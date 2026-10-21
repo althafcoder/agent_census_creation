@@ -17,9 +17,9 @@ from typing import Optional
 
 from fastapi import FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Ensure backend directory is in path
 BACKEND_DIR = Path(__file__).resolve().parent
@@ -69,10 +69,54 @@ logging.getLogger("uvicorn").setLevel(logging.INFO)
 
 log = logging.getLogger("census.api")
 
+# OpenAPI Tags Metadata for Swagger UI
+tags_metadata = [
+    {
+        "name": "Pipeline Processing",
+        "description": "Endpoints to upload documents and run automated census consolidation, invoice reconciliation, and deliverable generation.",
+    },
+    {
+        "name": "Testing & Samples",
+        "description": "Endpoints to test the pipeline on server disk folders or default sample data.",
+    },
+    {
+        "name": "Deliverables & Downloads",
+        "description": "Download generated Excel workbooks, exception reports, and email deliverables.",
+    },
+    {
+        "name": "Extracted Text & OCR",
+        "description": "Inspect and download raw structured text extracted from PDFs, Excel, CSV, and DOCX files.",
+    },
+    {
+        "name": "System Health",
+        "description": "Health check and system dependency status (Anthropic Claude API, Poppler OCR).",
+    },
+]
+
 app = FastAPI(
-    title="Census Comparison Agent",
-    description="Automated Census Creation and Invoice Comparison Engine",
+    title="Census Comparison & Invoice Reconciliation Agent API",
+    description="""
+### Automated Census Creation and Multi-Document Reconciliation Engine
+
+This API automates health insurance underwriting workflows:
+- **Intake & OCR**: Ingests PDFs (scanned & digital via PaddleOCR), Excel, CSV, and Word documents.
+- **Classification**: Distinguishes Census, Invoices, Renewals, GHQs, and RFPs.
+- **Carrier Routing**: Assigns carrier (Florida Blue vs Cigna) and master template (RAPT, Marsh, SBU).
+- **Prospect Extraction**: Employs Claude (`claude-opus-5-5`) for precise prospect metadata extraction.
+- **Reconciliation**: Validates tiers, enrollment status (Active, Waived, Cobra), flags discrepancies, and aligns renewal rates.
+- **Deliverables**: Outputs standardized protected Excel workbooks, audit exception summaries, and ready-to-send intake emails.
+
+#### Interactive Swagger UI
+- Explore and test endpoints directly below using the **Try it out** button on any endpoint.
+- OpenAPI Schema: [/openapi.json](/openapi.json)
+- ReDoc alternative: [/redoc](/redoc)
+- Direct Swagger route: [/swagger](/swagger) or [/docs](/docs)
+""",
     version="2.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    openapi_tags=tags_metadata,
 )
 
 app.add_middleware(
@@ -88,17 +132,77 @@ STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
+# Pydantic Request / Response Models for Swagger Schema Documentation
 class FolderTestRequest(BaseModel):
-    folder_path: str
+    folder_path: str = Field(..., description="Absolute or relative path to folder containing input documents", example="input")
 
 
-@app.get("/")
+class HealthResponse(BaseModel):
+    status: str = Field("online", description="Service status")
+    provider: str = Field("anthropic", description="LLM provider")
+    model: str = Field(..., description="Active Anthropic Claude model")
+    anthropic_model: str = Field(..., description="Active Anthropic Claude model name")
+    anthropic_configured: bool = Field(..., description="Whether ANTHROPIC_API_KEY is configured")
+    workspace_configured: bool = Field(..., description="Whether ANTHROPIC_WORKSPACE_ID is configured")
+    poppler_configured: bool = Field(..., description="Whether Poppler binary path exists for PDF OCR rendering")
+    output_dir: str = Field(..., description="Path to server output deliverables directory")
+
+
+class PipelineResponse(BaseModel):
+    success: bool = Field(True, description="Whether pipeline completed successfully")
+    output_filename: str = Field(..., description="Primary Excel deliverable filename")
+    txt_filename: str = Field(..., description="Exceptions audit text report filename")
+    download_xlsx_url: str = Field(..., description="URL to download primary Excel workbook")
+    download_txt_url: str = Field(..., description="URL to download exception audit report")
+    sbu_filename: Optional[str] = Field(None, description="SBU Census Template deliverable filename (if Cigna)")
+    download_sbu_url: Optional[str] = Field(None, description="URL to download SBU Excel workbook")
+    email_filename: Optional[str] = Field(None, description="Missing Information Email deliverable filename")
+    download_email_url: Optional[str] = Field(None, description="URL to download email text file")
+    email_text: str = Field("", description="Pre-composed email text ready to send to broker/client")
+    carrier: str = Field(..., description="Determined Carrier Routing (Florida Blue or Cigna)")
+    state: str = Field(..., description="Determined Business State")
+    routing: dict = Field(default_factory=dict, description="Routing decisions, primary template, and notes")
+    summary: str = Field(..., description="Brief Exception Summary")
+    audit: dict = Field(default_factory=dict, description="Employee & Dependent count audit metrics")
+    counters: dict = Field(default_factory=dict, description="Discrepancy counters")
+    notes: list[str] = Field(default_factory=list, description="Audit notes and rules triggered")
+    classified_docs: list[dict] = Field(default_factory=list, description="Classified input documents")
+    extracted_text_dir: str = Field(..., description="Directory where extracted text files are saved")
+    source_folder: Optional[str] = Field(None, description="Source folder path if run from test-folder")
+
+
+class ExtractedFileItem(BaseModel):
+    filename: str = Field(..., description="Extracted text filename")
+    size_bytes: int = Field(..., description="File size in bytes")
+    download_url: str = Field(..., description="Download URL")
+
+
+class ExtractedFileListResponse(BaseModel):
+    files: list[ExtractedFileItem] = Field(default_factory=list, description="List of extracted text files")
+    directory: str = Field(..., description="Directory path on server")
+
+
+class ExtractedFileContentResponse(BaseModel):
+    success: bool = Field(True, description="Extraction status")
+    filename: str = Field(..., description="Filename")
+    path: str = Field(..., description="Full path on disk")
+    content: str = Field(..., description="Full extracted text content")
+
+
+@app.get("/", include_in_schema=False)
 async def index():
-    """Serve the web UI."""
+    """Serve the interactive web UI."""
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
         return JSONResponse({"message": "UI not initialized yet."})
     return FileResponse(index_file)
+
+
+@app.get("/swagger", include_in_schema=False)
+@app.get("/docs/swagger", include_in_schema=False)
+async def swagger_ui_redirect():
+    """Direct alias redirecting /swagger to the interactive Swagger UI at /docs."""
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -107,7 +211,13 @@ async def favicon():
     return Response(status_code=204)
 
 
-@app.get("/api/health")
+@app.get(
+    "/api/health",
+    response_model=HealthResponse,
+    tags=["System Health"],
+    summary="Check API and System Status",
+    description="Check the online health of the server, LLM integration, Poppler OCR status, and directories.",
+)
 async def health():
     """Health check endpoint."""
     return {
@@ -151,8 +261,14 @@ def _pipeline_response(res: dict) -> dict:
     }
 
 
-@app.post("/api/process")
-async def process_files(files: list[UploadFile] = File(...)):
+@app.post(
+    "/api/process",
+    response_model=PipelineResponse,
+    tags=["Pipeline Processing"],
+    summary="Process Uploaded Documents",
+    description="Upload multiple documents (PDFs, Excel, CSV, DOCX). Automatically classifies, parses, routes carrier, compares census to invoice, and generates deliverables.",
+)
+async def process_files(files: list[UploadFile] = File(..., description="Multiple document files to process together")):
     """Upload files and run the census & invoice comparison pipeline."""
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded.")
@@ -197,7 +313,13 @@ async def process_files(files: list[UploadFile] = File(...)):
         shutil.rmtree(work, ignore_errors=True)
 
 
-@app.post("/api/test-folder")
+@app.post(
+    "/api/test-folder",
+    response_model=PipelineResponse,
+    tags=["Testing & Samples"],
+    summary="Run Pipeline on Server Folder",
+    description="Run the complete census pipeline directly against an existing folder on the server filesystem.",
+)
 async def test_folder(req: FolderTestRequest):
     """Run pipeline directly on a folder path on disk."""
     p = Path(req.folder_path)
@@ -230,7 +352,13 @@ async def test_folder(req: FolderTestRequest):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
-@app.post("/api/test-sample")
+@app.post(
+    "/api/test-sample",
+    response_model=PipelineResponse,
+    tags=["Testing & Samples"],
+    summary="One-Click Sample Test",
+    description="Quick test running the pipeline on the sample files currently in the input/ folder.",
+)
 async def test_sample():
     """Quick one-click test running the default input/ folder."""
     if not C.INPUT_DIR.exists():
@@ -253,7 +381,12 @@ async def test_sample():
         raise HTTPException(status_code=500, detail=str(exc))
 
 
-@app.get("/api/download/{filename}")
+@app.get(
+    "/api/download/{filename}",
+    tags=["Deliverables & Downloads"],
+    summary="Download Generated Deliverable",
+    description="Download a finalized Excel census workbook (.xlsx), exceptions report (.txt), or missing information email (.txt).",
+)
 async def download_output(filename: str):
     """Download a generated workbook or exception report from output directory."""
     safe_name = Path(filename).name
@@ -269,7 +402,13 @@ async def download_output(filename: str):
     return FileResponse(file_path, filename=safe_name, media_type=media_type)
 
 
-@app.get("/api/extracted-text/{filename}")
+@app.get(
+    "/api/extracted-text/{filename}",
+    response_model=ExtractedFileContentResponse,
+    tags=["Extracted Text & OCR"],
+    summary="Get Extracted Text Content",
+    description="Retrieve the full structured text extracted by OCR / text extractors for a given file.",
+)
 async def get_extracted_text(filename: str):
     """Retrieve full extracted text for a specific document."""
     safe_name = Path(filename).name
@@ -295,7 +434,13 @@ async def get_extracted_text(filename: str):
     raise HTTPException(status_code=404, detail=f"Extracted text file for '{filename}' not found.")
 
 
-@app.get("/api/extracted-files")
+@app.get(
+    "/api/extracted-files",
+    response_model=ExtractedFileListResponse,
+    tags=["Extracted Text & OCR"],
+    summary="List Extracted Text Files",
+    description="List all structured text files generated during document OCR and parsing.",
+)
 async def list_extracted_files():
     """List all extracted text files with metadata and download links."""
     files = []
@@ -309,7 +454,12 @@ async def list_extracted_files():
     return {"files": files, "directory": str(C.EXTRACTED_TEXT_DIR)}
 
 
-@app.get("/api/download-extracted/{filename}")
+@app.get(
+    "/api/download-extracted/{filename}",
+    tags=["Extracted Text & OCR"],
+    summary="Download Extracted Text File",
+    description="Directly download a raw extracted text file (.txt).",
+)
 async def download_extracted_file(filename: str):
     """Download an extracted text file directly."""
     safe_name = Path(filename).name
@@ -321,7 +471,12 @@ async def download_extracted_file(filename: str):
     return FileResponse(p, filename=safe_name, media_type="text/plain; charset=utf-8")
 
 
-@app.post("/process")
+@app.post(
+    "/process",
+    tags=["Pipeline Processing"],
+    summary="Legacy Direct-Download Processing",
+    description="Legacy endpoint that accepts uploaded documents and returns the generated Excel workbook directly as a file download.",
+)
 async def legacy_process(files: list[UploadFile] = File(...)):
     """Legacy endpoint returning direct file response."""
     work = Path(tempfile.mkdtemp(prefix="census_legacy_"))
@@ -340,3 +495,4 @@ async def legacy_process(files: list[UploadFile] = File(...)):
         )
     finally:
         shutil.rmtree(work, ignore_errors=True)
+

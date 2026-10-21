@@ -1,0 +1,753 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Census Comparison & Invoice Reconciliation Agent API",
+    "description": "\n### Automated Census Creation and Multi-Document Reconciliation Engine\n\nThis API automates health insurance underwriting workflows:\n- **Intake & OCR**: Ingests PDFs (scanned & digital via PaddleOCR), Excel, CSV, and Word documents.\n- **Classification**: Distinguishes Census, Invoices, Renewals, GHQs, and RFPs.\n- **Carrier Routing**: Assigns carrier (Florida Blue vs Cigna) and master template (RAPT, Marsh, SBU).\n- **Prospect Extraction**: Employs Claude (`claude-opus-5-5`) for precise prospect metadata extraction.\n- **Reconciliation**: Validates tiers, enrollment status (Active, Waived, Cobra), flags discrepancies, and aligns renewal rates.\n- **Deliverables**: Outputs standardized protected Excel workbooks, audit exception summaries, and ready-to-send intake emails.\n\n#### Interactive Swagger UI\n- Explore and test endpoints directly below using the **Try it out** button on any endpoint.\n- OpenAPI Schema: [/openapi.json](/openapi.json)\n- ReDoc alternative: [/redoc](/redoc)\n- Direct Swagger route: [/swagger](/swagger) or [/docs](/docs)\n",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "System Health"
+        ],
+        "summary": "Check API and System Status",
+        "description": "Check the online health of the server, LLM integration, Poppler OCR status, and directories.",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/process": {
+      "post": {
+        "tags": [
+          "Pipeline Processing"
+        ],
+        "summary": "Process Uploaded Documents",
+        "description": "Upload multiple documents (PDFs, Excel, CSV, DOCX). Automatically classifies, parses, routes carrier, compares census to invoice, and generates deliverables.",
+        "operationId": "process_files_api_process_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_process_files_api_process_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/test-folder": {
+      "post": {
+        "tags": [
+          "Testing & Samples"
+        ],
+        "summary": "Run Pipeline on Server Folder",
+        "description": "Run the complete census pipeline directly against an existing folder on the server filesystem.",
+        "operationId": "test_folder_api_test_folder_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/test-sample": {
+      "post": {
+        "tags": [
+          "Testing & Samples"
+        ],
+        "summary": "One-Click Sample Test",
+        "description": "Quick test running the pipeline on the sample files currently in the input/ folder.",
+        "operationId": "test_sample_api_test_sample_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/download/{filename}": {
+      "get": {
+        "tags": [
+          "Deliverables & Downloads"
+        ],
+        "summary": "Download Generated Deliverable",
+        "description": "Download a finalized Excel census workbook (.xlsx), exceptions report (.txt), or missing information email (.txt).",
+        "operationId": "download_output_api_download__filename__get",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/extracted-text/{filename}": {
+      "get": {
+        "tags": [
+          "Extracted Text & OCR"
+        ],
+        "summary": "Get Extracted Text Content",
+        "description": "Retrieve the full structured text extracted by OCR / text extractors for a given file.",
+        "operationId": "get_extracted_text_api_extracted_text__filename__get",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractedFileContentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/extracted-files": {
+      "get": {
+        "tags": [
+          "Extracted Text & OCR"
+        ],
+        "summary": "List Extracted Text Files",
+        "description": "List all structured text files generated during document OCR and parsing.",
+        "operationId": "list_extracted_files_api_extracted_files_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractedFileListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/download-extracted/{filename}": {
+      "get": {
+        "tags": [
+          "Extracted Text & OCR"
+        ],
+        "summary": "Download Extracted Text File",
+        "description": "Directly download a raw extracted text file (.txt).",
+        "operationId": "download_extracted_file_api_download_extracted__filename__get",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/process": {
+      "post": {
+        "tags": [
+          "Pipeline Processing"
+        ],
+        "summary": "Legacy Direct-Download Processing",
+        "description": "Legacy endpoint that accepts uploaded documents and returns the generated Excel workbook directly as a file download.",
+        "operationId": "legacy_process_process_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_legacy_process_process_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_legacy_process_process_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_legacy_process_process_post"
+      },
+      "Body_process_files_api_process_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "Multiple document files to process together"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_process_files_api_process_post"
+      },
+      "ExtractedFileContentResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Extraction status",
+            "default": true
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "Filename"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Full path on disk"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "Full extracted text content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "path",
+          "content"
+        ],
+        "title": "ExtractedFileContentResponse"
+      },
+      "ExtractedFileItem": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "Extracted text filename"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes",
+            "description": "File size in bytes"
+          },
+          "download_url": {
+            "type": "string",
+            "title": "Download Url",
+            "description": "Download URL"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "size_bytes",
+          "download_url"
+        ],
+        "title": "ExtractedFileItem"
+      },
+      "ExtractedFileListResponse": {
+        "properties": {
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/ExtractedFileItem"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "List of extracted text files"
+          },
+          "directory": {
+            "type": "string",
+            "title": "Directory",
+            "description": "Directory path on server"
+          }
+        },
+        "type": "object",
+        "required": [
+          "directory"
+        ],
+        "title": "ExtractedFileListResponse"
+      },
+      "FolderTestRequest": {
+        "properties": {
+          "folder_path": {
+            "type": "string",
+            "title": "Folder Path",
+            "description": "Absolute or relative path to folder containing input documents",
+            "example": "input"
+          }
+        },
+        "type": "object",
+        "required": [
+          "folder_path"
+        ],
+        "title": "FolderTestRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Service status",
+            "default": "online"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "LLM provider",
+            "default": "anthropic"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Active Anthropic Claude model"
+          },
+          "anthropic_model": {
+            "type": "string",
+            "title": "Anthropic Model",
+            "description": "Active Anthropic Claude model name"
+          },
+          "anthropic_configured": {
+            "type": "boolean",
+            "title": "Anthropic Configured",
+            "description": "Whether ANTHROPIC_API_KEY is configured"
+          },
+          "workspace_configured": {
+            "type": "boolean",
+            "title": "Workspace Configured",
+            "description": "Whether ANTHROPIC_WORKSPACE_ID is configured"
+          },
+          "poppler_configured": {
+            "type": "boolean",
+            "title": "Poppler Configured",
+            "description": "Whether Poppler binary path exists for PDF OCR rendering"
+          },
+          "output_dir": {
+            "type": "string",
+            "title": "Output Dir",
+            "description": "Path to server output deliverables directory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model",
+          "anthropic_model",
+          "anthropic_configured",
+          "workspace_configured",
+          "poppler_configured",
+          "output_dir"
+        ],
+        "title": "HealthResponse"
+      },
+      "PipelineResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Whether pipeline completed successfully",
+            "default": true
+          },
+          "output_filename": {
+            "type": "string",
+            "title": "Output Filename",
+            "description": "Primary Excel deliverable filename"
+          },
+          "txt_filename": {
+            "type": "string",
+            "title": "Txt Filename",
+            "description": "Exceptions audit text report filename"
+          },
+          "download_xlsx_url": {
+            "type": "string",
+            "title": "Download Xlsx Url",
+            "description": "URL to download primary Excel workbook"
+          },
+          "download_txt_url": {
+            "type": "string",
+            "title": "Download Txt Url",
+            "description": "URL to download exception audit report"
+          },
+          "sbu_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sbu Filename",
+            "description": "SBU Census Template deliverable filename (if Cigna)"
+          },
+          "download_sbu_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Sbu Url",
+            "description": "URL to download SBU Excel workbook"
+          },
+          "email_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Filename",
+            "description": "Missing Information Email deliverable filename"
+          },
+          "download_email_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Email Url",
+            "description": "URL to download email text file"
+          },
+          "email_text": {
+            "type": "string",
+            "title": "Email Text",
+            "description": "Pre-composed email text ready to send to broker/client",
+            "default": ""
+          },
+          "carrier": {
+            "type": "string",
+            "title": "Carrier",
+            "description": "Determined Carrier Routing (Florida Blue or Cigna)"
+          },
+          "state": {
+            "type": "string",
+            "title": "State",
+            "description": "Determined Business State"
+          },
+          "routing": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Routing",
+            "description": "Routing decisions, primary template, and notes"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Brief Exception Summary"
+          },
+          "audit": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Audit",
+            "description": "Employee & Dependent count audit metrics"
+          },
+          "counters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Counters",
+            "description": "Discrepancy counters"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes",
+            "description": "Audit notes and rules triggered"
+          },
+          "classified_docs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Classified Docs",
+            "description": "Classified input documents"
+          },
+          "extracted_text_dir": {
+            "type": "string",
+            "title": "Extracted Text Dir",
+            "description": "Directory where extracted text files are saved"
+          },
+          "source_folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Folder",
+            "description": "Source folder path if run from test-folder"
+          }
+        },
+        "type": "object",
+        "required": [
+          "output_filename",
+          "txt_filename",
+          "download_xlsx_url",
+          "download_txt_url",
+          "carrier",
+          "state",
+          "summary",
+          "extracted_text_dir"
+        ],
+        "title": "PipelineResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Pipeline Processing",
+      "description": "Endpoints to upload documents and run automated census consolidation, invoice reconciliation, and deliverable generation."
+    },
+    {
+      "name": "Testing & Samples",
+      "description": "Endpoints to test the pipeline on server disk folders or default sample data."
+    },
+    {
+      "name": "Deliverables & Downloads",
+      "description": "Download generated Excel workbooks, exception reports, and email deliverables."
+    },
+    {
+      "name": "Extracted Text & OCR",
+      "description": "Inspect and download raw structured text extracted from PDFs, Excel, CSV, and DOCX files."
+    },
+    {
+      "name": "System Health",
+      "description": "Health check and system dependency status (Anthropic Claude API, Poppler OCR)."
+    }
+  ]
+}
