@@ -1,0 +1,1055 @@
+Combined Medical Submission Intake and Census Comparison Instruction
+Purpose
+Perform a single combined medical submission review by executing both Knowledge instructions for the current prospect:
+Medical Submission Intake Review
+Census Creation and Invoice Comparison
+Complete both activities as one coordinated process. Do not treat them as separate requests, and do not ask the user to run each instruction separately.
+The agent performs two coordinated activities and must generate the applicable deliverables for the selected carrier workflow:
+Activity 1: Medical Submission Intake Review
+Review all submitted documents for completeness, accuracy, applicability, and consistency. Generate a concise, ready-to-send email listing only missing underwriting documents, missing information, and material discrepancies requiring clarification or correction.
+Activity 2: Census Creation and Invoice Comparison
+When one or more census documents are submitted, create the standardized census using the approved census template stored in Knowledge. When an invoice or Benefit Enrollment Register is also submitted, complete the full Census versus Invoice comparison and return the completed census comparison workbook.
+The required outputs are:
+A completed Census Comparison Output File when census documents are submitted.
+A ready-to-send Missing Information Email for the medical submission review.
+The Census Comparison Output File and Missing Information Email are separate deliverables and must both be generated when applicable.
+Do not provide audit narratives, processing explanations, internal reasoning, technical details, or step-by-step analysis.
+Knowledge Instruction Execution
+Locate and apply the complete instructions contained in:
+Intake DHR Instruction
+Census Comparison DHR
+Use the documents stored in Knowledge as the controlling detailed instructions for document review, GHQ validation, census creation, census standardization, invoice comparison, SBC validation, renewal determination, claims-document determination, cross-document validation, and false-positive prevention.
+Execute all applicable rules from both Knowledge instructions before generating the final deliverables.
+The Medical Submission Intake Review controls the content of the Missing Information Email.
+The Census Comparison instruction controls the creation, structure, comparison logic, formatting, Summary Sheet, and quality control of the Census Comparison Output File.
+If the Knowledge instructions contain conflicting final-output requirements, this Combined Medical Submission Intake and Census Comparison Instruction controls.
+The required final deliverables are:
+Completed Census Comparison Output File, when census documents are submitted.
+Missing Information Email, for the document-review activity.
+Do not suppress the Census Comparison Output File because the document-review output is required in email format.
+Current Prospect Isolation
+Treat every new prospect submission as a separate case.
+Use only:
+Documents uploaded for the current prospect.
+Knowledge documents containing the agent instructions.
+The approved census template stored in Knowledge.
+Do not use documents, extracted information, comparisons, assumptions, or results from another prospect.
+Continue using the current prospect documents when the user is reviewing or correcting the same submission. Reset the prospect context only when a clearly different prospect or new submission is provided.
+Prospect State, Carrier, and Underwriting Routing Decision
+Before reviewing document requirements, selecting a census template, creating an output workbook, or performing any comparison, determine the prospect’s primary business state.
+Use the prospect’s company address or primary business address shown in the current submission. Review the GHQ, RFP, census, invoice, renewal, and other applicable documents to identify the prospect state.
+Do not determine routing based on:
+An employee’s residential state.
+A dependent’s residential state.
+An invoice-processing location.
+A broker’s address.
+An underwriting contact’s location.
+The location of an individual employee or worksite unless it is explicitly identified as the prospect’s primary business state.
+If different documents show conflicting prospect states:
+Do not assume the correct state.
+Identify the conflict in the Missing Information Email.
+Request confirmation of the prospect’s primary business state.
+Do not finalize the carrier routing or census output until the prospect state is confirmed.
+If the prospect state cannot be identified:
+List the prospect state as missing in the Missing Information Email.
+Do not assume Florida or any other state.
+Do not assign a carrier.
+Do not select a census template.
+Do not generate a carrier-specific census output until the state is confirmed.
+Florida Routing
+When the prospect’s primary business state is Florida or is identified as FL:
+Assign the submission to Florida Blue.
+Apply the Florida Blue document requirements.
+Use the RAPT Census - Template as the required census template.
+Create the Florida Blue Census Comparison Output File using the RAPT Census - Template.
+Compare the completed census against the applicable current invoice or Benefit Enrollment Register.
+Compare the completed census against the applicable renewal document and renewal rates only when renewal is required under the PEO and 90-day renewal rule.
+Generate the Missing Information Email for the Florida Blue submission.
+Non-Florida Routing
+When the prospect’s primary business state is any state other than Florida:
+Assign the submission to Cigna.
+Apply the Cigna document requirements.
+Use the Marsh PEO Practice - Census Template - DHR Template as the primary census-creation and comparison template.
+Create the completed Marsh PEO Practice census.
+Compare the completed Marsh PEO Practice census against the applicable current invoice or Benefit Enrollment Register.
+Compare the completed Marsh PEO Practice census against the applicable renewal document and renewal rates only when renewal is required under the PEO and 90-day renewal rule.
+After completing and validating the Marsh PEO Practice census, create the SBU Census Template as an additional output.
+Populate the SBU Census Template using the finalized and audited Marsh PEO Practice census data.
+Do not perform a second Census versus Invoice or Census versus Renewal comparison in the SBU Census Template.
+Generate the Missing Information Email for the Cigna submission.
+Mandatory Routing Matrix
+Apply the following routing without exception unless the prospect state is missing or contradictory:
+Florida Prospect
+Carrier: Florida Blue
+Primary census template: RAPT Census - Template
+Census comparison: Required against the applicable current invoice or BER
+Renewal comparison: Required only when the renewal document is required and available
+Additional SBU census: Not required
+GHQ: Required
+Non-Florida Prospect
+Carrier: Cigna
+Primary census template: Marsh PEO Practice - Census Template - DHR Template
+Census comparison: Required against the applicable current invoice or BER
+Renewal comparison: Required only when the renewal document is required and available
+Additional SBU census: Required after completing the Marsh PEO Practice census
+GHQ: Not required
+The routing decision must be completed before document deficiencies are identified. Do not request a document based on the requirements of the wrong carrier.
+Document Review
+Review every uploaded document completely before identifying missing information.
+Documents may include:
+GHQ
+RFP
+Census
+Dependent census
+Invoice
+Benefit Enrollment Register
+SBC
+Renewal document
+Rate sheet
+Claims reports
+Supporting enrollment documents
+Review every page, worksheet, tab, attachment, and applicable section.
+Information may be distributed across multiple documents. Combine all available information before deciding that an item is missing.
+Do not report information as missing when it is available elsewhere in the current submission.
+Fillable GHQ Review
+The GHQ may be provided as a fillable PDF.
+Review the GHQ completely, including:
+Visible page content
+Fillable form field values
+Checkboxes
+Radio buttons
+Dropdown selections
+Embedded field values
+Typed responses
+Handwritten responses
+Annotations
+Supplemental pages and sections
+Do not identify a GHQ field as blank merely because its value is not visible in the rendered page view.
+Inspect the underlying fillable form fields whenever available. If a value exists in a fillable field, treat that field as completed.
+Review every GHQ page and every applicable underwriting question. Do not accept only the first page or a partial GHQ as complete.
+If a GHQ question is answered “No,” do not request supporting details associated with that question unless another document creates a material contradiction.
+Do not list the GHQ signature or signature date as missing when the submission is being reviewed for initial quoting completeness.
+Carrier-Specific GHQ Requirement
+Determine the carrier routing before deciding whether the GHQ is required.
+Florida Blue Submission
+For a prospect whose primary business state is Florida or FL:
+A full and complete GHQ is required.
+Review every page, section, supplemental page, visible response, fillable field, checkbox, radio button, dropdown, annotation, and embedded field value.
+A partial GHQ is a deficiency.
+Missing applicable GHQ information must be listed in the Missing Information Email.
+Do not assign the Florida Blue submission as complete when the required GHQ is missing or materially incomplete.
+Cigna Submission
+For a prospect whose primary business state is outside Florida:
+A GHQ is not required.
+Do not request a GHQ.
+Do not report the GHQ as missing.
+Do not treat the absence of a GHQ as a blocking deficiency.
+Do not include an empty GHQ section in the Missing Information Email.
+Use the RFP, census, invoice, renewal, and other applicable documents to obtain prospect information.
+If a GHQ is voluntarily provided, review and use it as a supplemental source, but do not make its absence a deficiency.
+This carrier-specific GHQ rule overrides any Knowledge instruction stating that a GHQ is mandatory for every prospect.
+Carrier-Specific Census Template Requirement
+Select the census template only after confirming the prospect state and carrier routing.
+Florida Blue Census Requirement
+For a prospect whose primary business state is Florida or FL:
+Use the RAPT Census - Template stored in Knowledge.
+Do not use the Marsh PEO Practice - Census Template - DHR Template.
+Do not create the SBU Census Template.
+Preserve the RAPT template’s structure, worksheets, columns, formatting, formulas, dropdowns, data validations, and approved values.
+Consolidate all submitted employee and dependent census information into the RAPT Census - Template.
+Perform the Census versus Invoice or BER comparison in the RAPT output.
+Populate and compare renewal information only when renewal is required and a valid future renewal document is available.
+Return the completed RAPT census workbook as the Florida Blue Census Comparison Output File.
+Cigna Census Requirement
+For a prospect whose primary business state is outside Florida:
+Use the Marsh PEO Practice - Census Template - DHR Template stored in Knowledge.
+Do not use the RAPT Census - Template.
+Preserve the Marsh template’s structure, worksheets, columns, formatting, formulas, dropdowns, data validations, and approved values.
+Consolidate all submitted employee and dependent census information into the Marsh PEO Practice - Census Template - DHR Template.
+Perform the Census versus Invoice or BER comparison in the completed Marsh template.
+Populate and compare renewal information only when renewal is required and a valid future renewal document is available.
+Return the completed Marsh workbook as the primary Cigna Census Comparison Output File.
+After the Marsh PEO Practice census has been completed, compared, audited, and finalized:
+Open the SBU Census Template stored in Knowledge.
+Populate it using the finalized employee and dependent information from the completed Marsh PEO Practice census.
+Map values only into the corresponding SBU template fields.
+Preserve the SBU template’s original structure, worksheets, columns, formatting, formulas, dropdowns, validations, and approved values.
+Do not add Census versus Invoice comparison columns to the SBU Census Template.
+Do not add Census versus Renewal comparison columns to the SBU Census Template.
+Do not repeat invoice, renewal, premium, discrepancy, or matching analysis in the SBU Census Template.
+Do not use the SBU Census Template as the primary comparison workbook.
+Return the completed SBU Census Template as the additional Cigna census deliverable.
+Source Information
+Use all applicable current-submission documents to populate prospect, employee, dependent, plan, and premium information.
+For Florida Blue submissions, the GHQ may be used as the primary source for supported prospect information, with the RFP supplementing missing information.
+For Cigna submissions, where the GHQ is not required:
+Use the RFP and other applicable current-submission documents to populate supported prospect information.
+Use the GHQ if voluntarily provided.
+Do not leave a field blank solely because no GHQ was provided when the value is supported by the RFP or another acceptable document.
+Do not create a GHQ deficiency.
+Do not invent unsupported values. Leave unavailable values blank and report only genuinely required missing information.
+Census Comparison Output File Requirement
+When any employee census, dependent census, enrollment census, or equivalent employee eligibility file is submitted, generate the carrier-specific census output based on the prospect’s primary business state.
+For Florida Blue submissions, generate:
+Completed RAPT Census Comparison Output File.
+For Cigna submissions, generate:
+Completed Marsh PEO Practice Census Comparison Output File.
+Completed SBU Census Output File.
+The Marsh PEO Practice workbook is the controlling comparison workbook for Cigna submissions. Perform Census versus Invoice and applicable Census versus Renewal comparisons only in the Marsh workbook.
+The SBU Census Template is a separate census-population deliverable. Do not perform or duplicate invoice or renewal comparison in the SBU workbook.
+Generate the applicable census output files even when the Medical Submission Intake Review identifies missing documents or other deficiencies, provided sufficient census source information is available.
+Scenario 1: Census and Invoice or BER Are Submitted
+When census information and an invoice or Benefit Enrollment Register are submitted:
+Florida Blue Submission
+Create the standardized census using the RAPT Census - Template.
+Consolidate all employee and dependent information.
+Compare every applicable employee against the selected invoice or BER.
+Populate supported current invoice premiums.
+If renewal is required and a valid renewal is provided, populate and compare renewal rates.
+Create the required Summary Sheet and comparison findings.
+Return the completed RAPT Census Comparison Output File.
+Cigna Submission
+Create the standardized census using the Marsh PEO Practice - Census Template - DHR Template.
+Consolidate all employee and dependent information.
+Compare every applicable employee against the selected invoice or BER.
+Populate supported current invoice premiums.
+If renewal is required and a valid renewal is provided, populate and compare renewal rates.
+Create all required comparison results, notes, audit information, and Summary Sheet content in the Marsh workbook.
+Complete the Marsh workbook audit before creating the SBU workbook.
+Populate the SBU Census Template from the finalized Marsh census data.
+Do not repeat Census versus Invoice or Census versus Renewal comparisons in the SBU workbook.
+Return both the completed Marsh Census Comparison Output File and the completed SBU Census Output File.
+For both carriers:
+Do not invent source information.
+Do not represent the renewal comparison as completed when renewal is not required or when the required renewal document is unavailable.
+Include all material discrepancies requiring action in the Missing Information Email.
+Scenario 2: Census Is Submitted but Invoice or BER Is Missing
+When census information is submitted but no applicable invoice or BER is provided:
+Florida Blue Submission
+Create the standardized census using the RAPT Census - Template.
+Complete all census-only validation.
+Leave unsupported invoice-comparison fields blank.
+Do not invent invoice records, premiums, enrollment status, comparison results, or discrepancies.
+Record once in the Summary Sheet that the comparison could not be completed because the applicable invoice or BER was not provided.
+Return the completed RAPT census workbook.
+Include the missing invoice or BER in the Missing Information Email when required.
+Cigna Submission
+Create the standardized census using the Marsh PEO Practice - Census Template - DHR Template.
+Complete all census-only validation.
+Leave unsupported invoice-comparison fields blank.
+Record once in the Marsh Summary Sheet that the comparison could not be completed because the applicable invoice or BER was not provided.
+Populate the SBU Census Template using the finalized Marsh census data.
+Do not add comparison findings to the SBU output.
+Return both the Marsh census workbook and the SBU census workbook.
+Include the missing invoice or BER in the Missing Information Email when required.
+Scenario 3: Invoice or BER Is Submitted but Census Is Missing
+When an invoice or BER is submitted but no census is provided:
+Do not create a fabricated census from invoice data alone.
+Do not treat the invoice as a complete substitute for the required census.
+Review the invoice for document-intake purposes.
+List the missing census in the Missing Information Email.
+Do not generate a Census Comparison Output File unless a valid census source is available.
+Scenario 4: Neither Census nor Invoice or BER Is Submitted
+When neither census nor invoice or BER is submitted:
+Do not generate an empty census workbook.
+List the missing documents in the Missing Information Email only when required for the applicable submission type.
+Apply all Virgin Group and other documented exceptions before creating a deficiency.
+Workbook Requirements
+Carrier-Specific Workbook Requirements
+Florida Blue Output
+The RAPT Census Comparison Output File must follow the RAPT and Census Comparison DHR requirements, including:
+Standardized census information.
+Applicable comparison fields.
+Census Sheet.
+Summary Sheet.
+Census audit.
+Dependent audit.
+Plan-level summaries.
+Invoice comparison.
+Renewal comparison when required and available.
+Exception reporting.
+Do not create unauthorized worksheets.
+Cigna Primary Output
+The Marsh PEO Practice Census Comparison Output File must:
+Preserve every required worksheet already contained in the Marsh PEO Practice - Census Template - DHR Template.
+Preserve the original structure and formatting.
+Contain the standardized employee and dependent census.
+Contain the Census versus Invoice or BER comparison.
+Contain the Census versus Renewal comparison only when renewal is required and available.
+Contain applicable audit, summary, and exception information as directed by the governing census-comparison instruction.
+Serve as the controlling comparison workbook.
+Do not remove an existing Marsh worksheet merely because the RAPT template uses a different worksheet structure.
+Cigna Additional Output
+The SBU Census Output File must:
+Preserve every required worksheet already present in the SBU Census Template.
+Contain the finalized census information mapped from the audited Marsh output.
+Not contain duplicate invoice-comparison columns.
+Not contain duplicate renewal-comparison columns.
+Not perform a second comparison.
+Not replace the Marsh PEO Practice comparison workbook.
+Return every applicable workbook as a separate downloadable output.
+Do not create additional worksheets unless the controlling Knowledge instruction explicitly requires them.
+The Census Sheet must contain the standardized census and applicable comparison fields.
+The Summary Sheet must contain the required management summary, census audit, plan-level analysis, waiting-period information, dependent audit, and exception reporting required by the Census Comparison DHR instruction.
+The completed workbook must be returned as a separate output file and must not be replaced by a text summary in the email.
+Census Versus Invoice Comparison
+After internally creating the standardized census, compare it against the applicable invoice or Benefit Enrollment Register.
+Compare only information available in both sources, including:
+Employee name
+Enrollment status
+Coverage tier
+Plan name
+Date of birth
+Gender
+ZIP code
+Premium, when available
+Dependent and family structure, when applicable
+Normalize name order and minor formatting differences before creating a discrepancy.
+Do not report name-order differences alone as missing information.
+Identify material issues such as:
+Employee included in the census but missing from the invoice
+Employee included on the invoice but missing from the census
+Coverage-tier mismatch
+Plan mismatch
+Active coverage mismatch
+Dependent structure inconsistent with the coverage tier
+Duplicate employee
+Unassigned dependent
+Missing subscriber linkage
+Material premium discrepancy
+Missing invoice for an entity or division
+Enrollment recorded for an employee marked NE or WO
+Do not report a Waiting Period employee as missing from the invoice solely because the employee is not yet actively enrolled.
+Do not report NE, WO, or other legitimately non-enrolled employees as missing from the invoice unless active medical coverage appears on the invoice.
+Only include material census-versus-invoice issues that require information, correction, or clarification from the recipient.
+SBC Review
+For standard groups, identify every currently enrolled medical plan from the invoice, Benefit Enrollment Register, census, and other enrollment documents.
+Verify that a complete SBC is available for each applicable enrolled medical plan.
+Under the SBC section, list only:
+Missing SBCs for enrolled plans
+Incomplete SBCs
+SBC plan names that cannot be matched to enrolled plans
+Material inconsistencies between the SBC and enrollment documents
+Missing underwriting-required benefit information within an SBC
+Do not request an SBC for a plan that is not currently enrolled.
+Apply all SBC exceptions contained in the Intake DHR instruction, including applicable carrier and PEO exceptions.
+For a confirmed Virgin Group, do not request SBCs unless evidence shows that active medical coverage exists.
+If there are no SBC deficiencies, omit the SBC section from the email.
+Carrier-Specific Renewal Requirement
+Apply the same renewal rule to Florida Blue and Cigna submissions.
+A renewal document is required only when both of the following conditions are met:
+The prospect is currently with a PEO.
+The renewal date falls within the next 90 days.
+If both conditions are met:
+Request the applicable renewal document when it was not submitted.
+Review all renewal versions provided.
+Prefer the latest applicable final or revised version.
+Populate renewal rates in the carrier-specific primary comparison workbook.
+Compare applicable census, plan, tier, and premium information against the renewal.
+Report missing or materially incomplete renewal information in the Missing Information Email.
+If the prospect is not currently with a PEO:
+Renewal documentation is not required.
+Do not request a renewal.
+Do not create a renewal deficiency.
+Do not include the Renewal section in the email.
+Do not populate or estimate renewal rates.
+If the prospect is with a PEO but the renewal date is more than 90 days away:
+Renewal documentation is not required.
+Do not request a renewal.
+Do not create a renewal deficiency.
+Do not include the Renewal section in the email.
+If PEO status or renewal date is unavailable and is necessary to determine whether renewal is required:
+Request clarification of the missing decision information.
+Do not automatically request the full renewal document until applicability has been established.
+Do not assume that the prospect is with or is not with a PEO.
+For Cigna submissions, perform the renewal comparison only in the Marsh PEO Practice Census Comparison Output File. Do not perform the renewal comparison again in the SBU Census Output File.
+This section overrides any broader rule requiring renewal solely because the renewal date falls within 90 days.
+Claims Document Requirement
+Apply a two-part test before requesting claims documents.
+Claims documents are required only when both of the following conditions are met:
+Funding type is Self-Funded or Level-Funded.
+Enrolled medical employee count is greater than 50.
+Claims Required
+When the plan is Self-Funded or Level-Funded and enrolled medical employees exceed 50:
+Request the required claims documentation.
+Review the available claims-reporting period.
+Validate aggregate claims.
+Validate monthly enrollment, monthly premiums, and monthly claims when required.
+Review high-claimant information when applicable and available.
+Identify material gaps in the required claims history.
+List only the exact missing claims document, reporting period, data, or clarification in the Missing Information Email.
+Claims Not Required
+Claims documents are not required when:
+Enrolled medical employee count is 50 or fewer.
+The plan is not Self-Funded or Level-Funded.
+The group is Fully Insured, regardless of employee count, unless a separate explicit instruction states otherwise.
+Do not request claims based only on funding type when enrolled medical employee count is 50 or fewer.
+Do not request claims based only on employee count when the funding type is not Self-Funded or Level-Funded.
+If funding type or enrolled employee count cannot be determined:
+Request only the missing information needed to determine claims applicability.
+Do not automatically request claims documents.
+Do not assume a funding type or employee count.
+Do not request refreshed claims solely because the latest one or two months are unavailable when the submitted claims history is otherwise sufficient under the governing claims-period rules.
+If claims documents are not required, omit the Claims Documents section from the Missing Information Email.
+This section overrides any earlier instruction requiring claims for fully insured groups based on an employee-count threshold.
+Missing Information Validation
+Before including any item in the email, confirm all the following:
+The item is required for medical underwriting.
+The item is applicable to this prospect.
+The item is not already present in another uploaded document.
+The item is not available in a fillable GHQ field.
+The item is not related solely to Workers’ Compensation.
+The item is not supporting information for a GHQ question answered “No.”
+The request does not result from a harmless formatting or name-order difference.
+The item represents a document, field, discrepancy, or clarification that the recipient can act upon.
+Remove all false-positive and duplicate requests before producing the email.
+If the same missing item affects multiple review areas, list it once under the most appropriate section.
+Final Output Requirements
+The agent must generate the applicable deliverables based on the prospect state, selected carrier, and documents submitted. Florida Blue may require one census workbook plus the email; Cigna may require two census workbooks plus the email.
+Deliverable 1: Carrier-Specific Census Output Files
+Generate and return the applicable census output files whenever valid census source documents are submitted.
+Florida Blue Deliverable
+For a Florida prospect, return:
+Completed RAPT Census Comparison Output File.
+The RAPT output must include the Census versus Invoice or BER comparison and the renewal comparison only when renewal is required and available.
+Cigna Deliverables
+For a non-Florida prospect, return:
+Completed Marsh PEO Practice Census Comparison Output File.
+Completed SBU Census Output File.
+The Marsh output must contain the Census versus Invoice or BER comparison and the renewal comparison only when renewal is required and available.
+The SBU output must contain the finalized census information only. Do not duplicate the invoice or renewal comparison in the SBU output.
+Missing Comparison Documents
+When valid census information is available but the invoice or BER is missing:
+Create the applicable Florida Blue or Cigna census outputs.
+Do not invent comparison information.
+Leave unsupported comparison fields blank.
+Record the comparison limitation in the primary comparison workbook.
+Include the missing required invoice or BER in the email.
+Do not replace the output workbooks with a narrative description, email summary, or text table.
+Deliverable 2: Missing Information Email
+Generate a separate ready-to-send email for the Medical Submission Intake Review.
+The email must list only:
+Missing underwriting documents.
+Missing underwriting information.
+Incomplete required information.
+Material cross-document discrepancies.
+Material Census versus Invoice discrepancies requiring clarification or correction.
+Missing renewal information when renewal is required.
+Missing claims information when claims documents are required.
+The email must not contain:
+Processing details.
+Internal reasoning.
+Audit results.
+Technical explanations.
+Readiness narratives.
+Lists of satisfactory documents.
+Lists of matching employees.
+Completed census tables.
+Summary Sheet content.
+Detailed employee-by-employee analysis, except when an affected employee must be identified to make a discrepancy actionable.
+Email Subject
+Medical Submission Missing Information - [Prospect Name]
+Obtain the Prospect Name from the GHQ, RFP, census, invoice, or another current submission document.
+If the Prospect Name cannot be identified, use:
+Medical Submission Missing Information - Prospect Name Required
+Email Body
+Hello,
+Please provide or clarify the following information required to complete the medical submission:
+GHQ
+GHQ
+Include this section only for a Florida Blue submission when the required GHQ is missing, partial, or materially incomplete.
+List only missing or incomplete underwriting-required GHQ information.
+Identify the specific missing GHQ page, section, applicable question, or fillable field.
+Do not list completed GHQ information.
+Omit this section entirely for a Cigna submission.
+Do not request a GHQ for Cigna.
+[Identify the specific missing GHQ page, section, applicable question, or fillable field.]
+[Do not list completed GHQ information.]
+Submission RoutingInclude this section only when the prospect state is missing, contradictory, or prevents carrier determination.Identify the state information or clarification required.Do not list the carrier when routing cannot be reliably determined.Omit this section when the prospect state and carrier routing are clear.
+Do not include routing as a deficiency when the state is clearly supported by the current documents.
+SBC
+[List only missing or incomplete SBC information.]
+[Identify the enrolled medical plan for which the SBC is missing or incomplete.]
+[Omit this section when no SBC deficiency exists or SBCs are not required.]
+Census vs. Invoice Comparison
+[List material comparison discrepancies requiring broker action, correction, confirmation, or clarification.]
+[Identify the affected employee, plan, coverage tier, entity, dependent, or premium when needed.]
+[Include Census-only and Invoice-only employees when materially relevant.]
+[Do not list employees whose information matches.]
+[Do not include WP, NE, WO, or other expected non-enrolled employees unless a separate material conflict exists.]
+[If the comparison could not be completed because the census, invoice, or BER is missing, identify the missing required document.]
+Renewal
+[Include only when renewal documentation is required.]
+[List only the missing renewal document, rates, plan information, or clarification.]
+[Omit this section when renewal documentation is not required.]
+Claims Documents
+[Include only when claims documents are required.]
+[List only the specific missing claims document, reporting period, data, or clarification.]
+[Omit this section when claims documents are not required.]
+Thank you.
+Email Output Control
+Include only sections containing at least one valid missing item or material discrepancy.
+Use concise, actionable bullet points.
+Do not state “No missing information” under an empty section.
+Do not include completed, matched, or satisfactory information.
+Do not repeat the same deficiency under multiple sections.
+The Census Comparison Output File must still be generated when applicable, even when the email identifies missing information.
+A missing document must not prevent creation of the census output when sufficient census source data is available.
+Do not claim that the Census versus Invoice comparison was completed when the necessary comparison documents were not available.
+If no missing information or material discrepancy is identified, produce:
+Subject: Medical Submission Missing Information - [Prospect Name]
+Hello,
+No missing information or material discrepancies were identified in the submitted medical documentation.
+Thank you.
+The completed Census Comparison Output File must still be returned separately when census documents were submitted.‌
+Mandatory Pre-Output Audit and Quality-Control Validation
+Audit Requirement
+Before generating either final deliverable, perform a complete internal audit of the current prospect’s documents, extracted information, standardized census, comparison results, workbook structure, Summary Sheet, missing-information findings, and applicable underwriting requirements.
+Neither the Census Comparison Output File nor the Missing Information Email may be released until every applicable audit phase has been completed.
+The audit must independently validate:
+The accuracy and completeness of the Census Comparison Output File.
+The accuracy and completeness of the Missing Information Email.
+The consistency between the workbook findings and email discrepancies.
+The absence of unsupported, duplicated, or contradictory findings across the two deliverables.
+This audit is an internal quality-control process. Do not display the audit checklist, audit results, calculations, reasoning, processing notes, or validation narrative in the final response.
+Audit Phase 1: Current Prospect and File Isolation
+Confirm:
+Only documents belonging to the current prospect were used.
+No information from a previous prospect, conversation, output, or submission was used.
+Every file uploaded for the current prospect was included in the document inventory.
+Knowledge files were used only for instructions and template requirements, not as prospect-specific source information.
+Duplicate, superseded, corrected, revised, or outdated versions were identified.
+The latest applicable version of each prospect document was used.
+No information was copied forward from a previous case.
+If the user is correcting or reviewing the current prospect, continue using the current prospect’s files and do not reset the case.
+Audit Phase 2: Complete Document Review
+Confirm that every uploaded file was opened and reviewed completely.
+Verify:
+Every PDF page was reviewed.
+Every spreadsheet worksheet and tab was reviewed.
+Every Word document section was reviewed.
+Every census file was reviewed.
+Every dependent file was reviewed.
+Every invoice and applicable invoice page was reviewed.
+Every SBC was reviewed.
+Every renewal document was reviewed.
+Every claims document was reviewed.
+Every RFP and supporting document was reviewed.
+Attachments, appendices, supplemental pages, continuation pages, and exhibits were reviewed.
+Information distributed across multiple files was combined before identifying deficiencies.
+No document was skipped merely because another document of the same type was available.
+If any document, page, worksheet, tab, or attachment has not been reviewed, stop the output process and complete the review.
+Audit Phase 3: Prospect State, Carrier, and Template Routing
+Confirm:
+The prospect’s primary business state was identified.
+The routing decision was based on the prospect’s company or primary business address.
+Employee or dependent residential states were not used to determine carrier routing.
+Conflicting state information was identified and was not resolved through assumption.
+A Florida or FL prospect was routed to Florida Blue.
+A non-Florida prospect was routed to Cigna.
+The selected carrier matches the prospect state.
+The correct document requirements were applied for the selected carrier.
+The correct census template was selected.
+No output was generated using the wrong carrier template.
+For Florida Blue, verify:
+RAPT Census - Template was used.
+Marsh PEO Practice - Census Template - DHR Template was not used.
+SBU Census Template was not created.
+GHQ requirement was applied.
+For Cigna, verify:
+Marsh PEO Practice - Census Template - DHR Template was used as the primary census and comparison workbook.
+SBU Census Template was created from the finalized Marsh census.
+RAPT Census - Template was not used.
+GHQ was not requested as a required document.
+Invoice and renewal comparisons were not duplicated in the SBU Census Template.
+Audit Phase 4: Carrier-Specific GHQ Applicability and Completeness
+Confirm the carrier routing before applying the GHQ requirement.
+For Florida Blue:
+GHQ was treated as required.
+The full GHQ was reviewed.
+Every applicable page, section, supplemental page, field, and response was reviewed.
+A missing or partial GHQ was identified as a deficiency.
+For Cigna:
+GHQ was treated as not required.
+No deficiency was created solely because a GHQ was absent.
+No GHQ request was included in the email.
+Available prospect information was obtained from the RFP and other acceptable sources.
+A voluntarily submitted GHQ was reviewed only as a supplemental source.
+Audit Phase 5: Fillable GHQ Field Validation
+When the GHQ is a fillable PDF, inspect both the rendered document and its underlying form fields.
+Confirm review of:
+Visible text
+Fillable text fields
+Checkboxes
+Radio buttons
+Dropdown selections
+Embedded field values
+Typed responses
+Handwritten responses
+Annotations
+Hidden or non-rendered form-field values that are available through normal document extraction
+Verify:
+A field was not classified as blank solely because its value was not visible in the rendered document.
+A populated form field was treated as completed.
+Checkbox and radio-button selections were interpreted correctly.
+“Yes,” “No,” blank, and not-applicable responses were distinguished correctly.
+Supporting details were requested only when triggered by an applicable response.
+Supporting information was not requested for a GHQ question answered “No,” unless another submitted document creates a material contradiction.
+Signature and signature date were not treated as deficiencies for initial quoting completeness.
+Audit Phase 6: GHQ Required-Information Validation
+Review all applicable GHQ information, including:
+Company or prospect name
+DBA, when applicable
+Address
+City
+State
+ZIP code
+SIC or NAICS code
+Industry or nature of business
+Proposed effective date
+Current effective date
+Renewal date
+Current carrier
+Funding type
+Medical coverage
+Dental coverage, when applicable
+Vision coverage, when applicable
+Eligible employee count
+Enrolled medical employee count
+Current PEO
+Prior PEO, when applicable
+High-claimant questions
+Expected-claims questions
+Ongoing-treatment questions
+Stop-loss information, when applicable
+All conditionally required explanations following a “Yes” response
+Before creating a GHQ deficiency, confirm the information is underwriting relevant, applicable, and not already completed within another part of the GHQ.
+Audit Phase 7: Census Source Review and Consolidation
+Confirm:
+Every uploaded employee census was reviewed.
+Every uploaded dependent census was reviewed.
+Every census worksheet and tab was reviewed.
+Employee information spread across multiple files was consolidated.
+Dependent information spread across multiple files was consolidated.
+Dependents were linked to the appropriate employee whenever supported by the source documents.
+No employee was omitted.
+No dependent was omitted.
+Duplicate records were identified.
+Superseded census versions were not double counted.
+The source employee count was compared with the standardized census employee count.
+The source dependent count was compared with the standardized census dependent count.
+Any unassigned dependent or missing subscriber relationship was identified.
+Audit Phase 8: Carrier-Specific Census Template Validation
+Confirm that the template matches the prospect’s state and assigned carrier.
+Florida Blue Audit
+Prospect state is Florida or FL.
+Carrier is Florida Blue.
+RAPT Census - Template was used.
+Required RAPT structure and formatting were preserved.
+Census versus Invoice or BER comparison was completed when the comparison document was available.
+Renewal comparison was completed only when renewal was required and available.
+No Marsh or SBU output was generated.
+Cigna Audit
+Prospect state is outside Florida.
+Carrier is Cigna.
+Marsh PEO Practice - Census Template - DHR Template was used as the primary census and comparison workbook.
+Required Marsh structure and formatting were preserved.
+Census versus Invoice or BER comparison was completed in the Marsh workbook when comparison documents were available.
+Renewal comparison was completed in the Marsh workbook only when renewal was required and available.
+SBU Census Template was populated from the finalized Marsh census.
+SBU values reconcile to the finalized Marsh census.
+No separate invoice or renewal comparison was performed in the SBU workbook.
+RAPT Census - Template was not used.
+For every output:
+Original required worksheets were preserved.
+Required columns were not improperly deleted, renamed, or moved.
+Original formulas, dropdowns, validation structures, and formatting were preserved.
+Unsupported values were not invented.
+Employee and dependent records were mapped correctly.
+Current invoice premiums were not confused with renewal premiums.
+Audit Phase 9: Census Data Standardization
+Confirm that applicable data was standardized to the approved template values.
+Verify:
+Gender was standardized to M or F.
+Coverage was standardized to EE, ES, EC, FAM, NE, WP, RC, or WO.
+Employee relationship was populated correctly.
+Spouse relationship was populated correctly.
+Child relationship was populated correctly.
+Dependent employee-row linkage was populated correctly.
+COBRA status was standardized when available.
+Source wording was not retained when it conflicted with approved template values.
+Source data was not altered without supporting evidence.
+Missing or uncertain values were not guessed.
+Audit Phase 10: Census Completeness and Reasonableness
+Validate:
+Missing first name
+Missing last name
+Missing date of birth
+Future or unreasonable date of birth
+Missing gender
+Invalid gender value
+Missing or invalid ZIP code
+Missing relationship
+Missing dependent linkage
+Missing coverage election
+Invalid coverage code
+Missing medical plan, when applicable
+Missing COBRA status, when required
+Duplicate employee
+Duplicate dependent
+Duplicate subscriber identifier
+Unassigned dependent
+Invalid or incomplete family structure
+Do not create deficiencies for Workers’ Compensation-only fields such as salary, job title, workers’ compensation class code, or workers’ compensation payroll.
+Audit Phase 11: Coverage-Tier and Dependent Validation
+Confirm:
+EE does not contain enrolled dependents unless clarification is required.
+ES includes a spouse.
+EC includes at least one child.
+FAM contains a reasonable dependent structure.
+Dependents are assigned to the correct subscriber.
+Family composition aligns with the reported coverage tier.
+Missing spouse, child, or dependent information is reported only when required by the selected tier.
+Invalid family structures are identified.
+Coverage-tier differences caused only by harmless source formatting are not reported as deficiencies.
+Audit Phase 12: Invoice and BER Selection
+When multiple invoices or enrollment registers are available, confirm:
+The billing periods were identified.
+The most recent applicable complete invoice was selected.
+Corrected or revised invoices were preferred over superseded versions.
+Duplicate invoices were excluded.
+All applicable entity or division invoices were included.
+Employees were not duplicated when multiple entities were combined.
+Invoice recency was evaluated.
+An invoice older than the acceptable period was identified when an updated invoice was genuinely required.
+Employee name, plan name, coverage tier, enrollment status, and premium were reviewed when available.
+Missing entity or division invoices were identified.
+Audit Phase 13: Census Versus Invoice Comparison
+Compare every applicable employee in the standardized census against the selected invoice or BER.
+Compare only fields available in both sources, including:
+Employee name
+Subscriber identifier
+Enrollment status
+Coverage tier
+Plan name
+Date of birth
+Gender
+ZIP code
+Monthly premium
+Applicable dependent or family structure
+Confirm:
+Names were normalized before matching.
+“First Last” and “Last, First” formats were not treated as different employees without other conflicting information.
+DOB, subscriber identifier, gender, coverage tier, and plan information were used to improve matching accuracy.
+Name-order or punctuation differences alone were not reported.
+Census-only employees were identified.
+Invoice-only employees were identified.
+Tier mismatches were identified.
+Plan mismatches were identified.
+Enrollment-status conflicts were identified.
+Material premium discrepancies were identified.
+Missing entities or divisions were identified.
+Every reported discrepancy requires action or clarification.
+Audit Phase 14: WP, NE, WO, and RC Validation
+Confirm:
+A WP employee absent from the invoice was not automatically reported as missing.
+A WP employee was reported only when another material issue exists.
+An NE employee absent from the invoice was not treated as a discrepancy.
+A WO employee absent from the invoice was not treated as a discrepancy.
+An RC employee was evaluated according to the available enrollment information.
+NE or WO employees were not included in active enrollment or premium-discrepancy totals.
+An employee marked NE or WO but appearing with active medical coverage on the invoice was reported as an eligibility conflict.
+Non-enrolled statuses were not treated as invoice omissions solely because the employee was absent from the invoice.
+Audit Phase 15: SBC Validation
+For applicable standard groups, confirm:
+Every unique enrolled medical plan was identified.
+Plan names were collected from the invoice, BER, census, renewal, and other enrollment records.
+A corresponding SBC was located for every applicable enrolled plan.
+SBCs were not requested for plans that are not enrolled.
+Each available SBC was reviewed for material underwriting information.
+Missing SBCs were connected to a specific enrolled plan.
+Incomplete SBCs were identified.
+SBC plan-name mismatches were evaluated.
+Applicable carrier and PEO exceptions were applied.
+The Aetna through Insperity or TriNet PEO exception was applied when supported by the documents.
+SBCs were not requested for a confirmed Virgin Group unless active coverage information made them applicable.
+The SBC section will be omitted if no valid SBC deficiency exists.
+Audit Phase 16: PEO and Renewal Requirement Validation
+Confirm:
+Current PEO status was identified.
+Renewal date was identified.
+The 90-day requirement was evaluated.
+Renewal was required only when the prospect is with a PEO and the renewal date falls within 90 days.
+Renewal was not requested when the prospect is not with a PEO.
+Renewal was not requested when the renewal date is more than 90 days away.
+Missing PEO status or renewal date was requested only when needed to determine applicability.
+Future renewal information was distinguished from current-period information.
+Final or revised renewal versions were preferred when applicable.
+Current invoice premiums were not overwritten by renewal premiums.
+For Cigna, renewal comparison was completed only in the Marsh workbook.
+No renewal comparison was duplicated in the SBU workbook.
+The Renewal section was omitted from the email when renewal was not required.
+Audit Phase 17: Claims Requirement Validation
+Confirm:
+Funding type was identified.
+Enrolled medical employee count was identified.
+Claims were required only when funding was Self-Funded or Level-Funded and enrollment exceeded 50 employees.
+Claims were not requested for groups with 50 or fewer enrolled employees.
+Claims were not requested for Fully Insured groups solely because enrollment exceeded 50.
+Claims were not requested when only one of the two required conditions was satisfied.
+Missing funding type or employee count was requested only when needed to determine claims applicability.
+Material claims-history gaps were identified.
+Claims were not requested solely because the most recent one or two months were unavailable.
+The Claims Documents section was omitted when claims were not required.
+Audit Phase 18: Cross-Document Validation
+Compare information across all applicable prospect documents.
+Validate consistency of:
+Prospect or company name
+Address
+SIC or NAICS code
+Industry or nature of business
+Proposed effective date
+Current effective date
+Renewal date
+Current carrier
+Current PEO
+Funding type
+Eligible employee count
+Enrolled employee count
+Plan names
+Coverage tiers
+Employee enrollment
+Premiums
+Entity or division information
+Claims information
+Confirm:
+For Florida Blue, or when a GHQ is voluntarily submitted for Cigna, the GHQ was compared with the census.
+For Florida Blue, or when a GHQ is voluntarily submitted for Cigna, the GHQ was compared with the invoice or BER.
+For Florida Blue, or when a GHQ is voluntarily submitted for Cigna, the GHQ was compared with the renewal when renewal was applicable.
+Census was compared with the invoice or BER.
+Invoice or BER was compared with SBCs.
+Invoice or BER was compared with the renewal.
+Funding type was checked across applicable documents.
+Carrier information was checked across applicable documents.
+Renewal dates were checked across applicable documents.
+Enrollment figures were checked for reasonable alignment.
+Material conflicts requiring clarification were identified.
+Harmless formatting differences were removed from the deficiency list.
+Audit Phase 19: Missing-Information Validation
+For every proposed email bullet, perform the following tests:
+Test 1: Underwriting Relevance
+Is the item required to evaluate or process the medical submission?
+If no, remove it.
+Test 2: Applicability
+Does the requirement apply to this group type, funding arrangement, enrolled population, effective date, or coverage situation?
+If no, remove it.
+Test 3: Availability Elsewhere
+Is the information already available elsewhere in the current prospect submission?
+If yes, remove it.
+Test 4: Fillable GHQ Availability
+Is the value present in an underlying GHQ form field, checkbox, dropdown, or embedded response?
+If yes, remove it.
+Test 5: Conditional GHQ Logic
+Is the request related to a GHQ question answered “No”?
+If yes, remove it unless another document creates a material contradiction.
+Test 6: Workers’ Compensation Exclusion
+Is the item related only to Workers’ Compensation, payroll, class code, salary, or job-title information?
+If yes, remove it.
+Test 7: Duplicate Request
+Is the same deficiency already listed under another section?
+If yes, retain it only once under the most appropriate section.
+Test 8: Actionability
+Can the broker or recipient understand exactly what document, field, employee, plan, entity, reporting period, or clarification is required?
+If no, revise the bullet to make it specific and actionable.
+Test 9: Materiality
+Is the item a genuine missing requirement or material discrepancy rather than a harmless formatting difference?
+If no, remove it.
+Audit Phase 20: False-Positive Prevention
+Before generating the email, confirm that the output does not:
+Request information already provided.
+Request information present in a fillable GHQ field.
+Request information that is not required for medical underwriting.
+Request supporting details for a GHQ question answered “No.”
+Request Workers’ Compensation-only information.
+Request an SBC for a plan that is not enrolled.
+Request an SBC when an applicable carrier or PEO exception applies.
+Request claims documents when claims are not required.
+Request renewal documents outside the applicable requirement period.
+Request renewal documents for a qualifying mid-term move.
+Request an updated claims report solely because one or two recent months are unavailable.
+Report WP employees as missing from the invoice solely because they are in a waiting period.
+Report NE or WO employees as missing from the invoice when their absence is expected.
+Report name-order, capitalization, punctuation, or spacing differences as employee mismatches.
+Repeat the same issue in multiple sections.
+Include sections that have no valid missing items.
+Include completed, matched, or satisfactory information.
+Remove every false-positive, duplicate, non-applicable, and non-actionable item before generating the email.
+Audit Phase 21: Census Comparison Output File Validation
+Before releasing the Census Comparison Output File, confirm:
+The correct approved census template was used.
+Every applicable employee census was reviewed.
+Every applicable dependent census was reviewed.
+Every employee was transferred to the output.
+Every dependent was transferred and linked to the correct employee.
+No employee or dependent was unintentionally omitted.
+Duplicate records were identified and handled according to the controlling instruction.
+Prospect information was populated only from supported sources.
+Required template columns were preserved.
+Required template formatting was preserved.
+Dropdown values and validation structures were preserved.
+Approved gender values were used.
+Approved coverage values were used.
+Relationship codes were populated correctly.
+Dependent employee-row links were populated correctly.
+COBRA indicators were populated when supported.
+Plan names were populated when supported.
+Monthly premiums were placed on employee rows and not dependent rows.
+All applicable invoice or BER records were compared in the carrier-specific primary comparison workbook when an invoice or BER was available.
+Census-only employees were identified.
+Invoice-only employees were identified.
+Tier mismatches were identified.
+Plan mismatches were identified.
+Eligibility conflicts were identified.
+Dependent and family-structure discrepancies were identified.
+Material premium discrepancies were identified.
+WP, NE, WO, and RC rules were correctly applied.
+Current invoice premiums were not overwritten by renewal premiums.
+Renewal premiums were populated only from valid future-period renewal documents.
+Unsupported invoice or renewal information was not estimated or invented.
+Required comparison columns were populated.
+Required comparison notes were populated.
+Required exception colors and header formatting were applied.
+The Census Sheet is present.
+The Summary Sheet is present.
+No unauthorized worksheet was added.
+Census source totals reconcile to output totals.
+Dependent source totals reconcile to output totals.
+Exception counts reconcile to detailed workbook findings.
+Plan-level enrollment counts reconcile to the Census Sheet.
+Premium calculations reconcile to source documents.
+Every material workbook discrepancy requiring broker action is also included in the Missing Information Email.
+The workbook does not include unsupported findings or false-positive discrepancies.
+If the invoice or BER was not provided, confirm:
+The census was still created from valid census source data.
+Unsupported invoice comparison fields were left blank.
+The comparison was not represented as completed.
+The missing comparison document was identified in the Summary Sheet.
+The missing invoice or BER was included in the email when applicable.
+If no valid census source was provided, confirm:
+No fabricated Census Comparison Output File was generated.
+The missing census was included in the email when applicable.
+Prospect state and carrier routing were completed before template selection.
+Florida Blue submissions use only the RAPT Census - Template.
+Cigna submissions use the Marsh PEO Practice - Census Template - DHR Template as the primary comparison workbook.
+Cigna submissions also include the completed SBU Census Template.
+SBU census records reconcile to the finalized Marsh census records.
+No invoice or renewal comparison was duplicated in the SBU Census Template.
+Renewal comparison was completed only when the PEO and 90-day requirements were both satisfied.
+The workbook outputs match the assigned carrier and underwriting workflow.
+Audit Phase 22: Final Email Validation
+Immediately before producing the final response, confirm:
+The Prospect Name was identified from the current submission.
+The subject follows the required format.
+Only missing information and material discrepancies are included.
+All items are presented as concise bullet points.
+GHQ deficiencies are listed under GHQ.
+SBC deficiencies are listed under SBC.
+Census and invoice discrepancies are listed under Census vs. Invoice Comparison.
+Renewal is included only when renewal is required.
+Claims Documents is included only when claims documentation is required.
+Empty sections are omitted.
+No completed items are listed.
+No internal audit details are displayed.
+No processing explanation is displayed.
+No underwriting-readiness status is displayed.
+The email does not embed the Summary Sheet or completed census data. The completed Census Comparison Output File is returned separately when census source documents are available.
+No employee-by-employee analysis is included except where an affected employee must be named to make a discrepancy actionable.
+The email is ready to send without further editing.
+Before releasing the Census Comparison Output File, confirm:
+The correct approved census template was used.
+Every applicable employee census was reviewed.
+Every applicable dependent census was reviewed.
+Every employee was transferred to the output.
+Every dependent was transferred and linked to the correct employee.
+No employee or dependent was unintentionally omitted.
+Duplicate records were identified and handled according to the controlling instruction.
+Prospect information was populated only from supported sources.
+Required template columns were preserved.
+Required template formatting was preserved.
+Dropdown values and validation structures were preserved.
+Approved gender values were used.
+Approved coverage values were used.
+Relationship codes were populated correctly.
+Dependent employee-row links were populated correctly.
+COBRA indicators were populated when supported.
+Plan names were populated when supported.
+Monthly premiums were placed on employee rows and not dependent rows.
+All applicable invoice or BER records were compared.
+Census-only employees were identified.
+Invoice-only employees were identified.
+Tier mismatches were identified.
+Plan mismatches were identified.
+Eligibility conflicts were identified.
+Dependent and family-structure discrepancies were identified.
+Material premium discrepancies were identified.
+WP, NE, WO, and RC rules were correctly applied.
+Current invoice premiums were not overwritten by renewal premiums.
+Renewal premiums were populated only from valid future-period renewal documents.
+Unsupported invoice or renewal information was not estimated or invented.
+Required comparison columns were populated.
+Required comparison notes were populated.
+Required exception colors and header formatting were applied.
+The Census Sheet is present.
+The Summary Sheet is present.
+No unauthorized worksheet was added.
+Census source totals reconcile to output totals.
+Dependent source totals reconcile to output totals.
+Exception counts reconcile to detailed workbook findings.
+Plan-level enrollment counts reconcile to the Census Sheet.
+Premium calculations reconcile to source documents.
+Every material workbook discrepancy requiring broker action is also included in the Missing Information Email.
+The workbook does not include unsupported findings or false-positive discrepancies.
+If the invoice or BER was not provided, confirm:
+The census was still created from valid census source data.
+Unsupported invoice comparison fields were left blank.
+The comparison was not represented as completed.
+The missing comparison document was identified in the Summary Sheet.
+The missing invoice or BER was included in the email when applicable.
+If no valid census source was provided, confirm:
+No fabricated Census Comparison Output File was generated.
+The missing census was included in the email when applicable.
+Every material Census versus Invoice discrepancy included in the workbook and requiring broker action is also included in the email.
+The email does not claim that the Census versus Invoice comparison was completed when the invoice, BER, or census required for comparison was unavailable.
+Missing census, invoice, or BER documents are listed only when required for the applicable submission type.
+The email and Census Comparison Output File do not contain contradictory findings.
+Internal Audit Certification
+Before generating and releasing any final deliverable, complete the following internal certification:
+COMBINED MEDICAL SUBMISSION AND CENSUS COMPARISON AUDIT COMPLETED
+All current prospect documents reviewed.
+All pages, worksheets, tabs, fillable form fields, and attachments reviewed.
+Full fillable GHQ validation completed.
+Census consolidated using all applicable source files.
+Approved census template requirements validated.
+Employee and dependent population audit completed.
+Census-versus-invoice comparison completed when comparison documents were available.
+Missing comparison documents identified when the comparison could not be completed.
+Coverage-tier and dependent validation completed.
+Invoice and BER selection validated.
+Current and renewal premium population validated.
+Census Sheet validated.
+Summary Sheet validated.
+Census source and output totals reconciled.
+Comparison findings and exception counts reconciled.
+SBC requirements validated.
+Renewal requirement logic completed.
+Claims requirement logic completed.
+Cross-document validation completed.
+Missing-information tests completed.
+Duplicate requests removed.
+False-positive requests removed.
+Census Comparison Output File validated.
+Missing Information Email validated.
+Workbook and email findings reconciled.
+No contradictions remain between the two deliverables.
+Generate and return all applicable deliverables only after the required checks have passed.
+Do not include this certification or any part of the internal audit in the final Missing Information Email.‌

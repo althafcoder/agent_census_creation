@@ -1,0 +1,179 @@
+"""Shared dataclasses used across the pipeline."""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import date
+from typing import Optional
+
+Note = tuple[str, bool]          # (text, is_red)
+
+
+@dataclass
+class Person:
+    role: str                                  # EE | SP | CH
+    first: str = ""
+    last: str = ""
+    gender: str = ""
+    dob: Optional[date] = None
+    zip: str = ""
+    coverage: str = ""                         # employees only
+    cobra: str = ""
+    plan: str = ""
+    premium: Optional[float] = None
+    sub_id: str = ""
+    hire_date: Optional[date] = None
+    effective_date: Optional[date] = None
+    source: str = ""
+    rel_raw: str = ""
+    cov_raw: str = ""
+    employee: Optional["Person"] = None        # dependents -> their employee
+    dependents: list["Person"] = field(default_factory=list)
+    notes: list[Note] = field(default_factory=list)
+    invoice_only: bool = False
+    is_duplicate: bool = False                 # second occurrence of an employee in the same file
+    row_no: int = 0                            # "Data Row" number assigned at write time
+
+    def note(self, text: str, red: bool = False, orange: bool = False) -> None:
+        color = "red" if red else ("orange" if orange else "black")
+        if not any(t == text for t, _ in self.notes):
+            self.notes.append((text, color))
+
+    @property
+    def display(self) -> str:
+        return f"{self.first} {self.last}".strip() or "(no name)"
+
+    @property
+    def relationship(self) -> str:
+        return self.role
+
+
+@dataclass
+class InvoiceRecord:
+    first: str = ""
+    last: str = ""
+    raw_name: str = ""                         # exact invoice spelling
+    tier: str = ""
+    dob: Optional[date] = None
+    gender: str = ""
+    zip: str = ""
+    plan: str = ""
+    premium: Optional[float] = None
+    status: str = ""
+    sub_id: str = ""
+    dep_count: int = 0
+    dep_rels: set = field(default_factory=set)
+    has_dep_detail: bool = False
+    source: str = ""
+
+
+@dataclass
+class InvoiceDoc:
+    path: str
+    records: list[InvoiceRecord]
+    period_start: Optional[date] = None
+    period_end: Optional[date] = None
+    entity: str = "default"
+    revised: bool = False
+    draft: bool = False
+    number: str = ""                            # statement / invoice number found in the document
+    doc_date: Optional[date] = None              # statement / invoice date found in the document
+
+
+@dataclass
+class RenewalDoc:
+    path: str
+    effective: Optional[date] = None
+    termination: Optional[date] = None
+    version_rank: int = 0                       # Final/Revised higher
+    rates: dict = field(default_factory=dict)   # (plan_name, tier) -> premium
+    plans: list[str] = field(default_factory=list)
+    age_banded: bool = False
+
+
+@dataclass
+class Prospect:
+    effective_date: Optional[date] = None
+    sic: str = ""
+    company: str = ""
+    address: str = ""
+    city_state_zip: str = ""
+    referral: str = ""
+    sales_person: str = ""
+    state: str = ""
+    city: str = ""
+    peo_name: str = ""
+    is_peo: bool = False
+    funding_type: str = ""
+    current_carrier: str = ""
+    ein: str = ""
+    salesforce_id: str = ""
+
+    @property
+    def zip(self) -> str:
+        import re
+        m = re.search(r"\b(\d{5}(?:-\d{4})?)\b", self.city_state_zip)
+        return m.group(1) if m else ""
+
+
+@dataclass
+class Census:
+    people: list[Person] = field(default_factory=list)      # employees + dependents in output order
+    raw_employee_rows: int = 0
+    raw_dependent_rows: int = 0
+    cross_file_merges: int = 0
+    dependent_merges: int = 0
+    duplicate_employees: int = 0
+    unassigned_dependents: list[Person] = field(default_factory=list)
+    files_used: list[str] = field(default_factory=list)
+    census_notes: list[str] = field(default_factory=list)
+
+    @property
+    def employees(self) -> list[Person]:
+        return [p for p in self.people if p.role == "EE"]
+
+    @property
+    def dependents(self) -> list[Person]:
+        return [p for p in self.people if p.role != "EE"]
+
+
+@dataclass
+class RowResult:
+    inv: Optional[InvoiceRecord] = None
+    inv_name: str = ""
+    plan: str = ""
+    tier: str = ""
+    status: str = ""
+    inv_premium: Optional[float] = None
+    renewal_premium: Optional[float] = None
+    match_pct: Optional[float] = None
+    match_text: str = ""
+    result: str = ""
+    result_red: bool = False
+    notes: list[Note] = field(default_factory=list)
+
+
+@dataclass
+class Findings:
+    """Document-level facts that feed the Summary sheet."""
+    notes: list[str] = field(default_factory=list)
+    exceptions: list[tuple[str, str, str]] = field(default_factory=list)   # (category, who, detail)
+    counters: dict = field(default_factory=dict)
+    invoice_period: str = ""
+    renewal_effective: Optional[date] = None
+    renewal_unmapped_plans: set = field(default_factory=set)
+    plan_rates: dict = field(default_factory=dict)       # (plan, tier) -> invoice rate
+    renewal_rates: dict = field(default_factory=dict)    # (plan, tier) -> renewal rate
+    plan_enrollment: dict = field(default_factory=dict)  # (plan, tier) -> count
+    wp_stats: dict = field(default_factory=dict)
+    invoice_employee_count: int = 0
+    invoice_medical_count: int = 0
+    invoices_received: str = ""
+    selected_invoice: str = ""
+    # Routing, carrier, and email deliverables
+    carrier: str = ""
+    state: str = ""
+    routing_notes: list[str] = field(default_factory=list)
+    sbc_notes: list[str] = field(default_factory=list)
+    claims_notes: list[str] = field(default_factory=list)
+    renewal_notes: list[str] = field(default_factory=list)
+    email_text: str = ""

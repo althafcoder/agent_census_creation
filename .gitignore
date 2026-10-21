@@ -1,0 +1,76 @@
+# ==============================================================================
+# Census Comparison Agent - .gitignore
+# ==============================================================================
+
+# Environment variables & secrets (Never commit API keys)
+.env
+.env.*
+!.env.example
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Pipeline Run Directories (Input files with PII/PHI & generated deliverables)
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep
+extracted_text/*
+!extracted_text/.gitkeep
+
+# Temporary scratch and test output folders
+backend/scratch_output/
+backend/scratch_output2/
+backend/scratch_output3/
+backend/test_out/
+scratch/
+
+# Microsoft Office temporary / lock files
+~$*.xlsx
+~$*.docx
+~$*.doc
+~$*.xls
+~$*
+
+# Logs
+*.log
+logs/
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+*.egg

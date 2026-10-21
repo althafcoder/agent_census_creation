@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Census & Invoice Comparison Agent</title>
+  <meta name="description" content="AI-powered health insurance census standardization and invoice comparison pipeline." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <!-- Background Glow Accents -->
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Header -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">RAPT Census & Invoice Agent</h1>
+        <p class="brand-subtitle">Health Insurance Census Creation & Multi-Document Reconciliation</p>
+      </div>
+    </div>
+    
+    <div class="nav-badges">
+      <span class="badge badge-emerald" id="model-badge">
+        <span class="pulse-dot"></span> Model: Claude Opus 5.5 (Anthropic)
+      </span>
+      <span class="badge badge-cyan" id="ocr-badge">
+        <span class="pulse-dot cyan"></span> OCR: PaddleOCR
+      </span>
+      <button class="btn btn-secondary btn-sm" id="btn-quick-sample" title="Run instant test on sample files in input/ folder">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>Test Sample Data</span>
+      </button>
+      <!-- Theme Switcher -->
+      <button class="theme-toggle" id="theme-toggle" title="Switch between Light (Light Blue / White) and Dark mode" aria-label="Toggle Theme">
+        <span class="theme-icon sun-icon" title="Light Mode">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </span>
+        <span class="theme-icon moon-icon" title="Dark Mode">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </span>
+        <span class="theme-toggle-thumb"></span>
+      </button>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    <div class="layout-grid">
+      
+      <!-- Left Column: Upload & Input -->
+      <section class="card upload-card">
+        <div class="card-header">
+          <div class="header-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <div>
+            <h2 class="card-title">Document Ingestion</h2>
+            <p class="card-desc">Upload employee census, invoices, renewals, and GHQ documents.</p>
+          </div>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="tab-pills" role="tablist">
+          <button class="tab-pill active" id="tab-btn-upload" role="tab">Upload Files</button>
+          <button class="tab-pill" id="tab-btn-folder" role="tab">Test Local Folder</button>
+        </div>
+
+        <!-- Mode 1: Drag & Drop Upload Zone -->
+        <div id="mode-upload" class="tab-content active">
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" multiple accept=".xlsx,.xlsm,.xls,.csv,.pdf,.docx,.txt" class="file-input" />
+            <div class="dropzone-inner">
+              <div class="upload-icon-circle">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <h3 class="dropzone-text">Drag & drop submission files here</h3>
+              <p class="dropzone-hint">or <span class="browse-link">browse files</span> from your computer</p>
+              <div class="format-tags">
+                <span class="tag">Excel (.xlsx, .xls)</span>
+                <span class="tag">PDF (Digital & Scanned)</span>
+                <span class="tag">Word (.docx)</span>
+                <span class="tag">CSV</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Staged Files List -->
+          <div class="files-preview-section" id="files-preview-section" style="display: none;">
+            <div class="preview-header">
+              <span class="preview-title" id="preview-count">0 files selected</span>
+              <button class="btn-clear" id="btn-clear-files">Clear All</button>
+            </div>
+            <ul class="file-list" id="file-list"></ul>
+          </div>
+
+          <!-- Process Button -->
+          <button class="btn btn-primary btn-block btn-lg" id="btn-process" disabled>
+            <span class="btn-content">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <span>Process Files & Generate Census</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- Mode 2: Test Folder Directly -->
+        <div id="mode-folder" class="tab-content" style="display: none;">
+          <div class="folder-input-box">
+            <label for="folder-path-input" class="label">Local Directory Path</label>
+            <input type="text" id="folder-path-input" class="input-text" placeholder="e.g. input or C:\path\to\folder" value="" />
+            <p class="input-hint">Specify a folder path containing census, invoice, and renewal files.</p>
+          </div>
+
+          <div class="quick-presets">
+            <span class="preset-label">Quick presets:</span>
+            <button type="button" class="btn-preset" data-path="input">Default input/ Folder</button>
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg" id="btn-process-folder">
+            <span class="btn-content">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Run Pipeline on Folder</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- Guidelines Callout -->
+        <div class="info-card">
+          <div class="info-icon">💡</div>
+          <div class="info-text">
+            <strong>REI Preserved Template Logic:</strong> Underwriting columns A–L remain untouched. Comparison section starts at column M. Scanned documents are parsed with PaddleOCR, and unstructured invoices leverage Anthropic <code>claude-opus-5-5</code>.
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Results & Dashboard -->
+      <section class="card results-card" id="results-card">
+        
+        <!-- State 1: Idle Empty State -->
+        <div class="state-view" id="state-idle">
+          <div class="empty-state">
+            <div class="empty-icon-circle">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <h3 class="empty-title">Ready for File Reconciliation</h3>
+            <p class="empty-desc">Upload files or select a folder to begin. The pipeline will classify your documents, consolidate subscribers & dependents, reconcile billing against invoices, and populate future renewal rates.</p>
+            <div class="feature-pills">
+              <div class="feature-item">✓ Template Strict Preservation</div>
+              <div class="feature-item">✓ Intelligent Document Role Detection</div>
+              <div class="feature-item">✓ PaddleOCR Scanned PDF Support</div>
+              <div class="feature-item">✓ Claude Opus 5.5 Fallback</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- State 2: Processing Loader -->
+        <div class="state-view" id="state-loading" style="display: none;">
+          <div class="loader-box">
+            <div class="spinner-orbit">
+              <div class="orbit-spinner"></div>
+              <div class="orbit-center-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+              </div>
+            </div>
+            <h3 class="loader-title" id="loader-status">Running Comparison Pipeline...</h3>
+            <p class="loader-subtitle" id="loader-sub">Extracting tables, OCR scanning, and reconciling records</p>
+            
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+
+            <div class="pipeline-steps">
+              <div class="step-item active" id="step-1">
+                <span class="step-dot"></span>
+                <span>Reading & Classifying Documents</span>
+              </div>
+              <div class="step-item" id="step-2">
+                <span class="step-dot"></span>
+                <span>Census & Dependents Consolidation</span>
+              </div>
+              <div class="step-item" id="step-3">
+                <span class="step-dot"></span>
+                <span>Invoice Subscriber Matching & LLM Extraction</span>
+              </div>
+              <div class="step-item" id="step-4">
+                <span class="step-dot"></span>
+                <span>Applying Underwriting Rules & Renewal Rates</span>
+              </div>
+              <div class="step-item" id="step-5">
+                <span class="step-dot"></span>
+                <span>Generating Master Workbook & Exceptions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- State 3: Completed Results Dashboard -->
+        <div class="state-view" id="state-results" style="display: none;">
+          
+          <!-- Download Header Bar -->
+          <div class="action-banner">
+            <div>
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                <div class="banner-status-tag">Pipeline Completed Successfully</div>
+                <span class="badge badge-purple" id="carrier-badge" style="display: none;">Carrier: Evaluating</span>
+              </div>
+              <h3 class="banner-title" id="output-company-name">Completed Census Output</h3>
+              <p class="banner-subtitle" id="output-meta">Generated ready for underwriting review</p>
+            </div>
+            <div class="banner-actions">
+              <a href="#" class="btn btn-download-xlsx" id="btn-download-xlsx" download>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span id="btn-download-xlsx-label">Download Census (.xlsx)</span>
+              </a>
+              <a href="#" class="btn btn-download-sbu" id="btn-download-sbu" download style="display: none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download SBU Census (.xlsx)</span>
+              </a>
+              <a href="#" class="btn btn-download-txt" id="btn-download-email" download style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span>Email (.txt)</span>
+              </a>
+              <a href="#" class="btn btn-download-txt" id="btn-download-txt" download>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span>Exceptions (.txt)</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Key Metrics Grid -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-label">Census Employees</span>
+              <span class="metric-val text-emerald" id="m-employees">0</span>
+              <span class="metric-sub" id="m-src-employees">Source: 0</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Dependents</span>
+              <span class="metric-val text-cyan" id="m-dependents">0</span>
+              <span class="metric-sub" id="m-unassigned">Unassigned: 0</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Missing from Invoice</span>
+              <span class="metric-val" id="m-missing-invoice">0</span>
+              <span class="metric-sub">Expected active</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Missing from Census</span>
+              <span class="metric-val" id="m-missing-census">0</span>
+              <span class="metric-sub">Invoice only</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Tier Mismatches</span>
+              <span class="metric-val" id="m-tier-mismatches">0</span>
+              <span class="metric-sub">Flagged in Col T</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Duplicate Employees</span>
+              <span class="metric-val" id="m-duplicates">0</span>
+              <span class="metric-sub">Deduped in output</span>
+            </div>
+          </div>
+
+          <!-- Result Tabs -->
+          <div class="result-tabs-nav">
+            <button class="result-tab active" data-target="tab-res-summary">Exception Summary</button>
+            <button class="result-tab" data-target="tab-res-email">Missing Information Email</button>
+            <button class="result-tab" data-target="tab-res-docs">Classified Files (<span id="docs-count">0</span>)</button>
+            <button class="result-tab" data-target="tab-res-notes">Audit & Findings</button>
+          </div>
+
+          <!-- Result Tab 1: Summary -->
+          <div class="result-tab-pane active" id="tab-res-summary">
+            <div class="summary-box">
+              <div class="summary-top">
+                <span class="summary-heading">Brief Exception Summary (Console Output)</span>
+                <button class="btn-copy" id="btn-copy-summary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+              <pre class="summary-pre" id="summary-text"></pre>
+            </div>
+          </div>
+
+          <!-- Result Tab 2: Missing Information Email -->
+          <div class="result-tab-pane" id="tab-res-email" style="display: none;">
+            <div class="summary-box">
+              <div class="summary-top">
+                <span class="summary-heading">Ready-to-Send Missing Information Email (Intake Deliverable)</span>
+                <button class="btn-copy" id="btn-copy-email">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>Copy Email</span>
+                </button>
+              </div>
+              <pre class="summary-pre" id="email-text" style="font-family: inherit; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap;"></pre>
+            </div>
+          </div>
+
+          <!-- Result Tab 2: Classified Docs -->
+          <div class="result-tab-pane" id="tab-res-docs" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">
+                All extracted files are automatically saved to <strong style="color: var(--cyan); font-family: var(--font-mono);">census_project/extracted_text/</strong>
+              </span>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Filename</th>
+                    <th>Detected Role</th>
+                    <th>Extraction Mode</th>
+                    <th>Characters</th>
+                    <th>Extracted Text</th>
+                  </tr>
+                </thead>
+                <tbody id="classified-docs-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Result Tab 3: Notes -->
+          <div class="result-tab-pane" id="tab-res-notes" style="display: none;">
+            <ul class="notes-list" id="notes-list"></ul>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- Extracted Text Modal -->
+  <div class="modal-overlay" id="text-modal" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="modal-doc-title">Document Extracted Text</h3>
+          <p class="modal-subtitle" id="modal-doc-sub">Extraction method and stats</p>
+        </div>
+        <button class="modal-close" id="modal-close-btn" title="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-toolbar">
+          <span class="modal-hint" id="modal-stats">0 characters extracted</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary btn-sm" id="btn-copy-modal-text">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>Copy Text</span>
+            </button>
+            <a href="#" class="btn btn-secondary btn-sm" id="btn-download-modal-file" download>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Download .txt</span>
+            </a>
+          </div>
+        </div>
+        <pre class="modal-pre" id="modal-pre-content"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
