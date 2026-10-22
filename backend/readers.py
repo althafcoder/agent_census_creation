@@ -4,7 +4,9 @@ Supported: .xlsx .xlsm .xls .csv .pdf (digital + scanned via OCR) .docx
 """
 from __future__ import annotations
 
+import importlib.util
 import logging
+import os
 import shutil
 import subprocess
 import tempfile
@@ -81,6 +83,57 @@ def _read_csv(path: Path) -> RawDoc:
 
 # -------------------------------------------------------------------- pdf ----
 _paddle_ocr_engine = None
+
+
+def _paddle_available() -> bool:
+    """True when this interpreter can run PaddleOCR in-process."""
+    return (importlib.util.find_spec("paddle") is not None
+            and importlib.util.find_spec("paddleocr") is not None)
+
+
+def _ocr_pdf_external(path: Path) -> str:
+    """Run PaddleOCR in a separate interpreter that has paddlepaddle installed.
+
+    Keeps OCR working when the pipeline runs on a newer Python (e.g. 3.14) that paddlepaddle has no
+    wheel for yet, while the project's `venv` (3.11) does. Override the interpreter with
+    PADDLE_OCR_PYTHON. Returns "" when no capable interpreter is found.
+    """
+    if os.getenv("PADDLE_OCR_BRIDGE"):
+        return ""
+    from config import BASE_DIR
+
+    override = os.getenv("PADDLE_OCR_PYTHON", "")
+    if override and Path(override).exists():
+        py = Path(override)
+    else:
+        cand = (BASE_DIR / "venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python"))
+        if not cand.exists():
+            return ""
+        py = cand
+
+    fd, out_name = tempfile.mkstemp(suffix=".txt")
+    os.close(fd)
+    out = Path(out_name)
+    env = os.environ.copy()
+    env["PADDLE_OCR_BRIDGE"] = "1"
+    log.info("Delegating PaddleOCR for %s to %s", path.name, py)
+    try:
+        proc = subprocess.run(
+            [str(py), str(Path(__file__).with_name("ocr_bridge.py")), str(path), str(out)],
+            capture_output=True, text=True, timeout=1800, env=env)
+        text = out.read_text(encoding="utf-8", errors="replace") if out.exists() else ""
+        if text.strip():
+            return text
+        log.warning("External PaddleOCR produced no text for %s (rc=%s): %s",
+                    path.name, proc.returncode, (proc.stderr or "")[-400:])
+    except Exception as exc:  # pragma: no cover - environment dependent
+        log.warning("External PaddleOCR failed on %s: %s", path.name, exc)
+    finally:
+        try:
+            out.unlink(missing_ok=True)
+        except OSError:
+            pass
+    return ""
 
 
 def _get_paddle_ocr():
@@ -171,6 +224,11 @@ def _reconstruct_ocr_layout(boxes_and_texts: list) -> str:
 
 
 def _ocr_pdf(path: Path) -> str:
+    # If paddlepaddle cannot run in this interpreter, delegate to the project's OCR interpreter.
+    if not _paddle_available():
+        text = _ocr_pdf_external(path)
+        if text:
+            return text
     try:
         from pdf2image import convert_from_path
         import numpy as np
@@ -246,6 +304,9 @@ def _ocr_pdf(path: Path) -> str:
         return extracted
     except Exception as exc:
         log.warning("PaddleOCR failed on %s: %s", path.name, exc)
+        text = _ocr_pdf_external(path)
+        if text:
+            return text
 
     # Fallback to pytesseract if available
     try:
@@ -297,9 +358,10 @@ def _read_pdf(path: Path) -> RawDoc:
     # "File identifier": digital vs scanned
     if len(doc.text.strip()) < 40 * max(1, len(texts)) * 0.25:
         doc.scanned = True
-        doc.extraction_method = "PaddleOCR (paddlepaddle 2.6.2 Scanned OCR)"
         log.info("%s identified as SCANNED -> using PaddleOCR", path.name)
         doc.text = _ocr_pdf(path)
+        doc.extraction_method = ("PaddleOCR (Scanned PDF OCR)" if doc.text.strip()
+                                 else "OCR unavailable (no text extracted)")
     else:
         doc.scanned = False
         doc.extraction_method = "Digital PDF (pdfplumber Direct Extraction)"

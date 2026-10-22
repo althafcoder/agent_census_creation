@@ -153,6 +153,7 @@ _COVERAGE_MAP = {
     "employeechildren": "EC", "empchild": "EC", "empchildren": "EC", "eechildren": "EC",
     "fam": "FAM", "family": "FAM", "employeefamily": "FAM", "eefamily": "FAM",
     "employeeplusfamily": "FAM", "subscriberfamily": "FAM", "eefam": "FAM", "empfamily": "FAM",
+    "ef": "FAM", "ee+f": "FAM", "eef": "FAM",
     "ne": "NE", "noteligible": "NE", "ineligible": "NE", "noteligibleforcoverage": "NE",
     "wp": "WP", "waitingperiod": "WP", "waiting": "WP", "inwaitingperiod": "WP", "waitperiod": "WP",
     "rc": "RC", "refused": "RC", "refusedcoverage": "RC", "refusingcoverage": "RC",

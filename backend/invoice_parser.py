@@ -19,6 +19,33 @@ _RANGE = re.compile(rf"{_DATE}\s*(?:to|through|thru|-|–|—)\s*{_DATE}", re.I)
 _ENTITY = re.compile(r"(?:group|account|policy|division|entity|location)\s*(?:#|no\.?|number|id)?\s*[:\-]?\s*"
                      r"([A-Za-z0-9][A-Za-z0-9\-]{2,})", re.I)
 
+# Lines that are wage / tax / WC / administrative fragments, never benefit-invoice employee rows.
+_REJECT_LINE = re.compile(
+    r"(gross\s*wages?|gross\s*pay|service\s*fee|admin\s*fee|\bfuta\b|\bsui\b|social\s*security|"
+    r"\bmedicare\b|\bwc\s*code\b|workers'?\s*comp|\bearnings\b|\bcheck\s*#|\bfile\s*#|"
+    r"paid-?in\s*department|total\s*(charges|adjustments|amount)\b)", re.I)
+
+
+def _is_fragment_name(raw: str) -> bool:
+    """A truncated / non-employee name fragment (e.g. 'HARRIS, JA') must never become an employee.
+    Dynamic heuristic: reject when the first name is a short initial-like fragment or the raw name
+    abuts non-name tokens; genuine 'Last, First' invoice names carry a full first name or initial+last."""
+    m = re.match(r"^([A-Za-z'\-\. ]+),\s*([A-Za-z'\-\. ]+)$", raw)
+    if not m:
+        return True
+    first = m.group(2).strip()
+    parts = first.split()
+    if not parts:
+        return True
+    head = parts[0]
+    # reject 2-4 letter non-word-like fragments that are not a plausible initial (e.g. 'JA', 'RICH', 'SAR')
+    if len(head) <= 4 and head.isalpha() and head.isupper() and len(parts) == 1:
+        return True
+    # reject when the parsed first name is empty (e.g. trailing comma only)
+    if not first:
+        return True
+    return False
+
 
 # --------------------------------------------------------------- periods ----
 def detect_period(doc: RawDoc) -> tuple[Optional[date], Optional[date]]:
@@ -137,6 +164,99 @@ def _records_from_peo_statement(doc: RawDoc) -> list[InvoiceRecord]:
     return recs
 
 
+# Grouped "Employee Details" statements (e.g. ADP PEO bills) list every benefit line per employee:
+#   Last, First [M] PROVIDER PLAN ... Employee CURRENT MM/DD/YYYY $COST
+#   EE ID:XXXXXXX  PROVIDER PLAN ...
+#                    PROVIDER PLAN ... $COST
+#                    Total $TOTAL
+# The medical premium is the amount on the medical line, never the first line of the block
+# (dental/life/LTD often come first). Select the medical line dynamically via _is_non_medical.
+_EMP_BLOCK = re.compile(r"^\s*([A-Z][A-Za-z'\-\.]+,\s*[A-Za-z'\-\. ]+?(?:\s+[A-Z])?)\s+"
+                        r"([A-Z]{2,}[A-Za-z0-9]*)\s+(.*?)\s+(Employee|Spouse|Child|Dependent)\s+"
+                        r"[A-Z]{2,}\s+(\d{1,2}/\d{1,2}/\d{2,4})\s+\$([\d,]+\.\d{2})\s*$")
+_EE_ID = re.compile(r"^\s*EE\s*ID\s*:\s*([A-Za-z0-9]+)\s*(.*)$", re.I)
+_BENEFIT_LINE = re.compile(r"^\s*([A-Z]{2,}[A-Za-z0-9]*)\s+(.*?)\s+"
+                           r"(Employee|Spouse|Child|Dependent)\s+[A-Z]{2,}\s+"
+                           r"\d{1,2}/\d{1,2}/\d{2,4}\s+\$([\d,]+\.\d{2})\s*$")
+_TOTAL_LINE = re.compile(r"^\s*Total\b.*\$\s*[\d,]+\.\d{2}\s*$", re.I)
+
+
+def _clean_emp_name(raw: str) -> str:
+    raw = re.sub(r"\s+", " ", raw).strip()
+    return raw
+
+
+def _records_from_peo_employee_details(doc: RawDoc) -> list[InvoiceRecord]:
+    from census_builder import _is_non_medical
+    lines = (doc.text or "").splitlines()
+    # Requires the distinctive header to avoid hijacking other invoice layouts.
+    if not any("Employee Details" in l for l in lines):
+        return []
+    if not any(re.search(r"\bProvider\s+Plan\b.*\bCost\b", l, re.I) for l in lines):
+        return []
+
+    recs: list[InvoiceRecord] = []
+    cur: Optional[InvoiceRecord] = None
+    cur_medical: Optional[tuple[str, float]] = None
+    seen_ids: set[str] = set()
+
+    def _flush():
+        nonlocal cur, cur_medical
+        if cur is not None:
+            if cur_medical is not None:
+                cur.plan, cur.premium = cur_medical
+            recs.append(cur)
+        cur, cur_medical = None, None
+
+    def _consider_medical(provider: str, plan: str, cost: float):
+        nonlocal cur_medical
+        if cur is None:
+            return
+        combined = f"{clean(provider)} {clean(plan)}".strip()
+        if _is_non_medical(combined):
+            return
+        if cur_medical is None:                        # keep the first medical line in the block
+            med_plan = clean(plan) or clean(provider)
+            cur_medical = (med_plan, cost)
+
+    for line in lines:
+        m = _EMP_BLOCK.match(line)
+        if m:
+            _flush()
+            raw = _clean_emp_name(m.group(1))
+            first, last = split_full_name(raw)
+            cur = InvoiceRecord(first=first, last=last, raw_name=raw, source=doc.name)
+            _consider_medical(m.group(2), m.group(3), to_money(m.group(6)) or 0.0)
+            continue
+        if cur is None:
+            continue
+        m_id = _EE_ID.match(line)
+        if m_id:
+            cur.sub_id = m_id.group(1)
+            rest = m_id.group(2).strip()
+            mb = _BENEFIT_LINE.match(rest) if rest else None
+            if mb:
+                _consider_medical(mb.group(1), mb.group(2), to_money(mb.group(4)) or 0.0)
+            continue
+        if _TOTAL_LINE.match(line):
+            _flush()
+            continue
+        mb = _BENEFIT_LINE.match(line)
+        if mb:
+            _consider_medical(mb.group(1), mb.group(2), to_money(mb.group(4)) or 0.0)
+    _flush()
+
+    # de-duplicate by subscriber id / name if the statement repeats blocks
+    out: list[InvoiceRecord] = []
+    for r in recs:
+        k = r.sub_id or name_key(r.first, r.last)
+        if k in seen_ids:
+            continue
+        seen_ids.add(k)
+        out.append(r)
+    return out
+
+
 def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
     recs: list[InvoiceRecord] = []
     for t in doc.tables:
@@ -211,6 +331,8 @@ def _records_from_text(doc: RawDoc) -> list[InvoiceRecord]:
     """Fallback for PDFs without extractable tables: 'SMITH, JOHN A  EE  $512.40' style lines."""
     recs = []
     for line in (doc.text or "").splitlines():
+        if _REJECT_LINE.search(line):
+            continue
         m_amt = re.findall(r"\$?\(?\d[\d,]*\.\d{2}\)?", line)
         m_name = re.match(r"\s*(?:\d+\s+)?([A-Z][A-Za-z'\-\.]+,\s*[A-Za-z'\-\. ]+?)\s{1,}(?=\S)", line)
         if not (m_amt and m_name):
@@ -218,6 +340,8 @@ def _records_from_text(doc: RawDoc) -> list[InvoiceRecord]:
         if _RETRO_WORDS.search(line) or re.search(r"total", line, re.I):
             continue
         raw = m_name.group(1).strip()
+        if _is_fragment_name(raw):
+            continue
         tier = re.search(rf"\b{_TIER_TOKEN}\b", line[m_name.end():], re.I)
         dob = re.search(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b", line)
         recs.append(InvoiceRecord(
@@ -252,8 +376,15 @@ def _records_from_llm(doc: RawDoc) -> list[InvoiceRecord]:
 
 
 def parse_invoice(doc: RawDoc) -> InvoiceDoc:
-    recs = _records_from_peo_statement(doc) or _records_from_tables(doc) or _records_from_text(doc) or _records_from_llm(doc)
     start, end = detect_period(doc)
+    # A payroll / wage document is not a benefit invoice: extract no employee records so it can never
+    # contribute premiums, comparison rows, or invoice-only employees (dynamic content detection).
+    from classifier import is_wage_document
+    if is_wage_document(doc):
+        return InvoiceDoc(path=doc.name, records=[], period_start=start, period_end=end,
+                          entity="payroll", draft=True, doc_date=None)
+    recs = (_records_from_peo_employee_details(doc) or _records_from_peo_statement(doc)
+            or _records_from_tables(doc) or _records_from_text(doc) or _records_from_llm(doc))
     text = (doc.text or "")[:4000]
     low = (doc.path.stem + " " + text[:1500]).lower()
     m = _ENTITY.search(text)

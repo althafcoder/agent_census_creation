@@ -19,8 +19,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+<<<<<<< Updated upstream
 import census_config as C
 from census_builder import build_census
+=======
+import config as C
+from census_builder import build_census, extract_waiting_period_rule, refine_non_enrolled_statuses
+>>>>>>> Stashed changes
 from classifier import classify
 from comparator import run_comparison
 from invoice_parser import combine_records, parse_invoice, select_invoices
@@ -149,6 +154,15 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
         log.info("      * Selected %d invoice(s), combined %d employee records (Period: %s)",
                  len(selected), len(invoice_records), period)
 
+    # Resolve non-enrolled coverage statuses (NE/WP/WO) structurally. The reference date for the
+    # waiting-period test is the invoice period start (the as-of date of the submission), falling back
+    # to the proposed effective date; the waiting period itself is read from the plan-design
+    # documents, never assumed.
+    ref_date = (selected[0].period_start if selected else None) or prospect.effective_date
+    wait_rule = extract_waiting_period_rule(docs)
+    wait_days = wait_rule.get("days") if wait_rule else None
+    refine_non_enrolled_statuses(census, reference_date=ref_date, waiting_days=wait_days, waiting_rule=wait_rule)
+
     # 5. renewal (PEO & 90-day rule check) ---------------------------------------------------------
     log.info("[5/7] Parsing and matching renewals...")
     ren_docs = [parse_renewal(d) for d in roles["renewal"]]
@@ -181,10 +195,14 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
     log.info("[6/7] Running comparison and audit reconciliation...")
     results = run_comparison(census, invoice_records, renewal, meta, F, have_invoice)
 
-    # Cross-document consistency check between census and payroll register(s)
-    if roles.get("payroll"):
+    # Cross-document consistency check between census and payroll register(s).
+    # Per the Payroll and Wage Document Exclusion rule, a payroll/wage document must never drive
+    # enrollment deficiencies, so only non-wage payroll-role documents are used here.
+    from classifier import is_wage_document as _is_wage_doc
+    payroll_enrollment_docs = [d for d in roles.get("payroll", []) if not _is_wage_doc(d)]
+    if payroll_enrollment_docs:
         payroll_names = set()
-        for p_doc in roles["payroll"]:
+        for p_doc in payroll_enrollment_docs:
             for t in p_doc.tables:
                 df = t.df
                 for val in df.values.flatten():
@@ -202,11 +220,19 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
                                 payroll_names.add((first.lower(), last.lower()))
 
         if payroll_names:
+            payroll_lasts = {l for _f, l in payroll_names}
             for emp in census.employees:
                 if emp.coverage in C.ACTIVE_TIERS and not emp.invoice_only:
                     fn = emp.first.lower().split()[0] if emp.first else ""
                     ln = emp.last.lower().strip() if emp.last else ""
-                    if (fn, ln) not in payroll_names:
+                    if not ln:
+                        continue
+                    # Match tolerantly: payroll extraction can drop leading characters (e.g. 'ertolotti'
+                    # for 'Bertolotti'), so accept a last-name containment match in either direction.
+                    match = (fn, ln) in payroll_names
+                    if not match and len(ln) >= 5:
+                        match = any(len(pl) >= 5 and (ln in pl or pl in ln) for pl in payroll_lasts)
+                    if not match:
                         res = results.get(id(emp))
                         plan_disp = (res.plan if res and res.plan else emp.plan) or "Medical"
                         who = f"{emp.first} {emp.last}".strip()

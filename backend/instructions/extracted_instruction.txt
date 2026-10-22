@@ -1053,3 +1053,39 @@ Workbook and email findings reconciled.
 No contradictions remain between the two deliverables.
 Generate and return all applicable deliverables only after the required checks have passed.
 Do not include this certification or any part of the internal audit in the final Missing Information Email.‌
+
+Payroll and Wage Document Exclusion
+A document that reports payroll, wages, taxes, or workers’ compensation charges is not a benefit invoice and must never be used to populate or compare employee premiums.
+Identify a payroll or wage document dynamically from its content whenever one or more of the following appear: Gross Wages, Service Fee, Social Security withholding, Medicare withholding, FUTA, SUI, workers’ compensation class code or WC Code, earnings, or paid-in department.
+A document must be treated as a payroll or wage document when its content is dominated by wage, tax, service-fee, or workers’ compensation lines, regardless of the file name or the presence of the word invoice in the name.
+Do not classify a payroll or wage document as a benefit invoice merely because its file name contains the word invoice.
+Exclude payroll and wage documents from the benefit-invoice selection, from the Census versus Invoice comparison, and from premium population.
+Never populate a census premium, an invoice premium, a comparison result, or a premium discrepancy from a payroll, wage, tax, or workers’ compensation amount.
+Never create an invoice-only employee, a Missing From Census employee, or an Employees missing from census exception from a payroll or wage document.
+Record once in the Summary Sheet that any payroll or wage document was excluded from the benefit-invoice comparison because it does not contain medical plan premium lines.
+Invoice Row Integrity and Fragment Prevention
+Only create an invoice employee record from a genuine employee benefit row that contains a usable employee name together with medical plan or premium information.
+Do not create an invoice employee record from a workers’ compensation class code, a wage amount, a tax line, a service-fee line, a department total, a page footer, a file number, a check number, or any other non-employee fragment.
+Do not treat a partially extracted, truncated, or column-split name as a distinct employee when the same person already exists in the submission under a fuller name.
+Before creating an invoice-only employee, confirm the record is a real enrolled participant supported by at least one employee-level benefit or census source; otherwise discard the record.
+Do not report a false invoice-only employee, a false missing-from-census employee, or a false employee-count difference caused by extracted text fragments.
+Enrollment Status Preservation
+Preserve the enrollment status explicitly stated in the source census, invoice, or enrollment documents.
+Do not overwrite an explicit WP (Waiting Period), NE (Not Eligible), RC (Refused Coverage), or WO (Waived) status with a different non-enrolled status during standardization.
+Only assign a non-enrolled status when the source does not already state one, and never convert an explicit WP or NE employee into WO, or an explicit WO employee into WP or NE.
+Determine WP only for an employee who is genuinely within a waiting period, and determine NE only for an employee who is genuinely not eligible, based on supported evidence in the current submission.
+When an explicit non-enrolled status in one document conflicts with a different non-enrolled status in another document, retain the status from the authoritative enrollment source and identify the conflict only when it is material.
+Never create a premium discrepancy, a tier mismatch, a coverage mismatch, or a DOB mismatch for an employee whose difference is caused solely by an inaccurate non-enrolled status classification.
+Comparison Field Fidelity
+Compare date of birth only when a date of birth is present in both the census source and the invoice or BER source.
+Do not report a date-of-birth mismatch when either source lacks a date of birth, when the invoice source contains no demographic columns, or when the extracted value is not a date of birth.
+Do not populate an invoice date of birth, gender, ZIP code, coverage tier, or premium from a column that does not represent that field; leave the field blank when the source does not provide it.
+Compare premium only between comparable premium values: census medical premium against an invoice medical plan premium. Do not compare a census medical premium against a wage, tax, service-fee, adjustment, or total-charge amount.
+Compare coverage tier only between the census tier and a genuine invoice medical coverage tier; do not derive an invoice tier from a plan label, a wage line, or a non-medical benefit line.
+Suppress any discrepancy that arises only because a comparison field is absent, unmapped, or drawn from the wrong source column.
+Company and Prospect Information Preservation
+Preserve and populate all supported prospect and company information in every carrier output workbook, including DBA, EIN, contact name, contact email, contact phone, desired effective date, address, city, state, and ZIP code.
+Populate company and prospect fields dynamically from the current submission’s GHQ, RFP, census, invoice, or other applicable documents when those values are supported.
+Do not drop, blank, or overwrite supported company or prospect information during census standardization, workbook population, or template mapping.
+When a template provides a field for supported company or prospect information, populate it from the source value and preserve the template’s structure and formatting.
+Leave a company or prospect field blank only when the value is genuinely unsupported, and report it as missing only when it is required for the applicable submission.

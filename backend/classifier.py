@@ -58,6 +58,15 @@ FIELD_ALIASES: dict[str, list[str]] = {
                "eessn", "subscribernumber", "employeenumber", "empno", "idnumber", "ssn4", "last4ssn",
                "householdid", "hhid", "familyid", "taxid", "employeetaxid", "positionid"],
     "hire_date": ["hiredate", "dateofhire", "doh", "startdate", "originalhiredate"],
+    "eligibility_class": ["benefiteligibilityclass", "eligibilityclass", "benefiteligibility",
+                          "eligibilitygroup", "benefiteligroup", "medicaleligibilitygroup",
+                          "medical1eligibilitygroup", "medicaleligibilityclass"],
+    "worker_category": ["workercategory", "employeecategory", "employmentcategory", "employeetype",
+                        "employeestatuscategory", "workerstatus", "workertype"],
+    "position_status": ["positionstatus", "employmentstatus", "positionstate"],
+    "waive_reason": ["medicalwaivereason", "waivereason", "waiverreason", "medicalwaiver",
+                     "waivedreason", "enrollmentwaivereason"],
+    "job_title": ["jobtitle", "positiontitle", "jobdescription", "positiondescription", "jobname"],
     "effective_date": ["effective_date", "effectivedate", "effdate", "enrollmenteffectivedate", "enrollmenteffdate",
                        "coverageeffectivedate", "coverageeffdate", "benefiteffectivedate", "benefiteffdate",
                        "enrollmentstartdate"],
@@ -136,6 +145,8 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
                       "first_name", "last_name", "gender", "dob", "zip", "relationship", "coverage", "status",
                       "cobra", "plan_type", "plan", "carrier", "premium", "ee_cost", "er_cost",
                       "hire_date", "effective_date", "txn_type", "sub_id", "full_name",
+                      "eligibility_class", "worker_category", "position_status",
+                      "waive_reason", "job_title",
                       "emp_first", "emp_last", "emp_full", "address", "city", "state"):
             if k in FIELD_ALIASES[canon] and canon not in cols:
                 cols[canon] = idx
@@ -150,7 +161,7 @@ def body(df: pd.DataFrame, hdr: Header) -> pd.DataFrame:
 # ------------------------------------------------------- document roles -----
 ROLE_FILENAME = [
     ("deliverable", r"(- marsh census|- sbu census|marsh_census_|sbu_census_|rapt_census_)"),
-    ("payroll", r"(payroll\s*register|payroll\s*report|payroll\s*journal|wage\s*report|payroll\s*summary)"),
+    ("payroll", r"(payroll|wage|earnings)"),
     ("invoice", r"(invoice|inv[_\-\s]|billing|bill[_\-\s]|statement|premium\s*bill)"),
     ("renewal", r"(renewal|renew|rate\s*(sheet|pass|card)|proposal)"),
     ("ghq", r"(ghq|group\s*health\s*questionnaire|questionnaire)"),
@@ -158,8 +169,11 @@ ROLE_FILENAME = [
     ("census", r"(census|roster|enroll|eligib|employee|dependent|demographic|census)"),
 ]
 ROLE_CONTENT = {
-    "payroll": [r"payroll register", r"earnings", r"gross pay", r"associate id", r"paid-in department"],
-    "invoice": [r"invoice", r"amount due", r"billing period", r"total (premium|due)", r"statement date"],
+    "payroll": [r"payroll register", r"gross wages?", r"gross pay", r"service fee", r"\bfuta\b", r"\bsui\b",
+                r"social security", r"medicare", r"wc code", r"workers'? comp", r"associate id", r"paid-in department",
+                r"earnings", r"\bcheck ?#", r"file ?#"],
+    "invoice": [r"amount due", r"billing period", r"total (premium|due)", r"statement date",
+                r"medical insurance", r"premium"],
     "renewal": [r"renewal", r"renewing", r"new rates?", r"rate (sheet|schedule)", r"proposed rates?"],
     "ghq": [r"group health questionnaire", r"ghq", r"prior carrier", r"sic code"],
     "rfp": [r"request for proposal", r"\brfp\b", r"new submission", r"submission", r"key details", r"peo consultant"],
@@ -167,8 +181,45 @@ ROLE_CONTENT = {
 }
 
 
+# Wage / payroll content signals used to dynamically disqualify a document from benefit-invoice use.
+# Only register-specific tokens are used. Generic terms like "earnings" or "social security" are
+# intentionally excluded: they occur incidentally in census and enrollment files (plan names,
+# deduction categories) and would cause false payroll classification.
+_WAGE_CONTENT = re.compile(
+    r"(gross\s*wages?|gross\s*pay|\bservice\s*fee\b|\bfuta\b|\bsui\b|"
+    r"\bwc\s*code\b|workers'?\s*comp|paid-?in\s*department|"
+    r"\bcheck\s*#|\bfile\s*#)", re.I)
+# Genuine benefit-invoice signals: medical plan premium lines.
+_BENEFIT_CONTENT = re.compile(
+    r"(medical\s*insurance|total\s*premium|premium\s*amount|monthly\s*premium|"
+    r"employee\s+details|provider\s+plan|coverage\s+type|plan\s+premium)", re.I)
+
+
+def is_wage_document(doc: RawDoc) -> bool:
+    """True when the document is dominated by payroll-register content and carries no genuine
+    medical premium detail. Purely content-driven - no file-name or hardcoded values.
+
+    Uses both an absolute floor and a density ratio so that large census/enrollment files that
+    merely mention a few wage-related words are never misclassified as payroll."""
+    text = doc.text or ""
+    if not text.strip():
+        return False
+    wage_hits = len(_WAGE_CONTENT.findall(text))
+    benefit_hits = len(_BENEFIT_CONTENT.findall(text))
+    words = max(len(text.split()), 1)
+    wage_density = wage_hits / words * 1000.0        # hits per 1,000 words
+    # A genuine payroll register repeats register-specific tokens dozens of times per page:
+    # require many hits, a high density, and a clear margin over benefit-premium signals.
+    return wage_hits >= 15 and wage_density >= 15.0 and wage_hits > benefit_hits * 2
+
+
 def classify(doc: RawDoc) -> str:
-    """Return one of: invoice, renewal, ghq, rfp, census, unknown."""
+    """Return one of: invoice, renewal, ghq, rfp, census, payroll, unknown."""
+    # Content-driven wage/payroll detection wins over filename: a document dominated by wage, tax,
+    # service-fee, or WC lines is a payroll document and must never be treated as a benefit invoice.
+    if is_wage_document(doc):
+        return "payroll"
+
     name = doc.path.stem.lower()
     for role, pat in ROLE_FILENAME:
         if re.search(pat, name):

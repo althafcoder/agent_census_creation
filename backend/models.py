@@ -23,6 +23,11 @@ class Person:
     sub_id: str = ""
     hire_date: Optional[date] = None
     effective_date: Optional[date] = None
+    eligibility_class: str = ""                # raw benefit eligibility classification (authoritative)
+    worker_category: str = ""                  # raw worker category (full-time/part-time/temp)
+    position_status: str = ""                  # raw position/employment status (e.g. Active)
+    waive_reason: str = ""                     # raw medical waive reason (evidence of a genuine waiver)
+    job_title: str = ""                        # raw job title / position description
     source: str = ""
     rel_raw: str = ""
     cov_raw: str = ""
@@ -31,6 +36,7 @@ class Person:
     notes: list[Note] = field(default_factory=list)
     invoice_only: bool = False
     is_duplicate: bool = False                 # second occurrence of an employee in the same file
+    benefit_roster: bool = False               # employee appears in a benefit-eligibility/plan roster
     row_no: int = 0                            # "Data Row" number assigned at write time
 
     def note(self, text: str, red: bool = False, orange: bool = False) -> None:
@@ -107,6 +113,11 @@ class Prospect:
     current_carrier: str = ""
     ein: str = ""
     salesforce_id: str = ""
+    dba: str = ""
+    contact_name: str = ""
+    contact_email: str = ""
+    contact_phone: str = ""
+    ft_employees: Optional[int] = None          # employer-declared full-time employee count
 
     @property
     def zip(self) -> str:

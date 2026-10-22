@@ -523,22 +523,45 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
         if p.hire_date:
             ws_census.cell(r, 12, p.hire_date).number_format = "mm/dd/yyyy"
 
-    # Company Info sheet
+    # Company Info sheet - map supported prospect values onto the template's existing label cells
     if "Company Info" in wb.sheetnames:
         ws_co = wb["Company Info"]
-        if prospect.company:
-            ws_co["B2"].value = prospect.company
-        if prospect.sic:
-            ws_co["B5"].value = prospect.sic
-        if prospect.address:
-            ws_co["B6"].value = prospect.address
-        if prospect.city_state_zip:
-            ws_co["B7"].value = prospect.city_state_zip
-        if prospect.referral:
-            ws_co["B9"].value = prospect.referral
-        if prospect.effective_date:
-            ws_co["B13"].value = prospect.effective_date.strftime("%m/%d/%Y")
-        ws_co["B14"].value = len(census.employees)
+        values = _company_info_values(prospect, census)
+        _fill_labeled_fields(ws_co, values)
+
+
+def _company_info_values(prospect: Prospect, census: Census) -> dict:
+    """Dynamic label -> value map for the Company Info sheet (labels matched, not cell refs)."""
+    return {
+        "legalcompanyname": prospect.company,
+        "dbaifapplicable": prospect.dba,
+        "dba": prospect.dba,
+        "eintaxid": prospect.ein,
+        "ein": prospect.ein,
+        "siccode": prospect.sic,
+        "maincompanyaddress": prospect.address,
+        "citystatezip": prospect.city_state_zip,
+        "address": prospect.address,
+        "contactname": prospect.contact_name,
+        "contactemail": prospect.contact_email,
+        "contactphone": prospect.contact_phone,
+        "desiredeffectivedate": prospect.effective_date.strftime("%m/%d/%Y") if prospect.effective_date else "",
+        "numberoffulltimeemployees": (prospect.ft_employees if prospect.ft_employees else
+                                      len([p for p in census.employees if not getattr(p, "invoice_only", False)])),
+    }
+
+
+def _fill_labeled_fields(ws, values: dict) -> None:
+    """Populate column B of a label sheet by matching the normalized label text in column A.
+    Preserves template structure/formatting and leaves genuinely unsupported fields blank."""
+    from utils import norm_key
+    for row in range(1, ws.max_row + 1):
+        label = ws.cell(row, 1).value
+        if label is None:
+            continue
+        key = norm_key(str(label).rstrip(":"))
+        if key in values and values[key] not in (None, ""):
+            ws.cell(row, 2).value = values[key]
 
 
 def save_rapt_workbook(template: Path, out: Path, census, prospect, results, F, audit):

@@ -29,6 +29,13 @@ LABELS = {
     "current_carrier": ["currentcarrier", "medicalcarrier", "carrier", "priorcarrier"],
     "peo": ["currentpeo", "peo", "peoname", "payrollpeo"],
     "funding": ["fundingtype", "fundingarrangement", "planfunding", "funding"],
+    "dba": ["dba", "dbadba", "doingbusinessas", "dbaname", "dbafictitiousname"],
+    "ein": ["ein", "eintaxid", "taxid", "fein", "federaltaxid", "employeridentificationnumber"],
+    "contact_name": ["contactname", "primarycontact", "primarycontactname", "contact",
+                     "clientcompanycontact", "clientcontact", "companycontact", "clientcontactname",
+                     "primarycompanycontact", "hrcontact", "contactperson"],
+    "contact_email": ["contactemail", "email", "emailaddress", "primarycontactemail", "clientemail"],
+    "contact_phone": ["contactphone", "phone", "phonenumber", "primarycontactphone", "telephone"],
 }
 
 
@@ -135,6 +142,110 @@ def _apply_llm_prospect(merged: dict, llm_res: dict) -> None:
     sf_id = llm_res.get("salesforce_id")
     if sf_id and not merged.get("salesforce_id"):
         merged["salesforce_id"] = sf_id
+    dba = llm_res.get("dba") or llm_res.get("dba_name")
+    if dba and not merged.get("dba"):
+        merged["dba"] = dba
+    ein = llm_res.get("ein") or llm_res.get("ein_tax_id")
+    if ein and not merged.get("ein"):
+        merged["ein"] = ein
+    cn = llm_res.get("contact_name")
+    if cn and not merged.get("contact_name"):
+        merged["contact_name"] = cn
+    ce = llm_res.get("contact_email")
+    if ce and not merged.get("contact_email"):
+        merged["contact_email"] = ce
+    cp = llm_res.get("contact_phone")
+    if cp and not merged.get("contact_phone"):
+        merged["contact_phone"] = cp
+
+
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+_PHONE_RE = re.compile(r"(?<!\d)(?:\+?1[\s.\-]?)?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}(?!\d)")
+_EIN_RE = re.compile(r"\b(\d{2}-\d{7})\b")
+_FT_RE = re.compile(r"#?\s*FT\s*Employees?\s*[:\-]?\s*(\d{1,5})", re.I)
+_FULLTIME_RE = re.compile(r"full[\s\-]?time\s+employees?\s*[:\-]?\s*(\d{1,5})", re.I)
+# Broker / agency / vendor domains that must never be captured as the *client's* contact email.
+_AGENCY_DOMAINS = ("adp.com", "archonpeo.com", "archon", "benefitfocus", "bswift", "peo")
+
+
+def _harvest(regex: "re.Pattern[str]", docs: list[RawDoc]) -> str:
+    for d in docs:
+        m = regex.search(d.text or "")
+        if m:
+            return m.group(0).strip()
+    return ""
+
+
+def _contact_name_from_text(docs: list[RawDoc]) -> str:
+    """Harvest a client contact person from GHQ/RFP-style text such as
+    'Client Company Contact: Bonni Mauro Title: HR Manager'. Label-driven, so it generalises."""
+    lab = re.compile(
+        r"(?:client\s+(?:company\s+)?contact|company\s+contact|primary\s+contact|contact\s+(?:name|person))"
+        r"\s*[:\-]?\s*([A-Z][A-Za-z'.\-]+(?:\s+[A-Z][A-Za-z'.\-]+){0,3})", re.I)
+    for d in docs:
+        for m in lab.finditer(d.text or ""):
+            name = m.group(1).strip()
+            name = re.split(r"\s+(?:Title|Phone|Fax|Email|E-?mail)\b", name, flags=re.I)[0].strip()
+            if 1 <= len(name.split()) <= 4 and not re.search(r"\d|@", name):
+                return name
+    return ""
+
+
+def _client_domain(company: str, docs: list[RawDoc]) -> str:
+    """Best-effort client domain from the company name tokens (e.g. 'SLM Waste ...' -> 'slm')."""
+    toks = [t for t in re.findall(r"[A-Za-z]{3,}", company or "") if t.lower() not in
+            {"inc", "llc", "corp", "company", "services", "service", "group", "the", "and"}]
+    if not toks:
+        return ""
+    return toks[0].lower()
+
+
+def _pick_client_email(docs: list[RawDoc], company: str) -> str:
+    """Return the first email whose domain plausibly belongs to the client (not a broker/agency)."""
+    domain_hint = _client_domain(company, docs)
+    candidates: list[str] = []
+    for d in docs:
+        candidates.extend(_EMAIL_RE.findall(d.text or ""))
+    for em in candidates:
+        low = em.lower()
+        if any(a in low for a in _AGENCY_DOMAINS):
+            continue
+        if domain_hint and domain_hint in low:
+            return em
+    for em in candidates:
+        low = em.lower()
+        if not any(a in low for a in _AGENCY_DOMAINS):
+            return em
+    return ""
+
+
+def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[RawDoc]) -> None:
+    """Harvest contact name, email, phone, and EIN from the company-info-bearing sources.
+
+    Prefer the authoritative GHQ/RFP documents; only fall back to other submission
+    documents (invoices, census tabs) for EIN, which is a stable company identifier.
+    Contact name/email/phone are never taken from invoices to avoid capturing a
+    broker's or carrier rep's details on broker-handled or multi-entity submissions.
+    """
+    if not merged.get("contact_name"):
+        nm = _contact_name_from_text(primary_docs)
+        if nm:
+            merged["contact_name"] = nm
+    client_em = _pick_client_email(primary_docs, merged.get("company", ""))
+    cur_em = (merged.get("contact_email") or "").lower()
+    cur_is_agency = any(a in cur_em for a in _AGENCY_DOMAINS) or "adp.com" in cur_em
+    if client_em and (not cur_em or cur_is_agency) and client_em.lower() != cur_em:
+        merged["contact_email"] = client_em
+    if not merged.get("contact_phone"):
+        merged["contact_phone"] = _harvest(_PHONE_RE, primary_docs)
+    if not merged.get("ein"):
+        val = _harvest(_EIN_RE, primary_docs) or _harvest(_EIN_RE, fallback_docs)
+        merged["ein"] = val
+    if not merged.get("ft_employees"):
+        m = _FT_RE.search("\n".join(d.text or "" for d in primary_docs)) or \
+            _FULLTIME_RE.search("\n".join(d.text or "" for d in primary_docs))
+        if m:
+            merged["ft_employees"] = int(m.group(1))
 
 
 def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: list[RawDoc] | None = None) -> tuple[Prospect, bool, bool]:
@@ -203,6 +314,9 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
     if _is_invalid_sic(merged.get("sic", "")):
         merged["sic"] = ""
 
+    # 3b. Harvest supported contact details (email, phone, EIN) from all current-submission documents
+    _text_fill(merged, sources, list(all_docs or []))
+
     pr = Prospect()
     d = parse_date(merged.get("effective_date"))
     pr.effective_date = d
@@ -215,6 +329,16 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
     pr.peo_name = merged.get("peo", "")
     pr.funding_type = merged.get("funding", "")
     pr.salesforce_id = merged.get("salesforce_id", "")
+    pr.dba = merged.get("dba", "")
+    pr.ein = merged.get("ein", "")
+    pr.contact_name = merged.get("contact_name", "")
+    pr.contact_email = merged.get("contact_email", "")
+    pr.contact_phone = merged.get("contact_phone", "")
+    if merged.get("ft_employees"):
+        try:
+            pr.ft_employees = int(merged["ft_employees"])
+        except (TypeError, ValueError):
+            pr.ft_employees = None
 
     if merged.get("csz"):
         pr.city_state_zip = merged["csz"]
