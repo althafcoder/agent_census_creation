@@ -166,9 +166,16 @@ class PipelineResponse(BaseModel):
     audit: dict = Field(default_factory=dict, description="Employee & Dependent count audit metrics")
     counters: dict = Field(default_factory=dict, description="Discrepancy counters")
     notes: list[str] = Field(default_factory=list, description="Audit notes and rules triggered")
-    classified_docs: list[dict] = Field(default_factory=list, description="Classified input documents")
     extracted_text_dir: str = Field(..., description="Directory where extracted text files are saved")
     source_folder: Optional[str] = Field(None, description="Source folder path if run from test-folder")
+    company: Optional[str] = Field("", description="Company name")
+    prospect_name: Optional[str] = Field("", description="Prospect name")
+    proposed_effective_date: Optional[str] = Field("", description="Proposed Effective Date from intake/prospect")
+    sic_naics_code: Optional[str] = Field("", description="SIC / NAICS Code from intake/prospect")
+    company_name: Optional[str] = Field("", description="Company Name from intake/prospect")
+    address: Optional[str] = Field("", description="Address from intake/prospect")
+    city_state_zip: Optional[str] = Field("", description="City, State, Zip from intake/prospect")
+    prospect: Optional[dict] = Field(default_factory=dict, description="Full prospect metadata block")
 
 
 class ExtractedFileItem(BaseModel):
@@ -239,6 +246,38 @@ def _pipeline_response(res: dict) -> dict:
     sbu_file = Path(res["sbu_output_file"]) if res.get("sbu_output_file") else None
     email_file = Path(res["email_file"]) if res.get("email_file") else None
 
+    prospect_block = res.get("prospect") or {}
+    eff_date = (
+        res.get("proposed_effective_date")
+        or prospect_block.get("proposed_effective_date")
+        or prospect_block.get("effective_date")
+        or ""
+    )
+    sic = (
+        res.get("sic_naics_code")
+        or prospect_block.get("sic_naics_code")
+        or prospect_block.get("sic")
+        or ""
+    )
+    comp = (
+        res.get("company_name")
+        or res.get("company")
+        or res.get("prospect_name")
+        or prospect_block.get("company_name")
+        or prospect_block.get("company")
+        or ""
+    )
+    addr = (
+        res.get("address")
+        or prospect_block.get("address")
+        or ""
+    )
+    csz = (
+        res.get("city_state_zip")
+        or prospect_block.get("city_state_zip")
+        or ""
+    )
+
     return {
         "success": True,
         "output_filename": out_file.name,
@@ -252,8 +291,25 @@ def _pipeline_response(res: dict) -> dict:
         "email_text": res.get("email_text", ""),
         "carrier": res.get("carrier", ""),
         "state": res.get("state", ""),
-        "company": res.get("company", "") or res.get("prospect_name", ""),
-        "prospect_name": res.get("prospect_name", "") or res.get("company", ""),
+        "company": comp,
+        "prospect_name": comp,
+        "company_name": comp,
+        "proposed_effective_date": eff_date,
+        "sic_naics_code": sic,
+        "address": addr,
+        "city_state_zip": csz,
+        "prospect": {
+            "proposed_effective_date": eff_date,
+            "sic_naics_code": sic,
+            "company_name": comp,
+            "address": addr,
+            "city_state_zip": csz,
+            "effective_date": eff_date,
+            "sic": sic,
+            "company": comp,
+            "referral": prospect_block.get("referral", ""),
+            "sales_person": prospect_block.get("sales_person", ""),
+        },
         "routing": res.get("routing", {}),
         "summary": res.get("summary", ""),
         "audit": res.get("audit", {}),
