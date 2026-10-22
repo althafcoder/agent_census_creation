@@ -1,6 +1,9 @@
-"""Central configuration for the Census Comparison pipeline."""
+"""Central configuration for the Census Comparison pipeline.
+Dedicated unique module name to avoid any namespace collision with parent config packages or GPU server extractors.
+"""
 from pathlib import Path
 import os
+import re
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 BACKEND_DIR = BASE_DIR / "backend"
@@ -15,8 +18,6 @@ try:
     load_dotenv(BASE_DIR / ".env")
 except ImportError:
     pass
-
-import re
 
 def _discover(env_var: str, folder: Path, pattern: str) -> Path:
     """Env override first, else the first file in `folder` matching `pattern` (no hardcoded filenames)."""
@@ -134,7 +135,6 @@ NON_ENROLLED = {"NE", "WO", "RC"}   # absent from invoice is expected, no notes
 FUZZY_ACCEPT = 0.80                  # name similarity accepted as a match
 FUZZY_WITH_DOB = 0.60                # lower bar when DOB also agrees
 
-
 # OCR / External binaries
 POPPLER_PATH = os.getenv("POPPLER_PATH", "")
 TESSERACT_PATH = os.getenv("TESSERACT_PATH", "")
@@ -145,5 +145,3 @@ ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-5-5")
 ANTHROPIC_WORKSPACE_ID = os.getenv("ANTHROPIC_WORKSPACE_ID", "")
 
 USE_LLM_FALLBACK = bool(ANTHROPIC_API_KEY)
-
-

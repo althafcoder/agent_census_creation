@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, HTTPException, Response, UploadFile
+from fastapi import FastAPI, File, HTTPException, Response, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,9 +25,9 @@ from pydantic import BaseModel, Field
 BACKEND_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BACKEND_DIR.parent
 if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
+    sys.path.append(str(BACKEND_DIR))
 
-import config as C
+import census_config as C
 from main import run_pipeline
 
 # Ensure unbuffered standard streams so terminal logs appear instantly
@@ -218,6 +218,7 @@ async def favicon():
     summary="Check API and System Status",
     description="Check the online health of the server, LLM integration, Poppler OCR status, and directories.",
 )
+@app.get("/health", response_model=HealthResponse, include_in_schema=False)
 async def health():
     """Health check endpoint."""
     return {
@@ -251,6 +252,8 @@ def _pipeline_response(res: dict) -> dict:
         "email_text": res.get("email_text", ""),
         "carrier": res.get("carrier", ""),
         "state": res.get("state", ""),
+        "company": res.get("company", "") or res.get("prospect_name", ""),
+        "prospect_name": res.get("prospect_name", "") or res.get("company", ""),
         "routing": res.get("routing", {}),
         "summary": res.get("summary", ""),
         "audit": res.get("audit", {}),
@@ -261,6 +264,13 @@ def _pipeline_response(res: dict) -> dict:
     }
 
 
+def _prepare_pipeline_env():
+    """Ensure the census agent backend directory is in sys.path without hijacking global config."""
+    backend_str = str(BACKEND_DIR)
+    if backend_str not in sys.path:
+        sys.path.append(backend_str)
+
+
 @app.post(
     "/api/process",
     response_model=PipelineResponse,
@@ -268,17 +278,34 @@ def _pipeline_response(res: dict) -> dict:
     summary="Process Uploaded Documents",
     description="Upload multiple documents (PDFs, Excel, CSV, DOCX). Automatically classifies, parses, routes carrier, compares census to invoice, and generates deliverables.",
 )
-async def process_files(files: list[UploadFile] = File(..., description="Multiple document files to process together")):
+@app.post("/process", response_model=PipelineResponse, include_in_schema=False)
+async def process_files(
+    files: list[UploadFile] = File(..., description="Multiple document files to process together"),
+    user_email: Optional[str] = Query(None, description="User email for audit tracking"),
+    request: Request = None,
+):
     """Upload files and run the census & invoice comparison pipeline."""
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded.")
 
+    _prepare_pipeline_env()
+    from main import run_pipeline
+    import census_config as C_local
+
+    processed_by = (
+        user_email
+        or (request.headers.get("x-user-email") if request else None)
+        or (request.query_params.get("user_email") if request else None)
+        or "SYSTEM"
+    )
+
     log.info("=" * 70)
-    log.info(">>> [API] Received upload request: %d file(s) uploaded", len(files))
+    log.info(">>> [API] Received upload request from %s: %d file(s) uploaded", processed_by, len(files))
 
     work = Path(tempfile.mkdtemp(prefix="census_run_"))
     in_dir = work / "in"
     in_dir.mkdir(parents=True, exist_ok=True)
+    primary_name = "census_files"
 
     try:
         saved_paths = []
@@ -290,8 +317,15 @@ async def process_files(files: list[UploadFile] = File(..., description="Multipl
             saved_paths.append(dest)
             log.info("    * Uploaded: %-40s (%d bytes)", safe_name, dest.stat().st_size)
 
+        primary_name = saved_paths[0].name if saved_paths else "census_files"
+        try:
+            from database.poc_db import log_universal
+            log_universal("BENEFITS_UW", "process", primary_name, "STARTED", f"Ingesting {len(saved_paths)} submission file(s)", processed_by)
+        except Exception:
+            pass
+
         log.info(">>> [API] Starting Census Comparison Pipeline on %d files...", len(saved_paths))
-        res = run_pipeline(saved_paths, C.OUTPUT_DIR)
+        res = run_pipeline(saved_paths, C_local.OUTPUT_DIR)
         out_file = Path(res["output_file"])
         txt_file = Path(res["txt_file"])
 
@@ -305,8 +339,24 @@ async def process_files(files: list[UploadFile] = File(..., description="Multipl
             log.info("    * Missing Info Email: %s", Path(res["email_file"]).name)
         log.info("=" * 70)
 
+        try:
+            from database.poc_db import log_universal
+            audit_info = res.get("audit", {})
+            out_emps = audit_info.get("out_employees", 0)
+            out_deps = audit_info.get("out_dependents", 0)
+            carrier = res.get("carrier", "Unknown")
+            state = res.get("state", "")
+            log_universal("BENEFITS_UW", "process", primary_name, "SUCCESS", f"Carrier: {carrier} ({state}) | Generated {out_file.name} ({out_emps} emps / {out_deps} deps)", processed_by)
+        except Exception:
+            pass
+
         return _pipeline_response(res)
     except Exception as exc:
+        try:
+            from database.poc_db import log_universal
+            log_universal("BENEFITS_UW", "process", primary_name, "FAILED", str(exc), processed_by)
+        except Exception:
+            pass
         log.exception("Pipeline execution failed: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
     finally:
@@ -320,8 +370,15 @@ async def process_files(files: list[UploadFile] = File(..., description="Multipl
     summary="Run Pipeline on Server Folder",
     description="Run the complete census pipeline directly against an existing folder on the server filesystem.",
 )
-async def test_folder(req: FolderTestRequest):
+@app.post("/test-folder", response_model=PipelineResponse, include_in_schema=False)
+async def test_folder(req: FolderTestRequest, request: Request = None):
     """Run pipeline directly on a folder path on disk."""
+    _prepare_pipeline_env()
+    from main import run_pipeline
+    import census_config as C_local
+
+    processed_by = (request.headers.get("x-user-email") if request else None) or "SYSTEM"
+
     p = Path(req.folder_path)
     if not p.is_absolute():
         p = (PROJECT_ROOT / p).resolve()
@@ -332,7 +389,13 @@ async def test_folder(req: FolderTestRequest):
     log.info(">>> [API] Running pipeline directly on folder: %s", p)
 
     try:
-        res = run_pipeline(p, C.OUTPUT_DIR)
+        from database.poc_db import log_universal
+        log_universal("BENEFITS_UW", "folder_test", p.name, "STARTED", f"Running pipeline on server folder {p}", processed_by)
+    except Exception:
+        pass
+
+    try:
+        res = run_pipeline(p, C_local.OUTPUT_DIR)
         out_file = Path(res["output_file"])
         txt_file = Path(res["txt_file"])
 
@@ -344,10 +407,23 @@ async def test_folder(req: FolderTestRequest):
         log.info("    * Exceptions Audit: %s", txt_file.name)
         log.info("=" * 70)
 
+        try:
+            from database.poc_db import log_universal
+            carrier = res.get("carrier", "Unknown")
+            state = res.get("state", "")
+            log_universal("BENEFITS_UW", "folder_test", p.name, "SUCCESS", f"Carrier: {carrier} ({state}) | Generated {out_file.name}", processed_by)
+        except Exception:
+            pass
+
         resp = _pipeline_response(res)
         resp["source_folder"] = str(p)
         return resp
     except Exception as exc:
+        try:
+            from database.poc_db import log_universal
+            log_universal("BENEFITS_UW", "folder_test", p.name, "FAILED", str(exc), processed_by)
+        except Exception:
+            pass
         log.exception("Folder run failed: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -359,24 +435,52 @@ async def test_folder(req: FolderTestRequest):
     summary="One-Click Sample Test",
     description="Quick test running the pipeline on the sample files currently in the input/ folder.",
 )
-async def test_sample():
+@app.post("/test-sample", response_model=PipelineResponse, include_in_schema=False)
+async def test_sample(request: Request = None):
     """Quick one-click test running the default input/ folder."""
-    if not C.INPUT_DIR.exists():
-        C.INPUT_DIR.mkdir(parents=True, exist_ok=True)
+    _prepare_pipeline_env()
+    from main import run_pipeline
+    import census_config as C_local
 
-    valid_files = [f for f in C.INPUT_DIR.iterdir() if f.is_file() and not f.name.startswith(".")]
+    processed_by = (request.headers.get("x-user-email") if request else None) or "SYSTEM"
+
+    if not C_local.INPUT_DIR.exists():
+        C_local.INPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    valid_files = [f for f in C_local.INPUT_DIR.iterdir() if f.is_file() and not f.name.startswith(".")]
     if not valid_files:
         sample_script = PROJECT_ROOT / "tests" / "make_sample_data.py"
         if sample_script.exists():
             import subprocess
-            subprocess.run([sys.executable, str(sample_script), str(C.INPUT_DIR)], check=True)
+            subprocess.run([sys.executable, str(sample_script), str(C_local.INPUT_DIR)], check=True)
 
     try:
-        res = run_pipeline(C.INPUT_DIR, C.OUTPUT_DIR)
+        from database.poc_db import log_universal
+        log_universal("BENEFITS_UW", "sample_test", "sample_input", "STARTED", "Running one-click sample census test", processed_by)
+    except Exception:
+        pass
+
+    try:
+        res = run_pipeline(C_local.INPUT_DIR, C_local.OUTPUT_DIR)
+
+        try:
+            from database.poc_db import log_universal
+            out_file = Path(res.get("output_file", "sample_census.xlsx"))
+            carrier = res.get("carrier", "Unknown")
+            state = res.get("state", "")
+            log_universal("BENEFITS_UW", "sample_test", "sample_input", "SUCCESS", f"Carrier: {carrier} ({state}) | Generated {out_file.name}", processed_by)
+        except Exception:
+            pass
+
         resp = _pipeline_response(res)
         resp["source_folder"] = str(C.INPUT_DIR)
         return resp
     except Exception as exc:
+        try:
+            from database.poc_db import log_universal
+            log_universal("BENEFITS_UW", "sample_test", "sample_input", "FAILED", str(exc), processed_by)
+        except Exception:
+            pass
         log.exception("Sample test failed: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
 
@@ -387,6 +491,7 @@ async def test_sample():
     summary="Download Generated Deliverable",
     description="Download a finalized Excel census workbook (.xlsx), exceptions report (.txt), or missing information email (.txt).",
 )
+@app.get("/download/{filename}", include_in_schema=False)
 async def download_output(filename: str):
     """Download a generated workbook or exception report from output directory."""
     safe_name = Path(filename).name
@@ -409,6 +514,7 @@ async def download_output(filename: str):
     summary="Get Extracted Text Content",
     description="Retrieve the full structured text extracted by OCR / text extractors for a given file.",
 )
+@app.get("/extracted-text/{filename}", response_model=ExtractedFileContentResponse, include_in_schema=False)
 async def get_extracted_text(filename: str):
     """Retrieve full extracted text for a specific document."""
     safe_name = Path(filename).name
@@ -441,6 +547,7 @@ async def get_extracted_text(filename: str):
     summary="List Extracted Text Files",
     description="List all structured text files generated during document OCR and parsing.",
 )
+@app.get("/extracted-files", response_model=ExtractedFileListResponse, include_in_schema=False)
 async def list_extracted_files():
     """List all extracted text files with metadata and download links."""
     files = []
@@ -460,6 +567,7 @@ async def list_extracted_files():
     summary="Download Extracted Text File",
     description="Directly download a raw extracted text file (.txt).",
 )
+@app.get("/download-extracted/{filename}", include_in_schema=False)
 async def download_extracted_file(filename: str):
     """Download an extracted text file directly."""
     safe_name = Path(filename).name
@@ -472,7 +580,7 @@ async def download_extracted_file(filename: str):
 
 
 @app.post(
-    "/process",
+    "/legacy-process",
     tags=["Pipeline Processing"],
     summary="Legacy Direct-Download Processing",
     description="Legacy endpoint that accepts uploaded documents and returns the generated Excel workbook directly as a file download.",

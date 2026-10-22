@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from statistics import mode, StatisticsError
 from typing import Optional
 
-from config import ACTIVE_TIERS, FUZZY_ACCEPT, FUZZY_WITH_DOB, NON_ENROLLED
+from census_config import ACTIVE_TIERS, FUZZY_ACCEPT, FUZZY_WITH_DOB, NON_ENROLLED
 from models import Census, Findings, InvoiceRecord, Person, RenewalDoc, RowResult
 from utils import clean, match_plan, name_similarity, name_tokens
 

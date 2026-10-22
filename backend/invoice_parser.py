@@ -228,7 +228,7 @@ def _records_from_text(doc: RawDoc) -> list[InvoiceRecord]:
 
 
 def _records_from_llm(doc: RawDoc) -> list[InvoiceRecord]:
-    from config import USE_LLM_FALLBACK
+    from census_config import USE_LLM_FALLBACK
     if not USE_LLM_FALLBACK:
         return []
     try:

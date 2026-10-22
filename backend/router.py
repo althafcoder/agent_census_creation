@@ -28,7 +28,7 @@ from pathlib import Path
 import re
 from typing import Optional
 
-import config as C
+import census_config as C
 from models import Census, Findings, InvoiceDoc, InvoiceRecord, Person, Prospect, RowResult
 from readers import RawDoc
 

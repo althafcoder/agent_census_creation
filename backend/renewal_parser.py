@@ -163,7 +163,7 @@ def parse_renewal(doc: RawDoc) -> RenewalDoc:
         rd.rates = _records_from_renewal_text(doc.text)
 
     if not rd.rates:
-        from config import USE_LLM_FALLBACK
+        from census_config import USE_LLM_FALLBACK
         if USE_LLM_FALLBACK and (doc.text or "").strip():
             try:
                 from llm_client import extract_renewal_rates

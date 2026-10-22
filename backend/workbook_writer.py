@@ -10,7 +10,7 @@ from openpyxl.cell.text import InlineFont
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-import config as C
+import census_config as C
 from comparator import tier_from_deps
 from models import Census, Findings, Prospect, RowResult
 

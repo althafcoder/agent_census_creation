@@ -174,7 +174,7 @@ def _ocr_pdf(path: Path) -> str:
     try:
         from pdf2image import convert_from_path
         import numpy as np
-        from config import POPPLER_PATH
+        from census_config import POPPLER_PATH
     except ImportError as exc:
         log.warning("%s looks scanned but pdf2image/numpy are missing: %s", path.name, exc)
         return ""
@@ -250,7 +250,7 @@ def _ocr_pdf(path: Path) -> str:
     # Fallback to pytesseract if available
     try:
         import pytesseract
-        from config import TESSERACT_PATH
+        from census_config import TESSERACT_PATH
         if TESSERACT_PATH:
             tess_p = Path(TESSERACT_PATH)
             if tess_p.is_dir():
@@ -342,7 +342,7 @@ def read_file(path: Path) -> RawDoc:
 
 def save_extracted_text(doc: RawDoc, dest_dir: Path | None = None) -> Path:
     """Save extracted text and table summaries for a document to a clean text file."""
-    import config as C
+    import census_config as C
     dirs_to_save = [C.EXTRACTED_TEXT_DIR]
     if dest_dir:
         dirs_to_save.append(Path(dest_dir))

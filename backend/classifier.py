@@ -187,7 +187,7 @@ def classify(doc: RawDoc) -> str:
     if sc >= 2:
         return role
 
-    from config import USE_LLM_FALLBACK
+    from census_config import USE_LLM_FALLBACK
     if USE_LLM_FALLBACK and (doc.text or "").strip():
         try:
             from llm_client import classify_document

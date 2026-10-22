@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(root / "backend"))
 
 from llm_client import _clean_json_text, _parse_json_robust, extract_json
-import config as C
+import census_config as C
 
 def test_json_parsing():
     # Test 1: Markdown code fences

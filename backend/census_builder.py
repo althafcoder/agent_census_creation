@@ -543,7 +543,7 @@ def build_census(census_docs: list[RawDoc], effective_date=None) -> tuple[Census
             except Exception as exc:
                 log.error("Census table %s/%s skipped: %s", doc.name, t.name, exc)
         if not used_any and (doc.text or "").strip():
-            from config import USE_LLM_FALLBACK
+            from census_config import USE_LLM_FALLBACK
             if USE_LLM_FALLBACK:
                 try:
                     from llm_client import extract_census_rows

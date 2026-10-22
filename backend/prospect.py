@@ -69,7 +69,7 @@ def _from_doc(doc: RawDoc) -> dict:
 
 
 def _llm_fill(doc: RawDoc, missing: list[str]) -> dict:
-    from config import USE_LLM_FALLBACK
+    from census_config import USE_LLM_FALLBACK
     if not USE_LLM_FALLBACK or not doc.text.strip():
         return {}
     try:
@@ -157,7 +157,7 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
         merged["sic"] = ""
 
     # 2. Claude Anthropic extraction from GHQ / RFP
-    from config import USE_LLM_FALLBACK
+    from census_config import USE_LLM_FALLBACK
     if USE_LLM_FALLBACK and (ghq_text.strip() or rfp_text.strip()):
         try:
             log.info("      [PROSPECT] Calling Claude Anthropic for prospect fields extraction from GHQ/RFP...")

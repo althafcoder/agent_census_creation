@@ -9,11 +9,25 @@ import json
 import logging
 from pathlib import Path
 import re
+import contextvars
 from typing import Any
 
-from config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_WORKSPACE_ID, INSTRUCTIONS_PATH, INSTRUCTIONS_PATHS
+from census_config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_WORKSPACE_ID, INSTRUCTIONS_PATH, INSTRUCTIONS_PATHS
 
 log = logging.getLogger("census.llm")
+
+# Context tracking for universal token utilization & cost analytics
+_CURRENT_FILE: contextvars.ContextVar[str] = contextvars.ContextVar("census_current_file", default="benefits_census_submission")
+_CURRENT_STEP: contextvars.ContextVar[str] = contextvars.ContextVar("census_current_step", default="llm_extraction")
+
+
+def set_current_tracking(file_name: str | None = None, step_name: str | None = None) -> None:
+    """Set current file and processing step for dynamic token usage tracking."""
+    if file_name:
+        _CURRENT_FILE.set(file_name)
+    if step_name:
+        _CURRENT_STEP.set(step_name)
+
 
 # Load official instructions verbatim from the configured official instruction documents
 _INSTRUCTIONS_CACHE: str | None = None
@@ -34,7 +48,7 @@ def _read_docx_paragraphs(path: Path) -> str:
 def get_instruction_doc_names() -> list[str]:
     """Return the list of filenames of all active official instruction documents."""
     try:
-        from config import INSTRUCTIONS_PATHS
+        from census_config import INSTRUCTIONS_PATHS
         if INSTRUCTIONS_PATHS:
             names = [p.name for p in INSTRUCTIONS_PATHS if p.exists()]
             if names:
@@ -58,7 +72,7 @@ def get_official_instructions() -> str:
 
     paths: list[Path] = []
     try:
-        from config import INSTRUCTIONS_PATHS
+        from census_config import INSTRUCTIONS_PATHS
         if INSTRUCTIONS_PATHS:
             paths = [p for p in INSTRUCTIONS_PATHS if p.exists()]
     except Exception:
@@ -184,6 +198,20 @@ def extract_json(prompt: str, max_tokens: int = 4000) -> Any:
                 {"role": "user", "content": prompt},
             ],
         )
+
+        # Dynamically record token usage and cost for Token Utilization & Cost Analytics
+        try:
+            from core.universal_token_monitor import track_usage
+            track_usage(
+                resp.usage,
+                model=ANTHROPIC_MODEL,
+                poc_name="BENEFITS_UW",
+                file_name=_CURRENT_FILE.get() or "benefits_census_submission",
+                step_name=_CURRENT_STEP.get() or "llm_extraction",
+            )
+        except Exception as _track_err:
+            log.debug("Token usage tracking skipped: %s", _track_err)
+
         content_parts: list[str] = []
         for block in resp.content:
             if getattr(block, "type", "") == "text" or hasattr(block, "text"):
@@ -199,6 +227,7 @@ def extract_json(prompt: str, max_tokens: int = 4000) -> Any:
 
 def extract_prospect_fields(doc_text: str, rfp_text: str = "") -> dict:
     """Extract prospect information adhering solely to official instructions."""
+    set_current_tracking(step_name="prospect_extraction")
     if rfp_text:
         combined_text = f"--- SUBMISSION EMAIL / RFP NOTES ---\n{rfp_text[:12000]}\n\n--- GHQ / QUESTIONNAIRE ---\n{doc_text[:25000]}"
     else:
@@ -261,6 +290,7 @@ Return JSON only:
 
 def extract_invoice_rows(text: str) -> list[dict]:
     """Extract subscriber rows strictly adhering to official invoice instructions."""
+    set_current_tracking(step_name="invoice_rows_extraction")
     instructions = get_official_instructions()
     doc_name = get_instruction_doc_name()
 
@@ -314,6 +344,7 @@ Return a JSON list of objects only:
 
 def extract_renewal_rates(text: str) -> list[dict]:
     """Extract medical renewal rate tables strictly adhering to official instructions."""
+    set_current_tracking(step_name="renewal_rates_extraction")
     instructions = get_official_instructions()
     doc_name = get_instruction_doc_name()
 
@@ -356,6 +387,7 @@ Return JSON list of objects only:
 
 def extract_census_rows(text: str) -> list[dict]:
     """Extract employee and dependent records strictly adhering to official instructions."""
+    set_current_tracking(step_name="census_rows_extraction")
     instructions = get_official_instructions()
     doc_name = get_instruction_doc_name()
 
@@ -411,6 +443,7 @@ Return JSON list of objects only:
 
 def classify_document(text: str, filename: str) -> str:
     """Classify document role strictly adhering to official definitions."""
+    set_current_tracking(file_name=filename, step_name="document_classification")
     instructions = get_official_instructions()
     doc_name = get_instruction_doc_name()
 

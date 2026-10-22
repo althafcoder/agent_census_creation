@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import config as C
+import census_config as C
 from census_builder import build_census
 from classifier import classify
 from comparator import run_comparison
@@ -310,6 +310,8 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
         "email_text": email_content,
         "carrier": routing.carrier or "Undetermined",
         "state": routing.state or "Unknown",
+        "company": prospect.company or "",
+        "prospect_name": prospect.company or "",
         "routing": {
             "carrier": routing.carrier,
             "state": routing.state,
