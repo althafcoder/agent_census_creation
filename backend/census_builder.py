@@ -172,13 +172,30 @@ def _eligibility_vals(r: _Row) -> dict:
     return out
 
 
+_DISCLAIMER_WORDS = re.compile(
+    r"\b(see\s+(attached|dep\w*|doc\w*|file|schedule|list|roster|page|tab|sheet|above|below|separate\w*)|"
+    r"separately\s+attached|attached\s+separately|refer\s+to|reference\s+to|"
+    r"no\s+dependents?|none\s+enrolled|not\s+applicable|as\s+per|enclosed|"
+    r"placeholder|instructions?|footnote|disclaimer)\b",
+    re.I
+)
+
+_JUNK_NAME_WORDS = {"required", "optional", "first", "firstname", "first name", "ee", "sp", "ch",
+                    "see", "separately", "attached", "document", "none", "notes", "note", "n/a", "na",
+                    "last", "lastname", "last name", "name"}
+
+
 def _names(r: _Row, first_f="first_name", last_f="last_name", full_f="full_name") -> tuple[str, str]:
     first, last = r.t(first_f), r.t(last_f)
     if (not first or not last) and r.t(full_f) and not (first and last):
         f2, l2 = split_full_name(r.t(full_f))
         first, last = first or f2, last or l2
-    if (first.lower() in {"required", "optional", "first", "firstname", "first name", "ee", "sp", "ch"} and
-        last.lower() in {"required", "optional", "last", "lastname", "last name", "name"}):
+    full = f"{first} {last}".strip()
+    if not full:
+        return "", ""
+    if _DISCLAIMER_WORDS.search(full):
+        return "", ""
+    if first.lower() in _JUNK_NAME_WORDS and last.lower() in _JUNK_NAME_WORDS:
         return "", ""
     return first, last
 
@@ -270,10 +287,14 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
 
     for _, series in body(df, hdr).iterrows():
         r = _Row(hdr, series)
-        if all(is_blank(v) for v in series.tolist()):
+        non_empty = [clean(v) for v in series.tolist() if clean(v)]
+        if not non_empty:
             continue
-        joined = " ".join(clean(v).lower() for v in series.tolist())
-        if joined.startswith(("total", "grand total", "count")):
+        joined = " ".join(v.lower() for v in non_empty)
+        if joined.startswith(("total", "grand total", "count", "subtotal")):
+            continue
+        if _DISCLAIMER_WORDS.search(joined) and len(non_empty) <= 3:
+            st.census.census_notes.append(" | ".join(non_empty))
             continue
 
         pt_val = r.t("plan_type") if "plan_type" in cols else ""
