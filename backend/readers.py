@@ -42,6 +42,75 @@ class RawDoc:
 
 
 # ------------------------------------------------------------------ excel ----
+def _patch_openpyxl_cellrange():
+    """Ensure openpyxl can handle column-only (e.g. 'P:Q') or row-only ('1:10') ranges.
+
+    Some spreadsheets (e.g. LibreOffice or third-party exports) write whole-column
+    data validations or conditional formatting like sqref='P:Q N9:N615'.
+    Standard openpyxl crashes on these with:
+    TypeError: expected <class 'openpyxl.worksheet.cell_range.MultiCellRange'>.
+    """
+    try:
+        import openpyxl.worksheet.cell_range as cr
+        from openpyxl.utils.cell import range_to_tuple, range_boundaries
+
+        if getattr(cr, "_census_patched", False):
+            return
+
+        def safe_cell_range_init(self, range_string=None, min_col=None, min_row=None,
+                                 max_col=None, max_row=None, title=None):
+            if range_string is not None:
+                if "!" in range_string:
+                    title, (min_col, min_row, max_col, max_row) = range_to_tuple(range_string)
+                else:
+                    min_col, min_row, max_col, max_row = range_boundaries(range_string)
+            if min_col is None:
+                min_col = 1
+            if max_col is None:
+                max_col = 16384
+            if min_row is None:
+                min_row = 1
+            if max_row is None:
+                max_row = 1048576
+            self.min_col = min_col
+            self.min_row = min_row
+            self.max_col = max_col
+            self.max_row = max_row
+            self.title = title
+
+        cr.CellRange.__init__ = safe_cell_range_init
+        cr._census_patched = True
+    except Exception:
+        pass
+
+
+_patch_openpyxl_cellrange()
+
+
+def _sanitize_excel_xml(src_path: Path) -> Path | None:
+    """Create a sanitized temporary copy of an .xlsx/.xlsm archive with malformed XML stripped."""
+    import re
+    import zipfile
+    try:
+        fd, tmp_name = tempfile.mkstemp(suffix=src_path.suffix.lower())
+        os.close(fd)
+        tmp_path = Path(tmp_name)
+        with zipfile.ZipFile(src_path, "r") as zin, zipfile.ZipFile(tmp_path, "w", compression=zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                content = zin.read(item.filename)
+                if item.filename.startswith("xl/worksheets/sheet") and item.filename.endswith(".xml"):
+                    text = content.decode("utf-8", errors="ignore")
+                    text = re.sub(r"<dataValidations[^>]*>.*?</dataValidations>", "", text, flags=re.DOTALL)
+                    text = re.sub(r"<dataValidation[^>]*>.*?</dataValidation>", "", text, flags=re.DOTALL)
+                    text = re.sub(r"<conditionalFormatting[^>]*>.*?</conditionalFormatting>", "", text, flags=re.DOTALL)
+                    content = text.encode("utf-8")
+                zout.writestr(item, content)
+        return tmp_path
+    except Exception as exc:
+        log.warning("XML sanitization failed for %s: %s", src_path.name, exc)
+        return None
+
+
 def _xls_to_xlsx(path: Path) -> Path:
     """Convert legacy .xls with LibreOffice when xlrd is not installed."""
     soffice = shutil.which("soffice") or shutil.which("libreoffice")
@@ -62,7 +131,31 @@ def _read_excel(path: Path) -> RawDoc:
             import xlrd  # noqa: F401
         except ImportError:
             target = _xls_to_xlsx(path)
-    sheets = pd.read_excel(target, sheet_name=None, header=None, dtype=object)
+
+    sheets = None
+    # 1. Try calamine engine first if available (faster, resilient to openpyxl XML edge-cases)
+    try:
+        sheets = pd.read_excel(target, sheet_name=None, header=None, dtype=object, engine="calamine")
+    except Exception:
+        pass
+
+    # 2. Standard pd.read_excel (openpyxl with patched CellRange)
+    if sheets is None:
+        try:
+            sheets = pd.read_excel(target, sheet_name=None, header=None, dtype=object)
+        except Exception as exc:
+            # 3. Fallback: sanitize worksheet XML (strip malformed dataValidations / conditionalFormatting)
+            sanitized = _sanitize_excel_xml(target)
+            if sanitized:
+                try:
+                    sheets = pd.read_excel(sanitized, sheet_name=None, header=None, dtype=object)
+                except Exception:
+                    pass
+                finally:
+                    sanitized.unlink(missing_ok=True)
+            if sheets is None:
+                raise exc
+
     for name, df in sheets.items():
         df = df.dropna(how="all").dropna(axis=1, how="all").reset_index(drop=True)
         if not df.empty:

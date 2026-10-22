@@ -1,5 +1,6 @@
 pandas>=2.0
 openpyxl>=3.1
+python-calamine>=0.2.0    # resilient, fast excel reader (immune to openpyxl XML bugs)
 python-docx>=1.1
 pdfplumber>=0.11
 python-dateutil>=2.8

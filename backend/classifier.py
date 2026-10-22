@@ -29,21 +29,22 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "zip": ["zip", "zipcode", "homezipcode", "postalcode", "homezip", "zip5", "residentzip",
             "primaryaddresszipcode", "primaryaddresszip", "residentzipcode", "residentpostalcode",
             "homepostalcode", "homezipcode", "residentpostal", "legalpreferredaddresszippostalcode",
-            "zippostalcode", "zippostal", "legalpreferredaddresszip"],
+            "zippostalcode", "zippostal", "legalpreferredaddresszip", "workzipcode", "workzip"],
     "relationship": ["relationship", "relationshiptoemployee", "rel", "relation", "relationshiptosubscriber",
                      "membertype", "relcode", "relationshipcode", "depcode", "relationshiptoee",
                      "dependentrelationship", "deprelationship", "reltoemployee", "relationshiptosubscriber", "deprel",
-                     "dependentbeneficiaryrelationship", "dependentbeneficiaryrel", "depbeneficiaryrel"],
+                     "dependentbeneficiaryrelationship", "dependentbeneficiaryrel", "depbeneficiaryrel",
+                     "statusrelationship", "statusrelation"],
     "coverage": ["coverage", "coveragetier", "tier", "coveragelevel", "enrollmenttier", "plantier",
                  "coveragetype", "election", "coveragecode", "enrollmentlevel", "benefittier", "ratetier",
                  "householdtier", "medicaltier", "coveragestatus", "coveragelevelvalue", "coveragelevelamount",
-                 "medicalcoverage"],
+                 "medicalcoverage", "healthcoveragelevel", "healthcoverage", "healthcoveragetier"],
     "status": ["status", "employeestatus", "memberstatus", "billingstatus", "policystatus",
                "enrollmentstatus", "enrolled", "coveragestatus", "medicalstatus", "medicalenrollment"],
     "cobra": ["cobra", "cobraparticipant", "cobrastatus", "cobraindicator"],
     "plan": ["plan", "planname", "medicalplan", "plancode", "planelected", "medicalplanname", "product",
              "productname", "planenrolled", "currentplan", "planoption", "medicalplancode", "plandescription",
-             "currentmedicalplan", "enrolledplan", "medicalplanoption"],
+             "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan"],
     "plan_type": ["plantype", "benefittype", "lineofcoverage", "producttype", "benefitplantype"],
     "plan_category": ["plancategory", "benefitcategory", "productcategory", "benefitplancategory"],
     "carrier": ["carrier", "provider", "carriercode", "carriername", "insurancecarrier", "vendor"],
@@ -85,7 +86,7 @@ FIELD_ALIASES: dict[str, list[str]] = {
                  "subscriber", "employee"],
     "address": ["address", "streetaddress", "address1", "street", "primaryaddressline1", "primaryaddress"],
     "city": ["city", "town", "primaryaddresscity", "residentcity"],
-    "state": ["state", "st", "primaryaddressstateterritory", "primaryaddressstate", "livedinstate", "residentstate"],
+    "state": ["state", "st", "primaryaddressstateterritory", "primaryaddressstate", "livedinstate", "residentstate", "workstate", "workst"],
 }
 
 # Premium vs amount wording that must NOT be treated as a total premium
@@ -107,9 +108,14 @@ class Header:
 
 
 def _score_row(vals: list[str]) -> int:
-    keys = [norm_key(v) for v in vals]
     flat = {a for al in FIELD_ALIASES.values() for a in al}
-    return sum(1 for k in keys if k and k in flat)
+    count = 0
+    for v in vals:
+        k = norm_key(v)
+        knp = norm_key(re.sub(r"\(.*?\)", "", str(v)))
+        if (k and k in flat) or (knp and knp in flat):
+            count += 1
+    return count
 
 
 def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
@@ -125,12 +131,13 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
     wide: dict[tuple[str, str], dict[str, int]] = {}
     for idx, lab in enumerate(labels):
         k = norm_key(lab)
-        if not k:
+        k_no_paren = norm_key(re.sub(r"\(.*?\)", "", str(lab)))
+        if not k and not k_no_paren:
             continue
-        m = _WIDE_DEP.match(k)
+        m = _WIDE_DEP.match(k) or (_WIDE_DEP.match(k_no_paren) if k_no_paren else None)
         if m and m.group(1) in {"dependent", "dep"} and not m.group(2):
             m = None                      # 'Dependent First Name' is a dependent-listing column, not wide
-        r = _WIDE_DEP_REV.match(k) if not m else None
+        r = (_WIDE_DEP_REV.match(k) or (_WIDE_DEP_REV.match(k_no_paren) if k_no_paren else None)) if not m else None
         if r and r.group(2) in {"dependent", "dep"} and not r.group(3):
             r = None
         if m or r:
@@ -148,7 +155,7 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
                       "eligibility_class", "worker_category", "position_status",
                       "waive_reason", "job_title",
                       "emp_first", "emp_last", "emp_full", "address", "city", "state"):
-            if k in FIELD_ALIASES[canon] and canon not in cols:
+            if ((k and k in FIELD_ALIASES[canon]) or (k_no_paren and k_no_paren in FIELD_ALIASES[canon])) and canon not in cols:
                 cols[canon] = idx
                 break
     return Header(best_i, cols, wide, labels)
