@@ -19,13 +19,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-<<<<<<< Updated upstream
 import census_config as C
-from census_builder import build_census
-=======
-import config as C
 from census_builder import build_census, extract_waiting_period_rule, refine_non_enrolled_statuses
->>>>>>> Stashed changes
 from classifier import classify
 from comparator import run_comparison
 from invoice_parser import combine_records, parse_invoice, select_invoices
