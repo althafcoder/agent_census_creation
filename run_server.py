@@ -50,6 +50,11 @@ if __name__ == "__main__":
         "level": "INFO",
         "propagate": False,
     }
+    log_config["loggers"]["census.caching"] = {
+        "handlers": ["census_console"],
+        "level": "INFO",
+        "propagate": False,
+    }
     log_config["loggers"][""] = {
         "handlers": ["census_console"],
         "level": "INFO",

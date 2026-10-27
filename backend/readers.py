@@ -35,6 +35,8 @@ class RawDoc:
     scanned: bool = False         # True when OCR was needed
     extraction_method: str = ""   # Engine or approach used
     extracted_text_path: Path | None = None
+    form_fields: dict = field(default_factory=dict)   # Interactive PDF form fields (pypdf)
+    conflicts: list[str] = field(default_factory=list) # Conflicts between text and form values
 
     @property
     def name(self) -> str:
@@ -157,7 +159,9 @@ def _read_excel(path: Path) -> RawDoc:
                 raise exc
 
     for name, df in sheets.items():
-        df = df.dropna(how="all").dropna(axis=1, how="all").reset_index(drop=True)
+        # Preserve spreadsheet column positions and blank cells:
+        # Only drop entirely empty rows; do not drop blank columns that would shift column alignment.
+        df = df.dropna(how="all").reset_index(drop=True)
         if not df.empty:
             doc.tables.append(RawTable(str(name), df))
             doc.text += "\n".join(" | ".join("" if pd.isna(c) else str(c) for c in row)
@@ -193,7 +197,7 @@ def _ocr_pdf_external(path: Path) -> str:
     """
     if os.getenv("PADDLE_OCR_BRIDGE"):
         return ""
-    from config import BASE_DIR
+    from census_config import BASE_DIR
 
     override = os.getenv("PADDLE_OCR_PYTHON", "")
     if override and Path(override).exists():
@@ -447,17 +451,72 @@ def _read_pdf(path: Path) -> RawDoc:
                             doc.tables.append(RawTable(f"p{pno}_x{ti}", df.reset_index(drop=True)))
                 except Exception as exc:  # pragma: no cover
                     log.debug("text-strategy table extraction failed on %s p%s: %s", path.name, pno, exc)
-    doc.text = "\n".join(texts)
+
+    # Interactive form field extraction via pypdf (AcroForm fields: text, checkboxes, radio buttons)
+    form_lines: list[str] = []
+    try:
+        from pypdf import PdfReader
+        pypdf_reader = PdfReader(str(path))
+        fields = pypdf_reader.get_fields() or {}
+        for f_name, f_obj in fields.items():
+            if not f_obj:
+                continue
+            f_val = getattr(f_obj, "value", None)
+            f_type = str(getattr(f_obj, "field_type", ""))
+            
+            # Button/Checkbox/Radio (/Btn)
+            if f_type == "/Btn":
+                if f_val in (None, "/Off", "Off", False, ""):
+                    status = "unchecked"
+                    disp_val = "Off / Unchecked"
+                else:
+                    status = "checked"
+                    disp_val = f"Checked ({f_val})"
+                doc.form_fields[f_name] = {
+                    "type": "button",
+                    "status": status,
+                    "raw_value": f_val,
+                    "value": disp_val,
+                    "is_checked": (status == "checked")
+                }
+                form_lines.append(f"{f_name}: {disp_val}")
+            else:
+                s_val = str(f_val).strip() if f_val is not None else ""
+                status = "populated" if (s_val and s_val.lower() != "none") else "blank"
+                doc.form_fields[f_name] = {
+                    "type": f_type,
+                    "status": status,
+                    "raw_value": f_val,
+                    "value": s_val if status == "populated" else ""
+                }
+                if status == "populated":
+                    form_lines.append(f"{f_name}: {s_val}")
+    except Exception as exc:
+        log.debug("pypdf interactive form extraction failed or not applicable on %s: %s", path.name, exc)
+
+    page_text = "\n".join(texts)
+    if form_lines:
+        form_block = "\n\n--- [INTERACTIVE FORM FIELDS] ---\n" + "\n".join(form_lines)
+        doc.text = (page_text + form_block).strip()
+    else:
+        doc.text = page_text
+
     # "File identifier": digital vs scanned
-    if len(doc.text.strip()) < 40 * max(1, len(texts)) * 0.25:
+    # Check whether the combined text has sufficient character density
+    total_len = len(doc.text.strip())
+    if total_len < 40 * max(1, len(texts)) * 0.25 and not form_lines:
         doc.scanned = True
         log.info("%s identified as SCANNED -> using PaddleOCR", path.name)
-        doc.text = _ocr_pdf(path)
-        doc.extraction_method = ("PaddleOCR (Scanned PDF OCR)" if doc.text.strip()
+        ocr_text = _ocr_pdf(path)
+        doc.text = (ocr_text + ("\n\n" + "\n".join(form_lines) if form_lines else "")).strip()
+        doc.extraction_method = ("PaddleOCR (Scanned PDF OCR)" if ocr_text.strip()
                                  else "OCR unavailable (no text extracted)")
     else:
         doc.scanned = False
-        doc.extraction_method = "Digital PDF (pdfplumber Direct Extraction)"
+        method_parts = ["Digital PDF (pdfplumber Direct Extraction)"]
+        if form_lines:
+            method_parts.append(f"AcroForm Fields (pypdf: {len(form_lines)} fields)")
+        doc.extraction_method = " + ".join(method_parts)
     return doc
 
 
@@ -547,14 +606,13 @@ def save_extracted_text(doc: RawDoc, dest_dir: Path | None = None) -> Path:
 
 
 def read_all(source: Path | list[Path | str], dest_dir: Path | None = None) -> list[RawDoc]:
-    if isinstance(source, list):
-        paths = [Path(p) for p in source]
-    elif Path(source).is_dir():
-        paths = sorted(Path(source).iterdir())
-    elif Path(source).is_file():
-        paths = [Path(source)]
-    else:
-        paths = []
+    raw_paths = [Path(p) for p in source] if isinstance(source, list) else [Path(source)]
+    paths: list[Path] = []
+    for p in raw_paths:
+        if p.is_dir():
+            paths.extend(sorted(p.iterdir()))
+        elif p.is_file():
+            paths.append(p)
 
     docs = []
     for p in paths:

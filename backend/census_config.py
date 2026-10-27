@@ -45,8 +45,8 @@ def _discover_all(env_var: str, folder: Path, pattern: str) -> list[Path]:
         if paths:
             return paths
     found = sorted(p for p in folder.glob(pattern) if not p.name.startswith("~$"))
-    # Order Combined instruction first if present, then other instructions alphabetically
-    return sorted(found, key=lambda p: (0 if "combined" in p.name.lower() else 1, p.name.lower()))
+    # Order Master / Unified / Combined instruction first if present, then other instructions alphabetically
+    return sorted(found, key=lambda p: (0 if any(k in p.name.lower() for k in ("master", "unified", "combined")) else 1, p.name.lower()))
 
 
 # Carrier definitions
@@ -64,6 +64,8 @@ TEMPLATE_PATH = _discover("CENSUS_TEMPLATE_PATH", BACKEND_DIR / "templates", "*R
 # Instructions Paths (dynamic multi-instruction discovery for all controlling instruction documents)
 INSTRUCTIONS_DIR = BACKEND_DIR / "instructions"
 INSTRUCTIONS_PATHS = _discover_all("CENSUS_INSTRUCTIONS_PATHS", INSTRUCTIONS_DIR, "*.docx")
+if not INSTRUCTIONS_PATHS:
+    INSTRUCTIONS_PATHS = _discover_all("CENSUS_INSTRUCTIONS_PATHS", INSTRUCTIONS_DIR, "*.txt")
 INSTRUCTIONS_PATH = INSTRUCTIONS_PATHS[0] if INSTRUCTIONS_PATHS else _discover("CENSUS_INSTRUCTIONS_PATH", INSTRUCTIONS_DIR, "*.docx")
 
 # ---- Template layout (RAPT Census Template) --------------------------------
@@ -142,6 +144,7 @@ TESSERACT_PATH = os.getenv("TESSERACT_PATH", "")
 # ---- LLM Configuration (Anthropic Claude) -----------------------------------
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-5-5")
+ANTHROPIC_TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", "1.0"))
 ANTHROPIC_WORKSPACE_ID = os.getenv("ANTHROPIC_WORKSPACE_ID", "")
 
 USE_LLM_FALLBACK = bool(ANTHROPIC_API_KEY)

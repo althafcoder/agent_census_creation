@@ -16,7 +16,7 @@ class Person:
     gender: str = ""
     dob: Optional[date] = None
     zip: str = ""
-    coverage: str = ""                         # employees only
+    coverage: str = ""                         # employees only: EE, ES, EC, FAM, WO, WP, NE, RC
     cobra: str = ""
     plan: str = ""
     premium: Optional[float] = None
@@ -28,9 +28,13 @@ class Person:
     position_status: str = ""                  # raw position/employment status (e.g. Active)
     waive_reason: str = ""                     # raw medical waive reason (evidence of a genuine waiver)
     job_title: str = ""                        # raw job title / position description
+    salary: str = ""                           # raw salary / compensation description
     source: str = ""
     rel_raw: str = ""
     cov_raw: str = ""
+    record_id: str = ""                        # Stable unique record ID within the submission
+    subscriber_id: str = ""                    # Explicit link to subscriber's record_id
+    eligibility_status: str = ""               # ENROLLED, WAITING_PERIOD, WAIVED, NOT_ELIGIBLE, REFUSED
     employee: Optional["Person"] = None        # dependents -> their employee
     dependents: list["Person"] = field(default_factory=list)
     notes: list[Note] = field(default_factory=list)
@@ -38,6 +42,7 @@ class Person:
     is_duplicate: bool = False                 # second occurrence of an employee in the same file
     benefit_roster: bool = False               # employee appears in a benefit-eligibility/plan roster
     row_no: int = 0                            # "Data Row" number assigned at write time
+    raw_data: dict = field(default_factory=dict) # Raw extracted values and source locations
 
     def note(self, text: str, red: bool = False, orange: bool = False) -> None:
         color = "red" if red else ("orange" if orange else "black")
@@ -62,14 +67,22 @@ class InvoiceRecord:
     dob: Optional[date] = None
     gender: str = ""
     zip: str = ""
-    plan: str = ""
-    premium: Optional[float] = None
+    plan: str = ""                             # normalized plan ID
+    raw_plan: str = ""                         # original extracted plan string
+    premium: Optional[float] = None            # current monthly premium (recurring)
+    current_premium: Optional[float] = None    # recurring monthly premium
+    retro_amount: Optional[float] = None       # retroactive adjustments
+    retro_code: str = ""                       # ADD, TRM, CHG, etc.
+    retro_period: str = ""                     # e.g. "9/01-9/30/2026"
+    service_period: str = ""                   # e.g. "10/01/2026 - 10/31/2026"
+    total_amount: Optional[float] = None       # line total (current + retro)
     status: str = ""
     sub_id: str = ""
     dep_count: int = 0
     dep_rels: set = field(default_factory=set)
     has_dep_detail: bool = False
     source: str = ""
+    raw_data: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -83,6 +96,10 @@ class InvoiceDoc:
     draft: bool = False
     number: str = ""                            # statement / invoice number found in the document
     doc_date: Optional[date] = None              # statement / invoice date found in the document
+    current_charges: Optional[float] = None      # total current monthly charges
+    total_adjustments: Optional[float] = None    # total adjustments / retro
+    total_due: Optional[float] = None            # total balance due
+    retro_adjustments: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -180,6 +197,16 @@ class Findings:
     invoice_medical_count: int = 0
     invoices_received: str = ""
     selected_invoice: str = ""
+    # Premium reconciliation metrics
+    census_matched_premium: Optional[float] = None
+    invoice_current_charges: Optional[float] = None
+    invoice_only_difference: Optional[float] = None
+    invoice_retro_adjustments: Optional[float] = None
+    invoice_total_balance_due: Optional[float] = None
+    reconciliation_items: list[tuple[str, float]] = field(default_factory=list)
+    # Renewal status
+    renewal_required: bool = False
+    renewal_reason: str = ""
     # Routing, carrier, and email deliverables
     carrier: str = ""
     state: str = ""

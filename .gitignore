@@ -38,6 +38,10 @@ backend/scratch_output/
 backend/scratch_output2/
 backend/scratch_output3/
 backend/test_out/
+backend/cache_storage/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
 scratch/
 
 # Microsoft Office temporary / lock files

@@ -595,7 +595,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --------------------------------------------------------------------------
-  // Dynamic Active Model Status
+  // Dynamic Active Model Status & Instruction Badge
   // --------------------------------------------------------------------------
   fetch("/api/health")
     .then(res => res.json())
@@ -603,6 +603,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const modelBadge = document.getElementById("model-badge");
       if (modelBadge && data.model) {
         modelBadge.innerHTML = `<span class="pulse-dot"></span> Model: Claude (${data.model})`;
+      }
+      const instBadge = document.getElementById("instruction-badge");
+      if (instBadge && data.instructions_doc) {
+        instBadge.title = data.instructions_doc;
+        let displayName = data.instructions_doc;
+        if (displayName.toLowerCase().includes("master unified")) {
+          displayName = "Master Unified Medical";
+        } else {
+          displayName = displayName.replace(/\.[^/.]+$/, "");
+        }
+        instBadge.innerHTML = `<span class="pulse-dot purple"></span> Instruction: ${displayName}`;
       }
     })
     .catch(() => {});

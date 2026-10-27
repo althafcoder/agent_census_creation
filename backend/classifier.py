@@ -15,15 +15,17 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "first_name": ["firstname", "first", "fname", "givenname", "employeefirstname", "eefirstname",
                    "subscriberfirstname", "memberfirstname", "firstnamemi", "legalfirstname",
                    "preferredorchosenfirst", "primaryfirstname", "eefirst", "employeefirst",
-                   "payrollnamefirstname", "payrollfirstname", "employeelegalfirstname", "payrollnamefirst"],
+                   "payrollnamefirstname", "payrollfirstname", "employeelegalfirstname", "payrollnamefirst",
+                   "employeedependentfirstname", "employeeanddependentfirstname", "eeanddepfirstname"],
     "last_name": ["lastname", "last", "lname", "surname", "familyname", "employeelastname",
                   "eelastname", "subscriberlastname", "memberlastname", "legallastname",
                   "preferredorchosenlast", "primarylastname", "eelast", "employeelast",
-                  "payrollnamelastname", "payrolllastname", "employeelegallastname", "payrollnamelast"],
+                  "payrollnamelastname", "payrolllastname", "employeelegallastname", "payrollnamelast",
+                  "employeedependentlastname", "employeeanddependentlastname", "eeanddeplastname"],
     "full_name": ["name", "fullname", "employeename", "membername", "subscribername", "employee",
                   "eename", "insuredname", "member", "subscriber", "participant", "enrolleename",
                   "lastfirst", "lastnamefirstname", "namelastfirst"],
-    "gender": ["gender", "sex", "mf", "gendermf", "gendercode", "genderdescription"],
+    "gender": ["gender", "sex", "mf", "gendermf", "gendercode", "genderdescription", "gendermorf"],
     "dob": ["dob", "dateofbirth", "birthdate", "birthday", "bdate", "birthdt", "memberdob", "dateofbirthmmddyyyy",
             "employeedateofbirth", "employeedob"],
     "zip": ["zip", "zipcode", "homezipcode", "postalcode", "homezip", "zip5", "residentzip",
@@ -34,14 +36,17 @@ FIELD_ALIASES: dict[str, list[str]] = {
                      "membertype", "relcode", "relationshipcode", "depcode", "relationshiptoee",
                      "dependentrelationship", "deprelationship", "reltoemployee", "relationshiptosubscriber", "deprel",
                      "dependentbeneficiaryrelationship", "dependentbeneficiaryrel", "depbeneficiaryrel",
-                     "statusrelationship", "statusrelation"],
+                     "statusrelationship", "statusrelation", "typeemployeespousechild", "typeeespch",
+                     "type", "eetype", "memberrole", "role", "dependenttype", "relationshiptype",
+                     "typeemployeespousechildren"],
     "coverage": ["coverage", "coveragetier", "tier", "coveragelevel", "enrollmenttier", "plantier",
                  "coveragetype", "election", "coveragecode", "enrollmentlevel", "benefittier", "ratetier",
                  "householdtier", "medicaltier", "coveragestatus", "coveragelevelvalue", "coveragelevelamount",
-                 "medicalcoverage", "healthcoveragelevel", "healthcoverage", "healthcoveragetier"],
+                 "medicalcoverage", "healthcoveragelevel", "healthcoverage", "healthcoveragetier",
+                 "medicalelection", "medicalelectioneees", "medicalelectioneeesec"],
     "status": ["status", "employeestatus", "memberstatus", "billingstatus", "policystatus",
                "enrollmentstatus", "enrolled", "coveragestatus", "medicalstatus", "medicalenrollment"],
-    "cobra": ["cobra", "cobraparticipant", "cobrastatus", "cobraindicator"],
+    "cobra": ["cobra", "cobraparticipant", "cobrastatus", "cobraindicator", "cobrayn"],
     "plan": ["plan", "planname", "medicalplan", "plancode", "planelected", "medicalplanname", "product",
              "productname", "planenrolled", "currentplan", "planoption", "medicalplancode", "plandescription",
              "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan"],
@@ -63,16 +68,17 @@ FIELD_ALIASES: dict[str, list[str]] = {
                           "eligibilitygroup", "benefiteligroup", "medicaleligibilitygroup",
                           "medical1eligibilitygroup", "medicaleligibilityclass"],
     "worker_category": ["workercategory", "employeecategory", "employmentcategory", "employeetype",
-                        "employeestatuscategory", "workerstatus", "workertype"],
+                        "employeestatuscategory", "workerstatus", "workertype", "ftpt", "fulltimeparttime"],
     "position_status": ["positionstatus", "employmentstatus", "positionstate"],
     "waive_reason": ["medicalwaivereason", "waivereason", "waiverreason", "medicalwaiver",
                      "waivedreason", "enrollmentwaivereason"],
-    "job_title": ["jobtitle", "positiontitle", "jobdescription", "positiondescription", "jobname"],
+    "job_title": ["jobtitle", "positiontitle", "jobdescription", "positiondescription", "jobname", "title"],
+    "salary": ["annualsalary", "salary", "annualwages", "wages", "grosssalary", "annualcomp",
+               "compensation", "annualcompensation", "basepay", "baseannualsalary"],
     "effective_date": ["effective_date", "effectivedate", "effdate", "enrollmenteffectivedate", "enrollmenteffdate",
                        "coverageeffectivedate", "coverageeffdate", "benefiteffectivedate", "benefiteffdate",
                        "enrollmentstartdate"],
-    "txn_type": ["type", "transactiontype", "chargetype", "description", "linetype", "adjustmenttype",
-                 "billingtype", "activity"],
+    "txn_type": ["transactiontype", "chargetype", "adjustmenttype", "billingtype", "linetype", "activity"],
     # explicit dependent columns (dependent listing files)
     "dep_first": ["dependentfirstname", "depfirstname", "dependentfirst", "depfirst", "dependentfname", "depfname"],
     "dep_last": ["dependentlastname", "deplastname", "dependentlast", "deplast", "dependentlname", "deplname"],
@@ -113,7 +119,9 @@ def _score_row(vals: list[str]) -> int:
     for v in vals:
         k = norm_key(v)
         knp = norm_key(re.sub(r"\(.*?\)", "", str(v)))
-        if (k and k in flat) or (knp and knp in flat):
+        knb = norm_key(re.sub(r"[\(\[\{].*", "", str(v)))
+        kn_lead = norm_key(re.sub(r"^[\)\]\}]+", "", str(v)))
+        if any(x and x in flat for x in (k, knp, knb, kn_lead)):
             count += 1
     return count
 
@@ -132,7 +140,9 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
     for idx, lab in enumerate(labels):
         k = norm_key(lab)
         k_no_paren = norm_key(re.sub(r"\(.*?\)", "", str(lab)))
-        if not k and not k_no_paren:
+        knb = norm_key(re.sub(r"[\(\[\{].*", "", str(lab)))
+        kn_lead = norm_key(re.sub(r"^[\)\]\}]+", "", str(lab)))
+        if not k and not k_no_paren and not knb and not kn_lead:
             continue
         m = _WIDE_DEP.match(k) or (_WIDE_DEP.match(k_no_paren) if k_no_paren else None)
         if m and m.group(1) in {"dependent", "dep"} and not m.group(2):
@@ -153,9 +163,9 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
                       "cobra", "plan_type", "plan", "carrier", "premium", "ee_cost", "er_cost",
                       "hire_date", "effective_date", "txn_type", "sub_id", "full_name",
                       "eligibility_class", "worker_category", "position_status",
-                      "waive_reason", "job_title",
+                      "waive_reason", "job_title", "salary",
                       "emp_first", "emp_last", "emp_full", "address", "city", "state"):
-            if ((k and k in FIELD_ALIASES[canon]) or (k_no_paren and k_no_paren in FIELD_ALIASES[canon])) and canon not in cols:
+            if any(x and x in FIELD_ALIASES[canon] for x in (k, k_no_paren, knb, kn_lead)) and canon not in cols:
                 cols[canon] = idx
                 break
     return Header(best_i, cols, wide, labels)
@@ -172,8 +182,9 @@ ROLE_FILENAME = [
     ("invoice", r"(invoice|inv[_\-\s]|billing|bill[_\-\s]|statement|premium\s*bill)"),
     ("renewal", r"(renewal|renew|rate\s*(sheet|pass|card)|proposal)"),
     ("ghq", r"(ghq|group\s*health\s*questionnaire|questionnaire)"),
-    ("rfp", r"(rfp|request\s*for\s*proposal|mail|email|submission|inbox)"),
-    ("census", r"(census|roster|enroll|eligib|employee|dependent|demographic|census)"),
+    ("rfp", r"(rfp|request\s*for\s*proposal|mail|email|submission|inbox|application)"),
+    ("census", r"(census|roster|enroll|eligib|employee|dependent|demographic)"),
+    ("plan_design", r"(plan[_\-\s]*design|summary[_\-\s]*of[_\-\s]*benefits?|sbc\b|benefit[_\-\s]*summary|\bplan\b.*(buy\s*up|base)|(buy\s*up|base)\s*plan)"),
 ]
 ROLE_CONTENT = {
     "payroll": [r"payroll register", r"gross wages?", r"gross pay", r"service fee", r"\bfuta\b", r"\bsui\b",
@@ -185,6 +196,7 @@ ROLE_CONTENT = {
     "ghq": [r"group health questionnaire", r"ghq", r"prior carrier", r"sic code"],
     "rfp": [r"request for proposal", r"\brfp\b", r"new submission", r"submission", r"key details", r"peo consultant"],
     "census": [r"date of birth|\bdob\b", r"gender|\bsex\b", r"relationship", r"coverage tier|\btier\b"],
+    "plan_design": [r"summary of benefits", r"schedule of benefits", r"benefit summary", r"coverage period", r"deductible", r"out-of-pocket", r"coinsurance", r"copayment"],
 }
 
 

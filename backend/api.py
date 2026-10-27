@@ -142,10 +142,12 @@ class HealthResponse(BaseModel):
     provider: str = Field("anthropic", description="LLM provider")
     model: str = Field(..., description="Active Anthropic Claude model")
     anthropic_model: str = Field(..., description="Active Anthropic Claude model name")
+    temperature: float = Field(1.0, description="Active Anthropic Claude temperature")
     anthropic_configured: bool = Field(..., description="Whether ANTHROPIC_API_KEY is configured")
     workspace_configured: bool = Field(..., description="Whether ANTHROPIC_WORKSPACE_ID is configured")
     poppler_configured: bool = Field(..., description="Whether Poppler binary path exists for PDF OCR rendering")
     output_dir: str = Field(..., description="Path to server output deliverables directory")
+    instructions_doc: Optional[str] = Field(None, description="Active official instruction document")
 
 
 class PipelineResponse(BaseModel):
@@ -176,6 +178,7 @@ class PipelineResponse(BaseModel):
     address: Optional[str] = Field("", description="Address from intake/prospect")
     city_state_zip: Optional[str] = Field("", description="City, State, Zip from intake/prospect")
     prospect: Optional[dict] = Field(default_factory=dict, description="Full prospect metadata block")
+    instructions_doc: Optional[str] = Field(None, description="Active official instruction document")
 
 
 class ExtractedFileItem(BaseModel):
@@ -228,19 +231,44 @@ async def favicon():
 @app.get("/health", response_model=HealthResponse, include_in_schema=False)
 async def health():
     """Health check endpoint."""
+    from llm_client import get_instruction_doc_name
     return {
         "status": "online",
         "provider": "anthropic",
         "model": C.ANTHROPIC_MODEL,
         "anthropic_model": C.ANTHROPIC_MODEL,
+        "temperature": C.ANTHROPIC_TEMPERATURE,
         "anthropic_configured": bool(C.ANTHROPIC_API_KEY),
         "workspace_configured": bool(C.ANTHROPIC_WORKSPACE_ID),
         "poppler_configured": bool(C.POPPLER_PATH and Path(C.POPPLER_PATH).exists()),
         "output_dir": str(C.OUTPUT_DIR),
+        "instructions_doc": get_instruction_doc_name(),
     }
 
 
+@app.get(
+    "/api/cache-stats",
+    tags=["System Health"],
+    summary="Prompt Caching Statistics and Telemetry",
+    description="Check local prompt cache item count, hit rates, reuse counts, and token savings.",
+)
+async def cache_stats():
+    """Retrieve prompt caching statistics and reuse metrics."""
+    try:
+        from caching import get_cache_metrics, get_local_cache
+        local_stats = get_local_cache().get_stats()
+        telemetry = get_cache_metrics()
+        return {
+            "status": "active",
+            "local_cache": local_stats,
+            "telemetry": telemetry,
+        }
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+
 def _pipeline_response(res: dict) -> dict:
+    from llm_client import get_instruction_doc_name
     out_file = Path(res["output_file"])
     txt_file = Path(res["txt_file"])
     sbu_file = Path(res["sbu_output_file"]) if res.get("sbu_output_file") else None
@@ -317,6 +345,7 @@ def _pipeline_response(res: dict) -> dict:
         "notes": getattr(res.get("findings"), "notes", []),
         "classified_docs": res.get("classified_docs", []),
         "extracted_text_dir": res.get("extracted_text_dir", str(C.EXTRACTED_TEXT_DIR)),
+        "instructions_doc": res.get("instructions_doc") or get_instruction_doc_name(),
     }
 
 

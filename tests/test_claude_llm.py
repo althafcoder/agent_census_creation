@@ -46,6 +46,7 @@ def test_anthropic_call_mock():
                         mock_instance.messages.create.assert_called_once()
                         call_kwargs = mock_instance.messages.create.call_args.kwargs
                         assert call_kwargs["model"] == "claude-3-5-sonnet-20241022"
+                        assert call_kwargs["temperature"] == 1.0
                         print("[PASS] Anthropic Claude client integration test passed.")
 
 if __name__ == "__main__":

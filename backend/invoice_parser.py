@@ -4,7 +4,8 @@ from __future__ import annotations
 import logging
 import re
 from datetime import date
-from typing import Optional
+from decimal import Decimal, ROUND_HALF_UP
+from typing import Any, Optional
 
 from classifier import _RETRO_WORDS, body, detect_header
 from models import InvoiceDoc, InvoiceRecord
@@ -324,29 +325,52 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
     return recs
 
 
-_TIER_TOKEN = r"(FAM(?:ILY)?|EE\s*\+\s*SP(?:OUSE)?|EE\s*\+\s*CH(?:ILD(?:REN)?)?|EMP(?:LOYEE)?(?:\s*ONLY)?|EE|ES|EC)"
+_TIER_TOKEN = r"((?:EE|EMP(?:LOYEE)?)\s*\+\s*(?:SP(?:OUSE)?|FAM(?:ILY)?|CH(?:ILD(?:REN)?)?)|FAM(?:ILY)?|EMP(?:LOYEE)?(?:\s*ONLY)?|EE|ES|EC|FAMILY|COUPLE)"
 
 
 def _records_from_text(doc: RawDoc) -> list[InvoiceRecord]:
     """Fallback for PDFs without extractable tables: 'SMITH, JOHN A  EE  $512.40' style lines."""
     recs = []
-    for line in (doc.text or "").splitlines():
+    for raw_line in (doc.text or "").splitlines():
+        line = re.sub(r'([a-z])([A-Z])', r'\1, \2', raw_line)
         if _REJECT_LINE.search(line):
             continue
         m_amt = re.findall(r"\$?\(?\d[\d,]*\.\d{2}\)?", line)
-        m_name = re.match(r"\s*(?:\d+\s+)?([A-Z][A-Za-z'\-\.]+,\s*[A-Za-z'\-\. ]+?)\s{1,}(?=\S)", line)
+        m_name = re.match(r"\s*(?:\d+\s+)?([A-Za-z][A-Za-z'\-\.]+,\s*[A-Za-z'\-\. ]+?)\s{1,}(?=\S)", line)
         if not (m_amt and m_name):
             continue
-        if _RETRO_WORDS.search(line) or re.search(r"total", line, re.I):
+        if _RETRO_WORDS.search(line) or re.search(r"\b(total|amount due|balance|adjustments|previous balance|payments)\b", line, re.I):
             continue
         raw = m_name.group(1).strip()
         if _is_fragment_name(raw):
             continue
-        tier = re.search(rf"\b{_TIER_TOKEN}\b", line[m_name.end():], re.I)
+        if any(term in raw.lower() for term in ["kitchens", "showcase", "inc", "llc", "corp", "group", "holdings", "company"]):
+            continue
+        after = line[m_name.end():]
+        # The camel-case repair above can turn one billing/vendor word into a fake
+        # "Last, First" name (e.g. "AutomaticPayment" -> "Automatic, Payment").
+        # Only trust a separator that was not present in the source when the same
+        # line also carries employee/coverage evidence.
+        if raw not in raw_line:
+            has_employee_evidence = bool(
+                re.search(rf"\b{_TIER_TOKEN}\b", after, re.I)
+                or re.search(r"\b(employee|spouse|child|dependent|member|subscriber)\b", raw_line, re.I)
+            )
+            if not has_employee_evidence:
+                continue
+        tier = re.search(rf"\b{_TIER_TOKEN}\b", after, re.I)
+        plan = ""
+        if tier:
+            between = after[:tier.start()]
+            between = re.sub(r'\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-z]*[,\s]+\d{2,4}\b', '', between, flags=re.I)
+            between = re.sub(r'\b(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])/(20\d{2}|\d{2})\b', '', between)
+            plan = " ".join(between.split())
         dob = re.search(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b", line)
+        first, last = split_full_name(raw)
         recs.append(InvoiceRecord(
-            first=split_full_name(raw)[0], last=split_full_name(raw)[1], raw_name=raw,
-            tier=std_coverage(tier.group(1)) if tier else "", dob=parse_date(dob.group(1)) if dob else None,
+            first=first, last=last, raw_name=raw,
+            tier=std_coverage(tier.group(1)) if tier else "", plan=plan,
+            dob=parse_date(dob.group(1)) if dob else None,
             premium=to_money(m_amt[-1]), source=doc.name))
     return recs
 
@@ -375,6 +399,124 @@ def _records_from_llm(doc: RawDoc) -> list[InvoiceRecord]:
     return out
 
 
+def _records_from_carrier_statement(doc: RawDoc) -> tuple[list[InvoiceRecord], dict[str, Any]]:
+    """Extract subscriber identity, normalized plan ID, coverage tier, current monthly premium,
+    retroactive adjustments, and service periods using structured statement parsing and decimal arithmetic."""
+    text = doc.text or ""
+    if not text:
+        return [], {}
+
+    # Match entries formatted as: <policy/cert_no> <Last, First> <Plan_ID> - <Description>
+    entry_start_re = re.compile(
+        r"(?:^|\n)\s*(\d{6,10})\s+([A-Za-z'\-\. ]+,\s*[A-Za-z'\-\. ]+?)\s+([A-Za-z0-9]{5,20})\s*-\s*(.*?)(?=(?:\n\s*\d{6,10}\s+[A-Za-z'\-\. ]+,\s*[A-Za-z'\-\. ]+?\s+[A-Za-z0-9]{5,20}\s*-|\n\s*Total\s+\$|\Z))",
+        re.DOTALL
+    )
+
+    matches = list(entry_start_re.finditer(text))
+    if not matches:
+        return [], {}
+
+    meta: dict[str, Any] = {}
+    m_cur = re.search(r"Current Charges\s*(?:\([+\-]\))?\s*\$?([\d,]+\.\d{2})", text, re.I)
+    if m_cur:
+        meta["current_charges"] = Decimal(m_cur.group(1).replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    m_adj = re.search(r"Current Adjustments\s*(?:\([+\-\/]+\))?\s*\$?([\d,]+\.\d{2})", text, re.I)
+    if m_adj:
+        meta["total_adjustments"] = Decimal(m_adj.group(1).replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    m_tot = re.search(r"Total Balance Due[^\$]*\$?([\d,]+\.\d{2})", text, re.I)
+    if m_tot:
+        meta["total_due"] = Decimal(m_tot.group(1).replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    m_cov = re.search(r"Coverage Period:\s*(\d{1,2}/\d{1,2}/\d{4})\s*-\s*(\d{1,2}/\d{1,2}/\d{4})", text, re.I)
+    cov_period = f"{m_cov.group(1)}-{m_cov.group(2)}" if m_cov else ""
+    meta["service_period"] = cov_period
+
+    records: dict[tuple[str, str], dict[str, Any]] = {}
+    retro_list: list[dict] = []
+
+    for m in matches:
+        policy_no = m.group(1).strip()
+        raw_name = m.group(2).strip()
+        raw_name = " ".join(raw_name.split())
+        plan_id = m.group(3).strip()
+        body_chunk = m.group(4).strip()
+
+        tier_m = re.search(r"\b(EE|EC|ES|ESC|FAM|E|E1D|E2D|E3D)\s+(A|C|TRM|ACT)\b", body_chunk)
+        tier_raw = tier_m.group(1) if tier_m else ""
+        if tier_raw in ("E1D", "E2D", "E3D", "EC"):
+            tier = "EC"
+        elif tier_raw in ("ESC", "FAM"):
+            tier = "FAM"
+        elif tier_raw == "ES":
+            tier = "ES"
+        else:
+            tier = tier_raw or "EE"
+
+        status_code = tier_m.group(2) if tier_m else "A"
+        status = status_code
+
+        adj_m = re.search(r"(\d{1,2}/\d{1,2}-\d{1,2}/\d{1,2}/\d{4})\s+([A-Z]{3})\s+\$?([\d,]+\.\d{2})", body_chunk)
+        retro_period = adj_m.group(1) if adj_m else ""
+        retro_code = adj_m.group(2) if adj_m else ""
+        retro_amt = Decimal(adj_m.group(3).replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if adj_m else Decimal("0.00")
+
+        amts = [Decimal(x.replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) for x in re.findall(r"\$?([\d,]+\.\d{2})", body_chunk)]
+        charge = Decimal("0.00")
+        if amts:
+            charge = amts[0]
+
+        key = (raw_name, plan_id)
+        if key not in records:
+            records[key] = {
+                "raw_name": raw_name,
+                "plan_id": plan_id,
+                "tier": tier,
+                "status": status,
+                "current_premium": Decimal("0.00"),
+                "retro_amount": Decimal("0.00"),
+                "retro_code": retro_code,
+                "retro_period": retro_period,
+                "service_period": cov_period,
+                "policy_no": policy_no,
+                "raw_plan": f"{plan_id} - Medical",
+            }
+        records[key]["current_premium"] += charge
+        if adj_m:
+            records[key]["retro_amount"] += retro_amt
+            if retro_code:
+                records[key]["retro_code"] = retro_code
+            if retro_period:
+                records[key]["retro_period"] = retro_period
+
+    out: list[InvoiceRecord] = []
+    for (r_name, p_id), d in records.items():
+        f, l = split_full_name(r_name)
+        cur_p = float(d["current_premium"])
+        ret_p = float(d["retro_amount"]) if d["retro_amount"] > Decimal("0.00") else None
+        tot_p = float(d["current_premium"] + d["retro_amount"])
+        rec = InvoiceRecord(
+            first=f, last=l, raw_name=r_name,
+            tier=d["tier"], plan=d["plan_id"], raw_plan=d["raw_plan"],
+            premium=cur_p, current_premium=cur_p,
+            retro_amount=ret_p, retro_code=d["retro_code"],
+            retro_period=d["retro_period"], service_period=d["service_period"],
+            total_amount=tot_p, status=d["status"], sub_id="",
+            source=doc.name
+        )
+        out.append(rec)
+        if ret_p:
+            retro_list.append({
+                "name": r_name,
+                "plan": d["plan_id"],
+                "code": d["retro_code"],
+                "period": d["retro_period"],
+                "amount": ret_p,
+            })
+
+    meta["retro_adjustments"] = retro_list
+    return out, meta
+
+
 def parse_invoice(doc: RawDoc) -> InvoiceDoc:
     start, end = detect_period(doc)
     # A payroll / wage document is not a benefit invoice: extract no employee records so it can never
@@ -383,8 +525,11 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
     if is_wage_document(doc):
         return InvoiceDoc(path=doc.name, records=[], period_start=start, period_end=end,
                           entity="payroll", draft=True, doc_date=None)
-    recs = (_records_from_peo_employee_details(doc) or _records_from_peo_statement(doc)
+
+    carrier_recs, carrier_meta = _records_from_carrier_statement(doc)
+    recs = (carrier_recs or _records_from_peo_employee_details(doc) or _records_from_peo_statement(doc)
             or _records_from_tables(doc) or _records_from_text(doc) or _records_from_llm(doc))
+
     text = (doc.text or "")[:4000]
     low = (doc.path.stem + " " + text[:1500]).lower()
     m = _ENTITY.search(text)
@@ -400,13 +545,24 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
             if m_num:
                 break
     m_dt = re.search(rf"(?:statement|invoice|bill)\s*date\s*[:\-]?\s*{_DATE}", text, re.I)
+
+    cur_charges = carrier_meta.get("current_charges")
+    tot_adj = carrier_meta.get("total_adjustments")
+    tot_due = carrier_meta.get("total_due")
+    retro_adjs = carrier_meta.get("retro_adjustments", [])
+
     return InvoiceDoc(
         path=doc.name, records=recs, period_start=start, period_end=end,
         entity=(m.group(1).upper() if m else "default"),
         revised=bool(re.search(r"(revis|correct|amend|supersed)", low)),
         draft=bool(re.search(r"\b(draft|void|cancel)", low)),
         number=m_num.group(1) if m_num else "",
-        doc_date=parse_date(m_dt.group(1)) if m_dt else None)
+        doc_date=parse_date(m_dt.group(1)) if m_dt else None,
+        current_charges=float(cur_charges) if cur_charges is not None else None,
+        total_adjustments=float(tot_adj) if tot_adj is not None else None,
+        total_due=float(tot_due) if tot_due is not None else None,
+        retro_adjustments=retro_adjs)
+
 
 
 # -------------------------------------------------------------- selection ---
@@ -477,10 +633,12 @@ def combine_records(selected: list[InvoiceDoc]) -> list[InvoiceRecord]:
     seen: dict = {}
     for inv in selected:
         for r in inv.records:
-            k = r.sub_id or name_key(r.first, r.last)
+            k = name_key(r.first, r.last)
             if k in seen:
                 ex = seen[k]
-                for f in ("tier", "dob", "gender", "zip", "plan", "premium", "status"):
+                for f in ("tier", "dob", "gender", "zip", "plan", "raw_plan", "premium", "current_premium",
+                          "retro_amount", "retro_code", "retro_period", "service_period", "total_amount",
+                          "status", "sub_id"):
                     if not getattr(ex, f) and getattr(r, f):
                         setattr(ex, f, getattr(r, f))
                 continue

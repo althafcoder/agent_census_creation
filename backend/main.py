@@ -11,7 +11,9 @@ Programmatic:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
+import os
 import re
 import sys
 from datetime import datetime
@@ -20,8 +22,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import census_config as C
+from caching.config import (
+    APP_VERSION,
+    BYPASS_LOCAL_CACHE,
+    INSTRUCTION_VERSION,
+    SCHEMA_VERSION,
+    get_instruction_hash,
+)
 from census_builder import build_census, extract_waiting_period_rule, refine_non_enrolled_statuses
-from classifier import classify
+from classifier import classify, detect_header
 from comparator import run_comparison
 from invoice_parser import combine_records, parse_invoice, select_invoices
 from models import Findings
@@ -34,6 +43,7 @@ from router import (
     determine_routing,
     generate_missing_information_email,
 )
+from tracer import DiagnosticTracer
 from workbook_writer import (
     save_marsh_workbook,
     save_rapt_workbook,
@@ -44,10 +54,19 @@ from workbook_writer import (
 log = logging.getLogger("census")
 
 
-def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path = C.OUTPUT_DIR) -> dict:
+def run_pipeline(
+    source: Path | list[Path | str] = C.INPUT_DIR,
+    output_dir: Path = C.OUTPUT_DIR,
+    bypass_cache: bool = False,
+    tracer: DiagnosticTracer | None = None,
+) -> dict:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     F = Findings()
+
+    if bypass_cache:
+        os.environ["BYPASS_LOCAL_CACHE"] = "true"
+    tracer = tracer or DiagnosticTracer()
 
     # 1. review EVERY uploaded document ----------------------------------------------------------
     log.info("[1/7] Reading and classifying documents...")
@@ -55,13 +74,37 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
     if not docs:
         raise ValueError(f"No supported files found in {source}")
 
-    roles: dict[str, list] = {"census": [], "invoice": [], "renewal": [], "ghq": [], "rfp": [], "deliverable": [], "payroll": [], "unknown": []}
+    input_hashes: dict[str, str] = {}
+    for d in docs:
+        try:
+            input_hashes[d.name] = hashlib.sha256(d.path.read_bytes()).hexdigest()[:12]
+        except Exception:
+            pass
+    inst_hash = get_instruction_hash()
+    log.info("Agent Execution: AppVersion=%s, SchemaVersion=%s, InstructionVersion=%s (Hash=%s)",
+             APP_VERSION, SCHEMA_VERSION, INSTRUCTION_VERSION, inst_hash)
+    log.info("Inputs received: %d files (Hashes: %s)", len(docs), ", ".join(f"{k}:{v}" for k, v in input_hashes.items()))
+
+    roles: dict[str, list] = {
+        "census": [], "invoice": [], "renewal": [], "ghq": [], "rfp": [],
+        "deliverable": [], "payroll": [], "plan_design": [], "unknown": []
+    }
     for d in docs:
         role = classify(d)
         roles.setdefault(role, []).append(d)
-        log.info("      * %-42s -> %-8s %s", d.name, role, "(OCR Scanned)" if d.scanned else "(Digital)")
-    # unknown files that contain a census-looking table are still used (never ignore a census file)
-    roles["census"] += roles.pop("unknown")
+        log.info("      * %-42s -> %-11s %s", d.name, role, "(OCR Scanned)" if d.scanned else "(Digital)")
+
+    # Unknown files that contain a census-looking table are still used (never ignore a genuine census file)
+    for unk in roles.pop("unknown", []):
+        has_census_table = False
+        for t in unk.tables:
+            h = detect_header(t.df)
+            if h and ({"first_name", "full_name"} & set(h.columns)) and ({"dob", "relationship", "coverage"} & set(h.columns)):
+                has_census_table = True
+                break
+        if has_census_table:
+            roles["census"].append(unk)
+            log.info("      * Unknown file %s contains census table -> promoted to census", unk.name)
 
     # 2. prospect block & routing decision --------------------------------------------------------
     log.info("[2/7] Extracting Prospect Information & Determining Carrier Routing...")
@@ -112,7 +155,7 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
     log.info("[3/7] Building Census: parsing employee & dependent records...")
     if not roles["census"]:
         raise ValueError("No census / enrollment file was found among the uploads.")
-    census, meta = build_census(roles["census"], effective_date=prospect.effective_date)
+    census, meta = build_census(roles["census"], effective_date=prospect.effective_date, tracer=tracer)
     if not census.employees:
         raise ValueError("Census files were found but no employee rows could be parsed.")
     log.info("      * Parsed %d employee records, %d dependent records", len(census.employees), len(census.dependents))
@@ -156,7 +199,10 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
     ref_date = (selected[0].period_start if selected else None) or prospect.effective_date
     wait_rule = extract_waiting_period_rule(docs)
     wait_days = wait_rule.get("days") if wait_rule else None
-    refine_non_enrolled_statuses(census, reference_date=ref_date, waiting_days=wait_days, waiting_rule=wait_rule)
+    refine_non_enrolled_statuses(
+        census, reference_date=ref_date, waiting_days=wait_days, waiting_rule=wait_rule,
+        docs=docs, effective_date=prospect.effective_date, tracer=tracer,
+    )
 
     # 5. renewal (PEO & 90-day rule check) ---------------------------------------------------------
     log.info("[5/7] Parsing and matching renewals...")
@@ -186,9 +232,14 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
         if renewal:
             log.info("      * Renewal document provided voluntarily: effective=%s, %d rate rows", renewal.effective, len(renewal.rates))
 
+    renewal_to_use = renewal if ren_required else None
+
     # 6. compare + populate premiums -------------------------------------------------------------
     log.info("[6/7] Running comparison and audit reconciliation...")
-    results = run_comparison(census, invoice_records, renewal, meta, F, have_invoice)
+    results = run_comparison(
+        census, invoice_records, renewal_to_use, meta, F, have_invoice,
+        renewal_required=ren_required, tracer=tracer,
+    )
 
     # Cross-document consistency check between census and payroll register(s).
     # Per the Payroll and Wage Document Exclusion rule, a payroll/wage document must never drive
@@ -258,13 +309,13 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
         # Florida Blue -> RAPT Census Comparison Workbook only
         log.info("[7/8] Generating Florida Blue RAPT Census Excel workbook...")
         out_path = output_dir / f"RAPT_Census_{name}_{stamp}.xlsx".replace(" ", "_")
-        save_rapt_workbook(C.RAPT_TEMPLATE_PATH, out_path, census, prospect, results, F, audit)
+        save_rapt_workbook(C.RAPT_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
         log.info("      * Saved Florida Blue Excel: %s", out_path.name)
     else:
         # Non-Florida (or default Cigna routing) -> Marsh Primary + SBU Deliverables
         log.info("[7/8] Generating Cigna Marsh PEO Practice Census Comparison workbook...")
         out_path = output_dir / f"Marsh_Census_{name}_{stamp}.xlsx".replace(" ", "_")
-        save_marsh_workbook(C.MARSH_TEMPLATE_PATH, out_path, census, prospect, results, F, audit)
+        save_marsh_workbook(C.MARSH_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
         log.info("      * Saved Marsh Cigna Excel: %s", out_path.name)
 
         log.info("      * Generating SBU Census Template deliverable from finalized census...")
@@ -303,6 +354,12 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
     F.email_text = email_content
     log.info("      * Saved Missing Information Email: %s", email_path.name)
 
+    # Diagnostic Trace deliverable
+    trace_summary = tracer.format_summary()
+    trace_path = output_dir / f"Diagnostic_Trace_{name}_{stamp}.txt".replace(" ", "_")
+    trace_path.write_text(trace_summary, encoding="utf-8")
+    log.info("      * Saved Diagnostic Trace: %s", trace_path.name)
+
     summary = exception_summary(F, census, audit)
     txt_path = output_dir / out_path.name.replace(".xlsx", "_exceptions.txt")
     txt_path.write_text(summary, encoding="utf-8")
@@ -329,6 +386,13 @@ def run_pipeline(source: Path | list[Path | str] = C.INPUT_DIR, output_dir: Path
         "txt_file": txt_path,
         "email_file": email_path,
         "email_text": email_content,
+        "trace_file": trace_path,
+        "tracer": tracer,
+        "tracer_summary": trace_summary,
+        "app_version": APP_VERSION,
+        "instruction_version": INSTRUCTION_VERSION,
+        "instruction_hash": inst_hash,
+        "input_hashes": input_hashes,
         "carrier": routing.carrier or "Undetermined",
         "state": routing.state or "Unknown",
         "company": prospect.company or "",
@@ -403,6 +467,7 @@ def _cli() -> None:
     ap.add_argument("files", nargs="*", default=[], help="Specific file path(s) to process")
     ap.add_argument("-i", "--input", default=str(C.INPUT_DIR), help="Input folder")
     ap.add_argument("-o", "--output", default=str(C.OUTPUT_DIR), help="Output folder")
+    ap.add_argument("--bypass-cache", action="store_true", help="Bypass local SQLite prompt/response cache")
     ap.add_argument("-q", "--quiet", action="store_true", help="Only show summary and errors (suppress progress logs)")
     ap.add_argument("-v", "--verbose", action="store_true", help="Show debug level logs")
     a = ap.parse_args()
@@ -425,7 +490,7 @@ def _cli() -> None:
 
     src = [Path(f) for f in a.files] if a.files else Path(a.input)
     try:
-        res = run_pipeline(src, Path(a.output))
+        res = run_pipeline(src, Path(a.output), bypass_cache=a.bypass_cache)
         print(f"\nOutput file: {res['output_file']}\n")
         print(res["summary"])
     except ValueError as exc:

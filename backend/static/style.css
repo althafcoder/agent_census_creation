@@ -191,6 +191,12 @@ body {
   border: 1px solid rgba(6, 182, 212, 0.25);
 }
 
+.badge-purple {
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+}
+
 .pulse-dot {
   width: 7px;
   height: 7px;
@@ -202,6 +208,10 @@ body {
 .pulse-dot.cyan {
   background-color: var(--cyan);
   box-shadow: 0 0 8px var(--cyan);
+}
+.pulse-dot.purple {
+  background-color: #c084fc;
+  box-shadow: 0 0 8px #c084fc;
 }
 
 @keyframes pulse-dot {

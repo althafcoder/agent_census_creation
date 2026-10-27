@@ -1,6 +1,6 @@
 """Carrier and Underwriting Routing Decision Engine.
 
-Operating strictly according to the Combined Medical Submission Intake and Census Comparison Instruction:
+Operating strictly according to the Master Unified Medical Submission Agent Instruction:
 1. Determine prospect's primary business state from company address (GHQ, RFP, census, invoice, renewal).
 2. Florida (FL) -> Florida Blue:
    - Primary template: RAPT Census - Template
@@ -158,7 +158,7 @@ def extract_prospect_state(prospect: Prospect, docs: list[RawDoc] | None = None)
 
 
 def determine_routing(prospect: Prospect, docs: list[RawDoc] | None = None) -> RoutingDecision:
-    """Apply the Mandatory Routing Matrix from the Combined Instruction."""
+    """Apply the Mandatory Routing Matrix from the Master Unified Medical Submission Agent Instruction."""
     state_code, is_conflicting, conflict_detail = extract_prospect_state(prospect, docs)
     r = RoutingDecision()
 
@@ -389,7 +389,7 @@ def generate_missing_information_email(
     results: dict | None = None,
     docs: list[RawDoc] | None = None,
 ) -> str:
-    """Generate the standardized ready-to-send Missing Information Email per the Combined Instruction."""
+    """Generate the standardized ready-to-send Missing Information Email per the Master Unified Medical Submission Agent Instruction."""
     prospect_name = prospect.company.strip() if prospect.company else "Prospect Name Required"
     subject = f"Medical Submission Missing Information - {prospect_name}"
 
@@ -420,27 +420,56 @@ def generate_missing_information_email(
 
     # 3. SBC Section
     sbc_items = []
-    has_sbc_doc = False
     all_docs = (docs or []) + (roles.get("sbc", []) if roles else [])
-    for d in all_docs:
-        if "sbc" in d.name.lower() or "summary of benefits" in d.name.lower():
-            has_sbc_doc = True
-            break
+    sbc_docs = [
+        d for d in all_docs
+        if "sbc" in d.name.lower() or "summary of benefits" in d.name.lower() or
+        re.search(r"summary of benefits and coverage|\bcoverage period\b", (d.text or "")[:1500], re.I)
+    ]
+    has_sbc_doc = bool(sbc_docs)
+
+    active_plans = sorted({
+        emp.plan for emp in (census.employees if census else [])
+        if emp.coverage in C.ACTIVE_TIERS and emp.plan and emp.plan not in ("Medical", "Waived", "None", "NA")
+    })
 
     if sbc_missing:
-        sbc_items.append("Please provide complete SBCs for each currently enrolled medical plan:")
-        sbc_items.extend(sbc_missing)
+        missing_list = sbc_missing
+    elif has_sbc_doc and active_plans:
+        missing_list = []
+        for p in active_plans:
+            matched = False
+            p_low = p.lower()
+            nums = re.findall(r"\d+", p)
+            metals = [m for m in ["bronze", "silver", "gold", "platinum"] if m in p_low]
+            carriers = [c for c in ["oxford", "anthem", "aetna", "cigna", "uhc", "united", "blue", "bcbs", "florida blue", "humana"] if c in p_low]
+            for sbc in sbc_docs:
+                sbc_str = (sbc.name + " " + (sbc.text or "")[:1000]).lower()
+                if carriers and not any(c in sbc_str for c in carriers):
+                    continue
+                if metals and not any(m in sbc_str for m in metals):
+                    continue
+                if nums:
+                    key_nums = [n for n in nums if len(n) >= 3 or n in ("40", "80", "50", "60", "30", "100")]
+                    if key_nums and all(n in sbc_str for n in key_nums):
+                        matched = True
+                        break
+                    elif not key_nums and any(n in sbc_str for n in nums):
+                        matched = True
+                        break
+                else:
+                    matched = True
+                    break
+            if not matched:
+                missing_list.append(p)
     elif not has_sbc_doc and not routing.is_florida:
-        # Non-Florida carrier (Cigna) requires SBC for all currently enrolled medical plans
-        active_plans = sorted({
-            emp.plan for emp in (census.employees if census else [])
-            if emp.coverage in C.ACTIVE_TIERS and emp.plan and emp.plan not in ("Medical", "Waived", "None", "NA")
-        })
-        if active_plans:
-            sbc_items.append("Please provide complete SBCs for each currently enrolled medical plan:")
-            sbc_items.extend(active_plans)
+        missing_list = active_plans
+    else:
+        missing_list = []
 
-    if sbc_items:
+    if missing_list:
+        sbc_items.append("Please provide complete SBCs for each currently enrolled medical plan:")
+        sbc_items.extend(missing_list)
         sections.append(("SBC", sbc_items))
 
     # 4. Census vs. Invoice Comparison Section

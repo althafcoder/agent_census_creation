@@ -12,7 +12,7 @@ import re
 import contextvars
 from typing import Any
 
-from census_config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_WORKSPACE_ID, INSTRUCTIONS_PATH, INSTRUCTIONS_PATHS
+from census_config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_TEMPERATURE, ANTHROPIC_WORKSPACE_ID, INSTRUCTIONS_PATH, INSTRUCTIONS_PATHS
 
 log = logging.getLogger("census.llm")
 
@@ -35,11 +35,17 @@ _INSTRUCTIONS_MTIMES: tuple[float, ...] = ()
 
 
 def _read_docx_paragraphs(path: Path) -> str:
-    """Read all non-empty paragraphs from a docx file."""
+    """Read all non-empty paragraphs and table contents from a docx file."""
     try:
         import docx
         d = docx.Document(str(path))
-        return "\n".join(p.text for p in d.paragraphs if p.text.strip())
+        parts = [p.text for p in d.paragraphs if p.text.strip()]
+        for table in d.tables:
+            for row in table.rows:
+                row_text = " | ".join(c.text.strip() for c in row.cells if c.text.strip())
+                if row_text:
+                    parts.append(row_text)
+        return "\n".join(parts)
     except Exception as exc:
         log.warning("Could not read docx %s: %s", path.name, exc)
         return ""
@@ -56,14 +62,17 @@ def get_instruction_doc_names() -> list[str]:
     except Exception:
         pass
     instructions_dir = Path(__file__).resolve().parent / "instructions"
-    files = sorted(instructions_dir.glob("*.docx"), key=lambda p: (0 if "combined" in p.name.lower() else 1, p.name.lower()))
+    files = sorted(
+        list(instructions_dir.glob("*.docx")) + list(instructions_dir.glob("*.txt")),
+        key=lambda p: (0 if any(k in p.name.lower() for k in ("master", "unified", "combined")) else 1, p.name.lower())
+    )
     return [p.name for p in files if not p.name.startswith("~$")]
 
 
 def get_instruction_doc_name() -> str:
     """Return a descriptive string of active official instruction documents."""
     names = get_instruction_doc_names()
-    return "; ".join(names) if names else "Official Instructions"
+    return "; ".join(names) if names else "Master Unified Medical Submission Agent Instruction"
 
 
 def get_official_instructions() -> str:
@@ -80,7 +89,10 @@ def get_official_instructions() -> str:
 
     if not paths:
         instructions_dir = Path(__file__).resolve().parent / "instructions"
-        paths = sorted(instructions_dir.glob("*.docx"), key=lambda p: (0 if "combined" in p.name.lower() else 1, p.name.lower()))
+        paths = sorted(
+            list(instructions_dir.glob("*.docx")) + list(instructions_dir.glob("*.txt")),
+            key=lambda p: (0 if any(k in p.name.lower() for k in ("master", "unified", "combined")) else 1, p.name.lower())
+        )
         paths = [p for p in paths if not p.name.startswith("~$")]
 
     # Check if cached and file mtimes haven't changed
@@ -127,7 +139,7 @@ get_official_rei_instructions = get_official_instructions
 def get_system_prompt() -> str:
     """Dynamic system prompt referencing all active official instruction documents."""
     names = get_instruction_doc_names()
-    doc_str = "; ".join(names) if names else "Official Instructions"
+    doc_str = "; ".join(names) if names else "Master Unified Medical Submission Agent Instruction"
     return (
         f"You are the Census Creation and Invoice Comparison Engine operating strictly under the official instructions: "
         f"[{doc_str}]. Never provide analysis or extraneous prose. "
@@ -174,12 +186,24 @@ def _parse_json_robust(text: str) -> Any:
         raise
 
 
-def extract_json(prompt: str, max_tokens: int = 4000) -> Any:
+def extract_json(prompt: str, max_tokens: int = 4000, bypass_cache: bool = False) -> Any:
     """Execute prompt via Anthropic Claude and return parsed JSON data."""
     if not ANTHROPIC_API_KEY:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured in .env.")
 
+    # 1. Tier 1: Check local persistent prompt cache (exact match, 0 tokens, <1ms)
+    if not bypass_cache and not ANTHROPIC_API_KEY.startswith("sk-ant-test"):
+        try:
+            from caching import get_local_cache
+            step_name = _CURRENT_STEP.get() or "llm_extraction"
+            cached = get_local_cache().get(prompt, ANTHROPIC_MODEL, step_name=step_name)
+            if cached is not None:
+                return cached
+        except Exception as _c_err:
+            log.debug("Local prompt cache lookup skipped: %s", _c_err)
+
     import anthropic
+    import time
 
     headers = {}
     if ANTHROPIC_WORKSPACE_ID:
@@ -189,15 +213,27 @@ def extract_json(prompt: str, max_tokens: int = 4000) -> Any:
         api_key=ANTHROPIC_API_KEY,
         default_headers=headers if headers else None,
     )
+
+    # 2. Tier 2: Prepare cached message blocks for Anthropic prompt caching
+    messages = [{"role": "user", "content": prompt}]
+    system_prompt = get_system_prompt()
+    if not ANTHROPIC_API_KEY.startswith("sk-ant-test"):
+        try:
+            from caching import prepare_cached_messages
+            messages, system_prompt = prepare_cached_messages(prompt, system_prompt)
+        except Exception as _prep_err:
+            log.debug("Anthropic cached message preparation skipped: %s", _prep_err)
+
+    t0 = time.perf_counter()
     try:
         resp = client.messages.create(
             model=ANTHROPIC_MODEL,
+            temperature=ANTHROPIC_TEMPERATURE,
             max_tokens=max_tokens,
-            system=get_system_prompt(),
-            messages=[
-                {"role": "user", "content": prompt},
-            ],
+            system=system_prompt,
+            messages=messages,
         )
+        latency_sec = time.perf_counter() - t0
 
         # Dynamically record token usage and cost for Token Utilization & Cost Analytics
         try:
@@ -212,6 +248,14 @@ def extract_json(prompt: str, max_tokens: int = 4000) -> Any:
         except Exception as _track_err:
             log.debug("Token usage tracking skipped: %s", _track_err)
 
+        # Record Anthropic prompt caching telemetry (cache reads / cache writes)
+        try:
+            from caching import record_anthropic_usage
+            step_name = _CURRENT_STEP.get() or "llm_extraction"
+            record_anthropic_usage(getattr(resp, "usage", None), step_name=step_name, latency_sec=latency_sec)
+        except Exception as _rec_err:
+            log.debug("Anthropic cache telemetry skipped: %s", _rec_err)
+
         content_parts: list[str] = []
         for block in resp.content:
             if getattr(block, "type", "") == "text" or hasattr(block, "text"):
@@ -219,7 +263,25 @@ def extract_json(prompt: str, max_tokens: int = 4000) -> Any:
             elif isinstance(block, dict) and "text" in block:
                 content_parts.append(block["text"])
         content = "".join(content_parts)
-        return _parse_json_robust(content)
+        parsed = _parse_json_robust(content)
+
+        # Save to local persistent cache for future runs
+        if not ANTHROPIC_API_KEY.startswith("sk-ant-test"):
+            try:
+                from caching import get_local_cache
+                step_name = _CURRENT_STEP.get() or "llm_extraction"
+                tokens_est = getattr(getattr(resp, "usage", None), "input_tokens", 0) or (len(prompt) // 4)
+                get_local_cache().set(
+                    prompt=prompt,
+                    model=ANTHROPIC_MODEL,
+                    response_data=parsed,
+                    step_name=step_name,
+                    tokens_saved_estimate=tokens_est,
+                )
+            except Exception as _store_err:
+                log.debug("Local prompt cache store skipped: %s", _store_err)
+
+        return parsed
     except Exception as exc:
         log.warning("Anthropic Claude API call failed: %s", exc)
         raise

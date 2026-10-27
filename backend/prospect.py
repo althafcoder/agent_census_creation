@@ -39,13 +39,54 @@ LABELS = {
 }
 
 
+def _parse_multi_colon_line(line: str) -> dict[str, str]:
+    colon_indices = [m.start() for m in re.finditer(r'(?<=[A-Za-z0-9\)])\s*:', line)]
+    if not colon_indices:
+        return {}
+    if len(colon_indices) == 1:
+        k, _, v = line.partition(":")
+        return {norm_key(k): clean(v)} if 0 < len(k.strip()) <= 45 and clean(v) else {}
+
+    pairs = {}
+    segments = [line[:colon_indices[0]].strip()]
+    for i in range(len(colon_indices) - 1):
+        segments.append(line[colon_indices[i] + 1: colon_indices[i + 1]].strip())
+    segments.append(line[colon_indices[-1] + 1:].strip())
+
+    curr_label = segments[0]
+    for i in range(1, len(segments)):
+        seg = segments[i]
+        if i == len(segments) - 1:
+            val = seg
+            if curr_label and val:
+                pairs[norm_key(curr_label)] = clean(val)
+        else:
+            words = seg.split()
+            if len(words) > 1:
+                next_label = words[-1]
+                val = " ".join(words[:-1])
+                if len(words) >= 3 and words[-2].lower() in ("contact", "phone", "cell", "fax", "job", "work", "alt"):
+                    next_label = words[-2] + " " + words[-1]
+                    val = " ".join(words[:-2])
+            else:
+                next_label = words[0] if words else ""
+                val = ""
+            if curr_label and val:
+                pairs[norm_key(curr_label)] = clean(val)
+            curr_label = next_label
+    return pairs
+
+
 def _kv_pairs(doc: RawDoc) -> dict[str, str]:
     """label -> value from 'Label: value' text lines and from label/value table cells."""
     pairs: dict[str, str] = {}
     for line in (doc.text or "").splitlines():
         if ":" in line:
             if line.count(":") > 1:
-                continue  # skip multi-column form lines that bundle multiple labels together
+                m_pairs = _parse_multi_colon_line(line)
+                for mk, mv in m_pairs.items():
+                    pairs.setdefault(mk, mv)
+                continue
             k, _, v = line.partition(":")
             if 0 < len(k.strip()) <= 45 and clean(v):
                 pairs.setdefault(norm_key(k), clean(v))
@@ -219,6 +260,38 @@ def _pick_client_email(docs: list[RawDoc], company: str) -> str:
     return ""
 
 
+def _sales_person_from_text(docs: list[RawDoc]) -> str:
+    for d in docs:
+        text = d.text or ""
+        m = re.search(r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\s*\n\s*(?:Senior\s+)?(?:Sales\s+(?:Manager|Rep|Representative|Executive|Director)|Account\s+Executive|PEO\s+Consultant)", text)
+        if m:
+            return m.group(1).strip()
+        m2 = re.search(r"From\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\s*<[^>]+@(?:decisionhr|cognethro|onedigital)[^>]*>", text, re.I)
+        if m2:
+            return m2.group(1).strip()
+    return ""
+
+
+def _sic_from_text(docs: list[RawDoc]) -> str:
+    for d in docs:
+        for t in getattr(d, "tables", []):
+            grid = t.df.values.tolist()
+            for row in grid:
+                for idx, cell in enumerate(row[:-1]):
+                    c_clean = clean(cell)
+                    if c_clean and re.search(r"\bSIC\b|\bSIC\s*CODE\b", c_clean, re.I):
+                        val = clean(row[idx + 1])
+                        if val and not _is_invalid_sic(val):
+                            return val
+        text = d.text or ""
+        m = re.search(r"\bSIC(?:\s*CODE)?\s*[:\-]?\s*([0-9]{4}(?:-[0-9]{1,4})?|[0-9]{3,6})\b", text, re.I)
+        if m:
+            sic_cand = m.group(1).strip()
+            if not _is_invalid_sic(sic_cand):
+                return sic_cand
+    return ""
+
+
 def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[RawDoc]) -> None:
     """Harvest contact name, email, phone, and EIN from the company-info-bearing sources.
 
@@ -228,7 +301,7 @@ def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[Raw
     broker's or carrier rep's details on broker-handled or multi-entity submissions.
     """
     if not merged.get("contact_name"):
-        nm = _contact_name_from_text(primary_docs)
+        nm = _contact_name_from_text(primary_docs) or _contact_name_from_text(fallback_docs)
         if nm:
             merged["contact_name"] = nm
     client_em = _pick_client_email(primary_docs, merged.get("company", ""))
@@ -237,7 +310,11 @@ def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[Raw
     if client_em and (not cur_em or cur_is_agency) and client_em.lower() != cur_em:
         merged["contact_email"] = client_em
     if not merged.get("contact_phone"):
-        merged["contact_phone"] = _harvest(_PHONE_RE, primary_docs)
+        merged["contact_phone"] = _harvest(_PHONE_RE, primary_docs) or _harvest(_PHONE_RE, fallback_docs)
+    if not merged.get("sales_person"):
+        sp = _sales_person_from_text(primary_docs) or _sales_person_from_text(fallback_docs)
+        if sp:
+            merged["sales_person"] = sp
     if not merged.get("ein"):
         val = _harvest(_EIN_RE, primary_docs) or _harvest(_EIN_RE, fallback_docs)
         merged["ein"] = val
@@ -249,7 +326,7 @@ def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[Raw
 
 
 def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: list[RawDoc] | None = None) -> tuple[Prospect, bool, bool]:
-    """Returns (prospect, any_source_found, any_field_missing) strictly following REI instructions."""
+    """Returns (prospect, any_source_found, any_field_missing) strictly following official instructions."""
     import pandas as pd
     sources = list(ghq_docs) + list(rfp_docs)
     merged = {f: "" for f in LABELS}
@@ -301,7 +378,7 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
         combined_other = "\n\n".join(other_texts)
         if combined_other.strip() and USE_LLM_FALLBACK:
             try:
-                log.info("      [PROSPECT] Reviewing all uploaded documents (census notes & invoices) per REI instructions...")
+                log.info("      [PROSPECT] Reviewing all uploaded documents (census notes & invoices) per official instructions...")
                 from llm_client import extract_prospect_fields
                 llm_res = extract_prospect_fields(combined_other)
                 if llm_res:
@@ -316,6 +393,10 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
 
     # 3b. Harvest supported contact details (email, phone, EIN) from all current-submission documents
     _text_fill(merged, sources, list(all_docs or []))
+
+    sic_from_text = _sic_from_text(sources + list(all_docs or []))
+    if sic_from_text and ("-" in sic_from_text or not merged.get("sic")):
+        merged["sic"] = sic_from_text
 
     pr = Prospect()
     d = parse_date(merged.get("effective_date"))
