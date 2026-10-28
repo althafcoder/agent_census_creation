@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_preferred_name_and_middle_name_matching",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_preferred_name_middle_name_matching_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Employee legal first name in census differs from invoice subscriber name (e.g. Derek vs Kyle), but preferred first name, middle name, or alternate alias matches the invoice subscriber with matching surname and corroborating plan/tier or title.",
+  "applicable_conditions": [
+    "Census contains preferred first name, middle name, or alternate alias",
+    "Invoice subscriber first name matches census employee preferred or middle name",
+    "Employee surname matches invoice subscriber surname",
+    "Plan, tier, or job title corroborates identity"
+  ],
+  "required_validators": [
+    "RULE_16_PREFERRED_NAME_MATCHING",
+    "GATE_E_RECONCILIATION"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_19_preferred_name_alias_reconciliation"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-10-28T17:57:21.012296",
+  "updated_at": "2026-10-28T18:19:31.146936",
+  "compatibility": {
+    "instruction_hashes": [
+      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "preferred first name",
+      "middle name",
+      "first name",
+      "last name",
+      "name"
+    ],
+    "stage": "comparison"
+  },
+  "trigger": {
+    "issue_type": "PREFERRED_NAME_ALIAS_MISMATCH",
+    "field": "preferred_first",
+    "conditions": [
+      "employee unmatched on invoice despite preferred name or middle name match"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 16.3",
+    "Section 16.6",
+    "Repair Section 2"
+  ],
+  "root_cause": {
+    "code": "PREFERRED_NAME_ALIAS_MISMATCH",
+    "verification_status": "verified",
+    "summary": "Reconcile census employee with invoice subscriber via preferred first name, middle name, or known alias, assigning 95% match score and preserving exact invoice subscriber name."
+  },
+  "strategy": {
+    "action": "RESOLVE_PREFERRED_NAME_ALIAS",
+    "parameters": {
+      "match_score": 0.95,
+      "preserve_invoice_name": true
+    },
+    "preconditions": [
+      "preferred name or middle name matches invoice subscriber first name with matching surname"
+    ],
+    "exclusions": [
+      "do not match if surname differs and no corroborating evidence exists"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_19"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_16_PREFERRED_NAME_MATCHING"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-28T18:19:31.043475"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261028_181931",
+    "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

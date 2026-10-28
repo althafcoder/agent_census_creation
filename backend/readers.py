@@ -37,6 +37,9 @@ class RawDoc:
     extracted_text_path: Path | None = None
     form_fields: dict = field(default_factory=dict)   # Interactive PDF form fields (pypdf)
     conflicts: list[str] = field(default_factory=list) # Conflicts between text and form values
+    access_status: str = "READABLE"
+    decrypted: bool = False
+    working_path: Path | None = None
 
     @property
     def name(self) -> str:
@@ -134,6 +137,32 @@ def _read_excel(path: Path) -> RawDoc:
         except ImportError:
             target = _xls_to_xlsx(path)
 
+    # Check for password-to-open encryption
+    try:
+        from protected_files import detect_file_encryption, get_current_store, unlock_office_file
+        is_enc, _ = detect_file_encryption(target)
+        if is_enc:
+            cands = get_current_store().get_candidates(path.name)
+            unlocked = False
+            for cand in cands:
+                log.info("   [APPLYING PASSWORD] Testing password on '%s'...", path.name)
+                ok, tmp_dec, _ = unlock_office_file(target, cand)
+                if ok and tmp_dec:
+                    target = tmp_dec
+                    doc.decrypted = True
+                    doc.access_status = "UNLOCKED_AND_READ"
+                    doc.working_path = tmp_dec
+                    doc.extraction_method += " (Decrypted successfully)"
+                    unlocked = True
+                    log.info("   [PASSWORD APPLIED] Successfully unlocked '%s'!", path.name)
+                    break
+            if not unlocked:
+                raise PermissionError(f"File {path.name} is password-protected and could not be unlocked with available credentials.")
+    except PermissionError:
+        raise
+    except Exception as exc:
+        log.debug("Pre-read encryption check skipped for %s: %s", path.name, exc)
+
     sheets = None
     # 1. Try calamine engine first if available (faster, resilient to openpyxl XML edge-cases)
     try:
@@ -164,8 +193,8 @@ def _read_excel(path: Path) -> RawDoc:
         df = df.dropna(how="all").reset_index(drop=True)
         if not df.empty:
             doc.tables.append(RawTable(str(name), df))
-            doc.text += "\n".join(" | ".join("" if pd.isna(c) else str(c) for c in row)
-                                  for row in df.values.tolist()[:60]) + "\n"
+            doc.text += f"=== Sheet: {name} ===\n" + "\n".join(" | ".join("" if pd.isna(c) else str(c) for c in row)
+                                  for row in df.values.tolist()) + "\n"
     return doc
 
 
@@ -173,9 +202,10 @@ def _read_csv(path: Path) -> RawDoc:
     df = pd.read_csv(path, header=None, dtype=object, keep_default_na=False, encoding_errors="replace")
     df = df.replace("", pd.NA).dropna(how="all").dropna(axis=1, how="all").reset_index(drop=True)
     doc = RawDoc(path, ".csv", [RawTable(path.stem, df)],
-                  "\n".join(" | ".join("" if pd.isna(c) else str(c) for c in r) for r in df.values.tolist()[:60]))
+                  "\n".join(" | ".join("" if pd.isna(c) else str(c) for c in r) for r in df.values.tolist()))
     doc.extraction_method = "CSV File (Structured Table Parsing)"
     return doc
+
 
 
 # -------------------------------------------------------------------- pdf ----
@@ -585,7 +615,10 @@ def save_extracted_text(doc: RawDoc, dest_dir: Path | None = None) -> Path:
         for idx, t in enumerate(doc.tables, 1):
             lines.append(f"\n[Table {idx}: {t.name} (Rows: {len(t.df)}, Columns: {t.df.shape[1]})]")
             try:
-                tbl_sample = t.df.head(60).to_string(index=False, header=False)
+                if len(t.df) <= 500:
+                    tbl_sample = t.df.to_string(index=False, header=False)
+                else:
+                    tbl_sample = f"[Full Table: {len(t.df)} rows across {t.df.shape[1]} columns]\n" + t.df.head(100).to_string(index=False, header=False) + f"\n... [{len(t.df) - 150} rows omitted from summary; full table retained in memory] ...\n" + t.df.tail(50).to_string(index=False, header=False)
                 lines.append(tbl_sample)
             except Exception:
                 lines.append("[Table string conversion omitted]")
@@ -606,24 +639,12 @@ def save_extracted_text(doc: RawDoc, dest_dir: Path | None = None) -> Path:
 
 
 def read_all(source: Path | list[Path | str], dest_dir: Path | None = None) -> list[RawDoc]:
-    raw_paths = [Path(p) for p in source] if isinstance(source, list) else [Path(source)]
-    paths: list[Path] = []
-    for p in raw_paths:
-        if p.is_dir():
-            paths.extend(sorted(p.iterdir()))
-        elif p.is_file():
-            paths.append(p)
-
-    docs = []
-    for p in paths:
-        if p.name.startswith(("~$", ".")) or p.suffix.lower() not in SUPPORTED:
-            continue
-        try:
-            log.info("   -> Reading file: %-42s (%s)", p.name, p.suffix.lower())
-            doc = read_file(p)
-            save_extracted_text(doc, dest_dir)
-            docs.append(doc)
-        except Exception as exc:  # keep going - one bad file must not kill the run
-            log.error("Could not read %s: %s", p.name, exc)
+    from protected_files import execute_access_preflight
+    docs, _ = execute_access_preflight(
+        source,
+        dest_dir=dest_dir,
+        read_file_func=read_file,
+        save_text_func=save_extracted_text,
+    )
     return docs
 

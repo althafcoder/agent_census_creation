@@ -12,7 +12,8 @@ import pandas as pd
 from classifier import Header, body, detect_header
 from models import Census, Person
 from readers import RawDoc
-from utils import (clean, display_name, is_blank, name_key, parse_date, split_full_name,
+from utils import (build_gender_candidate, clean, display_name, is_blank, is_unavailable_gender,
+                   name_key, parse_date, resolve_gender_candidates, split_full_name,
                    std_cobra, std_coverage, std_gender, std_relationship, std_zip, to_money)
 
 log = logging.getLogger("census.builder")
@@ -26,6 +27,11 @@ class _DepRef:
     emp_key: str = ""
     positional: Optional[Person] = None     # canonical employee from the same row/table position
     file: str = ""
+    table: str = ""
+    is_non_med: bool = False
+    plan_type: str = ""
+    plan: str = ""
+    coverage_tier: str = ""
 
 
 @dataclass
@@ -36,6 +42,7 @@ class _State:
     by_name: dict = field(default_factory=dict)     # name_key -> [Person]
     files_of: dict = field(default_factory=dict)    # id(Person) -> set(files)
     tables_of: dict = field(default_factory=dict)   # id(Person) -> set((file, table))
+    med_tables_of: dict = field(default_factory=dict) # id(Person) -> set((file, table)) with medical rows
     employees: list = field(default_factory=list)
     dep_refs: list = field(default_factory=list)
     has_cov_col: bool = False
@@ -63,6 +70,53 @@ class _Row:
     def t(self, f: str) -> str:
         return clean(self.g(f))
 
+    def gender_candidates(
+        self,
+        is_dep: bool = False,
+        demo_is_employee: bool = False,
+        source_file: str = "",
+        wide_slot: Optional[tuple[str, str]] = None,
+    ) -> list[dict]:
+        """Collect all candidate gender/sex columns for this person in physical column order."""
+        col_pairs: list[tuple[int, str]] = []
+        if wide_slot is not None:
+            wide_cands = getattr(self.h, "wide_candidate_columns", {}).get(wide_slot, {}).get("gender", [])
+            if wide_cands:
+                col_pairs.extend(wide_cands)
+            else:
+                flds = self.h.wide_deps.get(wide_slot, {})
+                if "gender" in flds:
+                    idx = flds["gender"]
+                    lab = self.h.labels[idx] if idx < len(self.h.labels) else "gender"
+                    col_pairs.append((idx, lab))
+        elif is_dep:
+            dep_cands = getattr(self.h, "candidate_columns", {}).get("dep_gender", [])
+            if dep_cands:
+                col_pairs.extend(dep_cands)
+            elif "dep_gender" in self.h.columns:
+                idx = self.h.columns["dep_gender"]
+                col_pairs.append((idx, self.h.labels[idx] if idx < len(self.h.labels) else "dep_gender"))
+            if not demo_is_employee and not col_pairs:
+                emp_cands = getattr(self.h, "candidate_columns", {}).get("gender", [])
+                if emp_cands:
+                    col_pairs.extend(emp_cands)
+                elif "gender" in self.h.columns:
+                    idx = self.h.columns["gender"]
+                    col_pairs.append((idx, self.h.labels[idx] if idx < len(self.h.labels) else "gender"))
+        else:
+            emp_cands = getattr(self.h, "candidate_columns", {}).get("gender", [])
+            if emp_cands:
+                col_pairs.extend(emp_cands)
+            elif "gender" in self.h.columns:
+                idx = self.h.columns["gender"]
+                col_pairs.append((idx, self.h.labels[idx] if idx < len(self.h.labels) else "gender"))
+
+        out: list[dict] = []
+        for idx, lab in col_pairs:
+            raw_v = self.s.iloc[idx] if idx < len(self.s) else None
+            out.append(build_gender_candidate(raw_v, source=source_file, column_index=idx, header=lab))
+        return out
+
 
 def _is_masked_or_empty(s: str) -> bool:
     if not s:
@@ -79,7 +133,7 @@ def _is_masked_or_empty(s: str) -> bool:
 
 def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
     combined = f"{clean(plan_name)} {clean(plan_type)}".lower()
-    non_med_words = ("dent", "vis", "life", "lif", "disab", "ltd", "std", "accid", "hsa", "fsa", "legal", "pet", "indemn", "crit", "identity", "ad&d", "spending")
+    non_med_words = ("dent", "vis", "life", "lif", "disab", "ltd", "std", "accid", "hsa", "fsa", "legal", "pet", "indemn", "crit", "identity", "ad&d", "spending", "401k", "401(k)", "401 k", "retirement", "pension", "commuter", "transit", "parking", "eap")
     # Strong, unambiguous non-medical line signals take priority: provider/plan codes such as
     # AETDEN / AET-DMO DEN / VSP / METLDI LIF / METLDI LTD. These override weak tokens like 'ppo'
     # that appear inside dental provider codes (e.g. 'AET-APPO').
@@ -94,7 +148,7 @@ def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
     if pt:
         if pt == "medical":
             return False
-        if any(w in pt for w in ("dent", "vis", "life", "disab", "ltd", "std", "accid", "hsa", "fsa", "legal", "pet", "indemn", "crit")):
+        if any(w in pt for w in ("dent", "vis", "life", "disab", "ltd", "std", "accid", "hsa", "fsa", "legal", "pet", "indemn", "crit", "401k", "401(k)", "retirement", "pension", "commuter", "eap")):
             return True
         if "med" in pt or "health" in pt:
             return False
@@ -111,17 +165,54 @@ def _fill(person: Person, **kw):
     for k, v in kw.items():
         if v in (None, ""):
             continue
+        if k == "aliases" and isinstance(v, list):
+            for a in v:
+                if a and a not in person.aliases:
+                    person.aliases.append(a)
+            continue
         curr = getattr(person, k, None)
         if not curr or (k == "coverage" and str(curr).lower() in ("enrolled", "active", "yes") and str(v).lower() not in ("enrolled", "active", "yes")):
             setattr(person, k, v)
 
 
+def _resolve_person_gender(p: Person) -> None:
+    """Resolve all same-person gender/sex candidates across columns and files without guessing."""
+    if not p.gender_candidates:
+        return
+    # Deduplicate identical observations while preserving physical order
+    deduped: list[dict] = []
+    seen_keys: set[tuple] = set()
+    for c in p.gender_candidates:
+        k = (c.get("source", ""), c.get("column_index", -1), c.get("header", ""), c.get("raw", ""))
+        if k not in seen_keys:
+            seen_keys.add(k)
+            deduped.append(c)
+    p.gender_candidates = deduped
+
+    resolved, status, detail = resolve_gender_candidates(p.gender_candidates)
+    p.gender = resolved
+    p.gender_resolution_status = status
+
+    # Clear stale gender notes before applying current resolution state
+    p.notes = [
+        n for n in p.notes
+        if not str(n[0]).startswith(("Missing Gender", "Invalid Gender Value", "Conflicting Gender Values"))
+    ]
+    if status == "CONFLICT":
+        p.note(f"Conflicting Gender Values ({detail}) - requires clarification", red=True)
+    elif status == "INVALID":
+        p.note(f"Invalid Gender Value: '{detail}'", red=True)
+
+
 def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> None:
     """Apply template standards + validation notes to a freshly parsed person."""
-    g_raw = row_vals.get("gender", "")
-    p.gender = std_gender(g_raw)
-    if g_raw and not p.gender:
-        p.note(f"Invalid Gender Value: '{g_raw}'")
+    g_cands = row_vals.get("gender_candidates")
+    if g_cands:
+        p.gender_candidates.extend(g_cands)
+    elif "gender" in row_vals:
+        g_raw = row_vals.get("gender", "")
+        p.gender_candidates.append(build_gender_candidate(g_raw, source=p.source, column_index=-1, header="gender"))
+    _resolve_person_gender(p)
     d_raw = row_vals.get("dob")
     p.dob = parse_date(d_raw)
     if not is_blank(d_raw) and not p.dob:
@@ -131,6 +222,7 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
     p.zip, ok = std_zip(row_vals.get("zip"))
     if not ok:
         p.note(f"Invalid ZIP Format: '{p.zip}'")
+    p.address = clean(row_vals.get("address"))
     # "Medical/Plan/Election/Tier/Coverage" column containing EE/ES/EC/EF/WO/WP/NE
     # but the header says "PLAN" or "MEDICAL PLAN" - scan the row values for coverage codes.
     cov = row_vals.get("coverage") if row_vals.get("coverage") is not None else ""
@@ -147,6 +239,16 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
     if is_employee and clean(cov) and not p.coverage and clean(cov).lower() not in ("enrolled", "active", "yes"):
         p.note(f"Invalid Coverage Code: '{clean(cov)}'", red=True)
     if is_employee:
+        p.preferred_first = clean(row_vals.get("preferred_first", getattr(p, "preferred_first", "")))
+        p.middle_name = clean(row_vals.get("middle_name", getattr(p, "middle_name", "")))
+        if p.preferred_first and p.last:
+            a1 = f"{p.preferred_first} {p.last}".strip()
+            if a1 not in p.aliases:
+                p.aliases.append(a1)
+        if p.middle_name and p.last and p.middle_name.lower() != p.preferred_first.lower():
+            a2 = f"{p.middle_name} {p.last}".strip()
+            if a2 not in p.aliases:
+                p.aliases.append(a2)
         p.cobra = std_cobra(row_vals.get("cobra")) or "N"
         p.plan = clean(row_vals.get("plan"))
         p.premium = to_money(row_vals.get("premium"))
@@ -201,6 +303,8 @@ _JUNK_NAME_WORDS = {"required", "optional", "first", "firstname", "first name", 
 
 def _names(r: _Row, first_f="first_name", last_f="last_name", full_f="full_name") -> tuple[str, str]:
     first, last = r.t(first_f), r.t(last_f)
+    if not first and "preferred_first" in r.h.columns:
+        first = r.t("preferred_first")
     if (not first or not last) and r.t(full_f) and not (first and last):
         f2, l2 = split_full_name(r.t(full_f))
         first, last = first or f2, last or l2
@@ -214,57 +318,107 @@ def _names(r: _Row, first_f="first_name", last_f="last_name", full_f="full_name"
     return first, last
 
 
+def _match_employee_by_name(st: _State, first: str = "", last: str = "", emp_key: str = "") -> list[Person]:
+    """Find matching employee(s) by exact name_key, falling back to primary-first + punctuation-insensitive last name."""
+    nk = emp_key or name_key(first, last)
+    if nk and st.by_name.get(nk):
+        return st.by_name[nk]
+    if not first and not last and emp_key:
+        first, last = split_full_name(emp_key)
+    p_first = re.sub(r"[^a-z0-9]", "", (first.split()[0] if first and first.split() else "")).lower()
+    p_last = re.sub(r"[^a-z0-9]", "", (last or "")).lower()
+    if not p_first or not p_last:
+        return []
+    matches = []
+    for cand in st.employees:
+        if getattr(cand, "is_duplicate", False):
+            continue
+        c_first = re.sub(r"[^a-z0-9]", "", (cand.first.split()[0] if cand.first and cand.first.split() else "")).lower()
+        c_last = re.sub(r"[^a-z0-9]", "", (cand.last or "")).lower()
+        if c_first == p_first and c_last == p_last:
+            matches.append(cand)
+            continue
+        c_pref = re.sub(r"[^a-z0-9]", "", (cand.preferred_first.split()[0] if cand.preferred_first and cand.preferred_first.split() else "")).lower()
+        c_mid = re.sub(r"[^a-z0-9]", "", (cand.middle_name.split()[0] if cand.middle_name and cand.middle_name.split() else "")).lower()
+        if c_last == p_last and (p_first in (c_pref, c_mid)):
+            matches.append(cand)
+    return matches
+
+
 # ----------------------------------------------------------- registration ---
-def _register_employee(p: Person, fname: str, st: _State, is_dep_listing: bool = False, tname: str = "") -> Person:
+def _register_employee(
+    p: Person,
+    fname: str,
+    st: _State,
+    is_dep_listing: bool = False,
+    tname: str = "",
+    is_non_med: bool = False,
+) -> Person:
     """Merge across files, flag same-file duplicates, return the canonical Person."""
     nk = name_key(p.first, p.last)
+    name_cands = _match_employee_by_name(st, p.first, p.last, nk)
     existing = None
     if p.sub_id and p.sub_id in st.by_id:
         existing = st.by_id[p.sub_id]
     elif (nk, p.dob) in st.by_nd and p.dob:
         existing = st.by_nd[(nk, p.dob)]
-    elif nk and not p.dob and st.by_name.get(nk):
-        existing = st.by_name[nk][0]
-    elif nk and p.dob and st.by_name.get(nk):
-        cand = [e for e in st.by_name[nk] if not e.dob]
+    elif nk and not p.dob and name_cands:
+        existing = name_cands[0]
+    elif nk and p.dob and name_cands:
+        cand = [e for e in name_cands if not e.dob or e.dob == p.dob]
         existing = cand[0] if cand else None
 
     if existing is not None:
         files = st.files_of[id(existing)]
         tables = st.tables_of.setdefault(id(existing), set())
-        if (fname, tname) in tables and not is_dep_listing:
-            # same file and same table => true duplicate employee
+        med_tables = st.med_tables_of.setdefault(id(existing), set())
+        if (fname, tname) in tables and not is_dep_listing and not is_non_med and (fname, tname) in med_tables:
+            # same file and same table with prior medical row => true duplicate employee
             p.note("Duplicate Employee", red=True)
             p.is_duplicate = True
-            existing.note("Duplicate Employee", red=True)
             st.census.raw_employee_rows += 1
             st.census.duplicate_employees += 1
             st.files_of[id(p)] = {fname}
             st.tables_of[id(p)] = {(fname, tname)}
+            st.med_tables_of[id(p)] = {(fname, tname)}
             st.employees.append(p)
             st.census.people.append(p)
             return existing                                  # dependents link to the first record
 
-        # Different table/page within the same file OR another file => merge complementary data
+        # Different table/page within the same file, benefit line, OR another file => merge complementary data
         if fname not in files:
             st.census.raw_employee_rows += 1
             st.census.cross_file_merges += 1
             files.add(fname)
         tables.add((fname, tname))
+        if not is_non_med:
+            med_tables.add((fname, tname))
 
         if existing.coverage and p.coverage and existing.coverage != p.coverage:
             existing.note(f"Coverage differs across census files ({existing.coverage} vs {p.coverage}); "
                           f"first file kept")
-        _fill(existing, first=p.first, last=p.last, gender=p.gender, dob=p.dob, zip=p.zip,
+        if p.gender_candidates:
+            existing.gender_candidates.extend(p.gender_candidates)
+            _resolve_person_gender(existing)
+        if p.coverage_associations:
+            existing.coverage_associations.extend(p.coverage_associations)
+        _fill(existing, first=p.first, last=p.last, preferred_first=p.preferred_first,
+              middle_name=p.middle_name, aliases=p.aliases, gender=p.gender, dob=p.dob, zip=p.zip,
               coverage=p.coverage, cobra=p.cobra, plan=p.plan, premium=p.premium,
               sub_id=p.sub_id, hire_date=p.hire_date, effective_date=p.effective_date, salary=p.salary,
-              job_title=p.job_title, worker_category=p.worker_category)
+              job_title=p.job_title, worker_category=p.worker_category,
+              eligibility_class=p.eligibility_class, position_status=p.position_status,
+              waive_reason=p.waive_reason)
         if not existing.salary and p.salary:
             existing.salary = p.salary
         if not existing.dob and p.dob:
             existing.notes = [n for n in existing.notes if n[0] != "Missing Date of Birth"]
         if not existing.hire_date and p.hire_date:
             existing.notes = [n for n in existing.notes if n[0] != "Missing Hire Date"]
+        if p.sub_id and p.sub_id not in st.by_id:
+            st.by_id[p.sub_id] = existing
+        if nk and existing not in st.by_name.get(nk, []):
+            st.by_name.setdefault(nk, []).append(existing)
         return existing
 
     if not p.record_id:
@@ -272,6 +426,7 @@ def _register_employee(p: Person, fname: str, st: _State, is_dep_listing: bool =
     st.census.raw_employee_rows += 1
     st.files_of[id(p)] = {fname}
     st.tables_of[id(p)] = {(fname, tname)}
+    st.med_tables_of[id(p)] = set() if is_non_med else {(fname, tname)}
     st.employees.append(p)
     st.census.people.append(p)
     if p.sub_id:
@@ -283,6 +438,8 @@ def _register_employee(p: Person, fname: str, st: _State, is_dep_listing: bool =
 
 # ------------------------------------------------------------ table parse ---
 def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
+    if tname.strip().lower() in ("data", "lookup", "lookups", "dropdown", "dropdowns", "validation", "lists", "codes"):
+        return False
     if any(w in tname.lower() for w in ["note", "company", "info", "summary", "population"]):
         for _, row in df.iterrows():
             text_vals = [clean(v) for v in row.dropna() if clean(v)]
@@ -298,6 +455,12 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
         return False
     # invoice-looking tables (premium + plan but no dob/coverage) are not census tables
     if "premium" in cols and "dob" not in cols and "coverage" not in cols and not hdr.wide_deps:
+        return False
+    # lookup/dropdown validation grids with only 'dep_full' and no demographic/employee columns are not census tables
+    if ("dep_full" in cols and "dep_first" not in cols and "dep_last" not in cols
+            and not any(k in cols for k in ("dob", "dep_dob", "gender", "dep_gender", "relationship",
+                                            "first_name", "last_name", "full_name",
+                                            "emp_first", "emp_last", "emp_full", "sub_id"))):
         return False
 
     st.has_cov_col |= "coverage" in cols
@@ -315,6 +478,9 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
         non_empty = [clean(v) for v in series.tolist() if clean(v)]
         if not non_empty:
             continue
+        first_cell = clean(series.iloc[0]).lower() if len(series) > 0 else ""
+        if first_cell in ("ex", "example", "sample", "eg", "e.g."):
+            continue
         joined = " ".join(v.lower() for v in non_empty)
         if joined.startswith(("total", "grand total", "count", "subtotal")):
             continue
@@ -325,17 +491,38 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
         pt_val = r.t("plan_type") if "plan_type" in cols else ""
         p_val = r.t("plan") if "plan" in cols else ""
         is_non_med = bool((pt_val or p_val) and _is_non_medical(p_val, pt_val))
+        has_benefit_lines = bool(dep_listing or "plan_type" in cols or "plan_category" in cols or ("plan" in cols and "premium" in cols))
+        cov_assoc = {
+            "file": fname,
+            "table": tname,
+            "plan_type": pt_val or ("Non-Medical" if is_non_med else ("Medical" if p_val else "Census")),
+            "plan": p_val,
+            "tier": clean(r.g("coverage")) if "coverage" in cols else "",
+            "is_medical": not is_non_med,
+        }
         if dep_listing:
             # Table has dependent columns (dep_first, dep_last, etc.)
             ef, el = _names(r)
-            # generic DOB/Gender columns describe the employee when the row's primary name columns name the employee
-            demo_is_employee = bool(ef or el)
+            dfirst, dlast = _names(r, "dep_first", "dep_last", "dep_full")
+            rel_raw = r.t("relationship")
+            rel_std = std_relationship(rel_raw) if rel_raw else ""
+            is_dep_row = bool(dfirst or dlast or rel_std in {"SP", "CH", "DP"})
+            demo_is_employee = not is_dep_row
+
             if not (ef or el) and any(k in cols for k in ("emp_first", "emp_last", "emp_full")):
                 ef, el = _names(r, "emp_first", "emp_last", "emp_full")
 
+            is_same_person_as_dep = bool(dfirst and dlast and name_key(ef, el) == name_key(dfirst, dlast))
             canon = None
-            if ef or el:
-                values = {"gender": r.t("gender"), "dob": r.g("dob"), "zip": r.g("zip"),
+            if (ef or el) and not is_same_person_as_dep:
+                emp_dob = r.g("emp_dob") if "emp_dob" in cols else (r.g("dob") if demo_is_employee else None)
+                emp_gender = r.t("emp_gender") if "emp_gender" in cols else (r.t("gender") if demo_is_employee else "")
+                values = {"gender": emp_gender,
+                          "gender_candidates": r.gender_candidates(is_dep=False, demo_is_employee=demo_is_employee, source_file=fname),
+                          "dob": emp_dob, "zip": r.g("zip"),
+                          "address": r.t("address") if "address" in cols else "",
+                          "preferred_first": r.t("preferred_first") if "preferred_first" in cols else "",
+                          "middle_name": r.t("middle_name") if "middle_name" in cols else "",
                           "hire": r.g("hire_date"), "status": r.g("status"), "salary": r.g("salary")}
                 values.update(_eligibility_vals(r))
                 if not is_non_med:
@@ -348,59 +535,54 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
                     values.update({"coverage": r.g("coverage"), "cobra": r.g("cobra"),
                                    "plan": r.g("plan"), "premium": prem, "effective_date": r.g("effective_date"),
                                    "salary": r.g("salary")})
-                rel_raw = r.t("relationship")
-                p_emp = Person("EE", ef, el, source=fname, sub_id=r.t("sub_id"), rel_raw=rel_raw)
+                p_emp = Person("EE", ef, el, source=fname, sub_id=r.t("sub_id"), rel_raw="EE")
                 p_emp.record_id = _next_record_id(st)
                 p_emp.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
+                p_emp.coverage_associations.append(dict(cov_assoc))
                 _standardise(p_emp, values, True, st)
-                canon = _register_employee(p_emp, fname, st, is_dep_listing=True, tname=tname)
+                canon = _register_employee(p_emp, fname, st, is_dep_listing=True, tname=tname, is_non_med=is_non_med)
                 canon.benefit_roster = canon.benefit_roster or is_roster
                 last_emp = canon
                 used = True
+            elif (ef or el) and is_same_person_as_dep:
+                canon = last_emp
 
-            if not is_non_med:
-                dfirst, dlast = _names(r, "dep_first", "dep_last", "dep_full")
-                if not (_is_masked_or_empty(dfirst) and _is_masked_or_empty(dlast)):
-                    rel_raw = r.t("relationship")
-                    p = Person("CH", dfirst, dlast, source=fname, rel_raw=rel_raw)
-                    p.record_id = _next_record_id(st)
-                    p.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
-                    if demo_is_employee:
-                        d_gender = r.t("dep_gender") if "dep_gender" in cols else ""
-                        d_dob = r.g("dep_dob") if "dep_dob" in cols else None
-                    else:
-                        d_gender = r.t("dep_gender") or r.t("gender")
-                        d_dob = r.g("dep_dob") if r.g("dep_dob") is not None else r.g("dob")
-                    _standardise(p, {"gender": d_gender, "dob": d_dob, "zip": r.g("zip")}, False, st)
-                    rel = std_relationship(rel_raw)
-                    if rel in {"SP", "CH"}:
-                        p.role = rel
-                    else:
-                        p.role = "CH"
-                        p.note("Missing Dependent Relationship" if not rel_raw else
-                               f"Unrecognised Relationship: '{rel_raw}'", red=True)
-                    emp_ref = name_key(ef, el) or name_key(*split_full_name(r.t("emp_full")))
-                    ref = _DepRef(p, sub_id=r.t("sub_id"), emp_key=emp_ref, positional=last_emp, file=fname)
-                    st.dep_refs.append(ref)
+            raw_dep_str = f"{r.t('dep_first')} {r.t('dep_last')} {r.t('dep_full')}".strip()
+            if _is_masked_or_empty(dfirst) and _is_masked_or_empty(dlast):
+                if raw_dep_str:
+                    st.census.masked_dependent_slots.append({
+                        "file": fname, "table": tname, "employee": f"{ef} {el}".strip(),
+                        "raw_value": raw_dep_str, "reason": "MASKED_PLACEHOLDER",
+                    })
+            elif dfirst or dlast or is_dep_row:
+                p = Person("CH", dfirst, dlast, source=fname, rel_raw=rel_raw)
+                p.record_id = _next_record_id(st)
+                p.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
+                p.coverage_associations.append(dict(cov_assoc))
+                if demo_is_employee:
+                    d_gender = r.t("dep_gender") if "dep_gender" in cols else ""
+                    d_dob = r.g("dep_dob") if "dep_dob" in cols else None
+                else:
+                    d_gender = r.t("dep_gender") or r.t("gender")
+                    d_dob = r.g("dep_dob") if r.g("dep_dob") is not None else r.g("dob")
+                d_gcands = r.gender_candidates(is_dep=True, demo_is_employee=demo_is_employee, source_file=fname)
+                _standardise(p, {"gender": d_gender, "gender_candidates": d_gcands, "dob": d_dob, "zip": r.g("zip"),
+                                 "address": r.t("address") if "address" in cols else ""}, False, st)
+                rel = std_relationship(rel_raw)
+                if rel in {"SP", "CH", "DP"}:
+                    p.role = rel
+                else:
+                    p.role = "CH"
+                    p.note("Missing Dependent Relationship" if not rel_raw else
+                           f"Unrecognised Relationship: '{rel_raw}'", red=True)
+                emp_ref = name_key(ef, el) or name_key(*split_full_name(r.t("emp_full")))
+                ref = _DepRef(p, sub_id=r.t("sub_id"), emp_key=emp_ref, positional=last_emp,
+                              file=fname, table=tname, is_non_med=is_non_med,
+                              plan_type=pt_val, plan=p_val, coverage_tier=clean(r.g("coverage")))
+                st.dep_refs.append(ref)
+                if not is_non_med:
                     st.census.raw_dependent_rows += 1
                     st.saw_dependent_source = True
-                    used = True
-            continue
-
-        if is_non_med:
-            # Register employee demographics without setting non-medical plan/coverage
-            first, last = _names(r)
-            if first or last:
-                values = {"gender": r.t("gender"), "dob": r.g("dob"), "zip": r.g("zip"),
-                          "hire": r.g("hire_date"), "status": r.g("status"), "effective_date": r.g("effective_date"),
-                          "salary": r.g("salary")}
-                values.update(_eligibility_vals(r))
-                p_emp = Person("EE", first, last, source=fname, sub_id=r.t("sub_id"))
-                p_emp.record_id = _next_record_id(st)
-                p_emp.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
-                _standardise(p_emp, values, True, st)
-                last_emp = _register_employee(p_emp, fname, st, tname=tname)
-                last_emp.benefit_roster = last_emp.benefit_roster or is_roster
                 used = True
             continue
 
@@ -416,7 +598,11 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
         if "relationship" not in cols:
             cov_val = clean(r.g("coverage")) if "coverage" in cols else ""
             is_emp_dep_col = any("dependent" in lab.lower() for lab in hdr.labels[:3])
-            if last_emp and (is_emp_dep_col or last_emp.coverage in ("ES", "EC", "FAM", "EF", "COUPLE")):
+            has_emp_evidence = bool(
+                r.g("hire_date") or r.g("salary") or r.g("job_title") or
+                r.g("worker_category") or r.g("position_status") or r.t("sub_id")
+            )
+            if last_emp and not has_emp_evidence and (is_emp_dep_col or last_emp.coverage in ("ES", "EC", "FAM", "EF", "COUPLE")):
                 if not cov_val:
                     if last_emp.coverage == "ES":
                         rel = "SP"
@@ -428,23 +614,55 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
                     else:
                         rel = "CH"
 
+        if is_non_med and rel not in {"SP", "CH", "DP", "?"}:
+            # Register employee demographics without setting non-medical plan/coverage
+            values = {"gender": r.t("gender"),
+                      "gender_candidates": r.gender_candidates(is_dep=False, demo_is_employee=True, source_file=fname),
+                      "dob": r.g("dob"), "zip": r.g("zip"),
+                      "address": r.t("address") if "address" in cols else "",
+                      "preferred_first": r.t("preferred_first") if "preferred_first" in cols else "",
+                      "middle_name": r.t("middle_name") if "middle_name" in cols else "",
+                      "hire": r.g("hire_date"), "status": r.g("status"), "effective_date": r.g("effective_date"),
+                      "salary": r.g("salary")}
+            values.update(_eligibility_vals(r))
+            p_emp = Person("EE", first, last, source=fname, sub_id=r.t("sub_id"))
+            p_emp.record_id = _next_record_id(st)
+            p_emp.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
+            p_emp.coverage_associations.append(dict(cov_assoc))
+            _standardise(p_emp, values, True, st)
+            last_emp = _register_employee(p_emp, fname, st, is_dep_listing=True, tname=tname, is_non_med=True)
+            last_emp.benefit_roster = last_emp.benefit_roster or is_roster
+            used = True
+            continue
+
         prem = r.g("premium")
         if prem is None and ("ee_cost" in cols or "er_cost" in cols):
             ee_c = to_money(r.g("ee_cost")) or 0.0
             er_c = to_money(r.g("er_cost")) or 0.0
             if ee_c > 0 or er_c > 0:
                 prem = round(ee_c + er_c, 2)
-        values = {"gender": r.t("gender"), "dob": r.g("dob"), "zip": r.g("zip"),
-                  "coverage": r.g("coverage"), "cobra": r.g("cobra"), "plan": r.g("plan"),
-                  "premium": prem, "hire": r.g("hire_date"), "status": r.g("status"),
+        is_dep_row = rel in {"SP", "CH", "DP", "?"}
+        values = {"gender": r.t("gender"),
+                  "gender_candidates": r.gender_candidates(is_dep=is_dep_row, demo_is_employee=not is_dep_row, source_file=fname),
+                  "dob": r.g("dob"), "zip": r.g("zip"),
+                  "address": r.t("address") if "address" in cols else "",
+                  "preferred_first": r.t("preferred_first") if "preferred_first" in cols else "",
+                  "middle_name": r.t("middle_name") if "middle_name" in cols else "",
+                  "coverage": r.g("coverage") if not is_non_med else "",
+                  "cobra": r.g("cobra") if not is_non_med else "",
+                  "plan": r.g("plan") if not is_non_med else "",
+                  "premium": prem if not is_non_med else None,
+                  "hire": r.g("hire_date"), "status": r.g("status"),
                   "effective_date": r.g("effective_date"), "salary": r.g("salary")}
         values.update(_eligibility_vals(r))
 
-        if rel in {"SP", "CH", "?"}:
-            st.saw_dependent_source = True
+        if is_dep_row:
+            if not is_non_med:
+                st.saw_dependent_source = True
             p = Person("CH" if rel == "?" else rel, first, last, source=fname, rel_raw=rel_raw)
             p.record_id = _next_record_id(st)
             p.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
+            p.coverage_associations.append(dict(cov_assoc))
             _standardise(p, values, False, st)
             if rel == "?":
                 p.note(f"Unrecognised Relationship: '{rel_raw}' - requires review", red=True)
@@ -454,8 +672,11 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
             if not emp_ref and r.t("full_name") and r.t("first_name") and r.t("last_name"):
                 emp_ref = name_key(*split_full_name(r.t("full_name")))
             st.dep_refs.append(_DepRef(p, sub_id=r.t("sub_id"), emp_key=emp_ref,
-                                       positional=last_emp, file=fname))
-            st.census.raw_dependent_rows += 1
+                                       positional=last_emp, file=fname, table=tname,
+                                       is_non_med=is_non_med, plan_type=pt_val, plan=p_val,
+                                       coverage_tier=clean(r.g("coverage"))))
+            if not is_non_med:
+                st.census.raw_dependent_rows += 1
             used = True
             continue
 
@@ -463,8 +684,9 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
         p = Person("EE", first, last, source=fname, sub_id=r.t("sub_id"), rel_raw=rel_raw)
         p.record_id = _next_record_id(st)
         p.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
+        p.coverage_associations.append(dict(cov_assoc))
         _standardise(p, values, True, st)
-        canon = _register_employee(p, fname, st, tname=tname)
+        canon = _register_employee(p, fname, st, is_dep_listing=has_benefit_lines, tname=tname, is_non_med=is_non_med)
         canon.benefit_roster = canon.benefit_roster or is_roster
         last_emp = canon
         used = True
@@ -479,14 +701,29 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
             if not (dfirst or dlast or not is_blank(ddob)):
                 continue
             if _is_masked_or_empty(dfirst) and _is_masked_or_empty(dlast):
+                raw_wide = f"{dfirst} {dlast} {gv('name')}".strip()
+                if raw_wide:
+                    st.census.masked_dependent_slots.append({
+                        "file": fname, "table": tname, "employee": f"{first} {last}".strip(),
+                        "slot": f"{kind}{n}", "raw_value": raw_wide, "reason": "MASKED_PLACEHOLDER",
+                    })
                 continue
-            dp = Person(kind, dfirst, dlast, source=fname, rel_raw=kind)
+            dp_role = kind
+            rel_str = gv("rel")
+            if rel_str:
+                std_r = std_relationship(rel_str)
+                if std_r in ("SP", "CH"):
+                    dp_role = std_r
+            dp = Person(dp_role, dfirst, dlast, source=fname, rel_raw=rel_str or kind)
             dp.record_id = _next_record_id(st)
             dp.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
-            _standardise(dp, {"gender": gv("gender"), "dob": ddob}, False, st)
-            st.dep_refs.append(_DepRef(dp, positional=canon, file=fname))
-            st.census.raw_dependent_rows += 1
-            st.saw_dependent_source = True
+            dp.coverage_associations.append(dict(cov_assoc))
+            wide_gcands = r.gender_candidates(wide_slot=(kind, n), source_file=fname)
+            _standardise(dp, {"gender": gv("gender"), "gender_candidates": wide_gcands, "dob": ddob, "relationship": rel_str or dp_role}, False, st)
+            st.dep_refs.append(_DepRef(dp, positional=canon, file=fname, table=tname, is_non_med=is_non_med))
+            if not is_non_med:
+                st.census.raw_dependent_rows += 1
+                st.saw_dependent_source = True
     return used
 
 
@@ -525,6 +762,10 @@ def extract_waiting_period_rule(docs: list[RawDoc]) -> Optional[dict]:
 
     # 1) Calendar rule - the most specific declaration, so it wins over any numeric wording.
     for text in texts:
+        # Check for 'first day of the month following N days'
+        m_fom_days = re.search(r"(?:first|1st)\s+day\s+of\s+(?:the\s+)?month\s+following\s+(\d{1,3})\s*days?", text, re.I)
+        if m_fom_days:
+            return {"kind": "first_of_month_after_days", "days": int(m_fom_days.group(1))}
         for pat in _WAIT_RULE_RES:
             if pat.search(text):
                 return {"kind": "first_of_month", "days": None}
@@ -559,7 +800,7 @@ def extract_waiting_period_days(docs: list[RawDoc]) -> Optional[int]:
     """The declared waiting period in days, or None when the plan states a non-numeric rule
     (e.g. '1st of Month > DOH') or states none at all."""
     rule = extract_waiting_period_rule(docs)
-    if rule and rule.get("kind") == "days":
+    if rule and rule.get("kind") in ("days", "first_of_month_after_days"):
         return rule.get("days")
     return None
 
@@ -574,6 +815,12 @@ def _waiting_period_end(hire, rule: Optional[dict]):
         if not days:
             return None
         return hire + _dt.timedelta(days=int(days))
+    if kind == "first_of_month_after_days":
+        days = rule.get("days", 60)
+        target = hire + _dt.timedelta(days=int(days))
+        year, month = target.year, target.month
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+        return _dt.date(year, month, 1)
     if kind == "first_of_month":
         # '1st of Month > DOH' - the first day of the month AFTER the hire month.
         year, month = hire.year, hire.month
@@ -646,7 +893,7 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
         if re.search(r"\bwaiting\s+period\b.*(?:eligible|come\s+onto)", t, re.I):
             wp_broker_flag = True
 
-    if wp_broker_flag:
+    if wp_broker_flag and wp_notes_count > 0:
         candidates = []
         for e in census.employees:
             if e.plan and e.plan.upper() not in ("NA", "N/A", "COST", "WAIVED", "NOT ELIGIBLE"):
@@ -698,10 +945,21 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
 
         # 1) Positive non-eligibility evidence (structural)
         ineligible = False
-        if cat and dominant_cat and cat != dominant_cat and not has_waiver:
+        worker_info = f"{e.worker_category} {e.job_title} {e.position_status} {e.salary}".lower()
+        if re.search(r"\b(temp|temporary|intern|seasonal|prn|per\s*diem)\b", worker_info):
             ineligible = True
-        if eclass and enrolled_classes and eclass not in enrolled_classes and not has_waiver:
+        elif re.search(r"\b(part[\s\-]?time|pt)\b", worker_info) and not has_waiver:
             ineligible = True
+        else:
+            # Check for hours < 30 per week (e.g. "20 hrs", "25 hours/week", "hours: 24")
+            m_hrs = re.search(r"(\d+(?:\.\d+)?)\s*(?:hrs?|hours?|hours?/week|hrs?/wk)", worker_info)
+            if m_hrs and float(m_hrs.group(1)) < 30.0 and not has_waiver:
+                ineligible = True
+            elif cat and dominant_cat and cat != dominant_cat and not has_waiver:
+                ineligible = True
+            elif eclass and enrolled_classes and eclass not in enrolled_classes and not has_waiver:
+                ineligible = True
+
         if ineligible:
             e.coverage = "NE"
             if not e.plan:
@@ -710,17 +968,31 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
                 e.cobra = "N"
             continue
 
-        # 2) Waiting period: the employee's waiting period has not yet elapsed on the reference date
+        # 2) Waiting period: check hire date vs. proposed effective date / invoice reference date
         hire = _as_date(e.hire_date)
-        if hire and ref and rule:
-            end = _waiting_period_end(hire, rule)
-            if end and end > ref and (ref - hire).days >= 0:
+        if hire:
+            eff_rule = rule or {"kind": "days", "days": 30}
+            end = _waiting_period_end(hire, eff_rule)
+            is_wp = False
+            # Condition A: Waiting period not elapsed as of invoice/submission reference date (and hired on or before ref)
+            if ref and _as_date(ref) and hire <= _as_date(ref):
+                ref_d = _as_date(ref)
+                if end and end > ref_d:
+                    is_wp = True
+            # Condition B: Hired after reference date (or no invoice) - check against proposed effective date
+            elif eff_dt and _as_date(eff_dt) and hire <= _as_date(eff_dt):
+                eff_d = _as_date(eff_dt)
+                if (end and end > eff_d) or (0 <= (eff_d - hire).days <= 90):
+                    is_wp = True
+
+            if is_wp:
                 e.coverage = "WP"
                 if not e.plan:
                     e.plan = "NA"
                 if not e.cobra:
                     e.cobra = "N"
                 continue
+
 
         # 2b) Roster absence
         if roster_authoritative and not getattr(e, "benefit_roster", False) and not has_waiver:
@@ -743,24 +1015,64 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
             if not e.cobra:
                 e.cobra = "N"
 
-    # Finalize eligibility_status and validate subscriber linkage on all people
+    # Finalize eligibility_status, part-time exclusions, dispositions, and subscriber linkage on all people
+    excluded_pt_deps: list[Person] = []
     for e in census.employees:
+        worker_info = f"{e.worker_category} {e.eligibility_class} {e.job_title} {e.position_status} {e.salary}".lower()
+        m_hrs = re.search(r"(\d+(?:\.\d+)?)\s*(?:hrs?|hours?|hours?/week|hrs?/wk)", worker_info)
+        is_pt = bool(
+            re.search(r"\b(part[\s\-]?time|pt)\b", worker_info)
+            or (m_hrs and float(m_hrs.group(1)) < 30.0)
+        )
         if e.coverage in ("EE", "ES", "EC", "FAM", "EF", "COUPLE") or (e.plan and e.plan not in ("", "NA", "N/A")):
             e.eligibility_status = "ENROLLED"
+            e.disposition = "INCLUDE_ACTIVE_MEDICAL"
         elif e.coverage == "WP":
             e.eligibility_status = "WAITING_PERIOD"
+            e.disposition = "RETAIN_MEDICAL_STATUS"
         elif e.coverage == "WO":
             e.eligibility_status = "WAIVED"
+            e.disposition = "EXCLUDE_PART_TIME" if is_pt else "RETAIN_MEDICAL_STATUS"
+            if is_pt and e.dependents:
+                for dep in list(e.dependents):
+                    dep.disposition = "EXCLUDE_PART_TIME"
+                    dep.eligibility_status = "EXCLUDED_PART_TIME"
+                    dep.subscriber_id = e.record_id
+                    if dep not in census.excluded_dependents:
+                        census.excluded_dependents.append(dep)
+                    excluded_pt_deps.append(dep)
+                e.dependents.clear()
         elif e.coverage == "NE":
             e.eligibility_status = "NOT_ELIGIBLE"
+            e.disposition = "EXCLUDE_PART_TIME" if is_pt else "RETAIN_MEDICAL_STATUS"
+            if is_pt and e.dependents:
+                for dep in list(e.dependents):
+                    dep.disposition = "EXCLUDE_PART_TIME"
+                    dep.eligibility_status = "EXCLUDED_PART_TIME"
+                    dep.subscriber_id = e.record_id
+                    if dep not in census.excluded_dependents:
+                        census.excluded_dependents.append(dep)
+                    excluded_pt_deps.append(dep)
+                e.dependents.clear()
         elif e.coverage == "RC":
             e.eligibility_status = "REFUSED"
+            e.disposition = "RETAIN_MEDICAL_STATUS"
         else:
             e.eligibility_status = "UNRESOLVED"
+            e.disposition = "UNRESOLVED"
 
         for dep in e.dependents:
             dep.eligibility_status = "DEPENDENT"
             dep.subscriber_id = e.record_id
+            if not dep.disposition:
+                dep.disposition = "INCLUDE_ACTIVE_MEDICAL"
+
+    if excluded_pt_deps:
+        pt_ids = {id(d) for d in excluded_pt_deps}
+        census.people = [p for p in census.people if id(p) not in pt_ids]
+
+    recalculate_row_numbers(census)
+    update_candidate_dispositions(census)
 
     if tracer:
         for p in census.people:
@@ -771,7 +1083,7 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
                 eligibility_status=p.eligibility_status or p.coverage or "",
                 waiver=p.waive_reason or "",
                 rule_applied="WaitingPeriodRefinement",
-                notes=[f"Role: {p.role}, SubID: {p.subscriber_id}"],
+                notes=[f"Role: {p.role}, SubID: {p.subscriber_id}, Disposition: {p.disposition}"],
             )
 
 
@@ -794,23 +1106,110 @@ def validate_census(census: Census) -> list[str]:
 
 
 
+def recalculate_row_numbers(census: Census) -> None:
+    """Recalculate final sequential Data Row numbers and subscriber Sub Row links after all sorting/filtering."""
+    data_row = 1
+    for p in census.people:
+        if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False):
+            p.row_no = 0
+            continue
+        p.row_no = data_row
+        data_row += 1
+    for p in census.people:
+        if p.role != "EE":
+            p.sub_row = p.employee.row_no if (p.employee and p.employee.row_no) else None
+        else:
+            p.sub_row = None
+
+
+def update_candidate_dispositions(census: Census) -> None:
+    """Populate census.candidate_dispositions with every person and dependent disposition."""
+    dispositions: list[dict] = []
+    seen_ids: set[int] = set()
+    for p in list(census.people) + list(census.excluded_dependents) + list(census.unassigned_dependents):
+        if id(p) in seen_ids or getattr(p, "is_duplicate", False):
+            continue
+        seen_ids.add(id(p))
+        disp = p.disposition
+        if not disp:
+            if p.role == "EE":
+                if p.coverage in ("EE", "ES", "EC", "FAM", "EF", "COUPLE") or (p.plan and p.plan.upper() not in ("", "NA", "N/A")):
+                    disp = "INCLUDE_ACTIVE_MEDICAL"
+                elif p.coverage in ("WP", "WO", "NE", "RC"):
+                    disp = "RETAIN_MEDICAL_STATUS"
+                else:
+                    disp = "UNRESOLVED"
+            else:
+                disp = "INCLUDE_ACTIVE_MEDICAL" if p in census.people else "UNRESOLVED"
+            p.disposition = disp
+        dispositions.append({
+            "record_id": p.record_id,
+            "name": p.display,
+            "role": p.role,
+            "subscriber_id": p.subscriber_id,
+            "row_no": p.row_no,
+            "sub_row": p.sub_row,
+            "gender": p.gender,
+            "gender_resolution_status": p.gender_resolution_status or ("RESOLVED" if p.gender in ("M", "F") else "MISSING"),
+            "gender_candidates": list(p.gender_candidates),
+            "coverage": p.coverage,
+            "plan": p.plan,
+            "disposition": disp,
+            "coverage_associations": list(p.coverage_associations),
+        })
+    census.candidate_dispositions = dispositions
+
+
 def _link_dependents(st: _State, effective_date=None) -> None:
+    cand_deps_by_emp: dict[int, list[Person]] = {}
     for ref in st.dep_refs:
         p = ref.person
         emp = None
         if ref.sub_id and ref.sub_id in st.by_id:
             emp = st.by_id[ref.sub_id]
-        elif ref.emp_key and st.by_name.get(ref.emp_key):
-            emp = st.by_name[ref.emp_key][0]
-        elif ref.positional is not None and not (ref.sub_id or ref.emp_key):
+        elif ref.emp_key:
+            cands = _match_employee_by_name(st, emp_key=ref.emp_key)
+            if cands:
+                emp = cands[0]
+
+        # Address & Household matching pass
+        if emp is None and p.address:
+            p_addr = p.address.strip().lower()
+            p_zip = p.zip[:5] if p.zip else ""
+            for candidate in st.employees:
+                c_addr = getattr(candidate, "address", "").strip().lower()
+                c_zip = candidate.zip[:5] if candidate.zip else ""
+                if c_addr and c_addr == p_addr and (not p_zip or not c_zip or p_zip == c_zip):
+                    emp = candidate
+                    break
+
+        # Compound / Shared Surname with Zip matching pass
+        if emp is None and p.last:
+            d_last = re.sub(r"[^a-z0-9]", "", p.last).lower()
+            p_zip = p.zip[:5] if p.zip else ""
+            for candidate in st.employees:
+                c_last = re.sub(r"[^a-z0-9]", "", candidate.last).lower()
+                c_zip = candidate.zip[:5] if candidate.zip else ""
+                if d_last and c_last and (d_last == c_last or d_last in c_last or c_last in d_last) and (p_zip and p_zip == c_zip):
+                    emp = candidate
+                    break
+
+        if emp is None and ref.positional is not None and not (ref.sub_id or ref.emp_key):
             emp = ref.positional
         if emp is None:
-            p.note("Unassigned Dependent - No Matching Subscriber", red=True)
-            st.census.unassigned_dependents.append(p)
+            if ref.is_non_med:
+                p.disposition = "EXCLUDE_NON_MEDICAL_ONLY"
+                st.census.excluded_dependents.append(p)
+            else:
+                p.disposition = "UNRESOLVED"
+                p.note("Unassigned Dependent - No Matching Subscriber", red=True)
+                st.census.unassigned_dependents.append(p)
             continue
+
         dk = name_key(p.first, p.last)
+        emp_cand_list = cand_deps_by_emp.setdefault(id(emp), [])
         dup = None
-        for d in emp.dependents:
+        for d in emp_cand_list:
             p_first_primary = p.first.split()[0].lower() if p.first else ""
             d_first_primary = d.first.split()[0].lower() if d.first else ""
             same_name = (name_key(d.first, d.last) == dk or (
@@ -818,8 +1217,13 @@ def _link_dependents(st: _State, effective_date=None) -> None:
             if same_name and (d.dob == p.dob or not d.dob or not p.dob):
                 dup = d
                 break
-        if dup:                                           # same dependent in two files/tabs
-            had_dob, had_gender = bool(dup.dob), bool(dup.gender)
+        if dup:                                           # same dependent across lines/files/tabs
+            had_dob = bool(dup.dob)
+            if p.gender_candidates:
+                dup.gender_candidates.extend(p.gender_candidates)
+                _resolve_person_gender(dup)
+            if p.coverage_associations:
+                dup.coverage_associations.extend(p.coverage_associations)
             _fill(dup, first=p.first, last=p.last, gender=p.gender, dob=p.dob, zip=p.zip)
             # keep the fuller legal name (e.g. 'Jolan Ridwan' over 'Jolan')
             if p.first and len(p.first) > len(dup.first or ""):
@@ -836,15 +1240,30 @@ def _link_dependents(st: _State, effective_date=None) -> None:
                 dup.role = "SP"
             if not had_dob and dup.dob:
                 dup.notes = [n for n in dup.notes if n[0] != "Missing Date of Birth"]
-            if not had_gender and dup.gender:
-                dup.notes = [n for n in dup.notes if not str(n[0]).startswith(("Missing Gender", "Invalid Gender"))]
             dup.subscriber_id = emp.record_id
             dup.employee = emp
-            st.census.dependent_merges += 1
+            if getattr(dup, "_saw_med_obs", False) and not ref.is_non_med:
+                st.census.dependent_merges += 1
+            dup._saw_med_obs = getattr(dup, "_saw_med_obs", False) or (not ref.is_non_med)
             continue
+        p._saw_med_obs = not ref.is_non_med
         p.employee = emp
         p.subscriber_id = emp.record_id
-        emp.dependents.append(p)
+        emp_cand_list.append(p)
+
+    # Partition candidate dependents into active medical vs excluded non-medical-only
+    for emp in st.employees:
+        for d in cand_deps_by_emp.get(id(emp), []):
+            has_med = getattr(d, "_saw_med_obs", False) or any(
+                a.get("is_medical", True) for a in d.coverage_associations
+            )
+            if has_med:
+                d.disposition = "INCLUDE_ACTIVE_MEDICAL"
+                emp.dependents.append(d)
+            else:
+                d.disposition = "EXCLUDE_NON_MEDICAL_ONLY"
+                d.eligibility_status = "EXCLUDED_NON_MEDICAL"
+                st.census.excluded_dependents.append(d)
 
     import datetime
     from comparator import tier_from_deps
@@ -853,13 +1272,15 @@ def _link_dependents(st: _State, effective_date=None) -> None:
     if isinstance(eff, datetime.datetime):
         eff = eff.date()
 
-    has_medical_roster = st.saw_dependent_source or any(e.plan for e in st.employees)
+    has_medical_roster = st.has_cov_col or any(e.plan for e in st.employees)
 
     for emp in st.employees:
         # Determine employee coverage tier if unassigned or generic "enrolled"
         if not emp.coverage or emp.coverage.lower() in ("enrolled", "active", "yes", "y", "true"):
             if emp.cov_raw and emp.cov_raw.upper() in ("WO", "WAIVED", "NE", "WP", "RC"):
                 emp.coverage = emp.cov_raw.upper()
+            elif emp.cov_raw and emp.cov_raw.lower() in ("enrolled", "active", "yes", "y", "true"):
+                emp.coverage = tier_from_deps(emp)
             elif has_medical_roster and not emp.plan:
                 # Non-enrolled status (NE/WP/WO) is resolved structurally later by
                 # refine_non_enrolled_statuses(), once the invoice period and declared waiting period
@@ -897,20 +1318,107 @@ def _link_dependents(st: _State, effective_date=None) -> None:
 
 
 def _order_output(st: _State) -> None:
+    enrolled_emps = [
+        e for e in st.employees
+        if e.coverage in ("EE", "ES", "EC", "FAM", "EF", "COUPLE") or (e.plan and e.plan.upper() not in ("", "NA", "N/A"))
+    ]
+    non_enrolled_emps = [e for e in st.employees if e not in enrolled_emps]
+    non_enrolled_emps.sort(key=lambda e: (e.last.lower(), e.first.lower()))
+
     out: list[Person] = []
-    for emp in st.employees:
+    for emp in enrolled_emps + non_enrolled_emps:
+        if getattr(emp, "disposition", "") == "EXCLUDE_PART_TIME":
+            continue
         out.append(emp)
-        out.extend(sorted(emp.dependents, key=lambda d: 0 if d.role == "SP" else 1))
+        out.extend(emp.dependents)
     out.extend(st.census.unassigned_dependents)
     st.census.people = out
     st.census.raw_dependent_rows = len([p for p in out if p.role != "EE"]) + st.census.dependent_merges
 
-    # Finalize sequential Data Row numbers only after output order is finalized
-    data_row = 1
-    for p in out:
-        if not p.invoice_only:
-            p.row_no = data_row
-            data_row += 1
+    # Finalize sequential Data Row numbers and Sub Row links only after output order is finalized
+    recalculate_row_numbers(st.census)
+    update_candidate_dispositions(st.census)
+
+
+
+def _doc_to_census_text(doc: RawDoc) -> str:
+    """Prepare comprehensive structured text representation of doc for LLM semantic extraction."""
+    parts = []
+    if doc.tables:
+        for t in doc.tables:
+            parts.append(f"=== Sheet: {t.name} ===")
+            df = t.df.dropna(how="all").reset_index(drop=True)
+            for _, row in df.iterrows():
+                row_str = " | ".join("" if pd.isna(c) else str(c).strip() for c in row)
+                if row_str.replace("|", "").strip():
+                    parts.append(row_str)
+    elif doc.text:
+        parts.append(doc.text)
+    return "\n".join(parts)
+
+
+def _extract_census_rows_smart(doc: RawDoc) -> list[dict]:
+    """Extract census rows using Claude Anthropic, with smart chunking for large rosters."""
+    from llm_client import extract_census_rows
+
+    all_rows: list[dict] = []
+    if doc.tables:
+        for t in doc.tables:
+            df = t.df.dropna(how="all").reset_index(drop=True)
+            if df.empty:
+                continue
+
+            # Identify the header row index (first row containing typical census column markers)
+            header_idx = 0
+            for idx in range(min(15, len(df))):
+                row_vals = [clean(c) for c in df.iloc[idx].tolist()]
+                if any(k in norm_key(c) for c in row_vals for k in ("first", "last", "name", "dob", "ssn", "tier", "plan", "cov")):
+                    header_idx = idx
+                    break
+
+            header_row = " | ".join("" if pd.isna(c) else str(c).strip() for c in df.iloc[header_idx])
+            data_start = header_idx + 1
+            data_rows = df.iloc[data_start:].reset_index(drop=True)
+
+            if len(data_rows) <= 25:
+                table_lines = [f"=== Sheet: {t.name} ===", header_row]
+                for _, row in data_rows.iterrows():
+                    r_str = " | ".join("" if pd.isna(c) else str(c).strip() for c in row)
+                    if r_str.replace("|", "").strip():
+                        table_lines.append(r_str)
+                batch = extract_census_rows("\n".join(table_lines))
+                if batch:
+                    all_rows.extend(batch)
+            else:
+                batch_size = 25
+                for s_i in range(0, len(data_rows), batch_size):
+                    e_i = min(s_i + batch_size, len(data_rows))
+                    chunk_df = data_rows.iloc[s_i:e_i]
+                    chunk_lines = [f"=== Sheet: {t.name} (Rows {s_i + 1} to {e_i}) ===", header_row]
+                    for _, row in chunk_df.iterrows():
+                        r_str = " | ".join("" if pd.isna(c) else str(c).strip() for c in row)
+                        if r_str.replace("|", "").strip():
+                            chunk_lines.append(r_str)
+                    batch_txt = "\n".join(chunk_lines)
+                    batch = extract_census_rows(batch_txt)
+                    if batch:
+                        all_rows.extend(batch)
+    elif doc.text:
+        lines = [l for l in doc.text.splitlines() if l.strip()]
+        if len(lines) <= 25:
+            batch = extract_census_rows(doc.text)
+            if batch:
+                all_rows.extend(batch)
+        else:
+            header_line = lines[0]
+            batch_size = 25
+            for s_i in range(1, len(lines), batch_size):
+                e_i = min(s_i + batch_size, len(lines))
+                chunk_lines = [header_line] + lines[s_i:e_i]
+                batch = extract_census_rows("\n".join(chunk_lines))
+                if batch:
+                    all_rows.extend(batch)
+    return all_rows
 
 
 
@@ -924,14 +1432,31 @@ def _parse_llm_census_rows(doc: RawDoc, rows: list[dict], st: _State) -> bool:
         rel = std_relationship(r.get("relationship", "EE")) or "EE"
         p = Person(rel, fn, ln, source=doc.name)
         p.record_id = _next_record_id(st)
+        p.sub_id = clean(r.get("sub_id", ""))
+
+        cov_val = clean(r.get("coverage", ""))
+        if cov_val:
+            st.has_cov_col = True
+        hire_val = clean(r.get("hire_date", ""))
+        if hire_val:
+            st.has_hire_col = True
+
         _standardise(p, {
             "gender": r.get("gender"),
             "dob": r.get("dob"),
             "zip": r.get("zip"),
-            "coverage": r.get("coverage"),
+            "coverage": cov_val,
             "cobra": r.get("cobra"),
             "plan": r.get("plan"),
             "premium": r.get("premium"),
+            "hire": hire_val,
+            "effective_date": r.get("effective_date"),
+            "eligibility_class": r.get("eligibility_class", ""),
+            "worker_category": r.get("worker_category", ""),
+            "position_status": r.get("position_status", ""),
+            "waive_reason": r.get("waive_reason", ""),
+            "job_title": r.get("job_title", ""),
+            "salary": r.get("salary", ""),
         }, is_employee=(rel == "EE"), st=st)
 
         if rel == "EE":
@@ -947,6 +1472,7 @@ def _parse_llm_census_rows(doc: RawDoc, rows: list[dict], st: _State) -> bool:
             st.dep_refs.append(_DepRef(person=p, emp_key=name_key(*split_full_name(sub_name)) if sub_name else "", file=doc.name))
         count += 1
     return count > 0
+
 
 
 def _prepare_doc_tables(doc: RawDoc) -> list[tuple[str, pd.DataFrame]]:
@@ -1014,22 +1540,53 @@ def build_census(census_docs: list[RawDoc], effective_date=None, tracer=None) ->
     st = _State()
     for doc in census_docs:
         used_any = False
+        from census_config import LLM_FIRST, USE_LLM_FALLBACK
+
+        # 1. High-Fidelity Tabular Parsing (for structured Excel/CSV censuses with recognized headers)
+        # Direct column alignment is used for tabular sheets to guarantee zero dropped records and zero token truncation on large enterprise rosters
         tables = _prepare_doc_tables(doc)
         for tname, tdf in tables:
+            parsed_ok = False
             try:
-                used_any |= _parse_table(doc, tname, tdf, st)
+                parsed_ok = _parse_table(doc, tname, tdf, st)
+                if parsed_ok:
+                    used_any = True
             except Exception as exc:
                 log.error("Census table %s/%s skipped: %s", doc.name, tname, exc)
-        if not used_any and (doc.text or "").strip():
-            from census_config import USE_LLM_FALLBACK
-            if USE_LLM_FALLBACK:
+                st.census.census_notes.append(f"Census table {tname} in {doc.name} failed parsing: {exc}")
+
+            # Table-level fallback if this specific table failed but document had other tables
+            if not parsed_ok and USE_LLM_FALLBACK and not tdf.empty:
                 try:
                     from llm_client import extract_census_rows
-                    rows = extract_census_rows(doc.text)
-                    if rows:
-                        used_any = _parse_llm_census_rows(doc, rows, st)
-                except Exception as exc:
-                    log.warning("LLM census extraction fallback failed for %s: %s", doc.name, exc)
+                    t_rows = extract_census_rows(tdf.to_string(index=False))
+                    if t_rows and _parse_llm_census_rows(doc, t_rows, st):
+                        used_any = True
+                        log.info("Table-level fallback extracted %d records from %s/%s", len(t_rows), doc.name, tname)
+                except Exception as _fb_exc:
+                    log.debug("Table-level fallback skipped for %s/%s: %s", doc.name, tname, _fb_exc)
+
+        # 2. LLM-First Semantic Extraction (for unstructured documents, PDF rosters, emails, or tables without recognized headers)
+        if not used_any and (LLM_FIRST or USE_LLM_FALLBACK):
+            try:
+                log.info("Applying LLM-First semantic extraction for census: %s", doc.name)
+                rows = _extract_census_rows_smart(doc)
+                if rows:
+                    used_any = _parse_llm_census_rows(doc, rows, st)
+                    if used_any:
+                        log.info("LLM-First successfully extracted %d records from %s", len(rows), doc.name)
+            except Exception as exc:
+                log.warning("LLM-First census extraction failed for %s: %s", doc.name, exc)
+
+        # 3. Last fallback if still not used
+        if not used_any and (doc.text or "").strip() and USE_LLM_FALLBACK:
+            try:
+                from llm_client import extract_census_rows
+                rows = extract_census_rows(doc.text)
+                if rows:
+                    used_any = _parse_llm_census_rows(doc, rows, st)
+            except Exception as exc:
+                log.warning("LLM census extraction fallback failed for %s: %s", doc.name, exc)
 
         if used_any:
             st.census.files_used.append(doc.name)

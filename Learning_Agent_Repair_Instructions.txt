@@ -1,0 +1,183 @@
+LEARNING AGENT REPAIR INSTRUCTIONS
+Missing gender cross-file dependents and medical population enforcement
+
+TASK
+
+Investigate and repair the extraction-to-output pipeline so that existing business instructions are actually enforced. Do not stop after appending more prompt text or manually filling a generated workbook. Find the failure, patch the responsible implementation, rerun the same current prospect from source, and verify the regenerated outputs.
+
+Use the supplied Dynamic Unified Medical Submission Agent Instruction as the controlling business instruction. This repair operationalizes Sections 6 and 6.1, 8.1, 9.1 through 9.4, 10.1 and 10.3, 16 and 17, 21, 23 and 24, and 30. It does not replace the master instruction or authorize changes to unrelated business rules.
+
+The screenshot is a structural example: GENDER (SELF-ID) can be blank while SEX contains Male or Female and another GENDER field contains Man / Male or Woman / Female. Do not hard-code the example's names, row numbers, column letters, company, or records.
+
+1. INSPECT THE REAL FAILURE BEFORE PATCHING
+
+Locate the actual project pipeline and existing learning-engine folder. Identify where files are inventoried, extracted, classified, mapped, normalized, consolidated, filtered, linked, compared, exported, and audited. Use real repository paths and schemas; do not assume module names.
+
+For each affected record, trace the value or dependent through:
+original source -> extracted content -> mapped candidates -> canonical record -> medical/status decision -> subscriber link -> final workbook.
+
+Identify the earliest point at which supported data is lost, misclassified, overwritten, duplicated, or assigned to the wrong person. Distinguish a parser failure from omitted LLM context, an alias-mapping failure, an identity error, a filter error, or an export error.
+
+Implement the smallest general repair at that stage. Add deterministic normalization, identity checks, and validation where practical. Use the LLM to interpret ambiguous layout with evidence; do not rely only on an instruction that says to check more carefully. Do not weaken an existing validator to make a failing result pass.
+
+2. REPAIR GENDER AND SEX FIELD RESOLUTION
+
+2.1 Discover all relevant fields
+
+For each employee and dependent, collect every relevant field for that same person, including Gender, Sex, Gender/Sex, Employee Gender, Employee Sex, Dependent Gender, Dependent Sex, and supported source-specific aliases. Recognize case, spacing, line-break, and punctuation variations.
+
+Do not stop at the first header containing Gender. Preserve separate physical column identities and provenance when a sheet contains repeated or similar headers; do not overwrite them in a dictionary keyed only by header text. Distinguish the employee's field from a spouse's or child's field in the same row.
+
+Treat nulls, empty cells, whitespace, NaN-like parser values, and source-defined missing markers as unavailable. An unavailable candidate does not prevent checking the other candidates.
+
+2.2 Resolve same-person evidence
+
+First inspect all relevant columns in the same source record. If needed, search all other current-case sources for the confidently matched person. Use reliable person identifiers or supported combinations of name, DOB, subscriber information, and other identity evidence. Never copy a nearby person's value or a subscriber's value to a dependent.
+
+Respect field meaning. Sex and self-identified gender are distinct source concepts. Use an approved target-to-source mapping when provided. Do not overwrite a documented administrative Sex mapping with a different self-identification field, or silently reinterpret conflicting concepts as a data-entry error.
+
+For the screenshot pattern, where the first gender field is blank and the same person's usable SEX and GENDER values agree, populate the target M/F field from that supported evidence rather than leaving it blank.
+
+Normalize unambiguous supported values to approved template codes:
+- M or Male -> M.
+- F or Female -> F.
+- Man / Male -> M and Woman / Female -> F when the source uses these combined labels for the target field.
+
+Trim whitespace and normalize case. Do not infer gender or sex from names, titles, pronouns, appearance, spouse relationships, or other demographic assumptions. Map numeric codes only when the source supplies a reliable legend. Do not force an unsupported value into M or F.
+
+If candidates conflict, apply a documented field mapping and applicable version/period authority only when it actually resolves the target field. Otherwise preserve the evidence, leave the affected target field unresolved, and request clarification only if required for underwriting. Do not arbitrarily pick the first nonblank value.
+
+2.3 Produce one canonical value
+
+All supported candidate fields must resolve into one canonical gender field per person. Do not create extra employee/dependent rows or extra output gender columns because multiple source fields exist. Do not concatenate values such as M,M, Male/Male, or Man / Male into an output cell that requires M.
+
+Preserve a valid existing value unless evidence establishes that it is wrong. Apply supported corrections by canonical person identity, not by an old workbook row number. Retain source file, sheet/page, row or record reference, original field label, and normalization decision in the private case audit.
+
+After all sources are checked, a genuinely unavailable required gender remains blank and is requested once. A parser failure or unread source must not be mislabeled as genuinely missing data.
+
+3. REPAIR DEPENDENT COLLECTION ACROSS ALL SOURCES
+
+Build one complete current-case source inventory. Review every applicable census, dependent Excel file, worksheet/tab, enrollment export, BER, medical invoice, carrier report, additional dependent column, subscriber/dependent listing, and accessible attachment. Do not skip a source because another census exists or because its filename is not Census.
+
+Inspect the extracted text AND structured rows already available. Where extraction omitted a worksheet, table, wrapped row, or page, repair or rerun the appropriate reader against the original file. Do not ask the LLM to recover information that was never provided to it. Preserve row, table, page, and subscriber-group context across any chunked extraction so dependent relationships are not lost.
+
+Apply the master instruction's access preflight to protected files. A locked or failed source is not an empty successfully reviewed file. Read newly accessible files through the normal full extraction path. Count an original and its decrypted working copy as one source.
+
+Collect candidate people and medical-coverage evidence across all applicable readable sources before deciding the final population. A dependent discovered in a medical invoice or separate dependent workbook can complete a valid current census. An invoice alone still cannot replace a missing valid census source.
+
+For each candidate dependent, resolve supported name, DOB, gender/sex, relationship, subscriber identity, medical participation, applicable coverage period, and available person/member identifiers. Missing nonessential fields must not silently erase an otherwise supported medical dependent. Leave unsupported required fields blank and request only the exact missing information.
+
+Link by explicit subscriber/dependent identifiers when available. Otherwise use a sufficiently corroborated identity combination within the correct case and entity. A shared surname, adjacent row, fuzzy name alone, or subscriber ID shared by several children is not a unique dependent identity. An identifier that is only partially masked is corroborating evidence, not automatically a unique key.
+
+Do not invent a spouse or child because ES, EC, or FAM was selected. A tier can trigger a search or an actionable clarification, but cannot supply a dependent's identity or prove which listed dependent has medical coverage. Do not assign an unresolved dependent to the closest-looking employee.
+
+4. ENFORCE MEDICAL-ONLY POPULATION AND STATUS PRECEDENCE
+
+Implement Section 9.2 as an explicit decision for each person and coverage association, not as a broad filter on an entire file. The same file can contain medical and non-medical records, and one person can appear in several benefit lines.
+
+Use these internal dispositions:
+- INCLUDE_ACTIVE_MEDICAL: supported active medical employee or supported medical-enrolled dependent.
+- RETAIN_MEDICAL_STATUS: supported WP, NE, WO, or RC employee record from the medical eligibility census, handled under Sections 9.3 and 21.
+- EXCLUDE_NON_MEDICAL_ONLY: evidence supports only dental, vision, life, STD, LTD, disability, voluntary, supplemental, or other non-medical coverage.
+- EXCLUDE_PART_TIME: the controlling part-time exclusion applies to the employee and dependent memberships under that excluded subscriber. Do not erase a separate supported membership under another included subscriber.
+- UNRESOLVED: person identity, medical participation, period, or required subscriber linkage cannot yet be established from available evidence.
+
+Recognize the person before merging their benefit evidence. A person found on both dental and medical lines must be included once for supported medical participation. A dependent listed only on a dental line must not enter the medical census simply because the subscriber has medical coverage.
+
+Use specific person-level or supported person-plan enrollment evidence. A generic SBC describes a plan; it does not by itself prove that a named person is enrolled. A filename, plan-looking description, employee family tier, or mere presence in a benefit file is not enough.
+
+Evaluate current participation using the applicable current coverage period and valid source versions. Keep future renewal evidence separate. Do not let an older or future record silently turn a non-enrolled current dependent into an active medical member. Preserve and investigate material contradictions; do not invent a universal rule that any invoice always overrides every census.
+
+Search all applicable sources before leaving participation unresolved. Do not silently include, exclude, or invent a medical enrollment to remove the unresolved state. Retain the candidate and specific unresolved reason in the private audit, and use the master's approved Summary/email handling when action is needed. Export only membership rows permitted by the actual template and supported evidence.
+
+Preserve valid WP, NE, WO, and RC employee status rows under the master instruction. Do not classify them as active medical enrollment merely to retain them. Keep waived employees as WO, never WP. Do not report expected non-enrolled invoice absence as a discrepancy or apply Most Used Plan Logic to WP, NE, or WO.
+
+5. DEDUPLICATE PEOPLE WITHOUT LOSING RELATIONSHIPS
+
+Consolidate duplicate observations into canonical current-case identities, retaining their source references. One dependent appearing in a census, an invoice, and a dependent workbook is not three dependents. One employee with several plans or gender fields is not several employees.
+
+Use stable current-case person identifiers and explicit subscriber links. A subscriber ID can identify a family but must not collapse several children into one person. Names alone must not merge two different people. Preserve distinct entity/member identities when the evidence requires them.
+
+Merge complementary supported fields; a later blank must not erase an existing supported value. Reconcile conflicting nonblank values instead of overwriting them silently. Select applicable corrected versions and periods before deduplicating enrollment observations.
+
+Keep person identity separate from legitimate coverage or subscriber associations. Prevent duplicate rows for the same required output membership while preserving genuinely distinct relationships allowed by the template. Do not deduplicate away a real child, spouse, or enrollment merely to make totals match.
+
+After consolidation, medical/status decisions, and final sorting, translate stable subscriber links into the actual employee-row references required by the workbook. Recalculate them after adding, removing, or reordering records. Never reuse stale pre-sort row numbers.
+
+6. ENFORCE SOURCE COVERAGE AND POPULATION GATES
+
+Add execution checks that must run before output generation:
+
+A. Source coverage
+Every supplied file and every applicable sheet/page is accounted for as reviewed, superseded/duplicate, irrelevant with a supported reason, or an explicit access limitation. An accessible applicable source that has not been fully reviewed blocks completion of the affected processing.
+
+B. Gender resolution
+Every included person with a usable, non-conflicting, correctly matched source value has exactly one approved canonical gender value. Remaining blanks are distinguishable as genuinely missing, unsupported for the target, conflicting, or blocked by source access.
+
+C. Dependent disposition
+Every unique dependent candidate has one accountable outcome: included once, excluded for a documented rule, or unresolved with a specific reason. Duplicate observations point to the same candidate rather than being counted as extra people.
+
+D. Enrollment and links
+Every active medical output row has supported medical participation for the applicable period. Every exported dependent links to the correct exported subscriber using the template's actual membership model. No dental-only or other non-medical-only dependent is exported as an active medical dependent. No parent or link may be fabricated to make an orphan row pass.
+
+E. Reconciliation
+Reconcile source observations to unique candidates and then to included, excluded, and unresolved populations. Reconcile identities as well as counts. Keep raw source records, unique persons, medical enrollment, retained status rows, exclusions, and invoice-only additions distinguishable in the private audit. Do not force raw source totals to equal output totals when legitimate filtering or deduplication explains the difference.
+
+F. Output consistency
+Rebuild dependent-row links, employee/dependent totals, plan/tier counts, premium calculations, family-structure checks, comparison findings, Summary tables, and missing-information findings from the repaired canonical dataset. Do not add family premiums again for dependent rows.
+
+Retain routing and template protection: Florida -> RAPT only; non-Florida -> Marsh, then SBU from finalized Marsh. Match SBU employee/dependent identities, counts, fields, and subscriber relationships to Marsh. Perform comparisons only in the primary workbook. Use the current approved template's actual comparison area; do not restore obsolete fixed column assumptions.
+
+Do not add unauthorized output columns or worksheets to expose internal repair diagnostics. Follow the master instruction's existing partial-output and access-limitation rules; do not claim the affected review is complete while material unresolved issues remain.
+
+7. VERIFY WITH TARGETED REGRESSION CASES
+
+Add or update meaningful tests in the existing project test framework using synthetic records:
+
+1) First gender field blank, SEX = Male, another GENDER = Man / Male -> one M value and one employee record.
+2) Primary gender blank, SEX = Female, secondary gender blank -> one F value; an empty first alias does not stop the search.
+3) Same employee occurs in several sources with agreeing gender values -> one canonical employee and one gender value.
+4) Two people share a name but have different reliable identities -> no gender borrowing and no accidental merge.
+5) Conflicting Sex/self-identification evidence without an approved mapping -> no arbitrary overwrite or fabricated M/F.
+6) Dependent missing from the employee census but explicitly medically enrolled in a separate dependent file or current invoice -> included once under the correct subscriber when a valid census source exists.
+7) Same medical dependent appears in three files -> one membership row with combined provenance.
+8) Dental-only, vision-only, or supplemental-only dependent -> excluded from active medical output.
+9) Same dependent has both dental and medical evidence -> included once for medical; non-medical evidence does not erase supported medical enrollment.
+10) Two children share a subscriber ID -> both distinct children retained with correct links.
+11) Medical eligibility unknown, subscriber ambiguous, or source unreadable -> no guessed enrollment/link and no false completion.
+12) WP/NE/WO/RC employee status rows -> retained when applicable, excluded from active counts as required, WO never converted to WP.
+13) Part-time exclusion, superseded records, invoice-only case without a valid census, and future-only coverage -> existing controlling rules remain effective.
+14) Final sort or inserted record changes workbook positions -> every dependent still links to the correct final employee row.
+15) Rerun the same inputs through the repaired pipeline twice -> no added duplicates and unchanged canonical identities and population totals; generated IDs and learning patterns remain stable under the project's identity/version rules.
+16) For Cigna, repaired Marsh and regenerated SBU agree on identities, dependents, fields, and links, with no second comparison in SBU.
+
+Run these checks against the actual patched pipeline. Then rerun the affected current prospect from its original sources and compare before/after results. Do not mark tests or the case rerun passed without executing them. If required source files, templates, code, tools, or permissions are unavailable, report the specific blocker and unexecuted checks instead of claiming success.
+
+8. SAVE VALIDATED LEARNING IN THE SEPARATE LEARNING FOLDER
+
+Reuse the existing learning engine's dedicated folder and JSON schema. If no structure exists, create a separate learning_engine directory with patterns, case_audits, and regression subfolders, keeping it separate from source uploads and workbook outputs. Integrate these paths into the project's actual configured learning workflow; a saved JSON file that is never loaded is not a functioning learning repair.
+
+Maintain two kinds of records:
+- Reusable pattern: generic root cause, applicable header/structure or coverage conditions, exact repair, master-rule references, patch version, required validators, and executed regression results. Do not store a prospect's gender, subscriber IDs, dependent names, DOBs, premiums, or passwords as a reusable default for future cases.
+- Private current-case audit: actual source references, canonical record IDs, candidate/disposition decisions, before/after field results where needed, unresolved issues, and rerun validation evidence under the application's existing access and retention controls.
+
+Use explicit learning states such as CANDIDATE, VALIDATED, and REJECTED, mapped to the existing schema. Promote a reusable repair to VALIDATED only after its applicable checks actually pass. A genuinely missing source value or unresolved conflict is not a successful learned correction. Keep blocked case work separate from a reusable pattern that has only passed synthetic tests.
+
+Deduplicate patterns by a stable fingerprint of the root cause, applicability, and repair. Update/version an existing matching pattern instead of adding an identical entry on every rerun. Keep the previous working version available for rollback if a regression occurs.
+
+On future prospects, load the validated generic pattern only when its conditions match, then resolve values anew from that prospect's evidence. A learned alias or extraction repair must not override the current master rules, approved template, medical evidence, or case isolation.
+
+9. COMPLETION REPORT TO THE PROJECT OWNER
+
+After the work, return a concise technical repair report containing:
+- Confirmed root cause for each reproduced issue and the evidence that supports it.
+- Actual changed files and the specific implementation repairs.
+- Executed test results and the before/after case findings, including remaining genuine gaps.
+- Regenerated applicable workbook outputs and updated missing-information email when actual case sources and templates were available.
+- Saved validated learning pattern paths and versions, or an explicit candidate/blocked status when validation is incomplete.
+
+Keep this developer repair report separate from the broker-facing email and standard underwriting output. Do not expose internal repair logs or learning diagnostics in those deliverables.
+
+SUCCESS CRITERIA
+
+Supported gender values are recovered across same-person aliases without duplication. All applicable dependent sources are actually reviewed. Every dependent candidate is accounted for, and only supported medical memberships enter the active population. Status exceptions and part-time exclusions remain correct. Stable identities, subscriber links, totals, and carrier outputs reconcile. The same repair works on rerun without hard-coded prospect data, and only verified reusable behavior is retained for future cases.

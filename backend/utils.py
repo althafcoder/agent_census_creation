@@ -104,17 +104,101 @@ def parse_date(v) -> Optional[date]:
 
 
 # --------------------------------------------------------------- gender ----
+_UNAVAILABLE_GENDER_TOKENS = {
+    "unknown", "unk", "u", "undisclosed", "not specified", "notspecified",
+    "not provided", "notprovided", "unspecified", "prefer not to say",
+    "prefer not to answer", "declined", "decline to state", "missing",
+    "masked", "tbd", "pending", "n/a", "na", "none", "null", "nan",
+}
+_FEMALE_TOKENS = {"f", "female", "woman", "women", "girl", "fem"}
+_MALE_TOKENS = {"m", "male", "man", "men", "boy", "masc"}
+
+
+def is_unavailable_gender(v) -> bool:
+    """Return True if value is blank, masked (e.g. XXXX), or an unavailable placeholder token."""
+    if is_blank(v):
+        return True
+    s = clean(v)
+    if not s:
+        return True
+    if re.fullmatch(r"[*Xx\s\-./#?_]+", s):
+        return True
+    low = s.lower()
+    if low in _UNAVAILABLE_GENDER_TOKENS:
+        return True
+    return False
+
+
 def std_gender(v) -> str:
+    """Normalize unambiguous gender/sex strings to 'M' or 'F'.
+    Returns '' for unavailable placeholders, masked strings, or ambiguous/conflicting strings."""
+    if is_unavailable_gender(v):
+        return ""
     s = clean(v).lower()
-    if any(k in s for k in ("female", "woman", "girl")):
+    tokens = [t for t in re.split(r"[^a-z]+", s) if t]
+    has_f = any(t in _FEMALE_TOKENS for t in tokens)
+    has_m = any(t in _MALE_TOKENS for t in tokens)
+    if has_f and has_m:
+        return ""
+    if has_f:
         return "F"
-    if any(k in s for k in ("male", "man", "boy")):
+    if has_m:
         return "M"
-    if s.startswith("f"):
+    # Fallback for compound strings without separators (e.g. 'gendermale', 'sexmale')
+    if any(k in s for k in ("female", "woman", "girl")) and not any(k in re.sub(r"female|woman", "", s) for k in ("male", "man", "boy")):
         return "F"
-    if s.startswith("m"):
+    if any(k in s for k in ("male", "man", "boy")) and not any(k in s for k in ("female", "woman", "girl")):
         return "M"
     return ""
+
+
+def build_gender_candidate(raw_v, source: str = "", column_index: int = -1, header: str = "") -> dict:
+    """Create a structured candidate gender observation preserving physical column & source identity."""
+    raw_clean = clean(raw_v) if not is_blank(raw_v) else ""
+    if is_unavailable_gender(raw_v):
+        return {
+            "source": source,
+            "column_index": column_index,
+            "header": header,
+            "raw": raw_clean,
+            "normalized": "",
+            "status": "UNAVAILABLE",
+        }
+    norm = std_gender(raw_v)
+    return {
+        "source": source,
+        "column_index": column_index,
+        "header": header,
+        "raw": raw_clean,
+        "normalized": norm,
+        "status": "USABLE" if norm in ("M", "F") else "INVALID",
+    }
+
+
+def resolve_gender_candidates(candidates: list[dict]) -> tuple[str, str, str]:
+    """Resolve all candidate gender/sex observations for the same person across columns and sources.
+
+    Returns (resolved_gender, status, detail) where:
+      - resolved_gender is 'M', 'F', or ''
+      - status is 'RESOLVED', 'CONFLICT', 'INVALID', or 'MISSING'
+      - detail describes any conflict or invalid raw token
+    """
+    usable = [c for c in candidates if c.get("status") == "USABLE" and c.get("normalized") in ("M", "F")]
+    usable_vals = {c["normalized"] for c in usable}
+    if len(usable_vals) == 1:
+        return next(iter(usable_vals)), "RESOLVED", ""
+    if len(usable_vals) > 1:
+        parts = []
+        for c in usable:
+            hdr = c.get("header") or f"col_{c.get('column_index', '?')}"
+            src = c.get("source") or ""
+            loc = f"{src}:{hdr}" if src else hdr
+            parts.append(f"{loc}='{c.get('raw')}'->{c.get('normalized')}")
+        return "", "CONFLICT", ", ".join(parts)
+    invalids = [c for c in candidates if c.get("status") == "INVALID"]
+    if invalids:
+        return "", "INVALID", invalids[0].get("raw", "")
+    return "", "MISSING", ""
 
 
 # ------------------------------------------------------------------ zip ----
@@ -198,7 +282,9 @@ def std_relationship(v) -> str:
         return ""
     if s in {"ee", "e", "emp", "employee", "self", "subscriber", "primary", "member", "s", "insured"}:
         return "EE"
-    if re.search(r"(spouse|wife|husband|partner|domestic|\bsp\b|^sp$)", s) or s in {"sp", "w", "h"}:
+    if re.search(r"(domestic\s*partner|\bdp\b|^dp$)", s) or "domestic" in s:
+        return "DP"
+    if re.search(r"(spouse|wife|husband|partner|\bsp\b|^sp$)", s) or s in {"sp", "w", "h"}:
         return "SP"
     if re.search(r"(child|son|daughter|dependent|step|\bch\b|^ch$|^c$|^d$)", s) or s in {"ch", "c", "dep", "d"}:
         return "CH"

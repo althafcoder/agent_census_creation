@@ -32,26 +32,45 @@ LOG_CACHE_METRICS = os.getenv("LOG_CACHE_METRICS", "true").lower() in ("true", "
 APP_VERSION = "2.1.0"
 SCHEMA_VERSION = "2026.1"
 PARSER_VERSION = "2.1.0"
-INSTRUCTION_VERSION = "unified_master_v1"
+INSTRUCTION_VERSION = "dynamic_unified_v1"
 
-# Bypass local cache toggle
-BYPASS_LOCAL_CACHE = os.getenv("BYPASS_LOCAL_CACHE", "false").lower() in ("true", "1", "yes")
+# Dynamic bypass local cache check
+def is_bypass_active() -> bool:
+    """Dynamically check if local cache bypass is enabled via env or runtime flag."""
+    return os.getenv("BYPASS_LOCAL_CACHE", "false").lower() in ("true", "1", "yes")
+
+BYPASS_LOCAL_CACHE = is_bypass_active()
 
 
 def get_instruction_hash() -> str:
-    """Return SHA-256 fingerprint of official instruction documents for cache invalidation."""
+    """Return SHA-256 fingerprint of official instruction documents for cache invalidation.
+    
+    Unifies with census_config discovery to support CENSUS_INSTRUCTIONS_PATHS and CENSUS_INSTRUCTIONS_PATH.
+    """
     import hashlib
-    instructions_dir = BACKEND_DIR / "instructions"
-    paths = sorted(list(instructions_dir.glob("*.docx")) + list(instructions_dir.glob("*.txt")))
+    try:
+        import sys
+        sys.path.insert(0, str(BACKEND_DIR))
+        import census_config as C
+        paths = C.get_instruction_paths()
+    except Exception:
+        instructions_dir = BACKEND_DIR / "instructions"
+        if not instructions_dir.exists():
+            return INSTRUCTION_VERSION
+        paths = sorted([
+            p for p in instructions_dir.iterdir()
+            if p.is_file() and p.suffix.lower() in (".txt", ".docx", ".md", ".pdf")
+            and not p.name.startswith("~$") and not p.name.startswith(".")
+        ])
     if not paths:
         return INSTRUCTION_VERSION
     h = hashlib.sha256()
     for p in paths:
-        if not p.name.startswith("~$") and p.exists():
-            try:
-                h.update(p.read_bytes())
-            except Exception:
-                pass
+        try:
+            h.update(p.name.encode("utf-8"))
+            h.update(p.read_bytes())
+        except Exception:
+            pass
     return h.hexdigest()[:16]
 
 

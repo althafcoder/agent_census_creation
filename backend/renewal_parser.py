@@ -119,33 +119,60 @@ def _records_from_renewal_text(text: str) -> dict:
 def parse_renewal(doc: RawDoc) -> RenewalDoc:
     eff, term = _dates(doc)
     rd = RenewalDoc(path=doc.name, effective=eff, termination=term, version_rank=_version_rank(doc))
-    for t in doc.tables:
-        df = t.df
-        for i in range(min(25, len(df))):
-            labels = [clean(v) for v in df.iloc[i].tolist()]
-            if any(re.search(r"\bage\b|age\s*band", l, re.I) for l in labels):
-                rd.age_banded = True
-            tiers = _tier_columns(labels)
-            if len(tiers) >= 2:                                    # WIDE: plan | EE | ES | EC | FAM
-                plan_col = next((j for j, l in enumerate(labels) if norm_key(l) in FIELD_ALIASES["plan"]
-                                 or "plan" in norm_key(l)), None)
-                if plan_col is None:
-                    plan_col = next((j for j in range(len(labels)) if j not in tiers.values()), 0)
-                title = ""
-                for k in range(i - 1, -1, -1):
-                    cand = clean(df.iloc[k, 0])
-                    if cand:
-                        title = cand
-                        break
-                for _, row in df.iloc[i + 1:].iterrows():
-                    plan = clean(row.iloc[plan_col]) or title
-                    if not plan or re.match(r"(sub)?total", plan.lower()):
-                        continue
-                    for tier, col in tiers.items():
-                        amt = to_money(row.iloc[col])
-                        if amt is not None and amt > 0:
-                            rd.rates[(plan, tier)] = amt
-                break
+
+    from census_config import LLM_FIRST, USE_LLM_FALLBACK
+    if LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip():
+        try:
+            log.info("Applying LLM-First semantic extraction for renewal: %s", doc.name)
+            from llm_client import extract_renewal_rates
+            rates_data = extract_renewal_rates(doc.text)
+            for item in rates_data:
+                p = clean(item.get("plan"))
+                t = std_coverage(clean(item.get("tier")))
+                amt = to_money(item.get("rate"))
+                if p and t in _TIERS and amt:
+                    rd.rates[(p, t)] = amt
+            if not rd.effective:
+                for item in rates_data:
+                    if item.get("effective_date"):
+                        eff_cand = parse_date(item["effective_date"])
+                        if eff_cand:
+                            rd.effective = eff_cand
+                            break
+            if rd.rates:
+                log.info("LLM-First successfully extracted %d renewal rates from %s", len(rd.rates), doc.name)
+        except Exception as exc:
+            log.warning("LLM-First renewal extraction failed for %s: %s (falling back to table parsers)", doc.name, exc)
+
+    if not rd.rates:
+        for t in doc.tables:
+            df = t.df
+            for i in range(min(25, len(df))):
+                labels = [clean(v) for v in df.iloc[i].tolist()]
+                if any(re.search(r"\bage\b|age\s*band", l, re.I) for l in labels):
+                    rd.age_banded = True
+                tiers = _tier_columns(labels)
+                if len(tiers) >= 2:                                    # WIDE: plan | EE | ES | EC | FAM
+                    plan_col = next((j for j, l in enumerate(labels) if norm_key(l) in FIELD_ALIASES["plan"]
+                                     or "plan" in norm_key(l)), None)
+                    if plan_col is None:
+                        plan_col = next((j for j in range(len(labels)) if j not in tiers.values()), 0)
+                    title = ""
+                    for k in range(i - 1, -1, -1):
+                        cand = clean(df.iloc[k, 0])
+                        if cand:
+                            title = cand
+                            break
+                    for _, row in df.iloc[i + 1:].iterrows():
+                        plan = clean(row.iloc[plan_col]) or title
+                        if not plan or re.match(r"(sub)?total", plan.lower()):
+                            continue
+                        for tier, col in tiers.items():
+                            amt = to_money(row.iloc[col])
+                            if amt is not None and amt > 0:
+                                rd.rates[(plan, tier)] = amt
+                    break
+
             hdr = detect_header(df.iloc[i:].reset_index(drop=True), max_scan=1)
             if hdr and "plan" in hdr.columns and "coverage" in hdr.columns:   # LONG layout
                 rate_col = next((j for j, l in enumerate(hdr.labels) if norm_key(l) in _RENEW_PREM), None)

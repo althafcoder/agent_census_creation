@@ -608,10 +608,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (instBadge && data.instructions_doc) {
         instBadge.title = data.instructions_doc;
         let displayName = data.instructions_doc;
-        if (displayName.toLowerCase().includes("master unified")) {
-          displayName = "Master Unified Medical";
-        } else {
-          displayName = displayName.replace(/\.[^/.]+$/, "");
+        displayName = displayName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").trim();
+        if (displayName.length > 32) {
+          displayName = displayName.substring(0, 30) + "...";
         }
         instBadge.innerHTML = `<span class="pulse-dot purple"></span> Instruction: ${displayName}`;
       }

@@ -9,6 +9,7 @@ import contextlib
 import hashlib
 import json
 import logging
+import os
 from pathlib import Path
 import sqlite3
 import threading
@@ -127,8 +128,9 @@ class LocalPromptCache:
         bypass_cache: bool = False,
     ) -> Any | None:
         """Retrieve cached response if available, not expired, and not bypassed."""
-        if not PROMPT_CACHE_ENABLED or bypass_cache or BYPASS_LOCAL_CACHE:
-            if bypass_cache or BYPASS_LOCAL_CACHE:
+        bypass_active = bypass_cache or BYPASS_LOCAL_CACHE or (os.getenv("BYPASS_LOCAL_CACHE", "false").lower() in ("true", "1", "yes"))
+        if not PROMPT_CACHE_ENABLED or bypass_active:
+            if bypass_active:
                 log.info("Cache BYPASS active: step='%s' (skipping local cache)", step_name)
             return None
 

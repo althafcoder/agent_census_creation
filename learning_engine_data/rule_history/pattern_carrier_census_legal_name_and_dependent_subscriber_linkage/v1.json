@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_carrier_census_legal_name_and_dependent_subscriber_linkage",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Carrier census spreadsheets frequently format employee and dependent headers with possessive tokens (e.g. Employee's Legal Name (First), Dependent's Legal Name (Last)) and repeat the subscriber employee's name across dependent rows. Normalization of possessive tokens and carrier legal name aliases preserves 100% direct tabular ingestion, filters template instruction rows, and links dependents to existing subscribers without spawning duplicate employee records.",
+  "applicable_conditions": [
+    "Census spreadsheet headers carry legal name variants with possessive tokens (Employee's Legal Name (First), Dependent's Legal Name (Last))",
+    "Subscriber employee name is repeated across dependent rows in tabular census",
+    "Template instruction/example rows present (row number or first column labeled Ex or Example)",
+    "Part-time employees who waive medical coverage are excluded from active census deliverables"
+  ],
+  "required_validators": [
+    "RULE_09_DEPENDENT_LINKAGE",
+    "RULE_10_REQUIRED_FIELDS",
+    "RULE_16_COMPARISON_MATCHING"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_medical_nutrition_therapy_carrier_census_and_invoice_reconciliation"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-10-28T18:50:00.000000",
+  "updated_at": "2026-10-28T18:50:00.000000",
+  "compatibility": {
+    "instruction_hashes": [
+      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna",
+      "Aetna",
+      "Anthem"
+    ],
+    "header_signature": [
+      "employee legal name first",
+      "employee legal name last",
+      "dependent legal name first",
+      "dependent legal name last",
+      "relationship employee spouse child"
+    ],
+    "stage": "mapping"
+  },
+  "trigger": {
+    "issue_type": "CARRIER_CENSUS_LEGAL_NAME_AND_DEPENDENT_SUBSCRIBER_REPETITION",
+    "field": "carrier_census_headers",
+    "conditions": [
+      "tabular census carries possessive legal name headers or repeated subscriber name on dependent rows"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 9.4",
+    "Section 10.1",
+    "Section 16.1"
+  ],
+  "root_cause": {
+    "code": "CARRIER_CENSUS_LEGAL_NAME_AND_DEPENDENT_SUBSCRIBER_REPETITION",
+    "verification_status": "verified",
+    "summary": "Normalize possessive tokens in column headers, match carrier legal name aliases for first/last/dep names, skip example rows (Ex), and link repeated subscriber names on dependent rows to existing employees."
+  },
+  "strategy": {
+    "action": "RESOLVE_CARRIER_CENSUS_LEGAL_NAME_AND_DEPENDENTS",
+    "parameters": {
+      "normalize_possessives": true,
+      "map_carrier_legal_name_aliases": true,
+      "link_subscriber_name_on_dependent_rows": true,
+      "exclude_template_example_rows": true,
+      "exclude_part_time_waived_employees": true
+    },
+    "preconditions": [
+      "carrier census spreadsheet carries legal name columns or repeated subscriber on dependent rows"
+    ],
+    "exclusions": [
+      "do not link dependent if relationship indicates an independent subscriber"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_carrier_census_legal_name"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_09_DEPENDENT_LINKAGE",
+      "RULE_10_REQUIRED_FIELDS",
+      "RULE_16_COMPARISON_MATCHING"
+    ],
+    "execution_gates": [
+      "A_source_coverage",
+      "E_reconciliation"
+    ]
+  },
+  "promotion": {
+    "mode": "auto",
+    "review_status": "APPROVED",
+    "promoted_by": "learning_engine_reconciliation_pipeline",
+    "promoted_at": "2026-10-28T18:50:00.000000"
+  }
+}

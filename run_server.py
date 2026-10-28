@@ -8,16 +8,17 @@ import os
 import sys
 from pathlib import Path
 
-# Force unbuffered output so terminal logs appear instantly
+# Force unbuffered output and UTF-8 encoding so emojis and terminal logs appear cleanly
 os.environ["PYTHONUNBUFFERED"] = "1"
+os.environ["PYTHONIOENCODING"] = "utf-8"
 if hasattr(sys.stdout, "reconfigure"):
     try:
-        sys.stdout.reconfigure(line_buffering=True)
+        sys.stdout.reconfigure(encoding="utf-8", line_buffering=True, errors="replace")
     except Exception:
         pass
 if hasattr(sys.stderr, "reconfigure"):
     try:
-        sys.stderr.reconfigure(line_buffering=True)
+        sys.stderr.reconfigure(encoding="utf-8", line_buffering=True, errors="replace")
     except Exception:
         pass
 
@@ -51,6 +52,11 @@ if __name__ == "__main__":
         "propagate": False,
     }
     log_config["loggers"]["census.caching"] = {
+        "handlers": ["census_console"],
+        "level": "INFO",
+        "propagate": False,
+    }
+    log_config["loggers"]["census.learning_engine"] = {
         "handlers": ["census_console"],
         "level": "INFO",
         "propagate": False,

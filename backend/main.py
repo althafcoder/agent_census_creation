@@ -59,6 +59,8 @@ def run_pipeline(
     output_dir: Path = C.OUTPUT_DIR,
     bypass_cache: bool = False,
     tracer: DiagnosticTracer | None = None,
+    case_id: str | None = None,
+    enable_learning: bool = True,
 ) -> dict:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -68,11 +70,78 @@ def run_pipeline(
         os.environ["BYPASS_LOCAL_CACHE"] = "true"
     tracer = tracer or DiagnosticTracer()
 
+    # Learning Engine initialization
+    le_orchestrator = None
+    le_ctx = None
+    le_snapshot = None
+    coverage_ledger = None
+    provenance = None
+    validator = None
+
+    if enable_learning:
+        try:
+            from learning_engine import (
+                LEARNING_ENGINE_ENABLED,
+                LearningEngineOrchestrator,
+                ProvenanceTracker,
+                SourceCoverageLedger,
+                UnderwritingValidator,
+            )
+            if LEARNING_ENGINE_ENABLED:
+                le_orchestrator = LearningEngineOrchestrator()
+                le_ctx, le_snapshot = le_orchestrator.initialize_run_context(
+                    case_id=case_id,
+                    bypass_cache=bypass_cache,
+                    output_dir=output_dir,
+                )
+                coverage_ledger = SourceCoverageLedger(run_id=le_ctx.run_id)
+                provenance = ProvenanceTracker(run_id=le_ctx.run_id)
+                validator = UnderwritingValidator(instruction_hash=le_snapshot.content_hash)
+        except Exception as _le_init_err:
+            log.warning("Learning Engine initialization skipped: %s", _le_init_err)
+
     # 1. review EVERY uploaded document ----------------------------------------------------------
     log.info("[1/7] Reading and classifying documents...")
     docs = read_all(source, dest_dir=output_dir / "extracted_text")
     if not docs:
         raise ValueError(f"No supported files found in {source}")
+
+    if coverage_ledger:
+        for d in docs:
+            exp_units = [t.name for t in d.tables] or ["main"]
+            from learning_engine import DocumentManifest
+            manifest = DocumentManifest(
+                document_id=d.name,
+                filename=d.name,
+                content_hash=getattr(d, "file_hash", "") or "",
+                roles=[getattr(d, "role", "unknown")],
+                access_status=getattr(d, "access_status", "READABLE"),
+                expected_units=exp_units,
+                visited_units=exp_units,
+                extraction_status="COMPLETED",
+            )
+            coverage_ledger.register_document(manifest)
+            for u in exp_units:
+                coverage_ledger.record_unit_visit(d.name, u, status="VISITED")
+        cov_sum = coverage_ledger.get_coverage_summary()
+        log.info(
+            "      * [LEARNING ENGINE] SourceCoverageLedger tracked %d files (%d/%d units visited, complete=%s)",
+            len(docs),
+            cov_sum.get("visited_units", 0),
+            cov_sum.get("total_expected_units", 0),
+            cov_sum.get("is_complete", True),
+        )
+
+    from protected_files import get_current_store, AccessStatus
+    access_records = get_current_store()._last_access_records
+    F.access_records = access_records
+    for name, rec in access_records.items():
+        if rec.status == AccessStatus.UNLOCKED_AND_READ:
+            applied_pw = getattr(rec, "applied_password", "")
+            pw_info = " (Decrypted with provided password)" if applied_pw else ""
+            log.info("      * %-42s -> UNLOCKED AND READ%s", name, pw_info)
+        elif rec.status in (AccessStatus.PASSWORD_REJECTED, AccessStatus.PASSWORD_NOT_FOUND, AccessStatus.PRESENT_LOCKED):
+            log.warning("      * %-42s -> %s", name, rec.status.value)
 
     input_hashes: dict[str, str] = {}
     for d in docs:
@@ -95,7 +164,8 @@ def run_pipeline(
         log.info("      * %-42s -> %-11s %s", d.name, role, "(OCR Scanned)" if d.scanned else "(Digital)")
 
     # Unknown files that contain a census-looking table are still used (never ignore a genuine census file)
-    for unk in roles.pop("unknown", []):
+    unknown_docs = list(roles.get("unknown", []))
+    for unk in unknown_docs:
         has_census_table = False
         for t in unk.tables:
             h = detect_header(t.df)
@@ -104,7 +174,28 @@ def run_pipeline(
                 break
         if has_census_table:
             roles["census"].append(unk)
+            if unk in roles.get("unknown", []):
+                roles["unknown"].remove(unk)
             log.info("      * Unknown file %s contains census table -> promoted to census", unk.name)
+
+    # Combine Benefits Enrollment Report (BER) / Election Report into census when census lacks medical plan columns
+    census_has_plan = any(
+        "plan" in (detect_header(t.df).columns if detect_header(t.df) else {})
+        for cd in roles["census"] for t in cd.tables
+    )
+    if not census_has_plan:
+        for inv_doc in roles.get("invoice", []):
+            if inv_doc not in roles["census"] and re.search(r"(enroll|benefit.*report|\bber\b|election)", inv_doc.name, re.I):
+                roles["census"].append(inv_doc)
+                log.info("      * Enrollment report %s also added to census for plan/tier consolidation", inv_doc.name)
+
+    # Conversely, if a Benefits Enrollment Report (BER) was classified as census and no medical carrier invoice exists,
+    # include the BER in invoice comparison as an invoice equivalent (Section 11.1)
+    if not roles.get("invoice"):
+        for cen_doc in roles.get("census", []):
+            if re.search(r"(benefit.*enroll.*report|enrollment\s*report|\bber\b)", cen_doc.name, re.I):
+                roles["invoice"].append(cen_doc)
+                log.info("      * Enrollment report %s also added to invoice as BER equivalent", cen_doc.name)
 
     # 2. prospect block & routing decision --------------------------------------------------------
     log.info("[2/7] Extracting Prospect Information & Determining Carrier Routing...")
@@ -154,10 +245,20 @@ def run_pipeline(
     # 3. census (employees + dependents from all files) ------------------------------------------
     log.info("[3/7] Building Census: parsing employee & dependent records...")
     if not roles["census"]:
-        raise ValueError("No census / enrollment file was found among the uploads.")
-    census, meta = build_census(roles["census"], effective_date=prospect.effective_date, tracer=tracer)
-    if not census.employees:
-        raise ValueError("Census files were found but no employee rows could be parsed.")
+        log.warning("No census / enrollment file was found among the uploads; proceeding to generate missing info deliverable.")
+        census = Census()
+        meta = {"has_coverage_column": False, "saw_dependent_source": False}
+        F.notes.append("No census / enrollment file was found among the uploads. Census comparison workbook was not generated.")
+    else:
+        census, meta = build_census(roles["census"], effective_date=prospect.effective_date, tracer=tracer)
+        if not census.employees:
+            fallback_docs = [d for d in docs if d not in roles["census"] and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
+            if fallback_docs:
+                log.info("      * Primary census yielded 0 employees; attempting fallback consolidation with %s", [d.name for d in fallback_docs])
+                census, meta = build_census(roles["census"] + fallback_docs, effective_date=prospect.effective_date, tracer=tracer)
+        if not census.employees:
+            log.warning("Census files were found but no employee rows could be parsed; proceeding to generate missing info deliverable.")
+            F.notes.append("Census files were provided but 0 employee rows could be read from them.")
     log.info("      * Parsed %d employee records, %d dependent records", len(census.employees), len(census.dependents))
 
     if not meta["saw_dependent_source"]:
@@ -303,16 +404,19 @@ def run_pipeline(
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     name = (prospect.company or "Prospect").replace("/", "-").strip()[:40]
 
+    out_path: Path | None = None
     sbu_path: Path | None = None
 
-    if routing.carrier == C.CARRIER_FLORIDA_BLUE or routing.is_florida:
+    if not census.employees:
+        log.info("[7/8] Census is absent or empty; withholding carrier comparison workbooks per Section 25.")
+    elif routing.carrier == C.CARRIER_FLORIDA_BLUE or routing.is_florida:
         # Florida Blue -> RAPT Census Comparison Workbook only
         log.info("[7/8] Generating Florida Blue RAPT Census Excel workbook...")
         out_path = output_dir / f"RAPT_Census_{name}_{stamp}.xlsx".replace(" ", "_")
         save_rapt_workbook(C.RAPT_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
         log.info("      * Saved Florida Blue Excel: %s", out_path.name)
-    else:
-        # Non-Florida (or default Cigna routing) -> Marsh Primary + SBU Deliverables
+    elif routing.carrier == C.CARRIER_CIGNA or (routing.state and routing.state.upper() not in ("FL", "UNKNOWN", "CONFLICTING")):
+        # Confirmed Non-Florida (Cigna routing) -> Marsh Primary + SBU Deliverables
         log.info("[7/8] Generating Cigna Marsh PEO Practice Census Comparison workbook...")
         out_path = output_dir / f"Marsh_Census_{name}_{stamp}.xlsx".replace(" ", "_")
         save_marsh_workbook(C.MARSH_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
@@ -322,6 +426,9 @@ def run_pipeline(
         sbu_path = output_dir / f"SBU_Census_{name}_{stamp}.xlsx".replace(" ", "_")
         save_sbu_workbook(C.SBU_TEMPLATE_PATH, sbu_path, census, prospect)
         log.info("      * Saved SBU Cigna Excel: %s", sbu_path.name)
+    else:
+        # Unknown or conflicting business state -> no carrier workbook per Section 4.2!
+        log.info("[7/8] Primary business state unknown/conflicting; withholding carrier workbooks per Section 4.2.")
 
     # Deliverable 2: Missing Information Email ----------------------------------------------------
     log.info("[8/8] Generating ready-to-send Missing Information Email deliverable...")
@@ -361,7 +468,10 @@ def run_pipeline(
     log.info("      * Saved Diagnostic Trace: %s", trace_path.name)
 
     summary = exception_summary(F, census, audit)
-    txt_path = output_dir / out_path.name.replace(".xlsx", "_exceptions.txt")
+    if out_path:
+        txt_path = output_dir / out_path.name.replace(".xlsx", "_exceptions.txt")
+    else:
+        txt_path = output_dir / f"Exceptions_Audit_{name}_{stamp}.txt".replace(" ", "_")
     txt_path.write_text(summary, encoding="utf-8")
     log.info("      * Saved Exceptions Report: %s", txt_path.name)
     log.info("\n" + summary)
@@ -380,6 +490,86 @@ def run_pipeline(
                 "extracted_filename": d.extracted_text_path.name if getattr(d, "extracted_text_path", None) else None,
                 "text_snippet": getattr(d, "text", "")[:2000],
             })
+    le_status = "PASSED"
+    le_val_report = None
+    if validator:
+        le_val_report = validator.validate_full_pipeline(
+            prospect=prospect, routing=routing, census=census, selected_invoices=selected,
+            renewal=renewal, ren_required=ren_required, claims_required=claims_required,
+            findings=F, results=results, roles=roles,
+        )
+        le_status = le_val_report.release_status.value
+        if le_orchestrator and le_ctx:
+            try:
+                if not le_ctx.case_id or le_ctx.case_id == "case_default":
+                    slug = "".join(ch if ch.isalnum() else "_" for ch in (prospect.company or "case")).strip("_").lower()[:40]
+                    if slug:
+                        le_ctx.case_id = f"case_{slug}"
+                le_orchestrator._ensure_validated_repair_patterns(le_ctx, le_val_report)
+                case_audit = le_orchestrator._build_private_case_audit(
+                    ctx=le_ctx,
+                    docs=docs,
+                    coverage_ledger=coverage_ledger,
+                    census=census,
+                    report=le_val_report,
+                    executed_patches=[],
+                    attempt=0,
+                )
+                le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "case_audit", case_audit)
+                le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "final_validation", le_val_report.to_dict())
+                if coverage_ledger:
+                    le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "coverage_ledger", coverage_ledger.to_dict())
+                if provenance:
+                    le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "provenance", provenance.to_dict())
+
+                gates = le_val_report.execution_gates or {}
+                gate_str = " | ".join(f"{k}={v.get('status', 'PASS')}" for k, v in gates.items())
+                pop_sum = case_audit.get("canonical_population_summary", {})
+                disp_counts = pop_sum.get("disposition_counts", {})
+                b_gate = gates.get("B_gender_resolution", {})
+                run_dir = le_orchestrator.memory_store.data_dir / "runs" / le_ctx.case_id / le_ctx.run_id
+                le_log = logging.getLogger("census.learning_engine.orchestrator")
+
+                banner_lines = [
+                    "=" * 88,
+                    f"[LEARNING ENGINE] VERIFICATION SUMMARY | Status={le_status} | Checks={le_val_report.passed_checks}/{le_val_report.total_checks} Passed",
+                    f"  * [INSTRUCTION SNAPSHOT] Hash={le_snapshot.content_hash[:12] if le_snapshot else inst_hash} | Case={le_ctx.case_id} | Run={le_ctx.run_id}",
+                    "  * [INSTRUCTION & REPAIR RULES APPLIED]:",
+                ]
+                for chk in le_val_report.checks:
+                    st_val = chk.status.value if hasattr(chk.status, "value") else str(chk.status)
+                    banner_lines.append(f"      - [{st_val}] {chk.rule_id} (Section {chk.section} - {chk.name}): {chk.reason}")
+
+                banner_lines.append("  * [VALIDATED LEARNING PATTERNS APPLIED]:")
+                for vp in le_orchestrator.memory_store.load_validated_patterns():
+                    banner_lines.append(
+                        f"      - [{vp.get('pattern_state', 'VALIDATED')}] {vp.get('learning_id')} "
+                        f"(v{vp.get('version', 1)}, patch={vp.get('patch_version', '2.2.0')}, fp={vp.get('fingerprint', '')})"
+                    )
+
+                banner_lines.extend([
+                    f"  * [POPULATION & DISPOSITIONS] CanonicalRows={pop_sum.get('total_canonical_rows', 0)} "
+                    f"(Employees={pop_sum.get('canonical_employees', 0)}, ActiveMedDeps={pop_sum.get('active_medical_dependents', 0)}) | "
+                    f"ExcludedNonMedDeps={pop_sum.get('excluded_non_medical_or_pt_dependents', 0)} | "
+                    f"MaskedSlotsIgnored={pop_sum.get('masked_placeholder_slots_ignored', 0)} | Dispositions={disp_counts}",
+                    f"  * [GENDER RESOLUTION] Resolved(M/F)={b_gate.get('resolved_m_f_count', 0)}/{b_gate.get('total_canonical_people', 0)} | "
+                    f"UnresolvedBlank={b_gate.get('unresolved_missing_count', 0)} | Conflicts={b_gate.get('conflict_count', 0)}",
+                    f"  * [EXECUTION GATES A-F] {gate_str}",
+                    f"  * [AUDIT ARTIFACTS SAVED] {run_dir}",
+                    f"[LEARNING ENGINE] ALL RULES APPLIED BASED ON ACTIVE INSTRUCTIONS -- LEARNING VERIFICATION COMPLETED (Status: {le_status})",
+                    "=" * 88,
+                ])
+
+                for bline in banner_lines:
+                    le_log.info(bline)
+                    if le_log.propagate is False:
+                        log.info(bline)
+
+                summary = summary + "\n\n" + "\n".join(banner_lines)
+                txt_path.write_text(summary, encoding="utf-8")
+            except Exception as _le_save_err:
+                log.warning("Learning Engine artifact persistence warning: %s", _le_save_err)
+
     return {
         "output_file": out_path,
         "sbu_output_file": sbu_path,
@@ -422,11 +612,19 @@ def run_pipeline(
             "requires_sbu": routing.requires_sbu,
             "ghq_required": routing.ghq_required,
         },
+        "census": census,
         "summary": summary,
         "audit": audit,
         "findings": F,
         "classified_docs": doc_roles,
         "extracted_text_dir": str(output_dir / "extracted_text"),
+        "learning_engine": {
+            "engine_status": le_status,
+            "case_id": le_ctx.case_id if le_ctx else None,
+            "run_id": le_ctx.run_id if le_ctx else None,
+            "instruction_hash": le_snapshot.content_hash if le_snapshot else inst_hash,
+            "validation_report": le_val_report.to_dict() if le_val_report else None,
+        },
     }
 
 

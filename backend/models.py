@@ -13,9 +13,13 @@ class Person:
     role: str                                  # EE | SP | CH
     first: str = ""
     last: str = ""
+    preferred_first: str = ""
+    middle_name: str = ""
+    aliases: list[str] = field(default_factory=list)
     gender: str = ""
     dob: Optional[date] = None
     zip: str = ""
+    address: str = ""
     coverage: str = ""                         # employees only: EE, ES, EC, FAM, WO, WP, NE, RC
     cobra: str = ""
     plan: str = ""
@@ -42,7 +46,12 @@ class Person:
     is_duplicate: bool = False                 # second occurrence of an employee in the same file
     benefit_roster: bool = False               # employee appears in a benefit-eligibility/plan roster
     row_no: int = 0                            # "Data Row" number assigned at write time
+    sub_row: Optional[int] = None              # Subscriber's final Data Row number (for dependents)
     raw_data: dict = field(default_factory=dict) # Raw extracted values and source locations
+    gender_candidates: list[dict] = field(default_factory=list)
+    gender_resolution_status: str = ""         # RESOLVED | CONFLICT | INVALID | MISSING
+    coverage_associations: list[dict] = field(default_factory=list)
+    disposition: str = ""                      # INCLUDE_ACTIVE_MEDICAL | RETAIN_MEDICAL_STATUS | EXCLUDE_NON_MEDICAL_ONLY | EXCLUDE_PART_TIME | UNRESOLVED
 
     def note(self, text: str, red: bool = False, orange: bool = False) -> None:
         color = "red" if red else ("orange" if orange else "black")
@@ -78,6 +87,7 @@ class InvoiceRecord:
     total_amount: Optional[float] = None       # line total (current + retro)
     status: str = ""
     sub_id: str = ""
+    group_no: str = ""
     dep_count: int = 0
     dep_rels: set = field(default_factory=set)
     has_dep_detail: bool = False
@@ -152,6 +162,9 @@ class Census:
     dependent_merges: int = 0
     duplicate_employees: int = 0
     unassigned_dependents: list[Person] = field(default_factory=list)
+    excluded_dependents: list[Person] = field(default_factory=list)
+    candidate_dispositions: list[dict] = field(default_factory=list)
+    masked_dependent_slots: list[dict] = field(default_factory=list)
     files_used: list[str] = field(default_factory=list)
     census_notes: list[str] = field(default_factory=list)
 
@@ -168,9 +181,11 @@ class Census:
 class RowResult:
     inv: Optional[InvoiceRecord] = None
     inv_name: str = ""
+    group_no: str = ""
     plan: str = ""
     tier: str = ""
     status: str = ""
+    plan_enrolled: str = ""
     inv_premium: Optional[float] = None
     renewal_premium: Optional[float] = None
     match_pct: Optional[float] = None

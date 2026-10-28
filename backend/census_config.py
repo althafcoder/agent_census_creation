@@ -4,6 +4,7 @@ Dedicated unique module name to avoid any namespace collision with parent config
 from pathlib import Path
 import os
 import re
+from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 BACKEND_DIR = BASE_DIR / "backend"
@@ -61,12 +62,40 @@ SBU_TEMPLATE_PATH = _discover("SBU_TEMPLATE_PATH", BACKEND_DIR / "templates", "*
 # Default template path for backwards compatibility
 TEMPLATE_PATH = _discover("CENSUS_TEMPLATE_PATH", BACKEND_DIR / "templates", "*RAPT*.xlsx")
 
-# Instructions Paths (dynamic multi-instruction discovery for all controlling instruction documents)
+# Instructions Paths: dynamic discovery directly accessing backend/instructions/
 INSTRUCTIONS_DIR = BACKEND_DIR / "instructions"
-INSTRUCTIONS_PATHS = _discover_all("CENSUS_INSTRUCTIONS_PATHS", INSTRUCTIONS_DIR, "*.docx")
-if not INSTRUCTIONS_PATHS:
-    INSTRUCTIONS_PATHS = _discover_all("CENSUS_INSTRUCTIONS_PATHS", INSTRUCTIONS_DIR, "*.txt")
-INSTRUCTIONS_PATH = INSTRUCTIONS_PATHS[0] if INSTRUCTIONS_PATHS else _discover("CENSUS_INSTRUCTIONS_PATH", INSTRUCTIONS_DIR, "*.docx")
+
+def get_instruction_paths() -> list[Path]:
+    """Dynamically return all active instruction documents currently in backend/instructions/."""
+    if not INSTRUCTIONS_DIR.exists():
+        return []
+    override = os.getenv("CENSUS_INSTRUCTIONS_PATHS") or os.getenv("CENSUS_INSTRUCTIONS_PATH")
+    if override:
+        paths = [Path(p.strip()) for p in re.split(r"[,;]", override) if Path(p.strip()).exists()]
+        if paths:
+            return paths
+    files = [
+        p for p in INSTRUCTIONS_DIR.iterdir()
+        if p.is_file() and p.suffix.lower() in (".txt", ".docx", ".md", ".pdf")
+        and not p.name.startswith("~$") and not p.name.startswith(".")
+    ]
+    files.sort(key=lambda p: (
+        0 if any(k in p.name.lower() for k in ("dynamic", "master", "unified", "combined", "instruction")) else 1,
+        p.name.lower()
+    ))
+    return files
+
+def get_instruction_path() -> Path:
+    """Return the primary active instruction document path dynamically."""
+    paths = get_instruction_paths()
+    return paths[0] if paths else (INSTRUCTIONS_DIR / "Dynamic_Unified_Medical_Submission_Agent_Instruction.txt")
+
+def __getattr__(name: str) -> Any:
+    if name == "INSTRUCTIONS_PATHS":
+        return get_instruction_paths()
+    if name == "INSTRUCTIONS_PATH":
+        return get_instruction_path()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # ---- Template layout (RAPT Census Template) --------------------------------
 HEADER_ROW = 14
@@ -108,11 +137,25 @@ COMPARISON_WIDTHS = [26, 40, 28, 12, 30, 15, 15, 24, 70]
 # ---- Marsh PEO Practice Layout ---------------------------------------------
 MARSH_HEADER_ROW = 12
 MARSH_FIRST_DATA_ROW = 14
-MARSH_COMPARISON_START_COL = 15  # Col O (after Code Key columns K-N)
+MARSH_COMPARISON_START_COL = 11  # Col K
 MARSH_COLS = {
     "row_no": 1, "first": 2, "last": 3, "gender": 4, "dob": 5, "zip": 6,
     "relationship": 7, "coverage": 8, "cobra": 9, "plan": 10,
 }
+MARSH_COMPARISON_HEADERS = [
+    "Invoice Employee Name",   # K (11)
+    "Match %",                 # L (12)
+    "Invoice Group #",         # M (13)
+    "Invoice Plan",            # N (14)
+    "Invoice Tier",            # O (15)
+    "Invoice Status",          # P (16)
+    "Plan Enrolled",           # Q (17)
+    "Invoice Premium",         # R (18)
+    "Renewal Premium",         # S (19)
+    "Comparison Result",       # T (20)
+    "Notes",                   # U (21)
+]
+MARSH_COMPARISON_WIDTHS = [26, 12, 18, 35, 14, 18, 35, 16, 16, 24, 40]
 
 # ---- SBU Census Template Layout --------------------------------------------
 SBU_HEADER_ROW = 3
@@ -144,7 +187,17 @@ TESSERACT_PATH = os.getenv("TESSERACT_PATH", "")
 # ---- LLM Configuration (Anthropic Claude) -----------------------------------
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-5-5")
-ANTHROPIC_TEMPERATURE = float(os.getenv("ANTHROPIC_TEMPERATURE", "1.0"))
+ANTHROPIC_EFFORT = os.getenv("ANTHROPIC_EFFORT", "high")
+ANTHROPIC_MAX_TOKENS = int(os.getenv("ANTHROPIC_MAX_TOKENS", "16000"))
+_temp_env = os.getenv("ANTHROPIC_TEMPERATURE", "").strip()
+ANTHROPIC_TEMPERATURE = (
+    float(_temp_env)
+    if (_temp_env and not any(tag in ANTHROPIC_MODEL.lower() for tag in ("opus-5-5", "opus-5.5")))
+    else None
+)
+ANTHROPIC_STRUCTURED_OUTPUTS = os.getenv("ANTHROPIC_STRUCTURED_OUTPUTS", "false").lower() in ("true", "1", "yes")
 ANTHROPIC_WORKSPACE_ID = os.getenv("ANTHROPIC_WORKSPACE_ID", "")
 
 USE_LLM_FALLBACK = bool(ANTHROPIC_API_KEY)
+LLM_FIRST = os.getenv("LLM_FIRST", "true").lower() in ("true", "1", "yes")
+

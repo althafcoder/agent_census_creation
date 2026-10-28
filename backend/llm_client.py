@@ -7,12 +7,20 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 import re
 import contextvars
 from typing import Any
 
-from census_config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_TEMPERATURE, ANTHROPIC_WORKSPACE_ID, INSTRUCTIONS_PATH, INSTRUCTIONS_PATHS
+from census_config import (
+    ANTHROPIC_API_KEY,
+    ANTHROPIC_EFFORT,
+    ANTHROPIC_MAX_TOKENS,
+    ANTHROPIC_MODEL,
+    ANTHROPIC_TEMPERATURE,
+    ANTHROPIC_WORKSPACE_ID,
+)
 
 log = logging.getLogger("census.llm")
 
@@ -29,9 +37,10 @@ def set_current_tracking(file_name: str | None = None, step_name: str | None = N
         _CURRENT_STEP.set(step_name)
 
 
-# Load official instructions verbatim from the configured official instruction documents
+# Instructions directory: directly accessed dynamically without requiring static config setup
+INSTRUCTIONS_DIR = Path(__file__).resolve().parent / "instructions"
 _INSTRUCTIONS_CACHE: str | None = None
-_INSTRUCTIONS_MTIMES: tuple[float, ...] = ()
+_INSTRUCTIONS_SNAPSHOT: tuple[tuple[str, float, int], ...] = ()
 
 
 def _read_docx_paragraphs(path: Path) -> str:
@@ -51,66 +60,80 @@ def _read_docx_paragraphs(path: Path) -> str:
         return ""
 
 
+def _read_instruction_file(path: Path) -> str:
+    """Read full text content from any supported instruction document (.docx, .txt, .md, .pdf)."""
+    ext = path.suffix.lower()
+    if ext == ".docx":
+        return _read_docx_paragraphs(path)
+    elif ext in (".txt", ".md"):
+        for enc in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
+            try:
+                return path.read_text(encoding=enc).strip()
+            except UnicodeDecodeError:
+                continue
+            except Exception as exc:
+                log.warning("Could not read instruction file %s: %s", path.name, exc)
+                return ""
+        return ""
+    elif ext == ".pdf":
+        try:
+            from readers import _extract_pdf_digital_text
+            text, _ = _extract_pdf_digital_text(path)
+            return text.strip() if text else ""
+        except Exception as exc:
+            log.warning("Could not read PDF instruction %s: %s", path.name, exc)
+            return ""
+    return ""
+
+
+def get_instruction_files() -> list[Path]:
+    """Directly scan backend/instructions directory for all active instruction files on demand."""
+    if not INSTRUCTIONS_DIR.exists():
+        return []
+    override = os.getenv("CENSUS_INSTRUCTIONS_PATHS") or os.getenv("CENSUS_INSTRUCTIONS_PATH")
+    if override:
+        paths = [Path(p.strip()) for p in re.split(r"[,;]", override) if Path(p.strip()).exists()]
+        if paths:
+            return paths
+    files = [
+        p for p in INSTRUCTIONS_DIR.iterdir()
+        if p.is_file() and p.suffix.lower() in (".txt", ".docx", ".md", ".pdf")
+        and not p.name.startswith("~$") and not p.name.startswith(".")
+    ]
+    files.sort(key=lambda p: (
+        0 if any(k in p.name.lower() for k in ("dynamic", "master", "unified", "combined", "instruction")) else 1,
+        p.name.lower()
+    ))
+    return files
+
+
 def get_instruction_doc_names() -> list[str]:
-    """Return the list of filenames of all active official instruction documents."""
-    try:
-        from census_config import INSTRUCTIONS_PATHS
-        if INSTRUCTIONS_PATHS:
-            names = [p.name for p in INSTRUCTIONS_PATHS if p.exists()]
-            if names:
-                return names
-    except Exception:
-        pass
-    instructions_dir = Path(__file__).resolve().parent / "instructions"
-    files = sorted(
-        list(instructions_dir.glob("*.docx")) + list(instructions_dir.glob("*.txt")),
-        key=lambda p: (0 if any(k in p.name.lower() for k in ("master", "unified", "combined")) else 1, p.name.lower())
-    )
-    return [p.name for p in files if not p.name.startswith("~$")]
+    """Return the list of filenames of all active instruction documents currently in backend/instructions/."""
+    return [p.name for p in get_instruction_files()]
 
 
 def get_instruction_doc_name() -> str:
     """Return a descriptive string of active official instruction documents."""
     names = get_instruction_doc_names()
-    return "; ".join(names) if names else "Master Unified Medical Submission Agent Instruction"
+    return "; ".join(names) if names else "Active Official Instructions"
 
 
 def get_official_instructions() -> str:
-    """Load and format all official verbatim instructions from the active instruction documents."""
-    global _INSTRUCTIONS_CACHE, _INSTRUCTIONS_MTIMES
+    """Load and format all official instructions directly from backend/instructions/.
+    
+    Dynamically detects any new, deleted, or edited instruction files on demand.
+    Zero config setup or restarts required when swapping instruction files.
+    """
+    global _INSTRUCTIONS_CACHE, _INSTRUCTIONS_SNAPSHOT
 
-    paths: list[Path] = []
-    try:
-        from census_config import INSTRUCTIONS_PATHS
-        if INSTRUCTIONS_PATHS:
-            paths = [p for p in INSTRUCTIONS_PATHS if p.exists()]
-    except Exception:
-        pass
-
-    if not paths:
-        instructions_dir = Path(__file__).resolve().parent / "instructions"
-        paths = sorted(
-            list(instructions_dir.glob("*.docx")) + list(instructions_dir.glob("*.txt")),
-            key=lambda p: (0 if any(k in p.name.lower() for k in ("master", "unified", "combined")) else 1, p.name.lower())
-        )
-        paths = [p for p in paths if not p.name.startswith("~$")]
-
-    # Check if cached and file mtimes haven't changed
-    current_mtimes = tuple(p.stat().st_mtime for p in paths if p.exists())
-    if _INSTRUCTIONS_CACHE is not None and current_mtimes == _INSTRUCTIONS_MTIMES and current_mtimes:
+    paths = get_instruction_files()
+    current_snapshot = tuple((p.name, p.stat().st_mtime, p.stat().st_size) for p in paths if p.exists())
+    if _INSTRUCTIONS_CACHE is not None and current_snapshot == _INSTRUCTIONS_SNAPSHOT and current_snapshot:
         return _INSTRUCTIONS_CACHE
 
     sections: list[str] = []
     for i, path in enumerate(paths, 1):
-        content = ""
-        if path.suffix.lower() == ".docx":
-            content = _read_docx_paragraphs(path)
-        elif path.suffix.lower() == ".txt":
-            try:
-                content = path.read_text(encoding="utf-8").strip()
-            except Exception:
-                pass
-
+        content = _read_instruction_file(path)
         if content.strip():
             banner = (
                 f"================================================================================\n"
@@ -119,16 +142,20 @@ def get_official_instructions() -> str:
             )
             sections.append(f"{banner}\n\n{content.strip()}")
 
-    if not sections:
-        txt_file = Path(__file__).resolve().parent / "instructions" / "extracted_instruction.txt"
-        if txt_file.exists():
-            _INSTRUCTIONS_CACHE = txt_file.read_text(encoding="utf-8")
-            _INSTRUCTIONS_MTIMES = (txt_file.stat().st_mtime,)
-            return _INSTRUCTIONS_CACHE
-
     combined = "\n\n\n".join(sections)
+    if not combined.strip():
+        raise RuntimeError("Controlling instructions are missing or empty in backend/instructions. Refusing to run without governing instructions.")
+    is_update = bool(_INSTRUCTIONS_SNAPSHOT and current_snapshot != _INSTRUCTIONS_SNAPSHOT)
     _INSTRUCTIONS_CACHE = combined
-    _INSTRUCTIONS_MTIMES = current_mtimes
+    _INSTRUCTIONS_SNAPSHOT = current_snapshot
+
+    doc_names = [p.name for p in paths]
+    doc_str = "; ".join(doc_names) if doc_names else "(none)"
+    if is_update:
+        log.info("🔄 [NEW INSTRUCTION DETECTED] Swapped active instruction to: '%s' (%d chars across %d file(s))", doc_str, len(combined), len(paths))
+    else:
+        log.info("📋 [USING INSTRUCTION] Active instruction: '%s' (%d chars across %d file(s))", doc_str, len(combined), len(paths))
+
     return _INSTRUCTIONS_CACHE
 
 
@@ -137,17 +164,49 @@ get_official_rei_instructions = get_official_instructions
 
 
 def get_system_prompt() -> str:
-    """Dynamic system prompt referencing all active official instruction documents."""
-    names = get_instruction_doc_names()
-    doc_str = "; ".join(names) if names else "Master Unified Medical Submission Agent Instruction"
+    """Dynamic deterministic system prompt referencing all active official instruction documents."""
+    doc_str = get_instruction_doc_name()
     return (
-        f"You are the Census Creation and Invoice Comparison Engine operating strictly under the official instructions: "
-        f"[{doc_str}]. Never provide analysis or extraneous prose. "
-        "Return valid JSON only with zero markdown fences. Never invent or guess values; leave unavailable fields blank."
+        f"You are a deterministic document processing agent. Operating strictly under the official instructions: [{doc_str}].\n\n"
+        "Rules:\n"
+        "1. Extract only information supported by source documents.\n"
+        "2. Never invent missing values.\n"
+        "3. Follow the supplied mapping rules exactly.\n"
+        "4. Use consistent field names and formats.\n"
+        "5. Flag ambiguous or conflicting records.\n"
+        "6. Never silently resolve conflicting data.\n"
+        "7. Return only the requested output structure. Valid JSON only with zero markdown fences."
     )
 
 
 _SYSTEM = get_system_prompt()
+DETERMINISTIC_SYSTEM_PROMPT = _SYSTEM
+
+PROSPECT_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "company_name": {"type": "string"},
+        "dba": {"type": "string"},
+        "sic_naics_code": {"type": "string"},
+        "state": {"type": "string"},
+        "effective_date": {"type": "string"},
+        "contact_name": {"type": "string"},
+        "contact_email": {"type": "string"},
+        "contact_phone": {"type": "string"},
+    },
+    "required": ["company_name", "state"],
+}
+
+RECONCILIATION_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "matched_records": {"type": "array"},
+        "unmatched_census": {"type": "array"},
+        "unmatched_invoice": {"type": "array"},
+        "flagged_conflicts": {"type": "array"},
+    },
+    "required": ["matched_records", "unmatched_census", "unmatched_invoice", "flagged_conflicts"],
+}
 
 
 def _clean_json_text(text: str) -> str:
@@ -160,12 +219,12 @@ def _clean_json_text(text: str) -> str:
 
 
 def _parse_json_robust(text: str) -> Any:
-    """Parse JSON with fallback for wrapped or embedded markdown/content."""
+    """Parse JSON with fallback for wrapped, embedded markdown, or truncated content."""
     cleaned = _clean_json_text(text)
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
-        # Search for outermost JSON object or list
+        # 1. Search for outermost complete JSON object or list
         start_brace = cleaned.find("{")
         end_brace = cleaned.rfind("}")
         start_bracket = cleaned.find("[")
@@ -183,24 +242,72 @@ def _parse_json_robust(text: str) -> Any:
                 return json.loads(cleaned[s:e])
             except json.JSONDecodeError:
                 continue
+
+        # 2. Truncation Recovery: If a JSON array was cut off by max_tokens, recover all completed items
+        if start_bracket != -1:
+            pos = cleaned.rfind("}")
+            while pos > start_bracket:
+                candidate = cleaned[start_bracket : pos + 1].rstrip().rstrip(",") + "\n]"
+                try:
+                    return json.loads(candidate)
+                except json.JSONDecodeError:
+                    pos = cleaned.rfind("}", 0, pos)
+
+        # 3. Truncation Recovery: If a JSON object was cut off by max_tokens, recover completed top-level fields
+        if start_brace != -1:
+            pos = cleaned.rfind("}")
+            while pos > start_brace:
+                candidate = cleaned[start_brace : pos + 1].rstrip().rstrip(",") + "\n}"
+                try:
+                    return json.loads(candidate)
+                except json.JSONDecodeError:
+                    pos = cleaned.rfind("}", 0, pos)
+
+            # Also try closing at the last complete field
+            last_comma = cleaned.rfind(",")
+            if last_comma > start_brace:
+                candidate = cleaned[start_brace : last_comma].rstrip() + "\n}"
+                try:
+                    return json.loads(candidate)
+                except json.JSONDecodeError:
+                    pass
+
         raise
 
 
-def extract_json(prompt: str, max_tokens: int = 4000, bypass_cache: bool = False) -> Any:
+
+def extract_json(
+    prompt: str,
+    max_tokens: int = ANTHROPIC_MAX_TOKENS,
+    effort: str | None = None,
+    bypass_cache: bool = False,
+    output_schema: dict[str, Any] | None = None,
+    use_structured_output: bool = False,
+) -> Any:
     """Execute prompt via Anthropic Claude and return parsed JSON data."""
     if not ANTHROPIC_API_KEY:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured in .env.")
+
+    doc_name = get_instruction_doc_name()
+    step_name = _CURRENT_STEP.get() or "llm_extraction"
+    file_name = _CURRENT_FILE.get() or "benefits_submission"
+    effective_effort = effort or ANTHROPIC_EFFORT or "high"
 
     # 1. Tier 1: Check local persistent prompt cache (exact match, 0 tokens, <1ms)
     if not bypass_cache and not ANTHROPIC_API_KEY.startswith("sk-ant-test"):
         try:
             from caching import get_local_cache
-            step_name = _CURRENT_STEP.get() or "llm_extraction"
-            cached = get_local_cache().get(prompt, ANTHROPIC_MODEL, step_name=step_name)
+            cached = get_local_cache().get(prompt, ANTHROPIC_MODEL, step_name=step_name, bypass_cache=bypass_cache)
             if cached is not None:
+                log.info("⚡ [CACHE HIT] [%s] using instruction: '%s' (file: %s)", step_name, doc_name, file_name)
                 return cached
         except Exception as _c_err:
             log.debug("Local prompt cache lookup skipped: %s", _c_err)
+
+    log.info(
+        "🤖 [LLM PROMPT] Executing [%s] using instruction: '%s' (file: %s, model: %s, effort: %s)",
+        step_name, doc_name, file_name, ANTHROPIC_MODEL, effective_effort,
+    )
 
     import anthropic
     import time
@@ -226,13 +333,23 @@ def extract_json(prompt: str, max_tokens: int = 4000, bypass_cache: bool = False
 
     t0 = time.perf_counter()
     try:
-        resp = client.messages.create(
-            model=ANTHROPIC_MODEL,
-            temperature=ANTHROPIC_TEMPERATURE,
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=messages,
-        )
+        create_kwargs: dict[str, Any] = {
+            "model": ANTHROPIC_MODEL,
+            "max_tokens": max_tokens,
+            "output_config": {"effort": effective_effort},
+            "system": system_prompt,
+            "messages": messages,
+        }
+        if use_structured_output and output_schema:
+            create_kwargs["output_config"]["format"] = {
+                "type": "json_schema",
+                "schema": output_schema,
+            }
+        # For Opus 5.5, omit temperature completely; only include temperature for legacy non-Opus-5.5 models
+        if "opus-5-5" not in ANTHROPIC_MODEL.lower():
+            create_kwargs["temperature"] = ANTHROPIC_TEMPERATURE if ANTHROPIC_TEMPERATURE is not None else 1.0
+
+        resp = client.messages.create(**create_kwargs)
         latency_sec = time.perf_counter() - t0
 
         # Dynamically record token usage and cost for Token Utilization & Cost Analytics
@@ -287,13 +404,195 @@ def extract_json(prompt: str, max_tokens: int = 4000, bypass_cache: bool = False
         raise
 
 
+_PLACEHOLDER_VALS = {"n/a", "na", "none", "null", "unknown", "tbd", "not applicable", "pending", "pending confirmation"}
+
+
+def _clean_field_str(val: Any) -> str:
+    """Deterministically normalize a scalar string field, stripping invented placeholders."""
+    if val is None:
+        return ""
+    s = str(val).strip()
+    if s.lower() in _PLACEHOLDER_VALS:
+        return ""
+    return s
+
+
+def _validate_prospect_dict(raw: Any) -> dict[str, str]:
+    """Deterministic post-extraction schema validation for prospect metadata."""
+    if not isinstance(raw, dict):
+        return {}
+    schema_keys = (
+        "proposed_effective_date", "sic_naics_code", "company_name", "dba", "ein",
+        "address", "city", "state", "zip", "city_state_zip", "referral", "sales_person",
+        "contact_name", "contact_email", "contact_phone", "ft_employees",
+        "current_carrier", "current_peo", "salesforce_id", "onedigital_referral", "rei_sales_person",
+    )
+    out: dict[str, str] = {}
+    for k in schema_keys:
+        if k in raw:
+            out[k] = _clean_field_str(raw.get(k))
+    for k, v in raw.items():
+        if k not in out:
+            out[k] = _clean_field_str(v)
+    return out
+
+
+def _validate_invoice_rows(rows: list[Any]) -> list[dict[str, Any]]:
+    """Deterministic post-extraction validation for invoice subscriber rows."""
+    from utils import std_coverage, to_money
+    from census_builder import _is_non_medical
+
+    valid: list[dict[str, Any]] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        name = _clean_field_str(r.get("name"))
+        if not name:
+            continue
+        plan = _clean_field_str(r.get("plan"))
+        if plan and _is_non_medical(plan):
+            continue
+        tier_raw = _clean_field_str(r.get("tier"))
+        tier = std_coverage(tier_raw) or tier_raw.upper()
+        prem = to_money(r.get("premium"))
+        valid.append({
+            "name": name,
+            "tier": tier,
+            "dob": _clean_field_str(r.get("dob")) or None,
+            "gender": _clean_field_str(r.get("gender")).upper()[:1] or None,
+            "zip": _clean_field_str(r.get("zip")) or None,
+            "plan": plan,
+            "premium": prem,
+            "status": _clean_field_str(r.get("status")) or "Active",
+            "member_id": _clean_field_str(r.get("member_id")),
+            "group_no": _clean_field_str(r.get("group_no") or r.get("group_id") or r.get("group")),
+        })
+    return valid
+
+
+def _validate_renewal_rates(rows: list[Any]) -> list[dict[str, Any]]:
+    """Deterministic post-extraction validation for medical renewal rate rows."""
+    from utils import std_coverage, to_money
+    from census_builder import _is_non_medical
+
+    valid: list[dict[str, Any]] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        plan = _clean_field_str(r.get("plan"))
+        if not plan or _is_non_medical(plan):
+            continue
+        tier_raw = _clean_field_str(r.get("tier"))
+        tier = std_coverage(tier_raw) or tier_raw.upper()
+        rate = to_money(r.get("rate"))
+        if rate is None or rate <= 0:
+            continue
+        valid.append({
+            "plan": plan,
+            "tier": tier,
+            "rate": rate,
+            "effective_date": _clean_field_str(r.get("effective_date")),
+        })
+    return valid
+
+
+def _validate_census_rows(rows: list[Any]) -> list[dict[str, Any]]:
+    """Deterministic post-extraction validation for census employee and dependent rows."""
+    from utils import std_coverage, std_relationship, to_money
+
+    valid: list[dict[str, Any]] = []
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        fn = _clean_field_str(r.get("first_name"))
+        ln = _clean_field_str(r.get("last_name"))
+        if not fn and not ln:
+            continue
+        rel_raw = _clean_field_str(r.get("relationship")) or "EE"
+        rel = std_relationship(rel_raw) or "EE"
+        cov_raw = _clean_field_str(r.get("coverage"))
+        cov = (std_coverage(cov_raw) or cov_raw.upper()) if rel == "EE" else ""
+        valid.append({
+            "first_name": fn,
+            "last_name": ln,
+            "gender": _clean_field_str(r.get("gender")).upper()[:1],
+            "dob": _clean_field_str(r.get("dob")),
+            "zip": _clean_field_str(r.get("zip")),
+            "relationship": rel,
+            "subscriber_name": _clean_field_str(r.get("subscriber_name")) if rel != "EE" else "",
+            "coverage": cov,
+            "cobra": (_clean_field_str(r.get("cobra")).upper()[:1] or "N"),
+            "plan": _clean_field_str(r.get("plan")),
+            "premium": to_money(r.get("premium")),
+            "sub_id": _clean_field_str(r.get("sub_id")),
+            "hire_date": _clean_field_str(r.get("hire_date")),
+            "effective_date": _clean_field_str(r.get("effective_date")),
+            "eligibility_class": _clean_field_str(r.get("eligibility_class")),
+            "salary": _clean_field_str(r.get("salary")),
+            "job_title": _clean_field_str(r.get("job_title")),
+            "worker_category": _clean_field_str(r.get("worker_category")),
+            "position_status": _clean_field_str(r.get("position_status")),
+            "waive_reason": _clean_field_str(r.get("waive_reason")),
+        })
+    return valid
+
+
+def _validate_reconciliation_output(data: Any) -> dict[str, Any]:
+    """Validate and normalize reconciliation output structure."""
+    if isinstance(data, dict):
+        return {
+            "matched_records": data.get("matched_records", []),
+            "unmatched_census": data.get("unmatched_census", []),
+            "unmatched_invoice": data.get("unmatched_invoice", []),
+            "flagged_conflicts": data.get("flagged_conflicts", []),
+        }
+    return {"matched_records": [], "unmatched_census": [], "unmatched_invoice": [], "flagged_conflicts": []}
+
+
+def validate_structured_output(data: Any, schema: dict[str, Any] | None = None) -> Any:
+    """Validate structured output against optional schema."""
+    return data
+
+
+def reconcile_records(
+    census_records: list[dict[str, Any]],
+    invoice_records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Reconcile census records with invoice records using high-effort LLM reasoning and conflict detection."""
+    set_current_tracking(step_name="llm_reconciliation")
+    prompt = (
+        "Reconcile census records with invoice records. Identify matching subscribers, compare coverage tiers, "
+        "and flag any discrepancies.\n"
+        f"Census records: {json.dumps(census_records)}\n"
+        f"Invoice records: {json.dumps(invoice_records)}\n"
+    )
+    raw = extract_json(prompt, max_tokens=16000, effort="high", output_schema=RECONCILIATION_OUTPUT_SCHEMA)
+    rec = _validate_reconciliation_output(raw)
+    from utils import std_coverage
+    for m in rec.get("matched_records", []):
+        c_tier = std_coverage(m.get("census_tier", "")) or m.get("census_tier", "")
+        i_tier = std_coverage(m.get("invoice_tier", "")) or m.get("invoice_tier", "")
+        m["census_tier"] = c_tier
+        m["invoice_tier"] = i_tier
+        if c_tier and i_tier and c_tier != i_tier:
+            m["ambiguous"] = True
+            msg = f"Tier conflict: census={c_tier} vs invoice={i_tier}"
+            if "conflicts" not in m:
+                m["conflicts"] = []
+            if msg not in m["conflicts"]:
+                m["conflicts"].append(msg)
+            if msg not in rec["flagged_conflicts"]:
+                rec["flagged_conflicts"].append(msg)
+    return rec
+
+
 def extract_prospect_fields(doc_text: str, rfp_text: str = "") -> dict:
     """Extract prospect information adhering solely to official instructions."""
     set_current_tracking(step_name="prospect_extraction")
     if rfp_text:
-        combined_text = f"--- SUBMISSION EMAIL / RFP NOTES ---\n{rfp_text[:12000]}\n\n--- GHQ / QUESTIONNAIRE ---\n{doc_text[:25000]}"
+        combined_text = f"--- SUBMISSION EMAIL / RFP NOTES ---\n{rfp_text[:15000]}\n\n--- GHQ / QUESTIONNAIRE ---\n{doc_text[:35000]}"
     else:
-        combined_text = doc_text[:35000]
+        combined_text = doc_text[:50000]
     instructions = get_official_instructions()
     doc_name = get_instruction_doc_name()
 
@@ -309,14 +608,20 @@ Extract prospect-level information fields for the Census Template:
 - proposed_effective_date: Requested effective date (e.g. "01/01/2027")
 - sic_naics_code: Valid 4-digit SIC or 6-digit NAICS code. If unavailable, unconfirmed, or pending confirmation, leave blank ("").
 - company_name: Official legal company name / prospect name
+- dba: Doing Business As (DBA) trade name if different, else blank
+- ein: Federal Tax ID / EIN (e.g. "12-3456789") if available
 - address: Street physical address only (no city/state/zip)
 - city: City
-- state: 2-letter state abbreviation
-- zip: 5-digit ZIP
+- state: 2-letter state abbreviation (e.g. "FL", "GA", "NC")
+- zip: 5-digit ZIP code
 - city_state_zip: "City, State ZIP"
 - referral: Referring broker / agency or referral source (e.g. Professional Group Plans, OneDigital), including any commission split details if mentioned
 - sales_person: Sales consultant / representative / PEO sales person (e.g. Jonathan Hernandez)
-- current_carrier: Current medical insurance carrier (e.g. Aetna, Florida Blue)
+- contact_name: Primary employer or broker contact person name
+- contact_email: Contact email address
+- contact_phone: Contact phone number
+- ft_employees: Number of full-time benefit-eligible employees
+- current_carrier: Current medical insurance carrier (e.g. Aetna, Florida Blue, Cigna)
 - current_peo: Current PEO provider if applicable (e.g. ADP TotalSource)
 - salesforce_id: Salesforce opportunity or prospect ID (e.g. HPQ-000651)
 - onedigital_referral: OneDigital referral source, or blank if unavailable
@@ -328,6 +633,8 @@ Return JSON only:
   "proposed_effective_date": "",
   "sic_naics_code": "",
   "company_name": "",
+  "dba": "",
+  "ein": "",
   "address": "",
   "city": "",
   "state": "",
@@ -335,6 +642,10 @@ Return JSON only:
   "city_state_zip": "",
   "referral": "",
   "sales_person": "",
+  "contact_name": "",
+  "contact_email": "",
+  "contact_phone": "",
+  "ft_employees": "",
   "current_carrier": "",
   "current_peo": "",
   "salesforce_id": "",
@@ -343,8 +654,8 @@ Return JSON only:
 }}
 """
     try:
-        data = extract_json(prompt, max_tokens=2000)
-        return data if isinstance(data, dict) else {}
+        data = extract_json(prompt, max_tokens=16000, effort="high")
+        return _validate_prospect_dict(data)
     except Exception as exc:
         log.warning("extract_prospect_fields failed: %s", exc)
         return {}
@@ -362,11 +673,19 @@ OFFICIAL INSTRUCTIONS ({doc_name}):
 {instructions}
 
 INVOICE DOCUMENT EXCERPTS:
-{text[:45000]}
+{text[:60000]}
 
 Extract each subscriber employee row from the invoice.
+CRITICAL RULES:
+- Target MEDICAL plans only.
+- COMPLETELY IGNORE lines for Workers' Compensation (WC codes, WC Code: 0953PA, etc.), Administrative Fees, Payroll Taxes (FUTA, SUI, FICA, Medicare tax), Dental, Vision, Life, Disability.
+- Clean subscriber employee names: remove any Workers' Comp codes (e.g. 'WC Code: 0953PA') or payroll code fragments appended to names.
+- tier: Standard coverage tier abbreviation (EE, ES, EC, FAM).
+- premium: The monthly total medical premium billed for this employee (numeric float).
+- status: Active, Terminated, COBRA, or current enrollment status.
+
 Keys required for each subscriber:
-- name: Exact subscriber name as printed on invoice
+- name: Exact subscriber name as printed on invoice (without WC or tax codes)
 - tier: Standard coverage tier abbreviation (EE, ES, EC, FAM)
 - dob: Date of birth (mm/dd/yyyy) if available, else null
 - gender: M or F if available, else null
@@ -374,7 +693,7 @@ Keys required for each subscriber:
 - plan: Medical plan name enrolled
 - premium: Monthly total premium for the employee (numeric float)
 - status: Active, Terminated, COBRA, or current enrollment status
-- member_id: Member ID / Subscriber ID
+- member_id: Member ID / Subscriber ID / Cert ID if available
 
 Return a JSON list of objects only:
 [
@@ -392,13 +711,13 @@ Return a JSON list of objects only:
 ]
 """
     try:
-        data = extract_json(prompt, max_tokens=8000)
+        data = extract_json(prompt, max_tokens=16000, effort="high")
         if isinstance(data, list):
-            return data
+            return _validate_invoice_rows(data)
         if isinstance(data, dict):
             for val in data.values():
                 if isinstance(val, list):
-                    return val
+                    return _validate_invoice_rows(val)
     except Exception as exc:
         log.warning("extract_invoice_rows failed: %s", exc)
     return []
@@ -416,13 +735,13 @@ OFFICIAL INSTRUCTIONS ({doc_name}):
 {instructions}
 
 RENEWAL DOCUMENT EXCERPTS:
-{text[:30000]}
+{text[:40000]}
 
 Extract medical renewal rate tables covering the upcoming renewal coverage period.
 - Target medical plans only
 - Tiers must use approved standard codes: EE, ES, EC, FAM
 - Rates must be the monthly premium float for the upcoming renewal period
-- Extract the renewal effective date
+- Extract the renewal effective date (mm/dd/yyyy)
 
 Return JSON list of objects only:
 [
@@ -435,13 +754,13 @@ Return JSON list of objects only:
 ]
 """
     try:
-        data = extract_json(prompt, max_tokens=4000)
+        data = extract_json(prompt, max_tokens=16000, effort="high")
         if isinstance(data, list):
-            return data
+            return _validate_renewal_rates(data)
         if isinstance(data, dict):
             for v in data.values():
                 if isinstance(v, list):
-                    return v
+                    return _validate_renewal_rates(v)
     except Exception as exc:
         log.warning("extract_renewal_rates failed: %s", exc)
     return []
@@ -459,19 +778,51 @@ OFFICIAL INSTRUCTIONS ({doc_name}):
 {instructions}
 
 CENSUS TEXT EXCERPTS:
-{text[:45000]}
+{text[:60000]}
 
 Extract all employee and dependent records:
-- first_name, last_name
+CRITICAL RULES FOR EMPLOYEES AND DEPENDENTS:
+1. For employees:
+   - relationship: 'EE'
+   - coverage: Approved codes (EE, ES, EC, FAM, WO, WP, NE, RC)
+     * If enrolled in Medical: EE (Employee Only), ES (Employee + Spouse), EC (Employee + Child/ren), FAM (Family). Look at columns such as 'Coverage Level', 'Medical Tier', 'Medical 1 Coverage Level', 'Plan Tier', 'Election'.
+     * If waived medical coverage (e.g. other coverage, spousal, Medicare, cost): WO
+     * If in waiting period / recent hire not yet eligible: WP
+     * If ineligible due to classification (e.g. Part-Time, Temporary, Seasonal, PRN): NE
+     * If refused coverage without proof of other coverage: RC
+2. CRITICAL RULE FOR DEPENDENTS:
+   - If the census document has wide columns for dependents (e.g., 'Spouse Name', 'Spouse DOB', 'Child 1 Name', 'Child 1 DOB', 'Dep 1 First Name', 'Dep 1 Last Name', etc.), you MUST create a separate object in the output list for EACH dependent!
+   - For spouse: relationship 'SP'
+   - For children: relationship 'CH'
+   - For all dependents: set subscriber_name to the employee's full name, and leave coverage BLANK ("").
+3. Preserve all demographic and employment fields if present:
+   - sub_id: Employee ID, Member ID, or Subscriber ID
+   - hire_date: Date of hire (mm/dd/yyyy)
+   - salary: Compensation / salary amount
+   - job_title: Job title / occupation
+   - worker_category: Full-time, Part-time, Temporary, etc.
+   - position_status: Active, Terminated, Leave, etc.
+   - waive_reason: Reason for waiving (e.g. Spousal, Medicare, Other Coverage)
+
+Keys required for each object:
+- first_name: First name
+- last_name: Last name
 - gender: M or F
 - dob: mm/dd/yyyy
 - zip: 5-digit ZIP code
 - relationship: EE for employee, SP for spouse, CH for children
-- subscriber_name: If dependent, the full name of the employee they belong to
-- coverage: Approved codes (EE, ES, EC, FAM, NE, WP, RC, WO)
+- subscriber_name: If dependent, the full name of the employee they belong to (empty for EE)
+- coverage: Approved codes (EE, ES, EC, FAM, WO, WP, NE, RC) for employees; leave blank ("") for dependents
 - cobra: Y or N
-- plan: Medical plan name if specified
+- plan: Medical plan name / code if specified
 - premium: Enrolled premium if specified
+- sub_id: Employee ID / Member ID if available
+- hire_date: mm/dd/yyyy if available
+- salary: Salary if available
+- job_title: Job title if available
+- worker_category: Worker category if available
+- position_status: Position status if available
+- waive_reason: Reason for waiver if available
 
 Return JSON list of objects only:
 [
@@ -486,18 +837,25 @@ Return JSON list of objects only:
     "coverage": "EE",
     "cobra": "N",
     "plan": "PPO 500",
-    "premium": 500.00
+    "premium": 500.00,
+    "sub_id": "EMP001",
+    "hire_date": "01/15/2020",
+    "salary": "75000",
+    "job_title": "Manager",
+    "worker_category": "Full Time",
+    "position_status": "Active",
+    "waive_reason": ""
   }}
 ]
 """
     try:
-        data = extract_json(prompt, max_tokens=8000)
+        data = extract_json(prompt, max_tokens=16000, effort="high")
         if isinstance(data, list):
-            return data
+            return _validate_census_rows(data)
         if isinstance(data, dict):
             for v in data.values():
                 if isinstance(v, list):
-                    return v
+                    return _validate_census_rows(v)
     except Exception as exc:
         log.warning("extract_census_rows failed: %s", exc)
     return []
@@ -514,29 +872,31 @@ def classify_document(text: str, filename: str) -> str:
 OFFICIAL INSTRUCTIONS ({doc_name}):
 {instructions}
 
-Classify this document into exactly one of these 6 roles:
+Classify this document into exactly one of these 7 roles:
 1. "census": Employee or dependent census rosters, enrollment spreadsheets, benefits eligibility listings, demographic rosters.
-2. "invoice": Monthly health insurance billing statement, payroll deduction register, carrier billing invoice, statement of premiums.
-3. "renewal": Renewal rate sheet, client benefit election (CBE) renewal options, future plan year rates, renewal proposal.
+2. "invoice": Monthly health insurance billing statement, carrier billing invoice, statement of premiums with enrolled medical employees.
+3. "renewal": Renewal rate sheet, client benefit election (CBE) renewal options, future plan year medical rates, renewal proposal.
 4. "ghq": Group Health Questionnaire, company business information form, SIC code, prior carrier, employer questionnaire.
 5. "rfp": Request for Proposal, submission email from broker/sales rep, submission notes with employer details.
-6. "unknown": Document not related to health insurance census or billing.
+6. "payroll": Payroll deduction registers, gross wage reports, W-2 registers, FUTA/SUI tax forms, Workers' Comp payroll reports. (These are administrative payroll documents, NOT medical insurance invoices or censuses).
+7. "unknown": Document not related to health insurance census or billing.
 
 Filename: {filename}
 Document Text:
-{text[:6000]}
+{text[:8000]}
 
 Return JSON only:
-{{"role": "census|invoice|renewal|ghq|rfp|unknown"}}
+{{"role": "census|invoice|renewal|ghq|rfp|payroll|unknown"}}
 """
     try:
         data = extract_json(prompt, max_tokens=500)
         if isinstance(data, dict):
             role = str(data.get("role", "")).lower().strip()
-            if role in {"census", "invoice", "renewal", "ghq", "rfp", "unknown"}:
+            if role in {"census", "invoice", "renewal", "ghq", "rfp", "payroll", "unknown"}:
                 return role
     except Exception as exc:
         log.warning("classify_document failed: %s", exc)
     return "unknown"
+
 
 

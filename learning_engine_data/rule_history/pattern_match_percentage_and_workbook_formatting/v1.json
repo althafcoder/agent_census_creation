@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_match_percentage_and_workbook_formatting",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_match_percentage_workbook_format_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Comparison columns in generated census workbooks inherit currency number format ($#,##0.00) from preceding census premium column, causing Match % to render as $1.00 or decimal instead of 100% with Section 18 color coding (100% green, 80-99% orange, <80% red).",
+  "applicable_conditions": [
+    "Workbook contains comparison area starting after primary census columns",
+    "Match % column populated from comparison results",
+    "Template comparison cells uninitialized or inheriting currency formatting from census premium"
+  ],
+  "required_validators": [
+    "RULE_18_MATCH_PERCENTAGE_FORMATTING",
+    "GATE_F_OUTPUT_CONSISTENCY"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_17_match_pct_0_percent_format",
+      "case_18_section_18_color_coding"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-10-28T17:09:37.757118",
+  "updated_at": "2026-10-28T18:19:31.127080",
+  "compatibility": {
+    "instruction_hashes": [
+      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "deliverable"
+    ],
+    "file_types": [
+      "xlsx"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "invoice employee name",
+      "match %",
+      "invoice plan",
+      "invoice tier"
+    ],
+    "stage": "writer"
+  },
+  "trigger": {
+    "issue_type": "MATCH_PERCENTAGE_FORMAT_DEFECT",
+    "field": "match_pct",
+    "conditions": [
+      "match percentage rendered with currency format or without Section 18 colors"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 18",
+    "Section 16.2A",
+    "Section 30.6"
+  ],
+  "root_cause": {
+    "code": "MATCH_PERCENTAGE_FORMAT_DEFECT",
+    "verification_status": "verified",
+    "summary": "Reset all comparison columns to General formatting, explicitly assign number_format='0%' to Match %, and apply Section 18 green/orange/red font colors."
+  },
+  "strategy": {
+    "action": "FORMAT_MATCH_PERCENTAGE",
+    "parameters": {
+      "number_format": "0%",
+      "apply_section_18_colors": true,
+      "reset_comparison_cols_to_general": true
+    },
+    "preconditions": [
+      "comparison match percentage populated"
+    ],
+    "exclusions": [
+      "do not alter premium currency formatting in columns R and S"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_17",
+      "reg_case_18"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_18_MATCH_PERCENTAGE_FORMATTING"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-28T18:19:31.043468"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261028_181931",
+    "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

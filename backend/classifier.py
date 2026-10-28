@@ -1,8 +1,9 @@
 """Header detection / field mapping and document-role classification."""
 from __future__ import annotations
 
+import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 import pandas as pd
@@ -10,22 +11,37 @@ import pandas as pd
 from readers import RawDoc, RawTable
 from utils import clean, norm_key
 
+log = logging.getLogger("census.classifier")
+
+
 # canonical field -> normalised header aliases
 FIELD_ALIASES: dict[str, list[str]] = {
     "first_name": ["firstname", "first", "fname", "givenname", "employeefirstname", "eefirstname",
                    "subscriberfirstname", "memberfirstname", "firstnamemi", "legalfirstname",
                    "preferredorchosenfirst", "primaryfirstname", "eefirst", "employeefirst",
                    "payrollnamefirstname", "payrollfirstname", "employeelegalfirstname", "payrollnamefirst",
-                   "employeedependentfirstname", "employeeanddependentfirstname", "eeanddepfirstname"],
+                   "employeedependentfirstname", "employeeanddependentfirstname", "eeanddepfirstname",
+                   "employeelegalnamefirst", "employeeslegalnamefirst", "employeelegalnamefirstname",
+                   "employeeslegalnamefirstname", "legalnamefirst", "legalnamefirstname"],
+    "preferred_first": ["preferredfirstname", "preferredfirst", "preferredname", "chosenfirst",
+                        "chosenfirstname", "nickname", "aliasfirstname", "preferredfname",
+                        "preferredorchosenfirst", "preferredchosenfirstname", "preferredchosenfirst",
+                        "preferrednamefirstname", "preferredfirstnamemi"],
+    "middle_name": ["middlename", "middle", "mname", "mi", "middleinitial", "employeemiddlename"],
     "last_name": ["lastname", "last", "lname", "surname", "familyname", "employeelastname",
                   "eelastname", "subscriberlastname", "memberlastname", "legallastname",
                   "preferredorchosenlast", "primarylastname", "eelast", "employeelast",
                   "payrollnamelastname", "payrolllastname", "employeelegallastname", "payrollnamelast",
-                  "employeedependentlastname", "employeeanddependentlastname", "eeanddeplastname"],
-    "full_name": ["name", "fullname", "employeename", "membername", "subscribername", "employee",
-                  "eename", "insuredname", "member", "subscriber", "participant", "enrolleename",
+                  "employeedependentlastname", "employeeanddependentlastname", "eeanddeplastname",
+                  "employeelegalnamelast", "employeeslegalnamelast", "employeelegalnamelastname",
+                  "employeeslegalnamelastname", "legalnamelast", "legalnamelastname"],
+    "full_name": ["name", "fullname", "employeename", "employeefullname", "membername", "subscribername", "subscriberfullname", "employee",
+                  "eename", "eefullname", "empfullname", "primaryfullname", "insuredname", "member", "subscriber", "participant", "enrolleename",
                   "lastfirst", "lastnamefirstname", "namelastfirst"],
-    "gender": ["gender", "sex", "mf", "gendermf", "gendercode", "genderdescription", "gendermorf"],
+    "gender": ["gender", "sex", "mf", "gendermf", "gendercode", "genderdescription", "gendermorf",
+               "genderselfid", "employeegender", "employeesex", "eegender", "eesex",
+               "subscribergender", "subscribersex", "membergender", "membersex",
+               "legalgender", "legalsex", "birthsex", "assignedsex", "biologicalsex"],
     "dob": ["dob", "dateofbirth", "birthdate", "birthday", "bdate", "birthdt", "memberdob", "dateofbirthmmddyyyy",
             "employeedateofbirth", "employeedob"],
     "zip": ["zip", "zipcode", "homezipcode", "postalcode", "homezip", "zip5", "residentzip",
@@ -38,23 +54,29 @@ FIELD_ALIASES: dict[str, list[str]] = {
                      "dependentbeneficiaryrelationship", "dependentbeneficiaryrel", "depbeneficiaryrel",
                      "statusrelationship", "statusrelation", "typeemployeespousechild", "typeeespch",
                      "type", "eetype", "memberrole", "role", "dependenttype", "relationshiptype",
-                     "typeemployeespousechildren"],
+                     "typeemployeespousechildren", "relationshipemployeespouseorchild", "relationshiptoinsured"],
     "coverage": ["coverage", "coveragetier", "tier", "coveragelevel", "enrollmenttier", "plantier",
                  "coveragetype", "election", "coveragecode", "enrollmentlevel", "benefittier", "ratetier",
                  "householdtier", "medicaltier", "coveragestatus", "coveragelevelvalue", "coveragelevelamount",
                  "medicalcoverage", "healthcoveragelevel", "healthcoverage", "healthcoveragetier",
-                 "medicalelection", "medicalelectioneees", "medicalelectioneeesec"],
+                 "medicalelection", "medicalelectioneees", "medicalelectioneeesec",
+                 "medical1coveragelevel", "medicalcoveragetier", "medical1coveragetier", "medical1tier", "medical1election"],
     "status": ["status", "employeestatus", "memberstatus", "billingstatus", "policystatus",
-               "enrollmentstatus", "enrolled", "coveragestatus", "medicalstatus", "medicalenrollment"],
-    "cobra": ["cobra", "cobraparticipant", "cobrastatus", "cobraindicator", "cobrayn"],
+               "enrollmentstatus", "enrolled", "coveragestatus", "medicalstatus", "medicalenrollment",
+               "employeesstatus", "employeesstatusftfulltimeptparttime", "employeestatusftfulltimeptparttime"],
+    "cobra": ["cobra", "cobraparticipant", "cobrastatus", "cobraindicator", "cobrayn", "oncobra", "oncobra1yes0no"],
     "plan": ["plan", "planname", "medicalplan", "plancode", "planelected", "medicalplanname", "product",
              "productname", "planenrolled", "currentplan", "planoption", "medicalplancode", "plandescription",
-             "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan"],
+             "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan",
+             "medical1planname", "medical1plan", "medical1plancode"],
     "plan_type": ["plantype", "benefittype", "lineofcoverage", "producttype", "benefitplantype"],
     "plan_category": ["plancategory", "benefitcategory", "productcategory", "benefitplancategory"],
-    "carrier": ["carrier", "provider", "carriercode", "carriername", "insurancecarrier", "vendor"],
-    "ee_cost": ["employeecost", "eecost", "employeededuction", "eededuction"],
-    "er_cost": ["employercost", "ercost", "employercostamount", "companycost", "employercontribution"],
+    "carrier": ["carrier", "provider", "carriercode", "carriername", "insurancecarrier", "vendor",
+                "medical1provider", "medical1carrier"],
+    "ee_cost": ["employeecost", "eecost", "employeededuction", "eededuction",
+                "medical1employeecost", "medical1eecost"],
+    "er_cost": ["employercost", "ercost", "employercostamount", "companycost", "employercontribution",
+                "medical1employercost", "medical1ercost"],
     "premium": ["premium", "monthlypremium", "totalpremium", "amount", "charge", "billedamount",
                 "currentpremium", "rate", "monthlytotalpremium", "totalcharge", "billedpremium",
                 "currentcharge", "totalamount", "currentamountdue", "monthlycost", "premiumamount",
@@ -72,25 +94,33 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "position_status": ["positionstatus", "employmentstatus", "positionstate"],
     "waive_reason": ["medicalwaivereason", "waivereason", "waiverreason", "medicalwaiver",
                      "waivedreason", "enrollmentwaivereason"],
-    "job_title": ["jobtitle", "positiontitle", "jobdescription", "positiondescription", "jobname", "title"],
+    "job_title": ["jobtitle", "positiontitle", "jobdescription", "positiondescription", "jobname", "title",
+                  "employeesjobtitle", "employeejobtitle"],
     "salary": ["annualsalary", "salary", "annualwages", "wages", "grosssalary", "annualcomp",
-               "compensation", "annualcompensation", "basepay", "baseannualsalary"],
+               "compensation", "annualcompensation", "basepay", "baseannualsalary",
+               "employeesannualpayrate", "employeeannualpayrate", "annualpayrate", "payrate", "annualrate"],
     "effective_date": ["effective_date", "effectivedate", "effdate", "enrollmenteffectivedate", "enrollmenteffdate",
                        "coverageeffectivedate", "coverageeffdate", "benefiteffectivedate", "benefiteffdate",
                        "enrollmentstartdate"],
     "txn_type": ["transactiontype", "chargetype", "adjustmenttype", "billingtype", "linetype", "activity"],
     # explicit dependent columns (dependent listing files)
-    "dep_first": ["dependentfirstname", "depfirstname", "dependentfirst", "depfirst", "dependentfname", "depfname"],
-    "dep_last": ["dependentlastname", "deplastname", "dependentlast", "deplast", "dependentlname", "deplname"],
+    "dep_first": ["dependentfirstname", "depfirstname", "dependentfirst", "depfirst", "dependentfname", "depfname",
+                  "dependentlegalnamefirst", "dependentslegalnamefirst", "dependentlegalnamefirstname",
+                  "dependentslegalnamefirstname", "dependentlegalfirstname", "dependentslegalfirstname"],
+    "dep_last": ["dependentlastname", "deplastname", "dependentlast", "deplast", "dependentlname", "deplname",
+                 "dependentlegalnamelast", "dependentslegalnamelast", "dependentlegalnamelastname",
+                 "dependentslegalnamelastname", "dependentlegallastname", "dependentslegallastname"],
     "dep_full": ["dependentname", "depname", "dependent", "dependentfullname", "dependentbeneficiaryname", "dependentbeneficiary", "depbeneficiaryname"],
     "dep_dob": ["dependentdob", "depdob", "dependentdateofbirth", "depdateofbirth", "dependentbirthdate", "dependentbeneficiarydateofbirth", "dependentbeneficiarydob", "depbeneficiarydob"],
-    "dep_gender": ["dependentgender", "depgender", "dependentsex", "depsex", "dependentbeneficiarygender", "depbeneficiarygender", "dependentbeneficiarysex"],
+    "dep_gender": ["dependentgender", "depgender", "dependentsex", "depsex", "dependentbeneficiarygender",
+                   "depbeneficiarygender", "dependentbeneficiarysex", "depbeneficiarysex",
+                   "dependentgenderselfid", "depgenderselfid"],
     # employee reference columns inside dependent files
     "emp_first": ["employeefirstname", "subscriberfirstname", "eefirst", "empfirstname", "primaryfirstname"],
     "emp_last": ["employeelastname", "subscriberlastname", "eelast", "emplastname", "primarylastname"],
-    "emp_full": ["employeename", "subscribername", "eename", "primaryname", "policyholder", "primarymember",
+    "emp_full": ["employeename", "employeefullname", "subscribername", "subscriberfullname", "eename", "eefullname", "empfullname", "primaryname", "primaryfullname", "policyholder", "primarymember",
                  "subscriber", "employee"],
-    "address": ["address", "streetaddress", "address1", "street", "primaryaddressline1", "primaryaddress"],
+    "address": ["address", "homeaddress1", "homeaddress", "streetaddress", "address1", "street", "primaryaddressline1", "primaryaddress"],
     "city": ["city", "town", "primaryaddresscity", "residentcity"],
     "state": ["state", "st", "primaryaddressstateterritory", "primaryaddressstate", "livedinstate", "residentstate", "workstate", "workst"],
 }
@@ -98,10 +128,10 @@ FIELD_ALIASES: dict[str, list[str]] = {
 # Premium vs amount wording that must NOT be treated as a total premium
 _RETRO_WORDS = re.compile(r"(retro|adjust|credit|refund|prior\s*period|reinstat)", re.I)
 
-# wide-format dependents: spouse_first / child1dob ...
+# wide-format dependents: spouse_first / child1dob / dependent1relationship ...
 _WIDE_DEP = re.compile(r"^(spouse|sp|child|ch|dependent|dep)(\d*)(firstname|first|lastname|last|name|dob|"
-                       r"dateofbirth|birthdate|gender|sex)$")
-_WIDE_DEP_REV = re.compile(r"^(firstname|first|lastname|last|name|dob|dateofbirth|birthdate|gender|sex)"
+                       r"dateofbirth|birthdate|gender|sex|relationship|rel)$")
+_WIDE_DEP_REV = re.compile(r"^(firstname|first|lastname|last|name|dob|dateofbirth|birthdate|gender|sex|relationship|rel)"
                            r"(spouse|sp|child|ch|dependent|dep)(\d*)$")
 
 
@@ -111,6 +141,8 @@ class Header:
     columns: dict[str, int]                        # canonical field -> column index
     wide_deps: dict[tuple[str, str], dict[str, int]]   # (kind, n) -> {field: col}
     labels: list[str]
+    candidate_columns: dict[str, list[tuple[int, str]]] = field(default_factory=dict)
+    wide_candidate_columns: dict[tuple[str, str], dict[str, list[tuple[int, str]]]] = field(default_factory=dict)
 
 
 def _score_row(vals: list[str]) -> int:
@@ -121,7 +153,9 @@ def _score_row(vals: list[str]) -> int:
         knp = norm_key(re.sub(r"\(.*?\)", "", str(v)))
         knb = norm_key(re.sub(r"[\(\[\{].*", "", str(v)))
         kn_lead = norm_key(re.sub(r"^[\)\]\}]+", "", str(v)))
-        if any(x and x in flat for x in (k, knp, knb, kn_lead)):
+        k_no_poss = norm_key(re.sub(r"['\u2019]s\b", "", str(v)))
+        knp_poss = norm_key(re.sub(r"['\u2019]s\b", "", re.sub(r"\(.*?\)", "", str(v))))
+        if any(x and x in flat for x in (k, knp, knb, kn_lead, k_no_poss, knp_poss)):
             count += 1
     return count
 
@@ -137,11 +171,15 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
     labels = [clean(v) for v in df.iloc[best_i].tolist()]
     cols: dict[str, int] = {}
     wide: dict[tuple[str, str], dict[str, int]] = {}
+    cand_cols: dict[str, list[tuple[int, str]]] = {}
+    wide_cands: dict[tuple[str, str], dict[str, list[tuple[int, str]]]] = {}
     for idx, lab in enumerate(labels):
         k = norm_key(lab)
         k_no_paren = norm_key(re.sub(r"\(.*?\)", "", str(lab)))
         knb = norm_key(re.sub(r"[\(\[\{].*", "", str(lab)))
         kn_lead = norm_key(re.sub(r"^[\)\]\}]+", "", str(lab)))
+        k_no_poss = norm_key(re.sub(r"['\u2019]s\b", "", str(lab)))
+        k_no_paren_poss = norm_key(re.sub(r"['\u2019]s\b", "", re.sub(r"\(.*?\)", "", str(lab))))
         if not k and not k_no_paren and not knb and not kn_lead:
             continue
         m = _WIDE_DEP.match(k) or (_WIDE_DEP.match(k_no_paren) if k_no_paren else None)
@@ -154,21 +192,32 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
             kind, n, fld = (m.group(1), m.group(2), m.group(3)) if m else (r.group(2), r.group(3), r.group(1))
             kind = "SP" if kind in {"spouse", "sp"} else "CH"
             fld = {"firstname": "first", "lastname": "last", "dateofbirth": "dob", "birthdate": "dob",
-                   "sex": "gender"}.get(fld, fld)
-            wide.setdefault((kind, n or "1"), {})[fld] = idx
+                   "sex": "gender", "relationship": "rel"}.get(fld, fld)
+            slot_key = (kind, n or "1")
+            slot_dict = wide.setdefault(slot_key, {})
+            if fld not in slot_dict or (fld == "gender" and "(" in str(labels[slot_dict[fld]]) and "(" not in str(lab)):
+                slot_dict[fld] = idx
+            wide_cands.setdefault(slot_key, {}).setdefault(fld, []).append((idx, str(lab)))
             continue
         # specific (dep_/emp_) aliases win over generic ones
         for canon in ("dep_first", "dep_last", "dep_dob", "dep_gender", "dep_full",
-                      "first_name", "last_name", "gender", "dob", "zip", "relationship", "coverage", "status",
+                      "first_name", "last_name", "preferred_first", "middle_name",
+                      "gender", "dob", "zip", "relationship", "coverage", "status",
                       "cobra", "plan_type", "plan", "carrier", "premium", "ee_cost", "er_cost",
                       "hire_date", "effective_date", "txn_type", "sub_id", "full_name",
                       "eligibility_class", "worker_category", "position_status",
                       "waive_reason", "job_title", "salary",
                       "emp_first", "emp_last", "emp_full", "address", "city", "state"):
-            if any(x and x in FIELD_ALIASES[canon] for x in (k, k_no_paren, knb, kn_lead)) and canon not in cols:
-                cols[canon] = idx
+            if any(x and x in FIELD_ALIASES[canon] for x in (k, k_no_paren, knb, kn_lead, k_no_poss, k_no_paren_poss)):
+                cand_cols.setdefault(canon, []).append((idx, str(lab)))
+                if canon not in cols:
+                    cols[canon] = idx
+                elif canon in ("gender", "dep_gender"):
+                    prev_lab = str(labels[cols[canon]])
+                    if "(" in prev_lab and "(" not in str(lab):
+                        cols[canon] = idx
                 break
-    return Header(best_i, cols, wide, labels)
+    return Header(best_i, cols, wide, labels, cand_cols, wide_cands)
 
 
 def body(df: pd.DataFrame, hdr: Header) -> pd.DataFrame:
@@ -232,8 +281,50 @@ def is_wage_document(doc: RawDoc) -> bool:
     return wage_hits >= 15 and wage_density >= 15.0 and wage_hits > benefit_hits * 2
 
 
+def _looks_like_roster(doc: RawDoc) -> bool:
+    """True when a spreadsheet table has a per-person roster header (first/full name + DOB) with
+    at least one populated data row, and the document is not a payroll register or a premium bill."""
+    if is_wage_document(doc) or not doc.tables:
+        return False
+    for t in doc.tables:
+        h = detect_header(t.df)
+        if not h or "dob" not in h.columns or not ({"first_name", "full_name"} & set(h.columns)):
+            continue
+        if "premium" in h.columns:
+            continue
+        try:
+            rows = body(t.df, h)
+            name_col = h.columns.get("first_name", h.columns.get("full_name"))
+            if rows.iloc[:, name_col].astype(str).str.strip().replace({"nan": "", "None": ""}).ne("").any():
+                return True
+        except Exception:
+            return True
+    return False
+
+
 def classify(doc: RawDoc) -> str:
     """Return one of: invoice, renewal, ghq, rfp, census, payroll, unknown."""
+    from census_config import LLM_FIRST, USE_LLM_FALLBACK
+
+    # 1. LLM-First semantic classification (Copilot Studio approach)
+    if LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip():
+        try:
+            from llm_client import classify_document
+            llm_role = classify_document(doc.text, doc.name)
+            if llm_role and llm_role != "unknown":
+                # Structural guard: a tabular employee roster (names + DOB header) that is not a
+                # payroll register must stay a census, even when it carries salary / WC-class /
+                # payroll-name columns that can mislead semantic classification.
+                if llm_role in {"payroll", "invoice", "rfp", "plan_design"} and _looks_like_roster(doc):
+                    log.info("LLM-First classified '%s' as %s; overridden to census (employee roster "
+                             "header detected, not a payroll register)", doc.name, llm_role)
+                    return "census"
+                log.info("LLM-First classified '%s' as %s", doc.name, llm_role)
+                return llm_role
+        except Exception as exc:
+            log.warning("LLM classification failed for %s: %s (falling back to rules)", doc.name, exc)
+
+    # 2. Rule-based / pattern fallback
     # Content-driven wage/payroll detection wins over filename: a document dominated by wage, tax,
     # service-fee, or WC lines is a payroll document and must never be treated as a benefit invoice.
     if is_wage_document(doc):

@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Census & Invoice Comparison Agent</title>
-  <meta name="description" content="AI-powered health insurance census standardization and invoice comparison pipeline." />
+  <meta name="description"
+    content="AI-powered health insurance census standardization and invoice comparison pipeline." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css" />
 </head>
+
 <body>
   <!-- Background Glow Accents -->
   <div class="glow-bg glow-1"></div>
@@ -32,10 +37,11 @@
         <p class="brand-subtitle">Health Insurance Census Creation & Multi-Document Reconciliation</p>
       </div>
     </div>
-    
+
     <div class="nav-badges">
-      <span class="badge badge-purple" id="instruction-badge" title="Master Unified Medical Submission Agent Instruction.docx">
-        <span class="pulse-dot purple"></span> Instruction: Master Unified Medical
+      <span class="badge badge-purple" id="instruction-badge"
+        title="Dynamic_Unified_Medical_Submission_Agent_Instruction.txt">
+        <span class="pulse-dot purple"></span> Instruction: Dynamic Unified Medical
       </span>
       <span class="badge badge-emerald" id="model-badge">
         <span class="pulse-dot"></span> Model: Claude Opus 5.5 (Anthropic)
@@ -43,13 +49,15 @@
       <span class="badge badge-cyan" id="ocr-badge">
         <span class="pulse-dot cyan"></span> OCR: PaddleOCR
       </span>
-      <button class="btn btn-secondary btn-sm" id="btn-quick-sample" title="Run instant test on sample files in input/ folder">
+      <button class="btn btn-secondary btn-sm" id="btn-quick-sample"
+        title="Run instant test on sample files in input/ folder">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="5 3 19 12 5 21 5 3"></polygon>
         </svg>
         <span>Test Sample Data</span>
       </button>
-      <a href="/swagger" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" id="btn-swagger" title="Open Interactive Swagger API Documentation" style="text-decoration: none;">
+      <a href="/swagger" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" id="btn-swagger"
+        title="Open Interactive Swagger API Documentation" style="text-decoration: none;">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -59,7 +67,8 @@
         <span>Swagger API</span>
       </a>
       <!-- Theme Switcher -->
-      <button class="theme-toggle" id="theme-toggle" title="Switch between Light (Light Blue / White) and Dark mode" aria-label="Toggle Theme">
+      <button class="theme-toggle" id="theme-toggle" title="Switch between Light (Light Blue / White) and Dark mode"
+        aria-label="Toggle Theme">
         <span class="theme-icon sun-icon" title="Light Mode">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"></circle>
@@ -87,7 +96,7 @@
   <!-- Main Container -->
   <main class="container">
     <div class="layout-grid">
-      
+
       <!-- Left Column: Upload & Input -->
       <section class="card upload-card">
         <div class="card-header">
@@ -113,7 +122,8 @@
         <!-- Mode 1: Drag & Drop Upload Zone -->
         <div id="mode-upload" class="tab-content active">
           <div class="dropzone" id="dropzone">
-            <input type="file" id="file-input" multiple accept=".xlsx,.xlsm,.xls,.csv,.pdf,.docx,.txt" class="file-input" />
+            <input type="file" id="file-input" multiple accept=".xlsx,.xlsm,.xls,.csv,.pdf,.docx,.txt"
+              class="file-input" />
             <div class="dropzone-inner">
               <div class="upload-icon-circle">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -157,7 +167,8 @@
         <div id="mode-folder" class="tab-content" style="display: none;">
           <div class="folder-input-box">
             <label for="folder-path-input" class="label">Local Directory Path</label>
-            <input type="text" id="folder-path-input" class="input-text" placeholder="e.g. input or C:\path\to\folder" value="" />
+            <input type="text" id="folder-path-input" class="input-text" placeholder="e.g. input or C:\path\to\folder"
+              value="" />
             <p class="input-hint">Specify a folder path containing census, invoice, and renewal files.</p>
           </div>
 
@@ -180,14 +191,16 @@
         <div class="info-card">
           <div class="info-icon">📋</div>
           <div class="info-text">
-            <strong>Master Unified Medical Submission Instructions:</strong> Strict carrier routing (Florida Blue vs Cigna), template preservation, fillable GHQ review, PEO 90-day renewal rule, Self/Level &gt;50 claims rule, Most Used Plan logic, and ready-to-send missing info email.
+            <strong>Dynamic Unified Medical Submission Instructions:</strong> Dynamic rule engine, carrier routing
+            (Florida Blue vs Cigna), template preservation, fillable GHQ review, PEO 90-day renewal rule, Self/Level
+            &gt;50 claims rule, Most Used Plan logic, and ready-to-send missing info email.
           </div>
         </div>
       </section>
 
       <!-- Right Column: Results & Dashboard -->
       <section class="card results-card" id="results-card">
-        
+
         <!-- State 1: Idle Empty State -->
         <div class="state-view" id="state-idle">
           <div class="empty-state">
@@ -199,7 +212,9 @@
               </svg>
             </div>
             <h3 class="empty-title">Ready for File Reconciliation</h3>
-            <p class="empty-desc">Upload files or select a folder to begin. The pipeline will classify your documents, consolidate subscribers & dependents, reconcile billing against invoices, and populate future renewal rates.</p>
+            <p class="empty-desc">Upload files or select a folder to begin. The pipeline will classify your documents,
+              consolidate subscribers & dependents, reconcile billing against invoices, and populate future renewal
+              rates.</p>
             <div class="feature-pills">
               <div class="feature-item">✓ Template Strict Preservation</div>
               <div class="feature-item">✓ Intelligent Document Role Detection</div>
@@ -222,7 +237,7 @@
             </div>
             <h3 class="loader-title" id="loader-status">Running Comparison Pipeline...</h3>
             <p class="loader-subtitle" id="loader-sub">Extracting tables, OCR scanning, and reconciling records</p>
-            
+
             <div class="progress-bar-container">
               <div class="progress-bar-fill" id="progress-bar"></div>
             </div>
@@ -254,7 +269,7 @@
 
         <!-- State 3: Completed Results Dashboard -->
         <div class="state-view" id="state-results" style="display: none;">
-          
+
           <!-- Download Header Bar -->
           <div class="action-banner">
             <div>
@@ -337,7 +352,8 @@
           <div class="result-tabs-nav">
             <button class="result-tab active" data-target="tab-res-summary">Exception Summary</button>
             <button class="result-tab" data-target="tab-res-email">Missing Information Email</button>
-            <button class="result-tab" data-target="tab-res-docs">Classified Files (<span id="docs-count">0</span>)</button>
+            <button class="result-tab" data-target="tab-res-docs">Classified Files (<span
+                id="docs-count">0</span>)</button>
             <button class="result-tab" data-target="tab-res-notes">Audit & Findings</button>
           </div>
 
@@ -371,7 +387,8 @@
                   <span>Copy Email</span>
                 </button>
               </div>
-              <pre class="summary-pre" id="email-text" style="font-family: inherit; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap;"></pre>
+              <pre class="summary-pre" id="email-text"
+                style="font-family: inherit; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap;"></pre>
             </div>
           </div>
 
@@ -379,7 +396,8 @@
           <div class="result-tab-pane" id="tab-res-docs" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
               <span style="font-size: 0.85rem; color: var(--text-muted);">
-                All extracted files are automatically saved to <strong style="color: var(--cyan); font-family: var(--font-mono);">census_project/extracted_text/</strong>
+                All extracted files are automatically saved to <strong
+                  style="color: var(--cyan); font-family: var(--font-mono);">census_project/extracted_text/</strong>
               </span>
             </div>
             <div class="table-container">
@@ -449,4 +467,5 @@
 
   <script src="/static/app.js"></script>
 </body>
+
 </html>

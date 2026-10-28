@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from copy import copy
 from pathlib import Path
+import re
 
 import openpyxl
 from openpyxl.cell.rich_text import CellRichText, TextBlock
@@ -33,7 +34,10 @@ def _rich_notes(notes: list, base: Font):
         return None
     norm = []
     for item in notes:
-        t, c = item[0], item[1]
+        if isinstance(item, str):
+            t, c = item, False
+        else:
+            t, c = item[0], item[1]
         if c is True or c == "red":
             color = C.RED
         elif c == "orange" or "verify dependent eligibility" in str(t):
@@ -92,6 +96,9 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
     base_font = copy(body_src[2].font)
     tc = C.TEMPLATE_COLS
 
+    from census_builder import recalculate_row_numbers
+    recalculate_row_numbers(census)
+
     # ---- clear template body rows then write
     row = C.FIRST_DATA_ROW
     had_gap = False
@@ -107,8 +114,9 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
                 _copy_style(body_src[col], cell)
         for col in range(13, 22):
             _copy_style(body_src[12], ws.cell(r, col))
+            ws.cell(r, col).number_format = "General"
             ws.cell(r, col).alignment = Alignment(wrap_text=True, vertical="center",
-                                                  horizontal="left" if col in (13, 14, 19, 20, 21) else "center")
+                                                  horizontal="left" if col in (13, 19, 20, 21) else "center")
 
         if p.invoice_only:
             ws.cell(r, tc["data_row"], None)
@@ -150,12 +158,17 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
             base = C.COMPARISON_START_COL  # Col M (13)
             ws.cell(r, base, rr.inv_name or None)                                # Col M (13): Invoice Employee Name
             if p.role == "EE":
-                m_val = 1 if rr.match_pct == 100 else (0 if rr.match_pct == 0 else (round(rr.match_pct / 100.0, 2) if rr.match_pct is not None else None))
+                m_val = None
+                if rr.match_pct is not None:
+                    m_val = 1 if rr.match_pct >= 100 else (0 if rr.match_pct == 0 else (round(rr.match_pct / 100.0, 2) if rr.match_pct > 1 else rr.match_pct))
                 m = ws.cell(r, base + 1, m_val)
+                m.number_format = "0%"
                 if m_val == 1:
                     m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
-                elif m_val == 0:
-                    m.font = Font(name=base_font.name, sz=base_font.sz, bold=False, color="FF000000")
+                elif m_val is not None and m_val >= 0.8:
+                    m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.ORANGE)
+                elif m_val is not None:
+                    m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
             else:
                 ws.cell(r, base + 1, None)
 
@@ -246,7 +259,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     # ---- 1. Findings Summary
     s.section("Findings Summary")
     s.header(["Metric", "Value"])
-    eff = prospect.effective_date.strftime("%m/%d/%Y") if prospect.effective_date else ""
+    eff = prospect.effective_date.strftime("%m/%d/%Y") if hasattr(prospect.effective_date, "strftime") else str(prospect.effective_date or "")
     eff_dt = prospect.effective_date
     census_emps = [p for p in census.employees if not p.invoice_only and not p.is_duplicate]
     enrolled_count = sum(1 for p in census_emps if p.coverage in C.ACTIVE_TIERS)
@@ -523,36 +536,37 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
     if prospect.referral:
         ws["H7"].value = prospect.referral
 
-    # 2. Comparison headers at row 12 starting Column 15 (Column O)
+    # 2. Comparison headers at row 12 starting Column 11 (Column K)
     hdr_src = ws.cell(12, 10)  # Col J style donor
-    for k, title in enumerate(C.COMPARISON_HEADERS):
+    for k, title in enumerate(C.MARSH_COMPARISON_HEADERS):
         col = C.MARSH_COMPARISON_START_COL + k
         c = ws.cell(C.MARSH_HEADER_ROW, col, title)
         _copy_style(hdr_src, c)
         c.fill = GREEN_FILL
-        ws.column_dimensions[get_column_letter(col)].width = C.COMPARISON_WIDTHS[k]
+        ws.column_dimensions[get_column_letter(col)].width = C.MARSH_COMPARISON_WIDTHS[k]
 
     body_src = {col: ws.cell(C.MARSH_FIRST_DATA_ROW, col) for col in range(1, 11)}
     base_font = copy(body_src[2].font)
 
     # 3. Populate census rows starting at row 14
+    from census_builder import recalculate_row_numbers
+    recalculate_row_numbers(census)
     row = C.MARSH_FIRST_DATA_ROW
-    n = 0
-    for p in census.people:
-        n += 1
-        p.row_no = n
 
     for p in census.people:
+        if p.is_duplicate:
+            continue
         r = row
         row += 1
         for col in range(1, 11):
             cell = ws.cell(r, col)
             if not cell.has_style or cell.border.left.style is None:
                 _copy_style(body_src[col], cell)
-        for col in range(C.MARSH_COMPARISON_START_COL, C.MARSH_COMPARISON_START_COL + len(C.COMPARISON_HEADERS)):
+        for col in range(C.MARSH_COMPARISON_START_COL, C.MARSH_COMPARISON_START_COL + len(C.MARSH_COMPARISON_HEADERS)):
             _copy_style(body_src[10], ws.cell(r, col))
+            ws.cell(r, col).number_format = "General"
             ws.cell(r, col).alignment = Alignment(wrap_text=True, vertical="center",
-                                                  horizontal="left" if col in (15, 16, 21, 22, 23) else "center")
+                                                  horizontal="left" if col in (11, 14, 17, 21) else "center")
 
         ws.cell(r, 1, p.row_no)
         ws.cell(r, 2, p.first or None)
@@ -561,7 +575,7 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
         if p.dob:
             ws.cell(r, 5, p.dob).number_format = "mm/dd/yyyy"
         if p.zip:
-            z = ws.cell(r, 6, p.zip)
+            z = ws.cell(r, 6, p.zip[:5])
             z.number_format = "@"
 
         # Member Type: EE/SP/CH/DP
@@ -581,36 +595,61 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
         if cov in ("FAM", "FAMILY"):
             cov = "EF"
         ws.cell(r, 8, cov or None)
-        ws.cell(r, 9, p.cobra or ("N" if p.role in ("SP", "CH") or cov == "WO" else "N"))
-        plan = p.plan or ("NA" if cov == "WO" else None)
+        ws.cell(r, 9, p.cobra or ("N" if p.role in ("SP", "CH", "DP") or cov in ("WO", "WP") else "N"))
+
+        plan = p.plan
+        if plan:
+            plan = re.sub(r"\s+copy\b", "", plan, flags=re.I).strip()
+        plan = plan if cov not in ("WO", "WP") else None
+        if plan and plan.upper() in ("NA", "N/A", "NONE", "WAIVED", "NOT ELIGIBLE"):
+            plan = None
         ws.cell(r, 10, plan)
 
         # Comparison columns
         rr = results.get(id(p))
         notes = list(p.notes)
-        if rr:
-            notes = notes + rr.notes
-            base = C.MARSH_COMPARISON_START_COL  # Col O (15)
-            ws.cell(r, base, rr.inv_name or None)
-            m = ws.cell(r, base + 1, rr.match_text or None)
-            if rr.match_text == "100% Match":
-                m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
-            elif rr.match_pct is not None:
-                colour = C.GREEN if rr.match_pct >= 100 else (C.ORANGE if rr.match_pct >= 80 else C.RED)
-                m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=colour)
-            ws.cell(r, base + 2, rr.plan or None)
-            ws.cell(r, base + 3, rr.tier or None)
-            ws.cell(r, base + 4, rr.status or None)
-            if rr.inv_premium is not None:
-                ws.cell(r, base + 5, rr.inv_premium).number_format = '#,##0.00'
-            if rr.renewal_premium is not None:
-                ws.cell(r, base + 6, rr.renewal_premium).number_format = '#,##0.00'
-            res = ws.cell(r, base + 7, rr.result or None)
-            if rr.result == "Match":
-                res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
-            elif rr.result in ("Eligibility Conflict", "Missing From Census") or rr.result_red:
-                res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
-        _set_notes(ws.cell(r, C.MARSH_COMPARISON_START_COL + 8), notes, base_font)
+        if p.role == "EE":
+            if rr:
+                notes = notes + rr.notes
+                base = C.MARSH_COMPARISON_START_COL  # Col K (11)
+                ws.cell(r, base, rr.inv_name or None)
+                m_val = None
+                if rr.match_pct is not None:
+                    m_val = 1 if rr.match_pct >= 100 else (round(rr.match_pct / 100.0, 2) if rr.match_pct > 1 else rr.match_pct)
+                m = ws.cell(r, base + 1, m_val)
+                m.number_format = "0%"
+                if m_val == 1:
+                    m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
+                elif m_val is not None and m_val >= 0.8:
+                    m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.ORANGE)
+                elif m_val is not None:
+                    m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
+
+                ws.cell(r, base + 2, rr.group_no or (rr.inv.group_no if rr.inv else None))
+                ws.cell(r, base + 3, rr.plan or None)
+                inv_tier = rr.tier or (rr.inv.tier if rr.inv else None)
+                if inv_tier in ("FAM", "FAMILY"):
+                    inv_tier = "EF"
+                ws.cell(r, base + 4, inv_tier or None)
+                ws.cell(r, base + 5, rr.status or None)
+                ws.cell(r, base + 6, rr.plan_enrolled or rr.plan or None)
+                if rr.inv_premium is not None:
+                    ws.cell(r, base + 7, rr.inv_premium).number_format = '$#,##0.00'
+                if rr.renewal_premium is not None:
+                    ws.cell(r, base + 8, rr.renewal_premium).number_format = '$#,##0.00'
+                res = ws.cell(r, base + 9, rr.result or None)
+                if rr.result == "Match":
+                    res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
+                elif rr.result in ("Eligibility Conflict", "Missing From Census", "Review - Name Mismatch") or rr.result_red:
+                    res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
+            _set_notes(ws.cell(r, C.MARSH_COMPARISON_START_COL + 10), notes, base_font)
+        else:
+            for col_idx in range(C.MARSH_COMPARISON_START_COL, C.MARSH_COMPARISON_START_COL + 10):
+                ws.cell(r, col_idx, None)
+            sub_name = p.employee.display if p.employee else ""
+            dep_note = f"Dependent of {sub_name}" if sub_name else ""
+            notes = [(dep_note, False)] if dep_note else []
+            _set_notes(ws.cell(r, C.MARSH_COMPARISON_START_COL + 10), notes, base_font)
 
     # Clear pre-populated row numbers in unused rows
     for r in range(row, 520):
@@ -624,6 +663,8 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
     row = C.SBU_FIRST_DATA_ROW
 
     for p in census.people:
+        if p.is_duplicate:
+            continue
         r = row
         row += 1
         for col in range(1, 14):
@@ -658,11 +699,11 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
 
         # Waived: Y / N
         if p.role == "EE":
-            is_w = p.coverage in ("WO", "RC", "NE") or "waiv" in (p.cov_raw or "").lower()
+            is_w = p.coverage in ("WO", "RC", "NE", "WP") or "waiv" in (p.cov_raw or "").lower()
             ws_census.cell(r, 7, "Y" if is_w else "N")
         else:
             sub = p.employee
-            is_w = (sub and sub.coverage in ("WO", "RC", "NE")) if sub else False
+            is_w = (sub and sub.coverage in ("WO", "RC", "NE", "WP")) if sub else False
             ws_census.cell(r, 7, "Y" if is_w else "N")
 
         if p.hire_date:

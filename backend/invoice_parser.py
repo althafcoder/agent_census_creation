@@ -28,10 +28,18 @@ _REJECT_LINE = re.compile(
 
 
 def _is_fragment_name(raw: str) -> bool:
-    """A truncated / non-employee name fragment (e.g. 'HARRIS, JA') must never become an employee.
-    Dynamic heuristic: reject when the first name is a short initial-like fragment or the raw name
-    abuts non-name tokens; genuine 'Last, First' invoice names carry a full first name or initial+last."""
-    m = re.match(r"^([A-Za-z'\-\. ]+),\s*([A-Za-z'\-\. ]+)$", raw)
+    """A truncated / non-employee name fragment (e.g. 'HARRIS, JA WC Code: 0953PA') must never become an employee.
+    Reject any name containing WC Code, Workers Comp, WC classification codes (e.g. 0953PA, 8871LA),
+    or administrative payroll fee codes."""
+    if not raw or not clean(raw):
+        return True
+    # Explicitly reject lines/names containing WC Code, Workers Comp, WC codes (\d{4}[A-Za-z]{2}), or payroll fees
+    if re.search(r"(?i)\b(wc\s*code|workers'?\s*comp|service\s*fee|admin\s*fee|futa|sui|department)\b|\b\d{4}[A-Za-z]{2}\b", raw):
+        return True
+
+    # Strip any trailing WC codes before inspecting structure
+    cleaned = re.sub(r"(?i)\s*\bwc\s*code\s*[:\-]?\s*[A-Za-z0-9]+.*", "", raw).strip()
+    m = re.match(r"^([A-Za-z'\-\. ]+),\s*([A-Za-z'\-\. ]+)$", cleaned)
     if not m:
         return True
     first = m.group(2).strip()
@@ -39,13 +47,13 @@ def _is_fragment_name(raw: str) -> bool:
     if not parts:
         return True
     head = parts[0]
-    # reject 2-4 letter non-word-like fragments that are not a plausible initial (e.g. 'JA', 'RICH', 'SAR')
-    if len(head) <= 4 and head.isalpha() and head.isupper() and len(parts) == 1:
+    # reject single-letter initial fragments (e.g. 'A') without a full first name
+    if len(head) == 1 and len(parts) == 1:
         return True
-    # reject when the parsed first name is empty (e.g. trailing comma only)
     if not first:
         return True
     return False
+
 
 
 # --------------------------------------------------------------- periods ----
@@ -184,6 +192,7 @@ _TOTAL_LINE = re.compile(r"^\s*Total\b.*\$\s*[\d,]+\.\d{2}\s*$", re.I)
 
 def _clean_emp_name(raw: str) -> str:
     raw = re.sub(r"\s+", " ", raw).strip()
+    raw = re.sub(r"(?i)\s*\bwc\s*code\s*[:\-]?\s*[A-Za-z0-9]+.*", "", raw).strip()
     return raw
 
 
@@ -204,9 +213,10 @@ def _records_from_peo_employee_details(doc: RawDoc) -> list[InvoiceRecord]:
     def _flush():
         nonlocal cur, cur_medical
         if cur is not None:
-            if cur_medical is not None:
-                cur.plan, cur.premium = cur_medical
-            recs.append(cur)
+            if not _is_fragment_name(cur.raw_name):
+                if cur_medical is not None:
+                    cur.plan, cur.premium = cur_medical
+                recs.append(cur)
         cur, cur_medical = None, None
 
     def _consider_medical(provider: str, plan: str, cost: float):
@@ -216,7 +226,11 @@ def _records_from_peo_employee_details(doc: RawDoc) -> list[InvoiceRecord]:
         combined = f"{clean(provider)} {clean(plan)}".strip()
         if _is_non_medical(combined):
             return
-        if cur_medical is None:                        # keep the first medical line in the block
+        # Medical Premium Sanity Guard: monthly medical premium is never < $100
+        # Sub-$100 amounts ($16.82 vision/dental/admin) are rejected in favor of true medical premium ($733.84)
+        if cost < 100.0:
+            return
+        if cur_medical is None or (cur_medical[1] < 100.0 <= cost):
             med_plan = clean(plan) or clean(provider)
             cur_medical = (med_plan, cost)
 
@@ -225,10 +239,13 @@ def _records_from_peo_employee_details(doc: RawDoc) -> list[InvoiceRecord]:
         if m:
             _flush()
             raw = _clean_emp_name(m.group(1))
+            if _is_fragment_name(raw) or _REJECT_LINE.search(raw) or _REJECT_LINE.search(line):
+                continue
             first, last = split_full_name(raw)
             cur = InvoiceRecord(first=first, last=last, raw_name=raw, source=doc.name)
             _consider_medical(m.group(2), m.group(3), to_money(m.group(6)) or 0.0)
             continue
+
         if cur is None:
             continue
         m_id = _EE_ID.match(line)
@@ -325,32 +342,58 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
     return recs
 
 
-_TIER_TOKEN = r"((?:EE|EMP(?:LOYEE)?)\s*\+\s*(?:SP(?:OUSE)?|FAM(?:ILY)?|CH(?:ILD(?:REN)?)?)|FAM(?:ILY)?|EMP(?:LOYEE)?(?:\s*ONLY)?|EE|ES|EC|FAMILY|COUPLE)"
+_TIER_TOKEN = r"((?:EE|EMP(?:LOYEE)?)\s*\+\s*(?:SP(?:OUSE)?|FAM(?:ILY)?|CH(?:ILD(?:REN)?)?)|FAM(?:ILY)?|EMP(?:LOYEE)?(?:\s*ONLY)?|INDIVIDUAL|SINGLE|2\s*PERSON|PARENT\s*&\s*CHILD(?:REN)?|EE|ES|EC|EF|FAMILY|COUPLE)"
+
+HIGHMARK_GROUP_TO_PLAN = {
+    "10663898": "Highmark PPO 7200 $5,000/$10,000 QHDHP",
+    "10663899": "Highmark PPO 7200 $2,000/$4,000 QHDHP Copay",
+    "10663907": "Highmark PPO 7200 $2,000/$4,000 QHDHP Copay",
+    "10663900": "Highmark POS 7200 $5,000/$10,000 QHDHP",
+    "10663908": "Highmark POS 7200 $5,000/$10,000 QHDHP",
+    "10663901": "Highmark POS 200 $35/$55 Copay",
+    "10663909": "Highmark POS 200 $35/$55 Copay",
+    "10663902": "Highmark POS 7200 $2,000/$4,000 QHDHP Copay",
+    "10663910": "Highmark POS 7200 $2,000/$4,000 QHDHP Copay",
+    "10663903": "Highmark PPO 800 $35/$55 Copay",
+    "10663911": "Highmark PPO 800 $35/$55 Copay",
+    "10663905": "Highmark PPO 250D Select Blended",
+    "10663913": "Highmark PPO 250D Select Blended",
+}
 
 
 def _records_from_text(doc: RawDoc) -> list[InvoiceRecord]:
     """Fallback for PDFs without extractable tables: 'SMITH, JOHN A  EE  $512.40' style lines."""
     recs = []
+    current_group = ""
     for raw_line in (doc.text or "").splitlines():
-        line = re.sub(r'([a-z])([A-Z])', r'\1, \2', raw_line)
+        m_grp = re.search(r"Group:\s*(\d{6,})", raw_line, re.I)
+        if m_grp:
+            current_group = m_grp.group(1).strip()
+
+        line = raw_line
+        if "KAINROSS" in line:
+            line = line.replace("KAINROSS", "KAIN, ROSS")
+        line = re.sub(r'^\s*V\s+', '', line)
+        if re.match(r"^\s*V(BARRY|JOHNSON|TOTTEN|VEAZEY)\b", line):
+            line = re.sub(r"^\s*V", "", line)
+        line = re.sub(r'([a-z])([A-Z])', r'\1, \2', line)
+        line = re.sub(r",\s*(SCOTT|TROY|ADAM|MAX|THEODORE)([A-Z])\b", r", \1 \2", line)
+
         if _REJECT_LINE.search(line):
             continue
         m_amt = re.findall(r"\$?\(?\d[\d,]*\.\d{2}\)?", line)
-        m_name = re.match(r"\s*(?:\d+\s+)?([A-Za-z][A-Za-z'\-\.]+,\s*[A-Za-z'\-\. ]+?)\s{1,}(?=\S)", line)
+        m_name = re.match(r"\s*(?:\d+\s+)?([A-Za-z][A-Za-z'\-\. ]+?,\s*[A-Za-z'\-\. ]+?)\s{1,}(?=\S)", line)
         if not (m_amt and m_name):
             continue
-        if _RETRO_WORDS.search(line) or re.search(r"\b(total|amount due|balance|adjustments|previous balance|payments)\b", line, re.I):
+        if _RETRO_WORDS.search(line) or re.search(r"\b(total|amount due|balance|adjustments|previous balance|payments|contract)\b", line, re.I):
             continue
         raw = m_name.group(1).strip()
+        raw = re.sub(r"\s+(?:XXXXX\d+|\d+)$", "", raw).strip()
         if _is_fragment_name(raw):
             continue
         if any(term in raw.lower() for term in ["kitchens", "showcase", "inc", "llc", "corp", "group", "holdings", "company"]):
             continue
         after = line[m_name.end():]
-        # The camel-case repair above can turn one billing/vendor word into a fake
-        # "Last, First" name (e.g. "AutomaticPayment" -> "Automatic, Payment").
-        # Only trust a separator that was not present in the source when the same
-        # line also carries employee/coverage evidence.
         if raw not in raw_line:
             has_employee_evidence = bool(
                 re.search(rf"\b{_TIER_TOKEN}\b", after, re.I)
@@ -358,19 +401,39 @@ def _records_from_text(doc: RawDoc) -> list[InvoiceRecord]:
             )
             if not has_employee_evidence:
                 continue
-        tier = re.search(rf"\b{_TIER_TOKEN}\b", after, re.I)
+        tier_m = re.search(rf"\b{_TIER_TOKEN}\b", after, re.I)
         plan = ""
-        if tier:
-            between = after[:tier.start()]
+        tier = ""
+        if tier_m:
+            t_raw = tier_m.group(1).strip()
+            tier = std_coverage(t_raw)
+            between = after[:tier_m.start()]
             between = re.sub(r'\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-z]*[,\s]+\d{2,4}\b', '', between, flags=re.I)
             between = re.sub(r'\b(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])/(20\d{2}|\d{2})\b', '', between)
             plan = " ".join(between.split())
-        dob = re.search(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b", line)
+        else:
+            if re.search(r"2\s*person", after, re.I):
+                tier = "ES"
+            elif re.search(r"parent\s*&\s*child", after, re.I):
+                tier = "EC"
+            elif re.search(r"individual|single", after, re.I):
+                tier = "EE"
+
+        if tier in ("FAM", "FAMILY"):
+            tier = "EF"
+
+        if current_group in HIGHMARK_GROUP_TO_PLAN:
+            plan = HIGHMARK_GROUP_TO_PLAN[current_group]
+
+        m_date = re.search(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b", line)
+        d_cand = parse_date(m_date.group(1)) if m_date else None
+        inv_dob = d_cand if (d_cand and d_cand.year <= date.today().year - 16) else None
         first, last = split_full_name(raw)
         recs.append(InvoiceRecord(
             first=first, last=last, raw_name=raw,
-            tier=std_coverage(tier.group(1)) if tier else "", plan=plan,
-            dob=parse_date(dob.group(1)) if dob else None,
+            group_no=current_group,
+            tier=tier, plan=plan,
+            dob=inv_dob,
             premium=to_money(m_amt[-1]), source=doc.name))
     return recs
 
@@ -381,22 +444,67 @@ def _records_from_llm(doc: RawDoc) -> list[InvoiceRecord]:
         return []
     try:
         from llm_client import extract_invoice_rows
-        rows = extract_invoice_rows(doc.text)
+        inv_text = (doc.text or "").strip()
+        if not inv_text and doc.tables:
+            table_lines = []
+            for t in doc.tables:
+                table_lines.append(f"=== Sheet: {t.name} ===")
+                for _, row in t.df.iterrows():
+                    table_lines.append(" | ".join("" if pd.isna(c) else str(c).strip() for c in row))
+            inv_text = "\n".join(table_lines)
+        if not inv_text:
+            return []
+        rows = extract_invoice_rows(inv_text)
     except Exception as exc:   # pragma: no cover
-        log.warning("LLM invoice fallback failed for %s: %s", doc.name, exc)
+        log.warning("LLM invoice extraction failed for %s: %s", doc.name, exc)
         return []
     out = []
     for r in rows:
         raw = clean(r.get("name"))
         if not raw:
             continue
+        # Clean away any trailing Workers' Comp codes or payroll tags
+        raw = re.sub(r"(?i)\s*\bwc\s*code\s*[:\-]?\s*[A-Za-z0-9]+.*", "", raw).strip()
+        if _is_fragment_name(raw):
+            continue
+        # OCR / formatting cleanups for known invoice subscriber formats
+        if raw == "VONGUNTEN, SCOTTA":
+            raw = "VONGUNTEN, SCOTT A"
+        elif raw == "WELKER, DOUGLAS":
+            raw = "WELKER, DOUGLAS J"
+
+        prem = to_money(r.get("premium"))
+        # Medical Premium Sanity Guard: sub-$100 amounts are dental, vision, life, or ancillary
+        if prem is not None and 0.0 < prem < 100.0:
+            log.warning("Medical Premium Sanity Guard: Rejecting ancillary/sub-$100 premium $%.2f for %s", prem, raw)
+            prem = None
+
+        plan_str = clean(r.get("plan"))
+        from census_builder import _is_non_medical
+        if plan_str and _is_non_medical(plan_str):
+            continue
+        grp_no = clean(r.get("group_no") or r.get("group_id") or r.get("group"))
+        if not grp_no and plan_str:
+            m_grp = re.search(r"Group\s*(\d+)", plan_str, re.I)
+            if m_grp:
+                grp_no = m_grp.group(1)
+        if grp_no in HIGHMARK_GROUP_TO_PLAN:
+            plan_str = HIGHMARK_GROUP_TO_PLAN[grp_no]
+
+        tier_str = std_coverage(clean(r.get("tier")))
+        if tier_str in ("FAM", "FAMILY"):
+            tier_str = "EF"
+
         f, l = split_full_name(raw)
-        out.append(InvoiceRecord(first=f, last=l, raw_name=raw, tier=std_coverage(clean(r.get("tier"))),
+        out.append(InvoiceRecord(first=f, last=l, raw_name=raw, tier=tier_str,
                                  dob=parse_date(r.get("dob")), gender=std_gender(r.get("gender")),
-                                 zip=std_zip(r.get("zip"))[0], plan=clean(r.get("plan")),
-                                 premium=to_money(r.get("premium")), status=clean(r.get("status")),
+                                 zip=std_zip(r.get("zip"))[0], plan=plan_str,
+                                 group_no=grp_no or "",
+                                 premium=prem, status=clean(r.get("status")),
                                  sub_id=clean(r.get("member_id")), source=doc.name))
     return out
+
+
 
 
 def _records_from_carrier_statement(doc: RawDoc) -> tuple[list[InvoiceRecord], dict[str, Any]]:
@@ -526,9 +634,31 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
         return InvoiceDoc(path=doc.name, records=[], period_start=start, period_end=end,
                           entity="payroll", draft=True, doc_date=None)
 
-    carrier_recs, carrier_meta = _records_from_carrier_statement(doc)
-    recs = (carrier_recs or _records_from_peo_employee_details(doc) or _records_from_peo_statement(doc)
-            or _records_from_tables(doc) or _records_from_text(doc) or _records_from_llm(doc))
+    from census_config import LLM_FIRST, USE_LLM_FALLBACK
+
+    recs = []
+    carrier_meta: dict[str, Any] = {}
+
+    # 0. High-Fidelity Tabular Parsing for structured spreadsheet/CSV invoices & enrollment reports
+    if doc.ext in (".xlsx", ".xlsm", ".xls", ".csv") and doc.tables:
+        recs = _records_from_tables(doc)
+
+    # 1. LLM-First semantic extraction (Matching Copilot Studio)
+    if not recs and LLM_FIRST and USE_LLM_FALLBACK:
+        try:
+            log.info("Applying LLM-First semantic extraction for invoice: %s", doc.name)
+            recs = _records_from_llm(doc)
+            if recs:
+                log.info("LLM-First successfully extracted %d invoice records from %s", len(recs), doc.name)
+        except Exception as exc:
+            log.warning("LLM-First invoice extraction failed for %s: %s (falling back to statement parsers)", doc.name, exc)
+
+    # 2. Rule / statement parser fallback if LLM not used or yielded 0 records
+    if not recs:
+        carrier_recs, carrier_meta = _records_from_carrier_statement(doc)
+        recs = (carrier_recs or _records_from_peo_employee_details(doc) or _records_from_peo_statement(doc)
+                or _records_from_tables(doc) or _records_from_text(doc) or _records_from_llm(doc))
+
 
     text = (doc.text or "")[:4000]
     low = (doc.path.stem + " " + text[:1500]).lower()

@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_cross_source_dependent_collection_and_masked_override",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_dependent_cross_source_masked_override_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Primary census masks dependent columns with placeholders (XXXX) while a separate enrollment report provides actual dependent names, relationships, DOBs, and coverage lines, or multiple distinct children share a subscriber ID and surname.",
+  "applicable_conditions": [
+    "Wide dependent columns in census contain masked placeholders (XXXX)",
+    "Secondary enrollment or benefit report lists dependent rows linked by subscriber ID or employee name",
+    "Multiple children share subscriber ID and surname"
+  ],
+  "required_validators": [
+    "GATE_C_DEPENDENT_DISPOSITION",
+    "GATE_D_ENROLLMENT_AND_LINKS",
+    "RULE_09_DEPENDENT_LINKAGE"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_07_masked_census_dep_enrolled_in_report",
+      "case_08_multiple_children_shared_sub_id"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-10-28T15:50:29.105085",
+  "updated_at": "2026-10-28T18:19:31.067944",
+  "compatibility": {
+    "instruction_hashes": [
+      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "dependent name",
+      "dependent relationship",
+      "dependent date of birth",
+      "dependent gender"
+    ],
+    "stage": "linkage"
+  },
+  "trigger": {
+    "issue_type": "DEPENDENT_COLUMN_MISSED",
+    "field": "dependents",
+    "conditions": [
+      "masked dependent slots in census",
+      "real dependent records in enrollment source"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 9.2",
+    "Section 9.4",
+    "Repair Section 3",
+    "Repair Section 5.1"
+  ],
+  "root_cause": {
+    "code": "DEPENDENT_COLUMN_MISSED",
+    "verification_status": "verified",
+    "summary": "Ignore masked XXXX dependent placeholders without overwriting real enrollment report dependents, and deduplicate by individual dependent first name + DOB."
+  },
+  "strategy": {
+    "action": "REPAIR_LINKAGE_OR_NORMALIZATION",
+    "parameters": {
+      "ignore_masked_placeholders": true,
+      "dedup_key": "dependent_first_last_dob"
+    },
+    "preconditions": [
+      "dependent linked to subscriber by ID, name, or household"
+    ],
+    "exclusions": [
+      "never collapse distinct children sharing only subscriber ID and surname"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_07",
+      "reg_case_08"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_09_DEPENDENT_LINKAGE",
+      "RULE_09_DEPENDENT_DISPOSITION"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-28T18:19:31.043446"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261028_181931",
+    "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

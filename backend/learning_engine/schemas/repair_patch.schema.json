@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RepairPatch",
+  "type": "object",
+  "required": [
+    "patch_id",
+    "issue_ids",
+    "action",
+    "scope_predicates",
+    "preconditions",
+    "affected_stages"
+  ],
+  "properties": {
+    "patch_id": { "type": "string" },
+    "issue_ids": { "type": "array", "items": { "type": "string" } },
+    "action": {
+      "type": "string",
+      "enum": [
+        "RE_READ_SOURCE_UNIT",
+        "RE_OCR_PAGE",
+        "RECLASSIFY_SOURCE",
+        "APPLY_HEADER_MAPPING",
+        "REPAIR_LINKAGE_OR_NORMALIZATION",
+        "SELECT_SOURCE_VERSION",
+        "REPLACE_STRUCTURED_VALUE",
+        "RECOMPUTE_FINDINGS",
+        "REGENERATE_WORKBOOK",
+        "BYPASS_EVICT_CACHE",
+        "RESOLVE_MULTI_COLUMN_GENDER",
+        "FILTER_NON_MEDICAL_DEPENDENTS",
+        "RECALCULATE_SUBSCRIBER_LINKS",
+        "EXCLUDE_PART_TIME_DEPENDENTS",
+        "FORMAT_MATCH_PERCENTAGE",
+        "RESOLVE_PREFERRED_NAME_ALIAS",
+        "RESOLVE_CARRIER_CENSUS_LEGAL_NAME_AND_DEPENDENTS"
+      ]
+    },
+    "scope_predicates": { "type": "object" },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "preconditions": { "type": "array", "items": { "type": "string" } },
+    "expected_old_state": { "type": ["string", "object", "null"] },
+    "proposed_new_state": { "type": ["string", "object", "null"] },
+    "parameters": { "type": "object" },
+    "affected_stages": { "type": "array", "items": { "type": "string" } },
+    "rollback_data": { "type": ["object", "null"] },
+    "verification_checks": { "type": "array", "items": { "type": "string" } }
+  }
+}
+

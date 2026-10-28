@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_multi_column_gender_sex_resolution",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_gender_multi_col_sex_self_id_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Multiple gender/sex columns exist for the same person (e.g. Gender (Self-ID), Sex, Gender, Employee Sex, Dependent Sex) where the primary column is blank or masked (XXXX/Unknown/N/A) while a secondary column or linked file holds a valid unambiguous value.",
+  "applicable_conditions": [
+    "Table or linked files contain >= 1 employee or dependent gender/sex columns",
+    "Primary gender column is blank, whitespace, NaN, XXXX, N/A, or Unknown while secondary Sex/Gender column is populated",
+    "Wide row contains both employee sex and dependent sex columns"
+  ],
+  "required_validators": [
+    "GATE_B_GENDER_RESOLUTION",
+    "RULE_10_GENDER_RESOLUTION"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_01_self_id_blank_sex_female",
+      "case_02_self_id_blank_sex_male",
+      "case_03_self_id_blank_gender_blank_sex_female",
+      "case_04_cross_file_gender",
+      "case_05_wide_row_emp_dep_sex",
+      "case_06_conflicting_gender_flagged"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-10-28T15:50:29.085650",
+  "updated_at": "2026-10-28T18:19:31.048576",
+  "compatibility": {
+    "instruction_hashes": [
+      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "gender (self-id)",
+      "sex",
+      "gender",
+      "employee sex",
+      "dependent gender"
+    ],
+    "stage": "normalization"
+  },
+  "trigger": {
+    "issue_type": "MULTI_COLUMN_GENDER_UNRESOLVED",
+    "field": "gender",
+    "conditions": [
+      "same-person usable gender/sex candidate exists",
+      "blank or masked placeholder in primary column"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 9.1",
+    "Section 10.1",
+    "Section 10.2",
+    "Repair Section 2"
+  ],
+  "root_cause": {
+    "code": "MULTI_COLUMN_GENDER_UNRESOLVED",
+    "verification_status": "verified",
+    "summary": "Preserve all candidate gender/sex columns per person and resolve usable values to a single M/F code without concatenation or guessing."
+  },
+  "strategy": {
+    "action": "RESOLVE_MULTI_COLUMN_GENDER",
+    "parameters": {
+      "normalize_map": {
+        "M": [
+          "M",
+          "Male",
+          "Man / Male",
+          "Man/Male"
+        ],
+        "F": [
+          "F",
+          "Female",
+          "Woman / Female",
+          "Woman/Female"
+        ]
+      }
+    },
+    "preconditions": [
+      "at least one usable unambiguous gender/sex candidate for person"
+    ],
+    "exclusions": [
+      "conflicting M vs F candidates on same person must remain unresolved and flagged"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_01",
+      "reg_case_02",
+      "reg_case_03",
+      "reg_case_04",
+      "reg_case_05",
+      "reg_case_06"
+    ],
+    "negative_fixture_ids": [
+      "reg_case_06_conflict"
+    ],
+    "checks_passed": [
+      "RULE_10_GENDER_RESOLUTION"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-28T18:19:31.043422"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261028_181931",
+    "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

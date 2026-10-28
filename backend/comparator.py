@@ -8,7 +8,7 @@ from typing import Optional
 
 from census_config import ACTIVE_TIERS, FUZZY_ACCEPT, FUZZY_WITH_DOB, NON_ENROLLED
 from models import Census, Findings, InvoiceRecord, Person, RenewalDoc, RowResult
-from utils import clean, match_plan, name_similarity, name_tokens, std_coverage
+from utils import clean, match_plan, name_similarity, name_tokens, split_full_name, std_coverage
 
 TERMINATED = ("term", "cancel", "inactive", "lapse", "disenroll")
 
@@ -18,7 +18,7 @@ def tier_from_deps(emp: Person) -> str:
     roles = {d.role for d in emp.dependents}
     if not roles:
         return "EE"
-    if roles == {"SP"}:
+    if roles in ({"SP"}, {"DP"}):
         return "ES"
     if roles == {"CH"}:
         return "EC"
@@ -88,15 +88,45 @@ def match_employees(emps: list[Person], invs: list[InvoiceRecord]) -> dict[int, 
             res[i] = (cands[0], 1.0)
             used.add(cands[0])
 
+    # pass 2b - preferred name / middle name / alias exact matching
+    for i, e in enumerate(emps):
+        if i in res:
+            continue
+        alias_tok_cands = []
+        if getattr(e, "preferred_first", "") and e.last:
+            alias_tok_cands.append(name_tokens(e.preferred_first, e.last))
+        if getattr(e, "middle_name", "") and e.last and e.middle_name.lower() != (getattr(e, "preferred_first", "") or "").lower():
+            alias_tok_cands.append(name_tokens(e.middle_name, e.last))
+        for a in getattr(e, "aliases", []):
+            if a:
+                alias_tok_cands.append(name_tokens(*split_full_name(a)))
+        for atok in alias_tok_cands:
+            if not atok:
+                continue
+            cands = [j for j in by_tok.get(tuple(atok), []) if j not in used]
+            if cands:
+                cands.sort(key=lambda j: 0 if (e.dob and invs[j].dob == e.dob) or (e.plan and invs[j].plan == e.plan) else 1)
+                best_j = cands[0]
+                # Under Section 16.6, match score is 0.95 to show exact invoice name display
+                res[i] = (best_j, 0.95)
+                used.add(best_j)
+                break
+
     # pass 3 - fuzzy (typos, middle names); greedy best-first
     pairs = []
     for i, e in enumerate(emps):
         if i in res or not emp_tok[i]:
             continue
+        all_emp_toks = [emp_tok[i]]
+        if getattr(e, "preferred_first", "") and e.last:
+            all_emp_toks.append(name_tokens(e.preferred_first, e.last))
+        if getattr(e, "middle_name", "") and e.last:
+            all_emp_toks.append(name_tokens(e.middle_name, e.last))
         for j, t in enumerate(inv_tok):
             if j in used or not t:
                 continue
-            s = name_similarity(emp_tok[i], t)
+            sims = [name_similarity(et, t) for et in all_emp_toks if et]
+            s = max(sims) if sims else 0.0
             dob_eq = bool(e.dob and invs[j].dob and e.dob == invs[j].dob)
             if s >= FUZZY_ACCEPT or (dob_eq and s >= FUZZY_WITH_DOB):
                 pairs.append((s + (0.05 if dob_eq else 0), i, j, s))
@@ -150,6 +180,43 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
     matches = match_employees(emps, invs) if have_invoice else {}
     matched_inv = {j for j, _ in matches.values()}
 
+    # Name Mismatch Resolution pass:
+    # If an enrolled census employee is unmatched, check for an unmatched invoice subscriber
+    # with the same first name (e.g. Jennifer Moon vs SCHNETTLER, JENNIFER A) and matching plan/tier.
+    if have_invoice:
+        unmatched_census_enrolled = [
+            i for i, e in enumerate(emps)
+            if i not in matches and e.coverage in ACTIVE_TIERS
+        ]
+        unmatched_invoice = [
+            j for j, inv in enumerate(invs)
+            if j not in matched_inv and inv.plan
+        ]
+        for i in unmatched_census_enrolled:
+            e = emps[i]
+            for j in unmatched_invoice:
+                if j in matched_inv:
+                    continue
+                inv = invs[j]
+                fn_match = clean(e.first).lower() == clean(inv.first).lower() or (
+                    clean(e.first).lower() in clean(inv.raw_name).lower()
+                )
+                pref_match = (
+                    (bool(getattr(e, "preferred_first", "")) and clean(e.preferred_first).lower() == clean(inv.first).lower()) or
+                    (bool(getattr(e, "middle_name", "")) and clean(e.middle_name).lower() == clean(inv.first).lower())
+                )
+                ln_match = clean(e.last).lower() == clean(inv.last).lower()
+                tier_match = std_coverage(e.coverage) == std_coverage(inv.tier)
+                plan_match = bool(e.plan and inv.plan and clean(e.plan).lower() == clean(inv.plan).lower())
+                if fn_match and tier_match:
+                    matches[i] = (j, 0.62)
+                    matched_inv.add(j)
+                    break
+                elif (pref_match or ln_match) and (tier_match or plan_match):
+                    matches[i] = (j, 0.95 if pref_match and ln_match else 0.70)
+                    matched_inv.add(j)
+                    break
+
     for i, e in enumerate(emps):
         rr = RowResult()
         results[id(e)] = rr
@@ -161,8 +228,8 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
         # ---- tier vs dependent structure (only when dependents were supplied at all)
         if cov in ACTIVE_TIERS and meta.get("saw_dependent_source"):
             roles = [d.role for d in e.dependents]
-            bad = ((cov == "EE" and roles) or (cov == "ES" and ("SP" not in roles or "CH" in roles)) or
-                   (cov == "EC" and ("CH" not in roles or "SP" in roles)) or (cov == "FAM" and not roles))
+            bad = ((cov == "EE" and roles) or (cov == "ES" and (not ({"SP", "DP"} & set(roles)) or "CH" in roles)) or
+                   (cov == "EC" and ("CH" not in roles or ({"SP", "DP"} & set(roles)))) or (cov in ("FAM", "EF") and not roles))
             if bad:
                 rr.notes.append(("Tier Does Not Match Dependent Structure", True))
                 cnt["coverage_mismatch"] += 1
@@ -177,6 +244,8 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
             sim = j_sc[1]
             pct = int(round(sim * 100))
             rr.inv, rr.inv_name = inv, inv.raw_name
+            rr.group_no = inv.group_no
+            rr.plan_enrolled = inv.plan
             rr.match_pct = pct
             rr.match_text = "100% Match" if pct >= 100 else f"{pct}% Match | Invoice Name: {inv.raw_name}"
 
@@ -208,14 +277,19 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                 else:
                     rr.status = inv.status or "Active"
 
-                if e.dob and inv.dob and e.dob != inv.dob:
-                    issues.append("DOB")
+                e_d = e.dob.date() if hasattr(e.dob, "date") and callable(e.dob.date) else e.dob
+                inv_d = inv.dob.date() if hasattr(inv.dob, "date") and callable(inv.dob.date) else inv.dob
+                if e_d and inv_d and e_d != inv_d:
+                    from datetime import date as _dt_date
+                    if not (inv_d.year >= _dt_date.today().year - 16):
+                        issues.append("DOB")
                 if e.gender and inv.gender and e.gender != inv.gender:
                     issues.append("Gender")
                 if e.zip and inv.zip and e.zip[:5] != inv.zip[:5]:
                     issues.append("ZIP")
+                cov_std = std_coverage(cov)
                 inv_tier_std = std_coverage(inv.tier)
-                if cov in ACTIVE_TIERS and inv_tier_std in ACTIVE_TIERS and cov != inv_tier_std:
+                if cov_std in ACTIVE_TIERS and inv_tier_std in ACTIVE_TIERS and cov_std != inv_tier_std:
                     issues.append(f"Tier (Census {cov} / Invoice {inv.tier})")
                     red_issue = True
                     cnt["tier_mismatch"] += 1
@@ -235,8 +309,12 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     rr.notes.append((f"Premium Discrepancy: Census {e.premium:,.2f} vs Invoice {inv.premium:,.2f}", True))
                     cnt["premium_discrepancy"] += 1
                     exc("Premium discrepancies", who, f"Census {e.premium:,.2f} vs Invoice {inv.premium:,.2f}")
-                rr.result = "Match" if not issues else "Mismatch: " + "; ".join(issues)
-                rr.result_red = red_issue
+                if 0.60 <= sim < 0.70:
+                    rr.result = "Review - Name Mismatch"
+                    rr.notes.append((f"Name mismatch - census name differs from invoice subscriber; matched on plan/tier/coverage. Invoice Name: {inv.raw_name}", False))
+                else:
+                    rr.result = "Match" if not issues else "Mismatch: " + "; ".join(issues)
+                    rr.result_red = red_issue
 
             if cov not in NON_ENROLLED:
                 tier_for_renewal = (inv.tier if inv.tier in ACTIVE_TIERS else
@@ -255,7 +333,9 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
         # ================= employee NOT on invoice
         elif have_invoice:
             if cov in NON_ENROLLED:
-                pass                                                  # expected - no notes, no highlight
+                rr.status = "Not on invoice"
+                rr.result = "Expected - Not Enrolled"
+                rr.plan, rr.tier, rr.inv_premium = None, None, None
             elif cov == "WP":
                 wp["total"] += 1
                 elected = clean(e.plan)
@@ -264,6 +344,8 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     plan = match_plan(elected, inv_plans) or elected
                     wp["elected"] += 1
                     rr.plan, rr.tier = plan, tier
+                    rr.status = "Not on invoice"
+                    rr.result = "Expected - Waiting Period"
                     rr.inv_premium = rates.get((plan, tier))
                     rr.notes.append(("WP Employee - Awaiting Eligibility", True))
                     if plan:
@@ -275,8 +357,9 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                             F.renewal_unmapped_plans.add(plan)
                 else:
                     wp["missing_election"] += 1
-                    # Master instruction: leave plan blank unless another submission source supports it
-                    rr.plan, rr.tier = "", ""
+                    rr.status = "Not on invoice"
+                    rr.result = "Expected - Waiting Period"
+                    rr.plan, rr.tier = None, None
                     rr.inv_premium = None
             elif cov in ACTIVE_TIERS:
                 rr.notes.append(("Census Employee Not Found On Invoice", True))

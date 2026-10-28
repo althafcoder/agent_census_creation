@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ValidationReport",
+  "type": "object",
+  "required": [
+    "instruction_hash",
+    "total_checks",
+    "passed_checks",
+    "failed_checks",
+    "checks",
+    "issues",
+    "release_status"
+  ],
+  "properties": {
+    "instruction_hash": { "type": "string" },
+    "total_checks": { "type": "integer", "minimum": 0 },
+    "passed_checks": { "type": "integer", "minimum": 0 },
+    "failed_checks": { "type": "integer", "minimum": 0 },
+    "blocked_checks": { "type": "integer", "minimum": 0, "default": 0 },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "section", "name", "status"],
+        "properties": {
+          "rule_id": { "type": "string" },
+          "section": { "type": "string" },
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "NOT_APPLICABLE", "UNKNOWN", "BLOCKED"]
+          },
+          "reason": { "type": "string" },
+          "evidence_refs": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["issue_id", "rule_id", "issue_type", "severity", "earliest_stage"],
+        "properties": {
+          "issue_id": { "type": "string" },
+          "rule_id": { "type": "string" },
+          "target_ref": { "type": "string" },
+          "issue_type": { "type": "string" },
+          "severity": { "type": "string", "enum": ["CRITICAL", "WARNING", "INFO"] },
+          "earliest_stage": { "type": "string" },
+          "expected_state": { "type": "string" },
+          "observed_state": { "type": "string" },
+          "evidence_refs": { "type": "array", "items": { "type": "string" } },
+          "cause_status": { "type": "string", "enum": ["confirmed", "suspected", "undetermined"] },
+          "allowed_actions": { "type": "array", "items": { "type": "string" } },
+          "resolution_status": { "type": "string", "enum": ["open", "repaired", "unresolved", "not_applicable"] }
+        }
+      }
+    },
+    "release_status": {
+      "type": "string",
+      "enum": ["PASSED", "REPAIRED_AND_PASSED", "VALID_WITH_DOCUMENTED_LIMITATIONS", "NEEDS_SOURCE_INFORMATION", "BLOCKED_TECHNICAL"]
+    },
+    "supported_release_decisions": { "type": "array", "items": { "type": "string" } },
+    "known_limitations": { "type": "array", "items": { "type": "string" } },
+    "execution_gates": { "type": "object" }
+  }
+}
+

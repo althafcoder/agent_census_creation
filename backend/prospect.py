@@ -14,19 +14,19 @@ LABELS = {
     "effective_date": ["proposedeffectivedate", "requestedeffectivedate", "effectivedate",
                        "coverageeffectivedate", "proposedeffective", "desiredeffectivedate"],
     "sic": ["siccode", "sicnaicscode", "sicnaics", "naicscode", "sic", "naics", "siccodenaics"],
-    "company": ["companyname", "legalname", "prospectname", "employername", "nameofcompany", "businessname",
+    "company": ["companyname", "clientlegalname", "legalname", "prospectname", "employername", "nameofcompany", "businessname",
                 "groupname", "organizationname", "legalbusinessname", "nameofemployer", "company", "employer"],
     "address": ["address", "streetaddress", "businessaddress", "mailingaddress", "addressline1", "address1",
-                "physicaladdress"],
+                "physicaladdress", "hqaddress"],
     "city": ["city"],
-    "state": ["state"],
+    "state": ["state", "states", "primarystate"],
     "zip": ["zip", "zipcode", "postalcode"],
-    "csz": ["citystatezip", "citystatezipcode", "citystzip"],
+    "csz": ["citystatezip", "citystatezipcode", "citystzip", "hqcitystatezip", "locations"],
     "referral": ["onedigitalreferral", "onedigitalreferal", "referral", "referredby", "referralsource",
-                 "broker", "brokeragency", "prospectbroker", "prospectreferral"],
+                 "brokerandcommission", "broker", "brokeragency", "prospectbroker", "prospectreferral"],
     "sales_person": ["reisalesperson", "reisalesrep", "salesperson", "salesrep", "salesrepresentative",
-                     "accountexecutive", "salesexecutive"],
-    "current_carrier": ["currentcarrier", "medicalcarrier", "carrier", "priorcarrier"],
+                     "accountexecutive", "salesexecutive", "peosalesperson"],
+    "current_carrier": ["currentmedicalcarrier", "currentcarrier", "medicalcarrier", "carrier", "priorcarrier"],
     "peo": ["currentpeo", "peo", "peoname", "payrollpeo"],
     "funding": ["fundingtype", "fundingarrangement", "planfunding", "funding"],
     "dba": ["dba", "dbadba", "doingbusinessas", "dbaname", "dbafictitiousname"],
@@ -334,7 +334,20 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
     ghq_text = "\n\n".join(d.text for d in ghq_docs if d.text)
     rfp_text = "\n\n".join(d.text for d in rfp_docs if d.text)
 
-    # 1. Rule-based extraction pass on GHQ / RFP
+    from census_config import LLM_FIRST, USE_LLM_FALLBACK
+
+    # 1. LLM-First semantic extraction from GHQ / RFP (Matching Copilot Studio)
+    if LLM_FIRST and USE_LLM_FALLBACK and (ghq_text.strip() or rfp_text.strip()):
+        try:
+            log.info("      [PROSPECT] Calling Claude Anthropic (LLM-First) for prospect fields extraction...")
+            from llm_client import extract_prospect_fields
+            llm_res = extract_prospect_fields(ghq_text, rfp_text)
+            if llm_res:
+                _apply_llm_prospect(merged, llm_res)
+        except Exception as exc:
+            log.warning("LLM-First prospect extraction error on GHQ/RFP: %s", exc)
+
+    # 2. Rule-based extraction pass for any remaining unfilled fields
     for doc in sources:
         vals = _from_doc(doc)
         for k, v in vals.items():
@@ -344,9 +357,8 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
     if _is_invalid_sic(merged.get("sic", "")):
         merged["sic"] = ""
 
-    # 2. Claude Anthropic extraction from GHQ / RFP
-    from census_config import USE_LLM_FALLBACK
-    if USE_LLM_FALLBACK and (ghq_text.strip() or rfp_text.strip()):
+    # 3. Fallback LLM pass if not run earlier and fields missing
+    if not LLM_FIRST and USE_LLM_FALLBACK and (ghq_text.strip() or rfp_text.strip()):
         try:
             log.info("      [PROSPECT] Calling Claude Anthropic for prospect fields extraction from GHQ/RFP...")
             from llm_client import extract_prospect_fields
@@ -355,6 +367,7 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
                 _apply_llm_prospect(merged, llm_res)
         except Exception as exc:
             log.warning("LLM prospect extraction error on GHQ/RFP: %s", exc)
+
 
     # 3. If core prospect fields are still missing, review all uploaded documents (census notes tabs, invoices, reports)
     # as mandated by the official instructions ("Source Document Review: All files must be reviewed and combined")
@@ -365,6 +378,24 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
         for d in all_docs:
             if d in sources:
                 continue
+            vals = _from_doc(d)
+            for k, v in vals.items():
+                if v and not merged.get(k):
+                    merged[k] = v
+                    found_in_other = True
+            # Deterministic invoice header address/CSZ extraction when missing from GHQ/RFP
+            if d.text and (not merged.get("address") or not merged.get("csz") or not re.search(r"\b\d{5}\b", merged.get("csz", ""))):
+                m_inv_addr = re.search(
+                    r"Address\s+Contact\s+Information[\s\S]{0,160}?\n\s*(\d+\s+[A-Za-z0-9\s.\-]+?)(?:\s{2,}|\n)[\s\S]{0,160}?\n\s*([A-Za-z .\-]+,\s*[A-Z]{2},?\s*\d{5}(?:-\d{4})?)",
+                    d.text,
+                    re.I,
+                )
+                if m_inv_addr:
+                    if not merged.get("address"):
+                        merged["address"] = clean(m_inv_addr.group(1))
+                    if not merged.get("csz") or not re.search(r"\b\d{5}\b", merged.get("csz", "")):
+                        merged["csz"] = clean(m_inv_addr.group(2))
+                    found_in_other = True
             # Collect census notes/company tabs and headers
             for t in getattr(d, "tables", []):
                 t_lower = t.name.lower()
@@ -422,10 +453,14 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
             pr.ft_employees = None
 
     if merged.get("csz"):
-        pr.city_state_zip = merged["csz"]
+        csz_clean = re.sub(r"\([^)]*\)", "", merged["csz"]).strip()
+        pr.city_state_zip = csz_clean
     elif merged.get("city") and merged.get("state") and merged.get("zip"):
         z = re.sub(r"\.0$", "", merged["zip"])
         pr.city_state_zip = f"{merged['city']}, {merged['state']} {z}"
+
+    if pr.state and "," in pr.state:
+        pr.state = pr.state.split(",")[0].strip()
 
     # Extract or normalize state if needed
     if not pr.state and pr.city_state_zip:

@@ -258,7 +258,34 @@ def check_renewal_required(
         ren_date = renewal_doc.effective
     elif known_renewal_date:
         ren_date = known_renewal_date          # current PEO plan-year renewal stated in the uploaded documents
-    elif prospect.effective_date:
+    elif docs:
+        from datetime import timedelta
+        from utils import parse_date
+        for d in docs:
+            txt = d.text or ""
+            # 1) Explicit "4/1 renewal" or "renewal date: MM/DD/YYYY" in submission/email/GHQ text
+            m_ren = (re.search(r"\b(\d{1,2}/\d{1,2}(?:/\d{2,4})?)\s*renewal\b", txt, re.I)
+                     or re.search(r"\brenewal\s*(?:date)?\s*[:\-]?\s*(\d{1,2}/\d{1,2}(?:/\d{2,4})?)\b", txt, re.I))
+            if m_ren:
+                raw_d = m_ren.group(1)
+                if raw_d.count("/") == 1:
+                    yr = ref_date.year
+                    cand = parse_date(f"{raw_d}/{yr}")
+                    if cand and cand < date.today():
+                        cand = parse_date(f"{raw_d}/{yr + 1}")
+                    ren_date = cand
+                else:
+                    ren_date = parse_date(raw_d)
+                if ren_date:
+                    break
+            # 2) Medical Plan Period range in Benefits Enrollment Report (e.g. "Apr 01, 2026 - Mar 31, 2027")
+            m_per = re.search(r"\b([A-Za-z]{3,9}\s+\d{1,2},\s+20\d{2})\s*[-–]\s*([A-Za-z]{3,9}\s+\d{1,2},\s+20\d{2})\b", txt)
+            if m_per:
+                end_dt = parse_date(m_per.group(2))
+                if end_dt:
+                    ren_date = end_dt + timedelta(days=1)
+                    break
+    if not ren_date and prospect.effective_date:
         ren_date = prospect.effective_date
 
     if ren_date:
@@ -394,6 +421,24 @@ def generate_missing_information_email(
     subject = f"Medical Submission Missing Information - {prospect_name}"
 
     sections: list[tuple[str, list[str]]] = []
+
+    # 0. Document Access Section (Section 6.1 F)
+    access_records = getattr(findings, "access_records", {}) or {}
+    access_items = []
+    for fn, rec in access_records.items():
+        st = getattr(rec, "status", None)
+        st_val = getattr(st, "value", str(st))
+        if st_val in ("PASSWORD_REJECTED", "PASSWORD_NOT_FOUND", "PRESENT_LOCKED", "DECRYPTION_TOOL_UNAVAILABLE", "UNSUPPORTED_PROTECTION"):
+            if getattr(rec, "remedy_message", ""):
+                access_items.append(rec.remedy_message)
+            elif st_val == "PASSWORD_REJECTED":
+                access_items.append(f"Please confirm the password for {fn} or provide an unlocked copy; the password supplied in the submission email did not open the file.")
+            elif st_val == "PASSWORD_NOT_FOUND":
+                access_items.append(f"Please confirm the password for {fn} or provide an unlocked copy.")
+            else:
+                access_items.append(f"Please provide an unlocked copy of {fn}.")
+    if access_items:
+        sections.append(("Document Access", access_items))
 
     # 1. GHQ Section (Florida Blue only)
     if routing.is_florida:

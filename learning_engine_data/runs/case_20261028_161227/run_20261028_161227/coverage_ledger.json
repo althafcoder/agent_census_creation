@@ -1,0 +1,288 @@
+{
+  "run_id": "run_20261028_161227",
+  "summary": {
+    "total_expected_units": 10,
+    "visited_units": 10,
+    "failed_units": 0,
+    "unparsed_units": 0,
+    "is_complete": true,
+    "unparsed_unit_ids": []
+  },
+  "manifests": {
+    "SLM employee census.xlsx": {
+      "document_id": "SLM employee census.xlsx",
+      "filename": "SLM employee census.xlsx",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "Employee Census Report",
+        "Report Runtime Settings"
+      ],
+      "visited_units": [
+        "Employee Census Report",
+        "Report Runtime Settings"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    },
+    "SLM Employee and Dependent Enrollments.xlsx": {
+      "document_id": "SLM Employee and Dependent Enrollments.xlsx",
+      "filename": "SLM Employee and Dependent Enrollments.xlsx",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "Employee and Dependent_Benefici"
+      ],
+      "visited_units": [
+        "Employee and Dependent_Benefici"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    },
+    "2.PEO GHQ (2).pdf": {
+      "document_id": "2.PEO GHQ (2).pdf",
+      "filename": "2.PEO GHQ (2).pdf",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "main"
+      ],
+      "visited_units": [
+        "main"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    },
+    "Inbox - DHR Benefits Submissions - Outlook.pdf": {
+      "document_id": "Inbox - DHR Benefits Submissions - Outlook.pdf",
+      "filename": "Inbox - DHR Benefits Submissions - Outlook.pdf",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "main"
+      ],
+      "visited_units": [
+        "main"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    },
+    "SLM benefits invoice 10.5.26.pdf": {
+      "document_id": "SLM benefits invoice 10.5.26.pdf",
+      "filename": "SLM benefits invoice 10.5.26.pdf",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "main"
+      ],
+      "visited_units": [
+        "main"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    },
+    "RFP- SLM Waste and Recycling Services Inc_.docx": {
+      "document_id": "RFP- SLM Waste and Recycling Services Inc_.docx",
+      "filename": "RFP- SLM Waste and Recycling Services Inc_.docx",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "main"
+      ],
+      "visited_units": [
+        "main"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    },
+    "SLM Cost Compare Email.PDF": {
+      "document_id": "SLM Cost Compare Email.PDF",
+      "filename": "SLM Cost Compare Email.PDF",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "main"
+      ],
+      "visited_units": [
+        "main"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    },
+    "SLM payroll invoice 9.29.26.pdf": {
+      "document_id": "SLM payroll invoice 9.29.26.pdf",
+      "filename": "SLM payroll invoice 9.29.26.pdf",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "main"
+      ],
+      "visited_units": [
+        "main"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    },
+    "SLM WC Loss Run.pdf": {
+      "document_id": "SLM WC Loss Run.pdf",
+      "filename": "SLM WC Loss Run.pdf",
+      "parent_chain": [],
+      "content_hash": "",
+      "roles": [
+        "unknown"
+      ],
+      "version_or_period": "",
+      "access_status": "READABLE",
+      "expected_units": [
+        "main"
+      ],
+      "visited_units": [
+        "main"
+      ],
+      "extraction_status": "COMPLETED",
+      "errors": [],
+      "affected_capabilities": []
+    }
+  },
+  "units": {
+    "SLM employee census.xlsx::Employee Census Report": {
+      "unit_id": "SLM employee census.xlsx::Employee Census Report",
+      "document_id": "SLM employee census.xlsx",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "SLM employee census.xlsx::Report Runtime Settings": {
+      "unit_id": "SLM employee census.xlsx::Report Runtime Settings",
+      "document_id": "SLM employee census.xlsx",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "SLM Employee and Dependent Enrollments.xlsx::Employee and Dependent_Benefici": {
+      "unit_id": "SLM Employee and Dependent Enrollments.xlsx::Employee and Dependent_Benefici",
+      "document_id": "SLM Employee and Dependent Enrollments.xlsx",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "2.PEO GHQ (2).pdf::main": {
+      "unit_id": "2.PEO GHQ (2).pdf::main",
+      "document_id": "2.PEO GHQ (2).pdf",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "Inbox - DHR Benefits Submissions - Outlook.pdf::main": {
+      "unit_id": "Inbox - DHR Benefits Submissions - Outlook.pdf::main",
+      "document_id": "Inbox - DHR Benefits Submissions - Outlook.pdf",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "SLM benefits invoice 10.5.26.pdf::main": {
+      "unit_id": "SLM benefits invoice 10.5.26.pdf::main",
+      "document_id": "SLM benefits invoice 10.5.26.pdf",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "RFP- SLM Waste and Recycling Services Inc_.docx::main": {
+      "unit_id": "RFP- SLM Waste and Recycling Services Inc_.docx::main",
+      "document_id": "RFP- SLM Waste and Recycling Services Inc_.docx",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "SLM Cost Compare Email.PDF::main": {
+      "unit_id": "SLM Cost Compare Email.PDF::main",
+      "document_id": "SLM Cost Compare Email.PDF",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "SLM payroll invoice 9.29.26.pdf::main": {
+      "unit_id": "SLM payroll invoice 9.29.26.pdf::main",
+      "document_id": "SLM payroll invoice 9.29.26.pdf",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    },
+    "SLM WC Loss Run.pdf::main": {
+      "unit_id": "SLM WC Loss Run.pdf::main",
+      "document_id": "SLM WC Loss Run.pdf",
+      "unit_type": "sheet",
+      "status": "VISITED",
+      "row_count": 0,
+      "parsed_record_count": 0,
+      "error_message": null
+    }
+  },
+  "decisions_count": 0
+}

@@ -13,3 +13,4 @@ uvicorn>=0.29          # optional: backend/api.py
 python-multipart>=0.0.9
 anthropic>=0.25.0      # Anthropic Claude model support
 python-dotenv>=1.0     # Load .env variables
+msoffcrypto-tool>=5.4.0 # password-protected file decryption (Section 6.1)

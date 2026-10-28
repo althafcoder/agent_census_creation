@@ -1,0 +1,31 @@
+{
+  "active_rule_ids": [
+    "pattern_cross_source_dependent_collection_and_masked_override",
+    "pattern_match_percentage_and_workbook_formatting",
+    "pattern_medical_only_disposition_and_status_precedence",
+    "pattern_multi_column_gender_sex_resolution",
+    "pattern_post_sort_subscriber_row_recalculation",
+    "pattern_preferred_name_and_middle_name_matching",
+    "pattern_carrier_census_legal_name_and_dependent_subscriber_linkage"
+  ],
+  "rejected_rule_ids": [],
+  "retired_rule_ids": [],
+  "candidate_rule_ids": [
+    "pattern_cross_source_dependent_collection_and_masked_override",
+    "pattern_match_percentage_and_workbook_formatting",
+    "pattern_medical_only_disposition_and_status_precedence",
+    "pattern_multi_column_gender_sex_resolution",
+    "pattern_post_sort_subscriber_row_recalculation",
+    "pattern_preferred_name_and_middle_name_matching"
+  ],
+  "last_updated": "2026-10-28T18:19:31.157959",
+  "validated_pattern_fingerprints": [
+    "fp_dependent_cross_source_masked_override_v1",
+    "fp_gender_multi_col_sex_self_id_v1",
+    "fp_match_percentage_workbook_format_v1",
+    "fp_medical_only_disposition_status_precedence_v1",
+    "fp_post_sort_subscriber_row_recalc_v1",
+    "fp_preferred_name_middle_name_matching_v1",
+    "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1"
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LearningRule",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "learning_id",
+    "version",
+    "status",
+    "compatibility",
+    "scope",
+    "trigger",
+    "strategy",
+    "verification",
+    "promotion",
+    "usage"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "learning_id": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["candidate", "active", "rejected", "retired", "CANDIDATE", "VALIDATED", "REJECTED"]
+    },
+    "pattern_state": {
+      "type": "string",
+      "enum": ["CANDIDATE", "VALIDATED", "REJECTED"]
+    },
+    "fingerprint": { "type": "string" },
+    "patch_version": { "type": "string" },
+    "generic_root_cause": { "type": "string" },
+    "applicable_conditions": { "type": "array", "items": { "type": "string" } },
+    "required_validators": { "type": "array", "items": { "type": "string" } },
+    "regression_results": { "type": "object" },
+    "created_at": { "type": ["string", "null"] },
+    "updated_at": { "type": ["string", "null"] },
+    "compatibility": {
+      "type": "object",
+      "required": ["runtime_prompt_version"],
+      "properties": {
+        "instruction_hashes": { "type": "array", "items": { "type": "string" } },
+        "template_hashes": { "type": "array", "items": { "type": "string" } },
+        "parser_versions": { "type": "array", "items": { "type": "string" } },
+        "runtime_prompt_version": { "type": "string" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "required": ["document_roles", "file_types", "stage"],
+      "properties": {
+        "document_roles": { "type": "array", "items": { "type": "string" } },
+        "file_types": { "type": "array", "items": { "type": "string" } },
+        "carriers": { "type": "array", "items": { "type": "string" } },
+        "header_signature": { "type": "array", "items": { "type": "string" } },
+        "stage": { "type": "string" }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "required": ["issue_type"],
+      "properties": {
+        "issue_type": { "type": "string" },
+        "field": { "type": "string" },
+        "conditions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "business_rule_refs": { "type": "array", "items": { "type": "string" } },
+    "root_cause": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "verification_status": { "type": "string", "enum": ["verified", "unverified", "suspected"] },
+        "summary": { "type": "string" }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "required": ["action", "parameters"],
+      "properties": {
+        "action": { "type": "string" },
+        "parameters": { "type": "object" },
+        "preconditions": { "type": "array", "items": { "type": "string" } },
+        "exclusions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["promotion_eligible"],
+      "properties": {
+        "case_successes": { "type": "integer", "minimum": 0 },
+        "case_failures": { "type": "integer", "minimum": 0 },
+        "regression_fixture_ids": { "type": "array", "items": { "type": "string" } },
+        "negative_fixture_ids": { "type": "array", "items": { "type": "string" } },
+        "checks_passed": { "type": "array", "items": { "type": "string" } },
+        "promotion_eligible": { "type": "boolean" },
+        "last_verified_at": { "type": ["string", "null"] }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["not_promoted", "auto_allowlisted", "manual_approved"] },
+        "decision_ref": { "type": ["string", "null"] },
+        "reason": { "type": "string" }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "required": ["attempted", "successful", "rolled_back"],
+      "properties": {
+        "attempted": { "type": "integer", "minimum": 0 },
+        "successful": { "type": "integer", "minimum": 0 },
+        "rolled_back": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
+

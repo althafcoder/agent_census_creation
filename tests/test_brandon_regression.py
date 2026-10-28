@@ -34,6 +34,8 @@ FIXTURE_DIR = Path(
 
 @pytest.fixture(scope="module")
 def pipeline_run(tmp_path_factory):
+    if not FIXTURE_DIR.exists():
+        pytest.skip(f"Fixture directory not found: {FIXTURE_DIR}")
     out_dir = tmp_path_factory.mktemp("brandon_output")
     tracer = DiagnosticTracer()
     res = run_pipeline(FIXTURE_DIR, output_dir=out_dir, tracer=tracer)

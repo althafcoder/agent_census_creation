@@ -142,7 +142,8 @@ class HealthResponse(BaseModel):
     provider: str = Field("anthropic", description="LLM provider")
     model: str = Field(..., description="Active Anthropic Claude model")
     anthropic_model: str = Field(..., description="Active Anthropic Claude model name")
-    temperature: float = Field(1.0, description="Active Anthropic Claude temperature")
+    effort: str = Field("high", description="Active output_config effort level for claude-opus-5-5")
+    temperature: Optional[float] = Field(None, description="Active temperature (omitted for claude-opus-5-5 deterministic effort mode)")
     anthropic_configured: bool = Field(..., description="Whether ANTHROPIC_API_KEY is configured")
     workspace_configured: bool = Field(..., description="Whether ANTHROPIC_WORKSPACE_ID is configured")
     poppler_configured: bool = Field(..., description="Whether Poppler binary path exists for PDF OCR rendering")
@@ -152,19 +153,19 @@ class HealthResponse(BaseModel):
 
 class PipelineResponse(BaseModel):
     success: bool = Field(True, description="Whether pipeline completed successfully")
-    output_filename: str = Field(..., description="Primary Excel deliverable filename")
-    txt_filename: str = Field(..., description="Exceptions audit text report filename")
-    download_xlsx_url: str = Field(..., description="URL to download primary Excel workbook")
-    download_txt_url: str = Field(..., description="URL to download exception audit report")
+    output_filename: Optional[str] = Field(None, description="Primary Excel deliverable filename")
+    txt_filename: Optional[str] = Field(None, description="Exceptions audit text report filename")
+    download_xlsx_url: Optional[str] = Field(None, description="URL to download primary Excel workbook")
+    download_txt_url: Optional[str] = Field(None, description="URL to download exception audit report")
     sbu_filename: Optional[str] = Field(None, description="SBU Census Template deliverable filename (if Cigna)")
     download_sbu_url: Optional[str] = Field(None, description="URL to download SBU Excel workbook")
     email_filename: Optional[str] = Field(None, description="Missing Information Email deliverable filename")
     download_email_url: Optional[str] = Field(None, description="URL to download email text file")
     email_text: str = Field("", description="Pre-composed email text ready to send to broker/client")
-    carrier: str = Field(..., description="Determined Carrier Routing (Florida Blue or Cigna)")
-    state: str = Field(..., description="Determined Business State")
+    carrier: str = Field("", description="Determined Carrier Routing (Florida Blue or Cigna)")
+    state: str = Field("", description="Determined Business State")
     routing: dict = Field(default_factory=dict, description="Routing decisions, primary template, and notes")
-    summary: str = Field(..., description="Brief Exception Summary")
+    summary: str = Field("", description="Brief Exception Summary")
     audit: dict = Field(default_factory=dict, description="Employee & Dependent count audit metrics")
     counters: dict = Field(default_factory=dict, description="Discrepancy counters")
     notes: list[str] = Field(default_factory=list, description="Audit notes and rules triggered")
@@ -179,6 +180,7 @@ class PipelineResponse(BaseModel):
     city_state_zip: Optional[str] = Field("", description="City, State, Zip from intake/prospect")
     prospect: Optional[dict] = Field(default_factory=dict, description="Full prospect metadata block")
     instructions_doc: Optional[str] = Field(None, description="Active official instruction document")
+    learning_engine: Optional[dict] = Field(default_factory=dict, description="Learning Engine validation report and audit status")
 
 
 class ExtractedFileItem(BaseModel):
@@ -237,6 +239,7 @@ async def health():
         "provider": "anthropic",
         "model": C.ANTHROPIC_MODEL,
         "anthropic_model": C.ANTHROPIC_MODEL,
+        "effort": getattr(C, "ANTHROPIC_EFFORT", "high"),
         "temperature": C.ANTHROPIC_TEMPERATURE,
         "anthropic_configured": bool(C.ANTHROPIC_API_KEY),
         "workspace_configured": bool(C.ANTHROPIC_WORKSPACE_ID),
@@ -269,8 +272,8 @@ async def cache_stats():
 
 def _pipeline_response(res: dict) -> dict:
     from llm_client import get_instruction_doc_name
-    out_file = Path(res["output_file"])
-    txt_file = Path(res["txt_file"])
+    out_file = Path(res["output_file"]) if res.get("output_file") else None
+    txt_file = Path(res["txt_file"]) if res.get("txt_file") else None
     sbu_file = Path(res["sbu_output_file"]) if res.get("sbu_output_file") else None
     email_file = Path(res["email_file"]) if res.get("email_file") else None
 
@@ -308,10 +311,10 @@ def _pipeline_response(res: dict) -> dict:
 
     return {
         "success": True,
-        "output_filename": out_file.name,
-        "txt_filename": txt_file.name,
-        "download_xlsx_url": f"/api/download/{out_file.name}",
-        "download_txt_url": f"/api/download/{txt_file.name}",
+        "output_filename": out_file.name if out_file else None,
+        "txt_filename": txt_file.name if txt_file else None,
+        "download_xlsx_url": f"/api/download/{out_file.name}" if out_file else None,
+        "download_txt_url": f"/api/download/{txt_file.name}" if txt_file else None,
         "sbu_filename": sbu_file.name if sbu_file else None,
         "download_sbu_url": f"/api/download/{sbu_file.name}" if sbu_file else None,
         "email_filename": email_file.name if email_file else None,
@@ -319,6 +322,7 @@ def _pipeline_response(res: dict) -> dict:
         "email_text": res.get("email_text", ""),
         "carrier": res.get("carrier", ""),
         "state": res.get("state", ""),
+        "learning_engine": res.get("learning_engine") or {},
         "company": comp,
         "prospect_name": comp,
         "company_name": comp,
@@ -445,6 +449,11 @@ async def process_files(
         log.exception("Pipeline execution failed: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
     finally:
+        try:
+            from protected_files import clear_transient_passwords
+            clear_transient_passwords()
+        except Exception:
+            pass
         shutil.rmtree(work, ignore_errors=True)
 
 
