@@ -234,6 +234,8 @@ async def favicon():
 async def health():
     """Health check endpoint."""
     from llm_client import get_instruction_doc_name
+    from device_manager import get_device_manager
+    dm_status = get_device_manager().get_status()
     return {
         "status": "online",
         "provider": "anthropic",
@@ -246,7 +248,28 @@ async def health():
         "poppler_configured": bool(C.POPPLER_PATH and Path(C.POPPLER_PATH).exists()),
         "output_dir": str(C.OUTPUT_DIR),
         "instructions_doc": get_instruction_doc_name(),
+        "device": {
+            "mode": dm_status["active_mode"],
+            "engine": dm_status["active_engine"],
+            "name": dm_status["gpu_name"],
+            "fallback": dm_status["fallback_occurred"],
+        },
     }
+
+
+@app.get(
+    "/api/device-info",
+    tags=["System Health"],
+    summary="Compute Device & Hardware Acceleration Status",
+    description="Query active compute device (GPU vs CPU fallback), CUDA driver versions, and VRAM telemetry.",
+)
+async def device_info():
+    """Retrieve detailed hardware compute device status."""
+    try:
+        from device_manager import get_device_manager
+        return get_device_manager().get_status()
+    except Exception as exc:
+        return {"status": "error", "message": str(exc), "active_mode": "CPU"}
 
 
 @app.get(
@@ -266,6 +289,22 @@ async def cache_stats():
             "local_cache": local_stats,
             "telemetry": telemetry,
         }
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+
+@app.post(
+    "/api/clear-cache",
+    tags=["System Health"],
+    summary="Clear Local Prompt Cache",
+    description="Clear all cached prompt-response pairs from the local SQLite database.",
+)
+async def clear_cache():
+    """Clear all entries in the local prompt cache."""
+    try:
+        from caching import get_local_cache
+        get_local_cache().clear()
+        return {"status": "success", "message": "Local prompt cache cleared successfully."}
     except Exception as exc:
         return {"status": "error", "message": str(exc)}
 

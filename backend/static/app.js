@@ -595,7 +595,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --------------------------------------------------------------------------
-  // Dynamic Active Model Status & Instruction Badge
+  // Dynamic Active Model Status, Instruction Badge & Compute Device
   // --------------------------------------------------------------------------
   fetch("/api/health")
     .then(res => res.json())
@@ -613,6 +613,20 @@ document.addEventListener("DOMContentLoaded", () => {
           displayName = displayName.substring(0, 30) + "...";
         }
         instBadge.innerHTML = `<span class="pulse-dot purple"></span> Instruction: ${displayName}`;
+      }
+      const ocrBadge = document.getElementById("ocr-badge");
+      if (ocrBadge && data.device) {
+        const dev = data.device;
+        if (dev.mode === "GPU") {
+          ocrBadge.className = "badge badge-emerald";
+          ocrBadge.title = `Hardware Accelerated: ${dev.name || "CUDA GPU"} (${dev.engine})`;
+          ocrBadge.innerHTML = `<span class="pulse-dot"></span> ⚡ GPU: PaddleOCR`;
+        } else {
+          ocrBadge.className = "badge badge-cyan";
+          const fallbackNote = dev.fallback ? " (Fallback active)" : "";
+          ocrBadge.title = `Running on CPU${fallbackNote}: ${dev.name || "Standard Compute"} (${dev.engine})`;
+          ocrBadge.innerHTML = `<span class="pulse-dot cyan"></span> 💻 CPU: PaddleOCR`;
+        }
       }
     })
     .catch(() => {});

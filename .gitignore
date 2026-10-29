@@ -21,9 +21,14 @@ __pycache__/
 *$py.class
 .pytest_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+.cache/
+.paddleocr/
+paddleocr_models/
 
 # Pipeline Run Directories (Input files with PII/PHI & generated deliverables)
 input/*
@@ -39,6 +44,9 @@ backend/scratch_output2/
 backend/scratch_output3/
 backend/test_out/
 backend/cache_storage/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
@@ -47,16 +55,22 @@ backend/cache_storage/
 scratch/*
 !scratch/.gitkeep
 
-# Learning Engine Runtime Runs & Telemetry
+# Learning Engine Runtime Runs & Feedback
 learning_engine_data/runs/*
 !learning_engine_data/runs/.gitkeep
+learning_engine_data/feedback/*
+!learning_engine_data/feedback/.gitkeep
 
-# Microsoft Office temporary / lock files
+# Temporary, lock, and backup files
 ~$*.xlsx
 ~$*.docx
 ~$*.doc
 ~$*.xls
 ~$*
+*.tmp
+*.temp
+*.bak
+*.orig
 
 # Logs
 *.log
@@ -65,6 +79,8 @@ logs/
 # IDE & Editor Settings
 .vscode/
 .idea/
+.cursor/
+*.code-workspace
 *.swp
 *.swo
 *~
@@ -83,5 +99,7 @@ $RECYCLE.BIN/
 # Distribution / Packaging
 build/
 dist/
+.eggs/
 *.egg-info/
 *.egg
+*.whl

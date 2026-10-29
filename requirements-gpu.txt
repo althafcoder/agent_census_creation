@@ -1,0 +1,21 @@
+# ==============================================================================
+# GPU Acceleration Requirements for NVIDIA CUDA
+# ==============================================================================
+# Base requirements:
+-r requirements.txt
+
+# ------------------------------------------------------------------------------
+# PaddlePaddle-GPU Wheels:
+# Choose the wheel that matches your installed NVIDIA CUDA Toolkit version.
+# Note: Install with --find-links for official PaddlePaddle stable wheels:
+# 
+# For CUDA 12.x (12.0, 12.2, 12.4):
+# pip install paddlepaddle-gpu==2.6.2.post120 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+#
+# For CUDA 11.8:
+# pip install paddlepaddle-gpu==2.6.2.post118 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+# ------------------------------------------------------------------------------
+
+--find-links https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+paddlepaddle-gpu==2.6.2.post120; platform_system=="Windows"
+

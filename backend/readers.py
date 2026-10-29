@@ -263,14 +263,55 @@ def _ocr_pdf_external(path: Path) -> str:
     return ""
 
 
+def _run_ocr_smoke_test(engine) -> None:
+    """Execute a 10x10 synthetic image through OCR to verify CUDA kernel execution."""
+    import numpy as np
+    dummy = np.zeros((10, 10, 3), dtype=np.uint8)
+    engine.ocr(dummy, cls=False)
+
+
 def _get_paddle_ocr():
     global _paddle_ocr_engine
-    if _paddle_ocr_engine is None:
-        from paddleocr import PaddleOCR
+    if _paddle_ocr_engine is not None:
+        return _paddle_ocr_engine
+
+    from device_manager import get_device_manager
+    dm = get_device_manager()
+
+    if dm.should_use_gpu():
         try:
-            _paddle_ocr_engine = PaddleOCR(use_angle_cls=True, lang="en", show_log=False)
-        except Exception:
-            _paddle_ocr_engine = PaddleOCR(use_angle_cls=True, lang="en")
+            log.info("⚡ Attempting GPU-accelerated PaddleOCR on %s...", dm.gpu_name or "CUDA device")
+            import paddle
+            paddle.set_device(f"gpu:{dm.gpu_device_id}")
+            from paddleocr import PaddleOCR
+            try:
+                engine = PaddleOCR(use_angle_cls=True, lang="en", show_log=False, use_gpu=True)
+            except TypeError:
+                engine = PaddleOCR(use_angle_cls=True, lang="en", use_gpu=True)
+            _run_ocr_smoke_test(engine)
+            _paddle_ocr_engine = engine
+            dm.record_active_mode("GPU", "PaddleOCR-CUDA")
+            log.info("✅ PaddleOCR initialized successfully on GPU: %s", dm.gpu_name or "CUDA device")
+            return _paddle_ocr_engine
+        except Exception as exc:
+            log.warning("⚠️ GPU PaddleOCR initialization/smoke test failed (%s). Falling back gracefully to CPU...", exc)
+            dm.record_fallback(f"GPU initialization failed: {exc}")
+            try:
+                import paddle
+                paddle.set_device("cpu")
+            except Exception:
+                pass
+
+    log.info("💻 Initializing PaddleOCR on CPU (Multi-threaded execution)...")
+    from paddleocr import PaddleOCR
+    try:
+        try:
+            _paddle_ocr_engine = PaddleOCR(use_angle_cls=True, lang="en", show_log=False, use_gpu=False)
+        except TypeError:
+            _paddle_ocr_engine = PaddleOCR(use_angle_cls=True, lang="en", use_gpu=False)
+    except Exception:
+        _paddle_ocr_engine = PaddleOCR(use_angle_cls=True, lang="en")
+    dm.record_active_mode("CPU", "PaddleOCR-CPU")
     return _paddle_ocr_engine
 
 
@@ -378,7 +419,27 @@ def _ocr_pdf(path: Path) -> str:
         page_texts = []
         for pno, p in enumerate(pages, 1):
             img_arr = np.array(p)
-            res = ocr.ocr(img_arr, cls=True)
+            try:
+                res = ocr.ocr(img_arr, cls=True)
+            except Exception as page_exc:
+                err_lower = str(page_exc).lower()
+                if "out of memory" in err_lower or "cuda" in err_lower:
+                    log.warning("⚠️ CUDA error on page %d of %s (%s). Falling back to CPU for remaining pages...",
+                                pno, path.name, page_exc)
+                    from device_manager import get_device_manager
+                    get_device_manager().record_fallback(f"CUDA runtime error: {page_exc}")
+                    try:
+                        import paddle
+                        if hasattr(paddle.device, "cuda"):
+                            paddle.device.cuda.empty_cache()
+                        paddle.set_device("cpu")
+                    except Exception:
+                        pass
+                    _paddle_ocr_engine = None
+                    ocr = _get_paddle_ocr()
+                    res = ocr.ocr(img_arr, cls=True)
+                else:
+                    raise page_exc
             boxes = res[0] if res else []
 
             # Auto-detect orientation: if vertical tall boxes outnumber horizontal wide boxes
