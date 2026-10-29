@@ -44,7 +44,12 @@ backend/cache_storage/
 *.sqlite3-shm
 *.db
 *.db-journal
-scratch/
+scratch/*
+!scratch/.gitkeep
+
+# Learning Engine Runtime Runs & Telemetry
+learning_engine_data/runs/*
+!learning_engine_data/runs/.gitkeep
 
 # Microsoft Office temporary / lock files
 ~$*.xlsx
