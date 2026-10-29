@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_hsa_medical_plan_classification",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_hsa_medical_plan_classification_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "High-deductible health plans with HSA compatibility (e.g. '1700 HSA', 'CPOSII HSA', 'OAAS HSA') were erroneously discarded as non-medical spending accounts due to containing the string 'hsa', dropping valid medical subscribers from invoice and comparison.",
+  "applicable_conditions": [
+    "Invoice or census contains medical plan with 'HSA' in title",
+    "Plan carries medical network or design acronyms (ppo, pos, cpos, oaas, afa, sgp, hdhp, cdhp)",
+    "Subscribers on HSA medical plans must be retained as active medical enrollment"
+  ],
+  "required_validators": [
+    "RULE_09_HSA_MEDICAL_PLAN_DISPOSITION",
+    "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_hsa_medical_plans_retained"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-10-29T11:09:01.687639",
+  "updated_at": "2026-10-29T11:16:19.114140",
+  "compatibility": {
+    "instruction_hashes": [
+      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "invoice",
+      "census"
+    ],
+    "file_types": [
+      "pdf",
+      "xlsx",
+      "csv"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna",
+      "Aetna"
+    ],
+    "header_signature": [
+      "plan",
+      "plan name",
+      "tier",
+      "premium"
+    ],
+    "stage": "normalization"
+  },
+  "trigger": {
+    "issue_type": "HSA_MEDICAL_PLAN_DROPPED",
+    "field": "plan",
+    "conditions": [
+      "medical plan containing HSA classified as non-medical"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 9.2",
+    "Section 16.2",
+    "Section 23.3",
+    "Repair Section 4"
+  ],
+  "root_cause": {
+    "code": "HSA_MEDICAL_PLAN_DROPPED",
+    "verification_status": "verified",
+    "summary": "Protect HSA-compatible health plans with medical keywords from non-medical exclusion and isolate standalone spending accounts."
+  },
+  "strategy": {
+    "action": "REPAIR_HSA_MEDICAL_PLAN_CLASSIFICATION",
+    "parameters": {
+      "preserve_hsa_medical_plans": true
+    },
+    "preconditions": [
+      "plan carries medical network/benefit signals"
+    ],
+    "exclusions": [
+      "do not preserve standalone HSA deposit/fee accounts"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_hsa_plans"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_09_HSA_MEDICAL_PLAN_DISPOSITION",
+      "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-29T11:16:18.851362"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261029_111619",
+    "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

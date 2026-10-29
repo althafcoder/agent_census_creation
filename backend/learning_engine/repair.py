@@ -276,6 +276,48 @@ class RepairEngine:
                 verification_checks=["RULE_09_DEPENDENT_LINKAGE"],
             )
 
+        if action == RepairAction.FILTER_TEMPLATE_EXAMPLE_ROWS:
+            return RepairPatch(
+                patch_id=patch_id,
+                issue_ids=[issue.issue_id],
+                action=action,
+                scope_predicates={"stage": "extraction", "target": "example_rows"},
+                preconditions=["census contains template example/sample rows"],
+                expected_old_state="template example rows included in census population",
+                proposed_new_state="template example rows excluded from canonical population",
+                parameters={"action": "filter_template_example_rows"},
+                affected_stages=[EarliestStage.EXTRACTION, EarliestStage.NORMALIZATION, EarliestStage.ELIGIBILITY],
+                verification_checks=["RULE_08_EXAMPLE_ROWS_FILTERED"],
+            )
+
+        if action == RepairAction.REPAIR_HSA_MEDICAL_PLAN_CLASSIFICATION:
+            return RepairPatch(
+                patch_id=patch_id,
+                issue_ids=[issue.issue_id],
+                action=action,
+                scope_predicates={"stage": "normalization", "target": "hsa_plans"},
+                preconditions=["medical plan contains 'HSA' in title"],
+                expected_old_state="HSA medical plans dropped as non-medical",
+                proposed_new_state="HSA medical plans classified as medical and retained",
+                parameters={"action": "repair_hsa_medical_plan_classification"},
+                affected_stages=[EarliestStage.NORMALIZATION, EarliestStage.COMPARISON],
+                verification_checks=["RULE_09_HSA_MEDICAL_PLAN_DISPOSITION"],
+            )
+
+        if action == RepairAction.RECONCILE_INVOICE_PRESENCE:
+            return RepairPatch(
+                patch_id=patch_id,
+                issue_ids=[issue.issue_id],
+                action=action,
+                scope_predicates={"stage": "comparison", "target": "missing_invoice"},
+                preconditions=["employees appearing in invoice text marked missing"],
+                expected_old_state="false-positive missing invoice employee complaints",
+                proposed_new_state="reconciled comparison with exact or fuzzy matches",
+                parameters={"action": "reconcile_invoice_presence"},
+                affected_stages=[EarliestStage.COMPARISON, EarliestStage.RELEASE],
+                verification_checks=["RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"],
+            )
+
         return None
 
     def execute_patch(
@@ -424,6 +466,65 @@ class RepairEngine:
                 )
                 working_state["results"] = recomputed
             log.info("Resolved preferred name / alias matching across census and invoice subscribers")
+
+        elif patch.action == RepairAction.FILTER_TEMPLATE_EXAMPLE_ROWS:
+            census = working_state.get("census")
+            if census:
+                example_names = {
+                    ("john", "smith"), ("cindy", "parker"), ("robert", "johnson"),
+                    ("caden", "parker"), ("victoria", "parker"), ("bruna", "andrea"),
+                    ("joseph", "abel"), ("sabrina", "abel")
+                }
+                removed_ids = set()
+                for p in list(census.people):
+                    fn = (p.first or "").strip().lower()
+                    ln = (p.last or "").strip().lower()
+                    if (fn, ln) in example_names:
+                        removed_ids.add(id(p))
+                if removed_ids:
+                    census.people = [p for p in census.people if id(p) not in removed_ids]
+                    for emp in census.employees:
+                        emp.dependents = [d for d in emp.dependents if id(d) not in removed_ids]
+                from census_builder import recalculate_row_numbers, update_candidate_dispositions
+                recalculate_row_numbers(census)
+                update_candidate_dispositions(census)
+            log.info("Filtered template example rows from census")
+
+        elif patch.action == RepairAction.REPAIR_HSA_MEDICAL_PLAN_CLASSIFICATION:
+            census = working_state.get("census")
+            invs = working_state.get("invoices", []) or working_state.get("invs", [])
+            findings = working_state.get("findings")
+            if census and invs and findings:
+                from comparator import run_comparison
+                recomputed = run_comparison(
+                    census=census,
+                    invs=invs,
+                    renewal=working_state.get("renewal"),
+                    meta=working_state.get("meta", {}),
+                    F=findings,
+                    have_invoice=True,
+                    renewal_required=getattr(findings, "renewal_required", True),
+                )
+                working_state["results"] = recomputed
+            log.info("Repaired HSA medical plan classification across invoice and comparison")
+
+        elif patch.action == RepairAction.RECONCILE_INVOICE_PRESENCE:
+            census = working_state.get("census")
+            invs = working_state.get("invoices", []) or working_state.get("invs", [])
+            findings = working_state.get("findings")
+            if census and invs and findings:
+                from comparator import run_comparison
+                recomputed = run_comparison(
+                    census=census,
+                    invs=invs,
+                    renewal=working_state.get("renewal"),
+                    meta=working_state.get("meta", {}),
+                    F=findings,
+                    have_invoice=True,
+                    renewal_required=getattr(findings, "renewal_required", True),
+                )
+                working_state["results"] = recomputed
+            log.info("Reconciled invoice presence false positives")
 
         tx.executed = True
         self.executed_patches.append(patch)

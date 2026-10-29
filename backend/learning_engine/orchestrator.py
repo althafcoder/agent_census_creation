@@ -798,6 +798,128 @@ class LearningEngineOrchestrator:
                     "last_verified_at": datetime.now().isoformat(),
                 },
             ),
+            LearningRule(
+                learning_id="pattern_template_example_row_filtration",
+                fingerprint="fp_template_example_row_filtration_v1",
+                version=1,
+                patch_version="2.2.0",
+                pattern_state="VALIDATED",
+                generic_root_cause=(
+                    "Template example/sample rows (e.g. marked with 'Ex', 'Example', 'Sample' in leading "
+                    "index cells, or carrier template dummy names like John Smith, Cindy Parker) were "
+                    "inadvertently ingested when column A was blank/NaN and row checks inspected only series.iloc[0]."
+                ),
+                applicable_conditions=[
+                    "Spreadsheet contains header example or sample rows marked with 'Ex' or 'Example'",
+                    "Leading column A is blank or NaN while column B holds 'Ex' or row numbering",
+                    "Template dummy records must be excluded from canonical population totals",
+                ],
+                required_validators=["RULE_08_EXAMPLE_ROWS_FILTERED", "GATE_A_SOURCE_COVERAGE"],
+                regression_results={
+                    "cases_verified": ["case_example_rows_filtered"],
+                    "status": "PASS",
+                },
+                compatibility={
+                    "instruction_hashes": [ctx.instruction_hash],
+                    "template_hashes": [],
+                    "parser_versions": [ctx.parser_version],
+                    "runtime_prompt_version": "1.0",
+                },
+                scope={
+                    "document_roles": ["census"],
+                    "file_types": ["xlsx", "xlsm", "xls", "csv"],
+                    "carriers": ["Florida Blue", "Cigna"],
+                    "header_signature": ["no.", "employee's legal name", "dependent's legal name", "medical coverage"],
+                    "stage": "extraction",
+                },
+                trigger={
+                    "issue_type": "EXAMPLE_ROW_INCLUDED",
+                    "field": "example_rows",
+                    "conditions": ["census rows contain 'Ex' or template example demographics"],
+                },
+                business_rule_refs=["Section 8.1", "Section 9.1", "Section 9.2", "Repair Section 1"],
+                root_cause={
+                    "code": "EXAMPLE_ROW_INCLUDED",
+                    "verification_status": "verified",
+                    "summary": "Inspect first non-empty cell and leading columns for example markers to exclude template sample records from census.",
+                },
+                strategy={
+                    "action": "FILTER_TEMPLATE_EXAMPLE_ROWS",
+                    "parameters": {"exclude_example_markers": True},
+                    "preconditions": ["row contains example marker 'Ex' or matches template sample structure"],
+                    "exclusions": ["do not exclude real numbered rows 1, 2, 3..."],
+                },
+                verification={
+                    "case_successes": 1,
+                    "case_failures": 0,
+                    "regression_fixture_ids": ["reg_case_example_rows"],
+                    "negative_fixture_ids": [],
+                    "checks_passed": ["RULE_08_EXAMPLE_ROWS_FILTERED"],
+                    "promotion_eligible": True,
+                    "last_verified_at": datetime.now().isoformat(),
+                },
+            ),
+            LearningRule(
+                learning_id="pattern_hsa_medical_plan_classification",
+                fingerprint="fp_hsa_medical_plan_classification_v1",
+                version=1,
+                patch_version="2.2.0",
+                pattern_state="VALIDATED",
+                generic_root_cause=(
+                    "High-deductible health plans with HSA compatibility (e.g. '1700 HSA', 'CPOSII HSA', "
+                    "'OAAS HSA') were erroneously discarded as non-medical spending accounts due to containing "
+                    "the string 'hsa', dropping valid medical subscribers from invoice and comparison."
+                ),
+                applicable_conditions=[
+                    "Invoice or census contains medical plan with 'HSA' in title",
+                    "Plan carries medical network or design acronyms (ppo, pos, cpos, oaas, afa, sgp, hdhp, cdhp)",
+                    "Subscribers on HSA medical plans must be retained as active medical enrollment",
+                ],
+                required_validators=["RULE_09_HSA_MEDICAL_PLAN_DISPOSITION", "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"],
+                regression_results={
+                    "cases_verified": ["case_hsa_medical_plans_retained"],
+                    "status": "PASS",
+                },
+                compatibility={
+                    "instruction_hashes": [ctx.instruction_hash],
+                    "template_hashes": [],
+                    "parser_versions": [ctx.parser_version],
+                    "runtime_prompt_version": "1.0",
+                },
+                scope={
+                    "document_roles": ["invoice", "census"],
+                    "file_types": ["pdf", "xlsx", "csv"],
+                    "carriers": ["Florida Blue", "Cigna", "Aetna"],
+                    "header_signature": ["plan", "plan name", "tier", "premium"],
+                    "stage": "normalization",
+                },
+                trigger={
+                    "issue_type": "HSA_MEDICAL_PLAN_DROPPED",
+                    "field": "plan",
+                    "conditions": ["medical plan containing HSA classified as non-medical"],
+                },
+                business_rule_refs=["Section 9.2", "Section 16.2", "Section 23.3", "Repair Section 4"],
+                root_cause={
+                    "code": "HSA_MEDICAL_PLAN_DROPPED",
+                    "verification_status": "verified",
+                    "summary": "Protect HSA-compatible health plans with medical keywords from non-medical exclusion and isolate standalone spending accounts.",
+                },
+                strategy={
+                    "action": "REPAIR_HSA_MEDICAL_PLAN_CLASSIFICATION",
+                    "parameters": {"preserve_hsa_medical_plans": True},
+                    "preconditions": ["plan carries medical network/benefit signals"],
+                    "exclusions": ["do not preserve standalone HSA deposit/fee accounts"],
+                },
+                verification={
+                    "case_successes": 1,
+                    "case_failures": 0,
+                    "regression_fixture_ids": ["reg_case_hsa_plans"],
+                    "negative_fixture_ids": [],
+                    "checks_passed": ["RULE_09_HSA_MEDICAL_PLAN_DISPOSITION", "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"],
+                    "promotion_eligible": True,
+                    "last_verified_at": datetime.now().isoformat(),
+                },
+            ),
         ]
 
         for rule in core_patterns:

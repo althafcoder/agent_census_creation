@@ -133,7 +133,14 @@ def _is_masked_or_empty(s: str) -> bool:
 
 def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
     combined = f"{clean(plan_name)} {clean(plan_type)}".lower()
-    non_med_words = ("dent", "vis", "life", "lif", "disab", "ltd", "std", "accid", "hsa", "fsa", "legal", "pet", "indemn", "crit", "identity", "ad&d", "spending", "401k", "401(k)", "401 k", "retirement", "pension", "commuter", "transit", "parking", "eap")
+
+    # Core medical plan signals (network types, plan acronyms, benefit designs)
+    med_signals = (
+        "ppo", "pos", "cpos", "cposii", "hmo", "epo", "oaas", "oap", "afa", "sgp", "awh",
+        "open access", "hdhp", "cdhp", "copay", "coinsurance", "deductible", "medical"
+    )
+    has_medical_signal = any(s in combined for s in med_signals)
+
     # Strong, unambiguous non-medical line signals take priority: provider/plan codes such as
     # AETDEN / AET-DMO DEN / VSP / METLDI LIF / METLDI LTD. These override weak tokens like 'ppo'
     # that appear inside dental provider codes (e.g. 'AET-APPO').
@@ -141,22 +148,36 @@ def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
         return True
     if re.search(r"\blif\b|\bltd\b|\bstd\b", combined):
         return True
+
+    # Standalone HSA spending accounts (without medical plan indicators)
+    if re.search(r"\b(hsa\s*(?:fee|contribution|spending|deposit|account|bank|admin))\b", combined):
+        return True
+    if combined.strip() in ("hsa", "hsa account", "hsa contribution", "hsa fee", "hsa bank"):
+        return True
+
+    # Non-medical lines (excluding 'hsa' because high-deductible medical plans routinely include 'HSA' in plan titles)
+    non_med_words = (
+        "dent", "vis", "life", "lif", "disab", "ltd", "std", "accid", "fsa",
+        "legal", "pet", "indemn", "crit", "identity", "ad&d", "spending",
+        "401k", "401(k)", "401 k", "retirement", "pension", "commuter", "transit", "parking", "eap"
+    )
+
     if any(w in combined for w in non_med_words):
-        if "medical" not in combined:
+        if not has_medical_signal:
             return True
+
     pt = clean(plan_type).lower().strip()
     if pt:
-        if pt == "medical":
+        if pt == "medical" or "med" in pt or "health" in pt:
             return False
-        if any(w in pt for w in ("dent", "vis", "life", "disab", "ltd", "std", "accid", "hsa", "fsa", "legal", "pet", "indemn", "crit", "401k", "401(k)", "retirement", "pension", "commuter", "eap")):
+        if any(w in pt for w in non_med_words):
             return True
-        if "med" in pt or "health" in pt:
-            return False
-        return True
+        if not has_medical_signal:
+            return True
+
     pn = clean(plan_name).lower()
     if pn:
-        med_keywords = ("med", "health", "hmo", "ppo", "pos", "epo", "hdhp", "cdhp", "open access")
-        if any(k in pn for k in non_med_words) and not any(k in pn for k in med_keywords):
+        if any(k in pn for k in non_med_words) and not has_medical_signal:
             return True
     return False
 
@@ -478,8 +499,13 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
         non_empty = [clean(v) for v in series.tolist() if clean(v)]
         if not non_empty:
             continue
-        first_cell = clean(series.iloc[0]).lower() if len(series) > 0 else ""
-        if first_cell in ("ex", "example", "sample", "eg", "e.g."):
+
+        # Filter template example / sample rows (e.g. 'Ex', 'Example', 'Sample' in leading cells or column A/B)
+        first_non_empty = non_empty[0].lower() if non_empty else ""
+        if first_non_empty in ("ex", "example", "sample", "eg", "e.g.", "ex.", "example:"):
+            continue
+        if any(clean(series.iloc[c]).lower() in ("ex", "example", "sample", "eg", "e.g.", "ex.", "example:")
+               for c in range(min(4, len(series)))):
             continue
         joined = " ".join(v.lower() for v in non_empty)
         if joined.startswith(("total", "grand total", "count", "subtotal")):

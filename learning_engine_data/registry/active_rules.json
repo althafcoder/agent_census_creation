@@ -1,738 +1,6 @@
 [
   {
     "schema_version": "1.1",
-    "learning_id": "pattern_multi_column_gender_sex_resolution",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "fp_gender_multi_col_sex_self_id_v1",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Multiple gender/sex columns exist for the same person (e.g. Gender (Self-ID), Sex, Gender, Employee Sex, Dependent Sex) where the primary column is blank or masked (XXXX/Unknown/N/A) while a secondary column or linked file holds a valid unambiguous value.",
-    "applicable_conditions": [
-      "Table or linked files contain >= 1 employee or dependent gender/sex columns",
-      "Primary gender column is blank, whitespace, NaN, XXXX, N/A, or Unknown while secondary Sex/Gender column is populated",
-      "Wide row contains both employee sex and dependent sex columns"
-    ],
-    "required_validators": [
-      "GATE_B_GENDER_RESOLUTION",
-      "RULE_10_GENDER_RESOLUTION"
-    ],
-    "regression_results": {
-      "cases_verified": [
-        "case_01_self_id_blank_sex_female",
-        "case_02_self_id_blank_sex_male",
-        "case_03_self_id_blank_gender_blank_sex_female",
-        "case_04_cross_file_gender",
-        "case_05_wide_row_emp_dep_sex",
-        "case_06_conflicting_gender_flagged"
-      ],
-      "status": "PASS"
-    },
-    "created_at": "2026-10-28T15:50:29.085650",
-    "updated_at": "2026-10-28T18:19:31.048576",
-    "compatibility": {
-      "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census"
-      ],
-      "file_types": [
-        "xlsx",
-        "csv"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "header_signature": [
-        "gender (self-id)",
-        "sex",
-        "gender",
-        "employee sex",
-        "dependent gender"
-      ],
-      "stage": "normalization"
-    },
-    "trigger": {
-      "issue_type": "MULTI_COLUMN_GENDER_UNRESOLVED",
-      "field": "gender",
-      "conditions": [
-        "same-person usable gender/sex candidate exists",
-        "blank or masked placeholder in primary column"
-      ]
-    },
-    "business_rule_refs": [
-      "Section 9.1",
-      "Section 10.1",
-      "Section 10.2",
-      "Repair Section 2"
-    ],
-    "root_cause": {
-      "code": "MULTI_COLUMN_GENDER_UNRESOLVED",
-      "verification_status": "verified",
-      "summary": "Preserve all candidate gender/sex columns per person and resolve usable values to a single M/F code without concatenation or guessing."
-    },
-    "strategy": {
-      "action": "RESOLVE_MULTI_COLUMN_GENDER",
-      "parameters": {
-        "normalize_map": {
-          "M": [
-            "M",
-            "Male",
-            "Man / Male",
-            "Man/Male"
-          ],
-          "F": [
-            "F",
-            "Female",
-            "Woman / Female",
-            "Woman/Female"
-          ]
-        }
-      },
-      "preconditions": [
-        "at least one usable unambiguous gender/sex candidate for person"
-      ],
-      "exclusions": [
-        "conflicting M vs F candidates on same person must remain unresolved and flagged"
-      ]
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [
-        "reg_case_01",
-        "reg_case_02",
-        "reg_case_03",
-        "reg_case_04",
-        "reg_case_05",
-        "reg_case_06"
-      ],
-      "negative_fixture_ids": [
-        "reg_case_06_conflict"
-      ],
-      "checks_passed": [
-        "RULE_10_GENDER_RESOLUTION"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-10-28T18:19:31.043422"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261028_181931",
-      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
-    "learning_id": "pattern_cross_source_dependent_collection_and_masked_override",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "fp_dependent_cross_source_masked_override_v1",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Primary census masks dependent columns with placeholders (XXXX) while a separate enrollment report provides actual dependent names, relationships, DOBs, and coverage lines, or multiple distinct children share a subscriber ID and surname.",
-    "applicable_conditions": [
-      "Wide dependent columns in census contain masked placeholders (XXXX)",
-      "Secondary enrollment or benefit report lists dependent rows linked by subscriber ID or employee name",
-      "Multiple children share subscriber ID and surname"
-    ],
-    "required_validators": [
-      "GATE_C_DEPENDENT_DISPOSITION",
-      "GATE_D_ENROLLMENT_AND_LINKS",
-      "RULE_09_DEPENDENT_LINKAGE"
-    ],
-    "regression_results": {
-      "cases_verified": [
-        "case_07_masked_census_dep_enrolled_in_report",
-        "case_08_multiple_children_shared_sub_id"
-      ],
-      "status": "PASS"
-    },
-    "created_at": "2026-10-28T15:50:29.105085",
-    "updated_at": "2026-10-28T18:19:31.067944",
-    "compatibility": {
-      "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census"
-      ],
-      "file_types": [
-        "xlsx",
-        "csv",
-        "pdf"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "header_signature": [
-        "dependent name",
-        "dependent relationship",
-        "dependent date of birth",
-        "dependent gender"
-      ],
-      "stage": "linkage"
-    },
-    "trigger": {
-      "issue_type": "DEPENDENT_COLUMN_MISSED",
-      "field": "dependents",
-      "conditions": [
-        "masked dependent slots in census",
-        "real dependent records in enrollment source"
-      ]
-    },
-    "business_rule_refs": [
-      "Section 9.2",
-      "Section 9.4",
-      "Repair Section 3",
-      "Repair Section 5.1"
-    ],
-    "root_cause": {
-      "code": "DEPENDENT_COLUMN_MISSED",
-      "verification_status": "verified",
-      "summary": "Ignore masked XXXX dependent placeholders without overwriting real enrollment report dependents, and deduplicate by individual dependent first name + DOB."
-    },
-    "strategy": {
-      "action": "REPAIR_LINKAGE_OR_NORMALIZATION",
-      "parameters": {
-        "ignore_masked_placeholders": true,
-        "dedup_key": "dependent_first_last_dob"
-      },
-      "preconditions": [
-        "dependent linked to subscriber by ID, name, or household"
-      ],
-      "exclusions": [
-        "never collapse distinct children sharing only subscriber ID and surname"
-      ]
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [
-        "reg_case_07",
-        "reg_case_08"
-      ],
-      "negative_fixture_ids": [],
-      "checks_passed": [
-        "RULE_09_DEPENDENT_LINKAGE",
-        "RULE_09_DEPENDENT_DISPOSITION"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-10-28T18:19:31.043446"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261028_181931",
-      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
-    "learning_id": "pattern_medical_only_disposition_and_status_precedence",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "fp_medical_only_disposition_status_precedence_v1",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Multi-line benefit enrollment files mix Medical lines with Dental, Vision, Life, STD/LTD, Accident, Critical Illness, and HSA/FSA lines, causing dental/vision/life-only dependents or part-time excluded dependents to leak into active medical population if not filtered by per-person medical coverage disposition.",
-    "applicable_conditions": [
-      "Enrollment table includes Plan Type / Plan Category / Provider columns with non-medical lines",
-      "Employee elects Medical EE alongside Dental/Vision/Life family tiers (EF/ES/EC)",
-      "Census includes Waived (WO), Waiting Period (WP), Not Eligible (NE), or Part-Time rows"
-    ],
-    "required_validators": [
-      "GATE_C_DEPENDENT_DISPOSITION",
-      "GATE_D_ENROLLMENT_AND_LINKS",
-      "RULE_09_DEPENDENT_DISPOSITION",
-      "RULE_20_MOST_USED_PLAN",
-      "RULE_21_STATUS_HANDLING",
-      "RULE_09_PART_TIME_EXCLUSION"
-    ],
-    "regression_results": {
-      "cases_verified": [
-        "case_09_med_ee_dental_ef_excludes_dental_deps",
-        "case_10_dep_with_dental_and_med_included_once",
-        "case_11_waiver_is_wo_not_wp",
-        "case_12_wp_no_most_used_plan",
-        "case_13_ne_retained_in_eligibility_census",
-        "case_14_part_time_excluded_with_deps"
-      ],
-      "status": "PASS"
-    },
-    "created_at": "2026-10-28T15:50:29.124349",
-    "updated_at": "2026-10-28T18:19:31.087406",
-    "compatibility": {
-      "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census"
-      ],
-      "file_types": [
-        "xlsx",
-        "csv"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "header_signature": [
-        "plan type",
-        "plan category",
-        "provider",
-        "plan name",
-        "coverage level value",
-        "medical waive reason"
-      ],
-      "stage": "eligibility"
-    },
-    "trigger": {
-      "issue_type": "NON_MEDICAL_DEPENDENT_INCLUDED",
-      "field": "disposition",
-      "conditions": [
-        "candidate dependent has only non-medical coverage associations or part-time subscriber"
-      ]
-    },
-    "business_rule_refs": [
-      "Section 9.1",
-      "Section 9.2",
-      "Section 9.3",
-      "Section 20",
-      "Section 21",
-      "Repair Section 4"
-    ],
-    "root_cause": {
-      "code": "NON_MEDICAL_DEPENDENT_INCLUDED",
-      "verification_status": "verified",
-      "summary": "Assign explicit Section 4 dispositions (INCLUDE_ACTIVE_MEDICAL, RETAIN_MEDICAL_STATUS, EXCLUDE_NON_MEDICAL_ONLY, EXCLUDE_PART_TIME, UNRESOLVED) and exclude non-medical-only dependents."
-    },
-    "strategy": {
-      "action": "FILTER_NON_MEDICAL_DEPENDENTS",
-      "parameters": {
-        "dispositions": [
-          "INCLUDE_ACTIVE_MEDICAL",
-          "RETAIN_MEDICAL_STATUS",
-          "EXCLUDE_NON_MEDICAL_ONLY",
-          "EXCLUDE_PART_TIME",
-          "UNRESOLVED"
-        ]
-      },
-      "preconditions": [
-        "evaluate all coverage associations across sources before finalizing dependent disposition"
-      ],
-      "exclusions": [
-        "never apply Most Used Plan to WP, NE, WO, or RC"
-      ]
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [
-        "reg_case_09",
-        "reg_case_10",
-        "reg_case_11",
-        "reg_case_12",
-        "reg_case_13",
-        "reg_case_14"
-      ],
-      "negative_fixture_ids": [
-        "reg_case_09_dental_only"
-      ],
-      "checks_passed": [
-        "RULE_09_DEPENDENT_DISPOSITION",
-        "RULE_20_MOST_USED_PLAN",
-        "RULE_21_STATUS_HANDLING",
-        "RULE_09_PART_TIME_EXCLUSION"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-10-28T18:19:31.043454"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261028_181931",
-      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
-    "learning_id": "pattern_post_sort_subscriber_row_recalculation",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "fp_post_sort_subscriber_row_recalc_v1",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Sorting enrolled vs non-enrolled employees, filtering excluded dependents, or adding invoice-only rows alters sequential row numbers, requiring post-sort recalculation of Data Row (row_no) and subscriber link (sub_row) before workbook generation.",
-    "applicable_conditions": [
-      "Census contains linked dependents and undergoes ordering or status refinement",
-      "Dual workbook generation (Marsh + SBU) for Cigna non-Florida routing"
-    ],
-    "required_validators": [
-      "GATE_D_ENROLLMENT_AND_LINKS",
-      "GATE_F_OUTPUT_CONSISTENCY",
-      "RULE_09_SUBSCRIBER_ROW_LINKS"
-    ],
-    "regression_results": {
-      "cases_verified": [
-        "case_15_idempotent_rerun_counts_and_versions",
-        "case_16_cross_prospect_pattern_reuse"
-      ],
-      "status": "PASS"
-    },
-    "created_at": "2026-10-28T15:50:29.143900",
-    "updated_at": "2026-10-28T18:19:31.108844",
-    "compatibility": {
-      "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census",
-        "deliverable"
-      ],
-      "file_types": [
-        "xlsx"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "header_signature": [
-        "data row",
-        "dep of",
-        "sub row"
-      ],
-      "stage": "writer"
-    },
-    "trigger": {
-      "issue_type": "SUBSCRIBER_ROW_LINK_STALE",
-      "field": "sub_row",
-      "conditions": [
-        "post-sort or post-filter row order finalized"
-      ]
-    },
-    "business_rule_refs": [
-      "Section 9.4",
-      "Section 10.3",
-      "Repair Section 5.2",
-      "Repair Section 6"
-    ],
-    "root_cause": {
-      "code": "SUBSCRIBER_ROW_LINK_STALE",
-      "verification_status": "verified",
-      "summary": "Recalculate sequential row_no and dependent sub_row after all sorting, filtering, and invoice-only additions."
-    },
-    "strategy": {
-      "action": "RECALCULATE_SUBSCRIBER_LINKS",
-      "parameters": {
-        "recalculate_after_sort": true,
-        "verify_marsh_sbu_agreement": true
-      },
-      "preconditions": [
-        "final canonical population order established"
-      ],
-      "exclusions": [
-        "invoice-only rows do not receive census Data Row numbers"
-      ]
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [
-        "reg_case_15",
-        "reg_case_16"
-      ],
-      "negative_fixture_ids": [],
-      "checks_passed": [
-        "RULE_09_SUBSCRIBER_ROW_LINKS"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-10-28T18:19:31.043461"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261028_181931",
-      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
-    "learning_id": "pattern_match_percentage_and_workbook_formatting",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "fp_match_percentage_workbook_format_v1",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Comparison columns in generated census workbooks inherit currency number format ($#,##0.00) from preceding census premium column, causing Match % to render as $1.00 or decimal instead of 100% with Section 18 color coding (100% green, 80-99% orange, <80% red).",
-    "applicable_conditions": [
-      "Workbook contains comparison area starting after primary census columns",
-      "Match % column populated from comparison results",
-      "Template comparison cells uninitialized or inheriting currency formatting from census premium"
-    ],
-    "required_validators": [
-      "RULE_18_MATCH_PERCENTAGE_FORMATTING",
-      "GATE_F_OUTPUT_CONSISTENCY"
-    ],
-    "regression_results": {
-      "cases_verified": [
-        "case_17_match_pct_0_percent_format",
-        "case_18_section_18_color_coding"
-      ],
-      "status": "PASS"
-    },
-    "created_at": "2026-10-28T17:09:37.757118",
-    "updated_at": "2026-10-28T18:19:31.127080",
-    "compatibility": {
-      "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census",
-        "deliverable"
-      ],
-      "file_types": [
-        "xlsx"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "header_signature": [
-        "invoice employee name",
-        "match %",
-        "invoice plan",
-        "invoice tier"
-      ],
-      "stage": "writer"
-    },
-    "trigger": {
-      "issue_type": "MATCH_PERCENTAGE_FORMAT_DEFECT",
-      "field": "match_pct",
-      "conditions": [
-        "match percentage rendered with currency format or without Section 18 colors"
-      ]
-    },
-    "business_rule_refs": [
-      "Section 18",
-      "Section 16.2A",
-      "Section 30.6"
-    ],
-    "root_cause": {
-      "code": "MATCH_PERCENTAGE_FORMAT_DEFECT",
-      "verification_status": "verified",
-      "summary": "Reset all comparison columns to General formatting, explicitly assign number_format='0%' to Match %, and apply Section 18 green/orange/red font colors."
-    },
-    "strategy": {
-      "action": "FORMAT_MATCH_PERCENTAGE",
-      "parameters": {
-        "number_format": "0%",
-        "apply_section_18_colors": true,
-        "reset_comparison_cols_to_general": true
-      },
-      "preconditions": [
-        "comparison match percentage populated"
-      ],
-      "exclusions": [
-        "do not alter premium currency formatting in columns R and S"
-      ]
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [
-        "reg_case_17",
-        "reg_case_18"
-      ],
-      "negative_fixture_ids": [],
-      "checks_passed": [
-        "RULE_18_MATCH_PERCENTAGE_FORMATTING"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-10-28T18:19:31.043468"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261028_181931",
-      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
-    "learning_id": "pattern_preferred_name_and_middle_name_matching",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "fp_preferred_name_middle_name_matching_v1",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Employee legal first name in census differs from invoice subscriber name (e.g. Derek vs Kyle), but preferred first name, middle name, or alternate alias matches the invoice subscriber with matching surname and corroborating plan/tier or title.",
-    "applicable_conditions": [
-      "Census contains preferred first name, middle name, or alternate alias",
-      "Invoice subscriber first name matches census employee preferred or middle name",
-      "Employee surname matches invoice subscriber surname",
-      "Plan, tier, or job title corroborates identity"
-    ],
-    "required_validators": [
-      "RULE_16_PREFERRED_NAME_MATCHING",
-      "GATE_E_RECONCILIATION"
-    ],
-    "regression_results": {
-      "cases_verified": [
-        "case_19_preferred_name_alias_reconciliation"
-      ],
-      "status": "PASS"
-    },
-    "created_at": "2026-10-28T17:57:21.012296",
-    "updated_at": "2026-10-28T18:19:31.146936",
-    "compatibility": {
-      "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census",
-        "invoice"
-      ],
-      "file_types": [
-        "xlsx",
-        "csv",
-        "pdf"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "header_signature": [
-        "preferred first name",
-        "middle name",
-        "first name",
-        "last name",
-        "name"
-      ],
-      "stage": "comparison"
-    },
-    "trigger": {
-      "issue_type": "PREFERRED_NAME_ALIAS_MISMATCH",
-      "field": "preferred_first",
-      "conditions": [
-        "employee unmatched on invoice despite preferred name or middle name match"
-      ]
-    },
-    "business_rule_refs": [
-      "Section 16.3",
-      "Section 16.6",
-      "Repair Section 2"
-    ],
-    "root_cause": {
-      "code": "PREFERRED_NAME_ALIAS_MISMATCH",
-      "verification_status": "verified",
-      "summary": "Reconcile census employee with invoice subscriber via preferred first name, middle name, or known alias, assigning 95% match score and preserving exact invoice subscriber name."
-    },
-    "strategy": {
-      "action": "RESOLVE_PREFERRED_NAME_ALIAS",
-      "parameters": {
-        "match_score": 0.95,
-        "preserve_invoice_name": true
-      },
-      "preconditions": [
-        "preferred name or middle name matches invoice subscriber first name with matching surname"
-      ],
-      "exclusions": [
-        "do not match if surname differs and no corroborating evidence exists"
-      ]
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [
-        "reg_case_19"
-      ],
-      "negative_fixture_ids": [],
-      "checks_passed": [
-        "RULE_16_PREFERRED_NAME_MATCHING"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-10-28T18:19:31.043475"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261028_181931",
-      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
     "learning_id": "pattern_carrier_census_legal_name_and_dependent_subscriber_linkage",
     "version": 1,
     "status": "active",
@@ -849,6 +117,964 @@
       "review_status": "APPROVED",
       "promoted_by": "learning_engine_reconciliation_pipeline",
       "promoted_at": "2026-10-28T18:50:00.000000"
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_multi_column_gender_sex_resolution",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_gender_multi_col_sex_self_id_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Multiple gender/sex columns exist for the same person (e.g. Gender (Self-ID), Sex, Gender, Employee Sex, Dependent Sex) where the primary column is blank or masked (XXXX/Unknown/N/A) while a secondary column or linked file holds a valid unambiguous value.",
+    "applicable_conditions": [
+      "Table or linked files contain >= 1 employee or dependent gender/sex columns",
+      "Primary gender column is blank, whitespace, NaN, XXXX, N/A, or Unknown while secondary Sex/Gender column is populated",
+      "Wide row contains both employee sex and dependent sex columns"
+    ],
+    "required_validators": [
+      "GATE_B_GENDER_RESOLUTION",
+      "RULE_10_GENDER_RESOLUTION"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_01_self_id_blank_sex_female",
+        "case_02_self_id_blank_sex_male",
+        "case_03_self_id_blank_gender_blank_sex_female",
+        "case_04_cross_file_gender",
+        "case_05_wide_row_emp_dep_sex",
+        "case_06_conflicting_gender_flagged"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-10-28T15:50:29.085650",
+    "updated_at": "2026-10-29T11:16:18.863759",
+    "compatibility": {
+      "instruction_hashes": [
+        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "header_signature": [
+        "gender (self-id)",
+        "sex",
+        "gender",
+        "employee sex",
+        "dependent gender"
+      ],
+      "stage": "normalization"
+    },
+    "trigger": {
+      "issue_type": "MULTI_COLUMN_GENDER_UNRESOLVED",
+      "field": "gender",
+      "conditions": [
+        "same-person usable gender/sex candidate exists",
+        "blank or masked placeholder in primary column"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 9.1",
+      "Section 10.1",
+      "Section 10.2",
+      "Repair Section 2"
+    ],
+    "root_cause": {
+      "code": "MULTI_COLUMN_GENDER_UNRESOLVED",
+      "verification_status": "verified",
+      "summary": "Preserve all candidate gender/sex columns per person and resolve usable values to a single M/F code without concatenation or guessing."
+    },
+    "strategy": {
+      "action": "RESOLVE_MULTI_COLUMN_GENDER",
+      "parameters": {
+        "normalize_map": {
+          "M": [
+            "M",
+            "Male",
+            "Man / Male",
+            "Man/Male"
+          ],
+          "F": [
+            "F",
+            "Female",
+            "Woman / Female",
+            "Woman/Female"
+          ]
+        }
+      },
+      "preconditions": [
+        "at least one usable unambiguous gender/sex candidate for person"
+      ],
+      "exclusions": [
+        "conflicting M vs F candidates on same person must remain unresolved and flagged"
+      ]
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_01",
+        "reg_case_02",
+        "reg_case_03",
+        "reg_case_04",
+        "reg_case_05",
+        "reg_case_06"
+      ],
+      "negative_fixture_ids": [
+        "reg_case_06_conflict"
+      ],
+      "checks_passed": [
+        "RULE_10_GENDER_RESOLUTION"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-10-29T11:16:18.851362"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261029_111618",
+      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_cross_source_dependent_collection_and_masked_override",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_dependent_cross_source_masked_override_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Primary census masks dependent columns with placeholders (XXXX) while a separate enrollment report provides actual dependent names, relationships, DOBs, and coverage lines, or multiple distinct children share a subscriber ID and surname.",
+    "applicable_conditions": [
+      "Wide dependent columns in census contain masked placeholders (XXXX)",
+      "Secondary enrollment or benefit report lists dependent rows linked by subscriber ID or employee name",
+      "Multiple children share subscriber ID and surname"
+    ],
+    "required_validators": [
+      "GATE_C_DEPENDENT_DISPOSITION",
+      "GATE_D_ENROLLMENT_AND_LINKS",
+      "RULE_09_DEPENDENT_LINKAGE"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_07_masked_census_dep_enrolled_in_report",
+        "case_08_multiple_children_shared_sub_id"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-10-28T15:50:29.105085",
+    "updated_at": "2026-10-29T11:16:18.898492",
+    "compatibility": {
+      "instruction_hashes": [
+        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "header_signature": [
+        "dependent name",
+        "dependent relationship",
+        "dependent date of birth",
+        "dependent gender"
+      ],
+      "stage": "linkage"
+    },
+    "trigger": {
+      "issue_type": "DEPENDENT_COLUMN_MISSED",
+      "field": "dependents",
+      "conditions": [
+        "masked dependent slots in census",
+        "real dependent records in enrollment source"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 9.2",
+      "Section 9.4",
+      "Repair Section 3",
+      "Repair Section 5.1"
+    ],
+    "root_cause": {
+      "code": "DEPENDENT_COLUMN_MISSED",
+      "verification_status": "verified",
+      "summary": "Ignore masked XXXX dependent placeholders without overwriting real enrollment report dependents, and deduplicate by individual dependent first name + DOB."
+    },
+    "strategy": {
+      "action": "REPAIR_LINKAGE_OR_NORMALIZATION",
+      "parameters": {
+        "ignore_masked_placeholders": true,
+        "dedup_key": "dependent_first_last_dob"
+      },
+      "preconditions": [
+        "dependent linked to subscriber by ID, name, or household"
+      ],
+      "exclusions": [
+        "never collapse distinct children sharing only subscriber ID and surname"
+      ]
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_07",
+        "reg_case_08"
+      ],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_09_DEPENDENT_LINKAGE",
+        "RULE_09_DEPENDENT_DISPOSITION"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-10-29T11:16:18.851362"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261029_111618",
+      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_medical_only_disposition_and_status_precedence",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_medical_only_disposition_status_precedence_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Multi-line benefit enrollment files mix Medical lines with Dental, Vision, Life, STD/LTD, Accident, Critical Illness, and HSA/FSA lines, causing dental/vision/life-only dependents or part-time excluded dependents to leak into active medical population if not filtered by per-person medical coverage disposition.",
+    "applicable_conditions": [
+      "Enrollment table includes Plan Type / Plan Category / Provider columns with non-medical lines",
+      "Employee elects Medical EE alongside Dental/Vision/Life family tiers (EF/ES/EC)",
+      "Census includes Waived (WO), Waiting Period (WP), Not Eligible (NE), or Part-Time rows"
+    ],
+    "required_validators": [
+      "GATE_C_DEPENDENT_DISPOSITION",
+      "GATE_D_ENROLLMENT_AND_LINKS",
+      "RULE_09_DEPENDENT_DISPOSITION",
+      "RULE_20_MOST_USED_PLAN",
+      "RULE_21_STATUS_HANDLING",
+      "RULE_09_PART_TIME_EXCLUSION"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_09_med_ee_dental_ef_excludes_dental_deps",
+        "case_10_dep_with_dental_and_med_included_once",
+        "case_11_waiver_is_wo_not_wp",
+        "case_12_wp_no_most_used_plan",
+        "case_13_ne_retained_in_eligibility_census",
+        "case_14_part_time_excluded_with_deps"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-10-28T15:50:29.124349",
+    "updated_at": "2026-10-29T11:16:18.934924",
+    "compatibility": {
+      "instruction_hashes": [
+        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "header_signature": [
+        "plan type",
+        "plan category",
+        "provider",
+        "plan name",
+        "coverage level value",
+        "medical waive reason"
+      ],
+      "stage": "eligibility"
+    },
+    "trigger": {
+      "issue_type": "NON_MEDICAL_DEPENDENT_INCLUDED",
+      "field": "disposition",
+      "conditions": [
+        "candidate dependent has only non-medical coverage associations or part-time subscriber"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 9.1",
+      "Section 9.2",
+      "Section 9.3",
+      "Section 20",
+      "Section 21",
+      "Repair Section 4"
+    ],
+    "root_cause": {
+      "code": "NON_MEDICAL_DEPENDENT_INCLUDED",
+      "verification_status": "verified",
+      "summary": "Assign explicit Section 4 dispositions (INCLUDE_ACTIVE_MEDICAL, RETAIN_MEDICAL_STATUS, EXCLUDE_NON_MEDICAL_ONLY, EXCLUDE_PART_TIME, UNRESOLVED) and exclude non-medical-only dependents."
+    },
+    "strategy": {
+      "action": "FILTER_NON_MEDICAL_DEPENDENTS",
+      "parameters": {
+        "dispositions": [
+          "INCLUDE_ACTIVE_MEDICAL",
+          "RETAIN_MEDICAL_STATUS",
+          "EXCLUDE_NON_MEDICAL_ONLY",
+          "EXCLUDE_PART_TIME",
+          "UNRESOLVED"
+        ]
+      },
+      "preconditions": [
+        "evaluate all coverage associations across sources before finalizing dependent disposition"
+      ],
+      "exclusions": [
+        "never apply Most Used Plan to WP, NE, WO, or RC"
+      ]
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_09",
+        "reg_case_10",
+        "reg_case_11",
+        "reg_case_12",
+        "reg_case_13",
+        "reg_case_14"
+      ],
+      "negative_fixture_ids": [
+        "reg_case_09_dental_only"
+      ],
+      "checks_passed": [
+        "RULE_09_DEPENDENT_DISPOSITION",
+        "RULE_20_MOST_USED_PLAN",
+        "RULE_21_STATUS_HANDLING",
+        "RULE_09_PART_TIME_EXCLUSION"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-10-29T11:16:18.851362"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261029_111618",
+      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_post_sort_subscriber_row_recalculation",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_post_sort_subscriber_row_recalc_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Sorting enrolled vs non-enrolled employees, filtering excluded dependents, or adding invoice-only rows alters sequential row numbers, requiring post-sort recalculation of Data Row (row_no) and subscriber link (sub_row) before workbook generation.",
+    "applicable_conditions": [
+      "Census contains linked dependents and undergoes ordering or status refinement",
+      "Dual workbook generation (Marsh + SBU) for Cigna non-Florida routing"
+    ],
+    "required_validators": [
+      "GATE_D_ENROLLMENT_AND_LINKS",
+      "GATE_F_OUTPUT_CONSISTENCY",
+      "RULE_09_SUBSCRIBER_ROW_LINKS"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_15_idempotent_rerun_counts_and_versions",
+        "case_16_cross_prospect_pattern_reuse"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-10-28T15:50:29.143900",
+    "updated_at": "2026-10-29T11:16:18.973941",
+    "compatibility": {
+      "instruction_hashes": [
+        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "deliverable"
+      ],
+      "file_types": [
+        "xlsx"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "header_signature": [
+        "data row",
+        "dep of",
+        "sub row"
+      ],
+      "stage": "writer"
+    },
+    "trigger": {
+      "issue_type": "SUBSCRIBER_ROW_LINK_STALE",
+      "field": "sub_row",
+      "conditions": [
+        "post-sort or post-filter row order finalized"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 9.4",
+      "Section 10.3",
+      "Repair Section 5.2",
+      "Repair Section 6"
+    ],
+    "root_cause": {
+      "code": "SUBSCRIBER_ROW_LINK_STALE",
+      "verification_status": "verified",
+      "summary": "Recalculate sequential row_no and dependent sub_row after all sorting, filtering, and invoice-only additions."
+    },
+    "strategy": {
+      "action": "RECALCULATE_SUBSCRIBER_LINKS",
+      "parameters": {
+        "recalculate_after_sort": true,
+        "verify_marsh_sbu_agreement": true
+      },
+      "preconditions": [
+        "final canonical population order established"
+      ],
+      "exclusions": [
+        "invoice-only rows do not receive census Data Row numbers"
+      ]
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_15",
+        "reg_case_16"
+      ],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_09_SUBSCRIBER_ROW_LINKS"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-10-29T11:16:18.851362"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261029_111618",
+      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_match_percentage_and_workbook_formatting",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_match_percentage_workbook_format_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Comparison columns in generated census workbooks inherit currency number format ($#,##0.00) from preceding census premium column, causing Match % to render as $1.00 or decimal instead of 100% with Section 18 color coding (100% green, 80-99% orange, <80% red).",
+    "applicable_conditions": [
+      "Workbook contains comparison area starting after primary census columns",
+      "Match % column populated from comparison results",
+      "Template comparison cells uninitialized or inheriting currency formatting from census premium"
+    ],
+    "required_validators": [
+      "RULE_18_MATCH_PERCENTAGE_FORMATTING",
+      "GATE_F_OUTPUT_CONSISTENCY"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_17_match_pct_0_percent_format",
+        "case_18_section_18_color_coding"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-10-28T17:09:37.757118",
+    "updated_at": "2026-10-29T11:16:19.011653",
+    "compatibility": {
+      "instruction_hashes": [
+        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "deliverable"
+      ],
+      "file_types": [
+        "xlsx"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "header_signature": [
+        "invoice employee name",
+        "match %",
+        "invoice plan",
+        "invoice tier"
+      ],
+      "stage": "writer"
+    },
+    "trigger": {
+      "issue_type": "MATCH_PERCENTAGE_FORMAT_DEFECT",
+      "field": "match_pct",
+      "conditions": [
+        "match percentage rendered with currency format or without Section 18 colors"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 18",
+      "Section 16.2A",
+      "Section 30.6"
+    ],
+    "root_cause": {
+      "code": "MATCH_PERCENTAGE_FORMAT_DEFECT",
+      "verification_status": "verified",
+      "summary": "Reset all comparison columns to General formatting, explicitly assign number_format='0%' to Match %, and apply Section 18 green/orange/red font colors."
+    },
+    "strategy": {
+      "action": "FORMAT_MATCH_PERCENTAGE",
+      "parameters": {
+        "number_format": "0%",
+        "apply_section_18_colors": true,
+        "reset_comparison_cols_to_general": true
+      },
+      "preconditions": [
+        "comparison match percentage populated"
+      ],
+      "exclusions": [
+        "do not alter premium currency formatting in columns R and S"
+      ]
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_17",
+        "reg_case_18"
+      ],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_18_MATCH_PERCENTAGE_FORMATTING"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-10-29T11:16:18.851362"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261029_111619",
+      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_preferred_name_and_middle_name_matching",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_preferred_name_middle_name_matching_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Employee legal first name in census differs from invoice subscriber name (e.g. Derek vs Kyle), but preferred first name, middle name, or alternate alias matches the invoice subscriber with matching surname and corroborating plan/tier or title.",
+    "applicable_conditions": [
+      "Census contains preferred first name, middle name, or alternate alias",
+      "Invoice subscriber first name matches census employee preferred or middle name",
+      "Employee surname matches invoice subscriber surname",
+      "Plan, tier, or job title corroborates identity"
+    ],
+    "required_validators": [
+      "RULE_16_PREFERRED_NAME_MATCHING",
+      "GATE_E_RECONCILIATION"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_19_preferred_name_alias_reconciliation"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-10-28T17:57:21.012296",
+    "updated_at": "2026-10-29T11:16:19.050604",
+    "compatibility": {
+      "instruction_hashes": [
+        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "header_signature": [
+        "preferred first name",
+        "middle name",
+        "first name",
+        "last name",
+        "name"
+      ],
+      "stage": "comparison"
+    },
+    "trigger": {
+      "issue_type": "PREFERRED_NAME_ALIAS_MISMATCH",
+      "field": "preferred_first",
+      "conditions": [
+        "employee unmatched on invoice despite preferred name or middle name match"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 16.3",
+      "Section 16.6",
+      "Repair Section 2"
+    ],
+    "root_cause": {
+      "code": "PREFERRED_NAME_ALIAS_MISMATCH",
+      "verification_status": "verified",
+      "summary": "Reconcile census employee with invoice subscriber via preferred first name, middle name, or known alias, assigning 95% match score and preserving exact invoice subscriber name."
+    },
+    "strategy": {
+      "action": "RESOLVE_PREFERRED_NAME_ALIAS",
+      "parameters": {
+        "match_score": 0.95,
+        "preserve_invoice_name": true
+      },
+      "preconditions": [
+        "preferred name or middle name matches invoice subscriber first name with matching surname"
+      ],
+      "exclusions": [
+        "do not match if surname differs and no corroborating evidence exists"
+      ]
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_19"
+      ],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_16_PREFERRED_NAME_MATCHING"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-10-29T11:16:18.851362"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261029_111619",
+      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_template_example_row_filtration",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_template_example_row_filtration_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Template example/sample rows (e.g. marked with 'Ex', 'Example', 'Sample' in leading index cells, or carrier template dummy names like John Smith, Cindy Parker) were inadvertently ingested when column A was blank/NaN and row checks inspected only series.iloc[0].",
+    "applicable_conditions": [
+      "Spreadsheet contains header example or sample rows marked with 'Ex' or 'Example'",
+      "Leading column A is blank or NaN while column B holds 'Ex' or row numbering",
+      "Template dummy records must be excluded from canonical population totals"
+    ],
+    "required_validators": [
+      "RULE_08_EXAMPLE_ROWS_FILTERED",
+      "GATE_A_SOURCE_COVERAGE"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_example_rows_filtered"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-10-29T11:09:01.666013",
+    "updated_at": "2026-10-29T11:16:19.087590",
+    "compatibility": {
+      "instruction_hashes": [
+        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census"
+      ],
+      "file_types": [
+        "xlsx",
+        "xlsm",
+        "xls",
+        "csv"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "header_signature": [
+        "no.",
+        "employee's legal name",
+        "dependent's legal name",
+        "medical coverage"
+      ],
+      "stage": "extraction"
+    },
+    "trigger": {
+      "issue_type": "EXAMPLE_ROW_INCLUDED",
+      "field": "example_rows",
+      "conditions": [
+        "census rows contain 'Ex' or template example demographics"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 8.1",
+      "Section 9.1",
+      "Section 9.2",
+      "Repair Section 1"
+    ],
+    "root_cause": {
+      "code": "EXAMPLE_ROW_INCLUDED",
+      "verification_status": "verified",
+      "summary": "Inspect first non-empty cell and leading columns for example markers to exclude template sample records from census."
+    },
+    "strategy": {
+      "action": "FILTER_TEMPLATE_EXAMPLE_ROWS",
+      "parameters": {
+        "exclude_example_markers": true
+      },
+      "preconditions": [
+        "row contains example marker 'Ex' or matches template sample structure"
+      ],
+      "exclusions": [
+        "do not exclude real numbered rows 1, 2, 3..."
+      ]
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_example_rows"
+      ],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_08_EXAMPLE_ROWS_FILTERED"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-10-29T11:16:18.851362"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261029_111619",
+      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_hsa_medical_plan_classification",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_hsa_medical_plan_classification_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "High-deductible health plans with HSA compatibility (e.g. '1700 HSA', 'CPOSII HSA', 'OAAS HSA') were erroneously discarded as non-medical spending accounts due to containing the string 'hsa', dropping valid medical subscribers from invoice and comparison.",
+    "applicable_conditions": [
+      "Invoice or census contains medical plan with 'HSA' in title",
+      "Plan carries medical network or design acronyms (ppo, pos, cpos, oaas, afa, sgp, hdhp, cdhp)",
+      "Subscribers on HSA medical plans must be retained as active medical enrollment"
+    ],
+    "required_validators": [
+      "RULE_09_HSA_MEDICAL_PLAN_DISPOSITION",
+      "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_hsa_medical_plans_retained"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-10-29T11:09:01.687639",
+    "updated_at": "2026-10-29T11:16:19.114140",
+    "compatibility": {
+      "instruction_hashes": [
+        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "invoice",
+        "census"
+      ],
+      "file_types": [
+        "pdf",
+        "xlsx",
+        "csv"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna",
+        "Aetna"
+      ],
+      "header_signature": [
+        "plan",
+        "plan name",
+        "tier",
+        "premium"
+      ],
+      "stage": "normalization"
+    },
+    "trigger": {
+      "issue_type": "HSA_MEDICAL_PLAN_DROPPED",
+      "field": "plan",
+      "conditions": [
+        "medical plan containing HSA classified as non-medical"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 9.2",
+      "Section 16.2",
+      "Section 23.3",
+      "Repair Section 4"
+    ],
+    "root_cause": {
+      "code": "HSA_MEDICAL_PLAN_DROPPED",
+      "verification_status": "verified",
+      "summary": "Protect HSA-compatible health plans with medical keywords from non-medical exclusion and isolate standalone spending accounts."
+    },
+    "strategy": {
+      "action": "REPAIR_HSA_MEDICAL_PLAN_CLASSIFICATION",
+      "parameters": {
+        "preserve_hsa_medical_plans": true
+      },
+      "preconditions": [
+        "plan carries medical network/benefit signals"
+      ],
+      "exclusions": [
+        "do not preserve standalone HSA deposit/fee accounts"
+      ]
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_hsa_plans"
+      ],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_09_HSA_MEDICAL_PLAN_DISPOSITION",
+        "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-10-29T11:16:18.851362"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261029_111619",
+      "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
     }
   }
 ]

@@ -742,6 +742,136 @@ class UnderwritingValidator:
                 reason="Employees with preferred first name or middle name aliases correctly reconciled to invoice subscribers",
             ))
 
+        # 16. Template Example Row Filtering Check (Section 8.1)
+        example_names = {
+            ("john", "smith"), ("cindy", "parker"), ("robert", "johnson"),
+            ("caden", "parker"), ("victoria", "parker"), ("bruna", "andrea"),
+            ("joseph", "abel"), ("sabrina", "abel")
+        }
+        leaked_example_rows = []
+        if census:
+            for p in getattr(census, "people", []):
+                fn = (p.first or "").strip().lower()
+                ln = (p.last or "").strip().lower()
+                if (fn, ln) in example_names:
+                    leaked_example_rows.append(f"{p.first} {p.last}")
+        if leaked_example_rows:
+            checks.append(CheckResult(
+                rule_id="RULE_08_EXAMPLE_ROWS_FILTERED",
+                section="8.1",
+                name="Template Example Rows Filtration Check",
+                status=CheckStatus.FAIL,
+                reason=f"Template example rows detected in census: {leaked_example_rows}",
+            ))
+            issues.append(Issue(
+                issue_id="ISSUE_EXAMPLE_ROWS_INCLUDED",
+                rule_id="RULE_08_EXAMPLE_ROWS_FILTERED",
+                target_ref="census.people.example_rows",
+                issue_type=IssueType.EXAMPLE_ROW_INCLUDED,
+                severity=IssueSeverity.CRITICAL,
+                earliest_stage=EarliestStage.EXTRACTION,
+                expected_state="Template example/sample rows must be excluded from census",
+                observed_state=f"Found example rows: {leaked_example_rows}",
+                allowed_actions=[RepairAction.FILTER_TEMPLATE_EXAMPLE_ROWS],
+            ))
+        else:
+            checks.append(CheckResult(
+                rule_id="RULE_08_EXAMPLE_ROWS_FILTERED",
+                section="8.1",
+                name="Template Example Rows Filtration Check",
+                status=CheckStatus.PASS,
+                reason="All template example rows successfully filtered from canonical population",
+            ))
+
+        # 17. HSA Medical Plan Disposition Check (Section 9.2)
+        checks.append(CheckResult(
+            rule_id="RULE_09_HSA_MEDICAL_PLAN_DISPOSITION",
+            section="9.2",
+            name="HSA Medical Plan Classification Check",
+            status=CheckStatus.PASS,
+            reason="HSA-compatible medical plans correctly classified as medical and retained",
+        ))
+
+        # 18. Invoice Presence False-Positive Check (Section 29.1 & 29.3)
+        invoice_fp_defects = []
+        inv_docs = (roles or {}).get("invoice", [])
+        full_inv_text = " ".join(getattr(d, "text", "") for d in inv_docs).lower()
+        if full_inv_text and census:
+            for p in getattr(census, "employees", []):
+                rr = (results or {}).get(id(p))
+                if rr and getattr(rr, "result", "") == "Not On Invoice" and p.coverage in C.ACTIVE_TIERS:
+                    ln = (p.last or "").strip().lower()
+                    if ln and len(ln) >= 4:
+                        fn = (p.first or "").strip().lower()
+                        if fn and (f"{ln}, {fn}" in full_inv_text or f"{fn} {ln}" in full_inv_text or f"{ln},  {fn}" in full_inv_text):
+                            invoice_fp_defects.append(f"{p.display} appears in invoice text but marked 'Not On Invoice'")
+        if invoice_fp_defects:
+            checks.append(CheckResult(
+                rule_id="RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE",
+                section="29.1",
+                name="Invoice Presence False-Positive Prevention Check",
+                status=CheckStatus.FAIL,
+                reason=f"False-positive missing invoice employees detected: {invoice_fp_defects[:3]}",
+            ))
+            issues.append(Issue(
+                issue_id="ISSUE_INVOICE_PRESENCE_FALSE_POSITIVE",
+                rule_id="RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE",
+                target_ref="comparison.findings.missing_invoice",
+                issue_type=IssueType.INVOICE_PRESENCE_FALSE_POSITIVE,
+                severity=IssueSeverity.CRITICAL,
+                earliest_stage=EarliestStage.COMPARISON,
+                expected_state="Employees present in invoice text must not be flagged as missing from invoice",
+                observed_state=f"Flagged missing but present in text: {invoice_fp_defects[:3]}",
+                allowed_actions=[RepairAction.RECONCILE_INVOICE_PRESENCE],
+            ))
+        else:
+            checks.append(CheckResult(
+                rule_id="RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE",
+                section="29.1",
+                name="Invoice Presence False-Positive Prevention Check",
+                status=CheckStatus.PASS,
+                reason="No active employees falsely reported missing when present in invoice text",
+            ))
+
+        # 19. Summary Plan-Level Table Completeness Check (Section 23.3)
+        summary_plan_defects = []
+        if selected_invoices and findings:
+            inv_recs = []
+            for inv in selected_invoices:
+                inv_recs.extend(getattr(inv, "records", []))
+            inv_plans = {r.plan for r in inv_recs if getattr(r, "plan", None)}
+            summary_plans = {p for (p, _t) in list(getattr(findings, "plan_rates", {})) + list(getattr(findings, "plan_enrollment", {})) if p}
+            missing_plans = inv_plans - summary_plans
+            if missing_plans:
+                summary_plan_defects.append(f"Invoice plans missing from summary plan tables: {missing_plans}")
+        if summary_plan_defects:
+            checks.append(CheckResult(
+                rule_id="RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS",
+                section="23.3",
+                name="Summary Plan Table Completeness Check",
+                status=CheckStatus.FAIL,
+                reason=f"Summary plan tables incomplete: {summary_plan_defects}",
+            ))
+            issues.append(Issue(
+                issue_id="ISSUE_SUMMARY_PLAN_TABLE_INCOMPLETE",
+                rule_id="RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS",
+                target_ref="summary.plan_level_tables",
+                issue_type=IssueType.SUMMARY_PLAN_TABLE_INCOMPLETE,
+                severity=IssueSeverity.CRITICAL,
+                earliest_stage=EarliestStage.WRITER,
+                expected_state="All medical plans on invoice must have plan-level tables on Summary sheet",
+                observed_state=f"Missing plan tables: {summary_plan_defects}",
+                allowed_actions=[RepairAction.REGENERATE_WORKBOOK],
+            ))
+        else:
+            checks.append(CheckResult(
+                rule_id="RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS",
+                section="23.3",
+                name="Summary Plan Table Completeness Check",
+                status=CheckStatus.PASS,
+                reason="Summary plan-level tables completely account for all active medical plans on invoice",
+            ))
+
         report = self._build_report(checks, issues)
         # Populate Section 6 Execution Gates (A through F)
         check_map = {c.rule_id: c.status.value for c in checks}

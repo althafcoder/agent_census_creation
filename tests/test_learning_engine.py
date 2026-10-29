@@ -943,7 +943,7 @@ def test_repair_case_15_same_prospect_run_twice_idempotent_counts_and_versions()
         c2, s2, rules2 = _run_once(2)
 
         assert len(c1.people) == len(c2.people) == 2
-        assert len(rules1) == len(rules2) == 6
+        assert len(rules1) == len(rules2) == 8
         v1 = {r["fingerprint"]: r["version"] for r in rules1}
         v2 = {r["fingerprint"]: r["version"] for r in rules2}
         assert v1 == v2  # Stable pattern version across reruns!
@@ -1098,10 +1098,12 @@ def test_repair_case_18_section_18_color_coding_and_validator_gate():
         ctx, snap = orchestrator.initialize_run_context(case_id="case_match_test", output_dir=Path(tmp_dir) / "out")
         orchestrator._ensure_validated_repair_patterns(ctx, report)
         validated = store.load_validated_patterns()
-        assert len(validated) == 6
+        assert len(validated) == 8
         pattern_ids = {p["learning_id"] for p in validated}
         assert "pattern_match_percentage_and_workbook_formatting" in pattern_ids
         assert "pattern_preferred_name_and_middle_name_matching" in pattern_ids
+        assert "pattern_template_example_row_filtration" in pattern_ids
+        assert "pattern_hsa_medical_plan_classification" in pattern_ids
 
 
 def test_repair_case_19_preferred_name_alias_reconciliation():
@@ -1198,9 +1200,111 @@ def test_repair_case_19_preferred_name_alias_reconciliation():
         ctx, snap = orchestrator.initialize_run_context(case_id="case_pref_name_test", output_dir=Path(tmp_dir) / "out")
         orchestrator._ensure_validated_repair_patterns(ctx, report_pass)
         patterns = store.load_validated_patterns()
-        assert len(patterns) == 6
+        assert len(patterns) == 8
         p_ids = {p["learning_id"] for p in patterns}
         assert "pattern_preferred_name_and_middle_name_matching" in p_ids
+        assert "pattern_template_example_row_filtration" in p_ids
+        assert "pattern_hsa_medical_plan_classification" in p_ids
+
+
+def test_repair_case_20_template_example_row_filtration_and_gate():
+    """Case 20: Template example rows ('Ex', John Smith, Cindy Parker) must be excluded from census."""
+    from backend.census_builder import build_census
+    from backend.learning_engine.validator import UnderwritingValidator
+    from backend.learning_engine.contracts import CheckStatus, IssueType
+
+    # Table with blank column 0 and 'Ex' in column 1
+    doc = _make_table_doc("template_census.xlsx", [
+        ["", "No.", "First Name", "Last Name", "Relationship", "Medical Coverage", "DOB", "Gender", "Plan"],
+        ["", "Ex", "John", "Smith", "Employee", "EE", "01/01/1985", "M", "BC 1500"],
+        ["", "Ex", "Cindy", "Parker", "Employee", "FAM", "02/02/1990", "F", "BC 3000"],
+        ["", "1", "Alice", "Walker", "Employee", "EE", "03/03/1988", "F", "Plan A"],
+        ["", "2", "Bob", "Davis", "Employee", "EE", "04/04/1982", "M", "Plan A"],
+    ])
+    census, _ = build_census([doc])
+
+    # Only Alice Walker and Bob Davis should be in census!
+    assert len(census.employees) == 2
+    names = [f"{p.first} {p.last}" for p in census.employees]
+    assert "John Smith" not in names
+    assert "Cindy Parker" not in names
+    assert "Alice Walker" in names
+    assert "Bob Davis" in names
+
+    # Validator checks RULE_08_EXAMPLE_ROWS_FILTERED
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    report = validator.validate_full_pipeline(
+        prospect=Prospect(state="FL"),
+        routing=RoutingDecision(carrier=C.CARRIER_FLORIDA_BLUE, state="FL", is_florida=True),
+        census=census,
+        selected_invoices=[],
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=None,
+        results={},
+        roles={"census": [doc]},
+    )
+    rule_08_pass = next((c for c in report.checks if c.rule_id == "RULE_08_EXAMPLE_ROWS_FILTERED"), None)
+    assert rule_08_pass is not None
+    assert rule_08_pass.status == CheckStatus.PASS
+
+
+def test_repair_case_21_hsa_medical_plan_classification():
+    """Case 21: High-deductible health plans with HSA compatibility must be classified as medical."""
+    from backend.census_builder import _is_non_medical
+
+    # Medical HSA plans must return False (meaning they are medical)
+    assert _is_non_medical("AFA NJ AWH OAAS 1700 HSA 100/80 T CY V25 SGP") is False
+    assert _is_non_medical("AFA CPOSII 1700 HSA 100/50 T CY V25 SGP") is False
+    assert _is_non_medical("HDHP 1500 HSA") is False
+    assert _is_non_medical("Silver HSA 3000") is False
+
+    # Non-medical spending / fee accounts must return True
+    assert _is_non_medical("HSA Deposit Account") is True
+    assert _is_non_medical("HSA Fee") is True
+    assert _is_non_medical("HSA Contribution") is True
+    assert _is_non_medical("Dental DMO") is True
+    assert _is_non_medical("Vision VSP") is True
+
+
+def test_repair_case_22_invoice_presence_false_positive_check():
+    """Case 22: Employees present in invoice text must not be flagged missing from invoice."""
+    from backend.models import Person, Census, RowResult, Prospect, Findings
+    from backend.readers import RawDoc
+    from backend.router import RoutingDecision
+    from backend.learning_engine.validator import UnderwritingValidator
+    from backend.learning_engine.contracts import CheckStatus, IssueType
+
+    emp = Person(record_id="e1", first="Ashley", last="Bialoblocki", role="EE", coverage="EE")
+    census = Census(people=[emp])
+    results_defect = {id(emp): RowResult(result="Not On Invoice", result_red=True)}
+
+    raw_doc = RawDoc(
+        path=Path("invoice.pdf"),
+        ext=".pdf",
+        text="Aetna Health Invoice\nBialoblocki, Ashley  01/01/26  0106  $696.88\nTotal Charges: $696.88",
+    )
+
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    report = validator.validate_full_pipeline(
+        prospect=Prospect(state="NJ"),
+        routing=RoutingDecision(carrier=C.CARRIER_CIGNA, state="NJ", is_florida=False),
+        census=census,
+        selected_invoices=[raw_doc],
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=Findings(),
+        results=results_defect,
+        roles={"census": [Path("census.xlsx")], "invoice": [raw_doc]},
+    )
+
+    rule_29_fail = next((c for c in report.checks if c.rule_id == "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"), None)
+    assert rule_29_fail is not None
+    assert rule_29_fail.status == CheckStatus.FAIL
+    assert any(i.issue_type == IssueType.INVOICE_PRESENCE_FALSE_POSITIVE for i in report.issues)
+
 
 
 

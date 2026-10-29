@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_template_example_row_filtration",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_template_example_row_filtration_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Template example/sample rows (e.g. marked with 'Ex', 'Example', 'Sample' in leading index cells, or carrier template dummy names like John Smith, Cindy Parker) were inadvertently ingested when column A was blank/NaN and row checks inspected only series.iloc[0].",
+  "applicable_conditions": [
+    "Spreadsheet contains header example or sample rows marked with 'Ex' or 'Example'",
+    "Leading column A is blank or NaN while column B holds 'Ex' or row numbering",
+    "Template dummy records must be excluded from canonical population totals"
+  ],
+  "required_validators": [
+    "RULE_08_EXAMPLE_ROWS_FILTERED",
+    "GATE_A_SOURCE_COVERAGE"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_example_rows_filtered"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-10-29T11:09:01.666013",
+  "updated_at": "2026-10-29T11:16:19.087590",
+  "compatibility": {
+    "instruction_hashes": [
+      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census"
+    ],
+    "file_types": [
+      "xlsx",
+      "xlsm",
+      "xls",
+      "csv"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "no.",
+      "employee's legal name",
+      "dependent's legal name",
+      "medical coverage"
+    ],
+    "stage": "extraction"
+  },
+  "trigger": {
+    "issue_type": "EXAMPLE_ROW_INCLUDED",
+    "field": "example_rows",
+    "conditions": [
+      "census rows contain 'Ex' or template example demographics"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 8.1",
+    "Section 9.1",
+    "Section 9.2",
+    "Repair Section 1"
+  ],
+  "root_cause": {
+    "code": "EXAMPLE_ROW_INCLUDED",
+    "verification_status": "verified",
+    "summary": "Inspect first non-empty cell and leading columns for example markers to exclude template sample records from census."
+  },
+  "strategy": {
+    "action": "FILTER_TEMPLATE_EXAMPLE_ROWS",
+    "parameters": {
+      "exclude_example_markers": true
+    },
+    "preconditions": [
+      "row contains example marker 'Ex' or matches template sample structure"
+    ],
+    "exclusions": [
+      "do not exclude real numbered rows 1, 2, 3..."
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_example_rows"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_08_EXAMPLE_ROWS_FILTERED"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-29T11:16:18.851362"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261029_111619",
+    "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}
