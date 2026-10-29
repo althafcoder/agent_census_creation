@@ -23,7 +23,7 @@
     "status": "PASS"
   },
   "created_at": "2026-10-29T13:24:05.525959",
-  "updated_at": "2026-10-29T18:17:20.427148",
+  "updated_at": "2026-10-29T19:17:09.777303",
   "compatibility": {
     "instruction_hashes": [
       "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -95,11 +95,11 @@
       "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-10-29T18:17:20.219946"
+    "last_verified_at": "2026-10-29T19:17:09.414895"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261029_181720",
+    "decision_ref": "verified_20261029_191709",
     "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
   },
   "usage": {
