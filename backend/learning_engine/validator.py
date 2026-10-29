@@ -9,6 +9,7 @@ Executes deterministic validation checks across:
 from __future__ import annotations
 
 import logging
+import re
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -313,9 +314,13 @@ class UnderwritingValidator:
                     invalid_wp_wo.append(f"{emp.first} {emp.last} (notes='{notes_str}', cov='WP')")
 
                 # Check Part-Time in active medical census or with active dependents
-                if any(k in notes_str for k in ("part-time", "part time", "pt employee")):
-                    if cov not in ("NE", "WO", "WP", "RC") or getattr(emp, "dependents", []):
-                        part_time_violations.append(f"{emp.first} {emp.last}")
+                is_pt_rec = bool(
+                    getattr(emp, "worker_category", "").upper() == "PT" or
+                    re.search(r"\b(part[\s\-]?time|pt)\b", f"{getattr(emp, 'worker_category', '')} {getattr(emp, 'position_status', '')} {getattr(emp, 'eligibility_class', '')} {getattr(emp, 'job_title', '')}".lower()) or
+                    any(k in notes_str for k in ("part-time", "part time", "pt employee"))
+                )
+                if is_pt_rec and (getattr(emp, "disposition", "") != "EXCLUDE_PART_TIME" or getattr(emp, "dependents", []) or cov not in ("NE", "WO", "WP", "RC")):
+                    part_time_violations.append(f"{emp.first} {emp.last}")
 
                 # Check Most Used Plan: never apply to non-enrolled WP/NE/WO/RC
                 res = results.get(id(emp))
@@ -654,17 +659,38 @@ class UnderwritingValidator:
 
         # 8. Section 18 Match Percentage & Formatting Check
         match_format_defects = []
+        enrolled_active_emps = [
+            p for p in (census.employees if census else [])
+            if not getattr(p, "is_duplicate", False)
+            and not getattr(p, "invoice_only", False)
+            and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"
+            and p.coverage in C.ACTIVE_TIERS
+        ]
+        total_inv_count = getattr(findings, "invoice_employee_count", 0) if findings else 0
+        matched_count = 0
+
         for p in (census.employees if census else []):
-            if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False):
+            if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False) or getattr(p, "disposition", "") == "EXCLUDE_PART_TIME":
                 continue
             res = results.get(id(p))
-            if res and res.match_pct is not None:
-                pct = res.match_pct
-                if not isinstance(pct, (int, float)) or pct < 0 or pct > 100:
-                    match_format_defects.append(f"{p.display} (invalid match_pct={pct})")
-                elif pct < 100 and not res.inv_name:
-                    # Section 18: When Match % is below 100%, display exact invoice employee name
-                    match_format_defects.append(f"{p.display} (pct={pct}% but missing invoice name)")
+            if res:
+                if res.inv_name and res.match_pct is None:
+                    match_format_defects.append(f"{p.display} (matched to '{res.inv_name}' but match_pct is missing/None)")
+                elif res.match_pct is not None:
+                    pct = res.match_pct
+                    if not isinstance(pct, (int, float)) or pct < 0 or pct > 100:
+                        match_format_defects.append(f"{p.display} (invalid match_pct={pct})")
+                    elif pct < 100 and not res.inv_name:
+                        # Section 18: When Match % is below 100%, display exact invoice employee name
+                        match_format_defects.append(f"{p.display} (pct={pct}% but missing invoice name)")
+                    if pct > 0:
+                        matched_count += 1
+
+        # Check for matching collapse: if invoice has subscribers and census has active enrolled employees, match count cannot be 0
+        if total_inv_count >= 5 and len(enrolled_active_emps) >= 5 and matched_count == 0:
+            match_format_defects.append(
+                f"Matching collapse: 0 of {len(enrolled_active_emps)} enrolled census employees matched {total_inv_count} invoice subscribers"
+            )
 
         if match_format_defects:
             checks.append(CheckResult(
@@ -803,7 +829,17 @@ class UnderwritingValidator:
                     ln = (p.last or "").strip().lower()
                     if ln and len(ln) >= 4:
                         fn = (p.first or "").strip().lower()
-                        if fn and (f"{ln}, {fn}" in full_inv_text or f"{fn} {ln}" in full_inv_text or f"{ln},  {fn}" in full_inv_text):
+                        in_text = bool(
+                            fn and (
+                                f"{ln}, {fn}" in full_inv_text or
+                                f"{fn} {ln}" in full_inv_text or
+                                f"{ln} {fn}" in full_inv_text or
+                                f"{ln},  {fn}" in full_inv_text or
+                                (len(fn) >= 4 and f"{ln} {fn[:4]}" in full_inv_text) or
+                                (len(fn) >= 4 and f"{ln}, {fn[:4]}" in full_inv_text)
+                            )
+                        )
+                        if in_text:
                             invoice_fp_defects.append(f"{p.display} appears in invoice text but marked 'Not On Invoice'")
         if invoice_fp_defects:
             checks.append(CheckResult(
@@ -871,6 +907,76 @@ class UnderwritingValidator:
                 status=CheckStatus.PASS,
                 reason="Summary plan-level tables completely account for all active medical plans on invoice",
             ))
+
+        # 20. Invoice Extraction Fidelity & Collapse Guard (Section 5.1)
+        total_inv_chars = sum(len(getattr(d, "text", "") or "") for d in inv_docs)
+        total_inv_recs = getattr(findings, "invoice_employee_count", 0) if findings else 0
+        census_emp_count = len(getattr(census, "employees", [])) if census else 0
+
+        if total_inv_chars > 300 and census_emp_count > 20 and total_inv_recs <= 2:
+            checks.append(CheckResult(
+                rule_id="RULE_26_INVOICE_EXTRACTION_FIDELITY",
+                section="5.1",
+                name="Invoice Extraction Fidelity & Collapse Guard",
+                status=CheckStatus.FAIL,
+                reason=f"Invoice text has {total_inv_chars} chars across {len(inv_docs)} doc(s), but only {total_inv_recs} subscriber(s) extracted for a group of {census_emp_count} employees",
+            ))
+            issues.append(Issue(
+                issue_id="ISSUE_INVOICE_EXTRACTION_COLLAPSE",
+                rule_id="RULE_26_INVOICE_EXTRACTION_FIDELITY",
+                target_ref="invoice.records",
+                issue_type=IssueType.INVOICE_EXTRACTION_COLLAPSE,
+                severity=IssueSeverity.CRITICAL,
+                earliest_stage=EarliestStage.EXTRACTION,
+                expected_state="Invoice subscribers must be extracted with high fidelity without collapse",
+                observed_state=f"Only {total_inv_recs} subscriber(s) extracted from {total_inv_chars} chars of invoice text",
+                allowed_actions=[RepairAction.PARSE_MERITAIN_STATEMENT, RepairAction.RE_READ_SOURCE_UNIT],
+            ))
+        else:
+            checks.append(CheckResult(
+                rule_id="RULE_26_INVOICE_EXTRACTION_FIDELITY",
+                section="5.1",
+                name="Invoice Extraction Fidelity & Collapse Guard",
+                status=CheckStatus.PASS,
+                reason="Invoice extraction yielded plausible subscriber count relative to document volume",
+            ))
+
+        # 21. Census Headcount Conservation Check (Section 6 Audit)
+        if census and getattr(census, "raw_employee_rows", 0) > 0:
+            src_emp = census.raw_employee_rows - getattr(census, "cross_file_merges", 0)
+            out_emp = len([p for p in getattr(census, "people", []) if p.role == "EE" and not getattr(p, "invoice_only", False) and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"])
+            pt_excluded = len({id(p) for p in getattr(census, "people", []) if getattr(p, "disposition", "") == "EXCLUDE_PART_TIME"} | {id(p) for p in getattr(census, "excluded_employees", [])})
+            dup_emp = getattr(census, "duplicate_employees", 0)
+            missing_unreconciled = max(0, src_emp - out_emp - pt_excluded - dup_emp)
+            has_unreconciled_note = bool(findings and any("Census totals do not reconcile" in str(n) for n in getattr(findings, "notes", [])))
+
+            if missing_unreconciled > 0 and has_unreconciled_note:
+                checks.append(CheckResult(
+                    rule_id="RULE_06_CENSUS_CONSERVATION",
+                    section="6.0",
+                    name="Census Headcount Conservation Check",
+                    status=CheckStatus.FAIL,
+                    reason=f"Census headcount does not reconcile: {src_emp} source != {out_emp} output + {pt_excluded} PT excluded ({missing_unreconciled} unreconciled)",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_CENSUS_HEADCOUNT_UNRECONCILED",
+                    rule_id="RULE_06_CENSUS_CONSERVATION",
+                    target_ref="census.audit.headcount",
+                    issue_type=IssueType.BUSINESS_RULE_MISAPPLIED,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.NORMALIZATION,
+                    expected_state="Source employees must fully reconcile to output plus excluded/duplicates",
+                    observed_state=f"{missing_unreconciled} employees unreconciled between source and output",
+                    allowed_actions=[RepairAction.RECALCULATE_DISPOSITIONS],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_06_CENSUS_CONSERVATION",
+                    section="6.0",
+                    name="Census Headcount Conservation Check",
+                    status=CheckStatus.PASS,
+                    reason=f"Census headcount fully reconciled ({src_emp} source = {out_emp} output + {pt_excluded} PT excluded + {dup_emp} duplicates)",
+                ))
 
         report = self._build_report(checks, issues)
         # Populate Section 6 Execution Gates (A through F)

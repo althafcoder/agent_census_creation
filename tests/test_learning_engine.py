@@ -943,7 +943,7 @@ def test_repair_case_15_same_prospect_run_twice_idempotent_counts_and_versions()
         c2, s2, rules2 = _run_once(2)
 
         assert len(c1.people) == len(c2.people) == 2
-        assert len(rules1) == len(rules2) == 8
+        assert len(rules1) == len(rules2) == 10
         v1 = {r["fingerprint"]: r["version"] for r in rules1}
         v2 = {r["fingerprint"]: r["version"] for r in rules2}
         assert v1 == v2  # Stable pattern version across reruns!
@@ -1098,7 +1098,7 @@ def test_repair_case_18_section_18_color_coding_and_validator_gate():
         ctx, snap = orchestrator.initialize_run_context(case_id="case_match_test", output_dir=Path(tmp_dir) / "out")
         orchestrator._ensure_validated_repair_patterns(ctx, report)
         validated = store.load_validated_patterns()
-        assert len(validated) == 8
+        assert len(validated) == 10
         pattern_ids = {p["learning_id"] for p in validated}
         assert "pattern_match_percentage_and_workbook_formatting" in pattern_ids
         assert "pattern_preferred_name_and_middle_name_matching" in pattern_ids
@@ -1200,7 +1200,7 @@ def test_repair_case_19_preferred_name_alias_reconciliation():
         ctx, snap = orchestrator.initialize_run_context(case_id="case_pref_name_test", output_dir=Path(tmp_dir) / "out")
         orchestrator._ensure_validated_repair_patterns(ctx, report_pass)
         patterns = store.load_validated_patterns()
-        assert len(patterns) == 8
+        assert len(patterns) == 10
         p_ids = {p["learning_id"] for p in patterns}
         assert "pattern_preferred_name_and_middle_name_matching" in p_ids
         assert "pattern_template_example_row_filtration" in p_ids
@@ -1304,6 +1304,158 @@ def test_repair_case_22_invoice_presence_false_positive_check():
     assert rule_29_fail is not None
     assert rule_29_fail.status == CheckStatus.FAIL
     assert any(i.issue_type == IssueType.INVOICE_PRESENCE_FALSE_POSITIVE for i in report.issues)
+
+
+def test_repair_case_23_meritain_statement_parsing_and_collapse_guard():
+    """Verify that Meritain statement parsing extracts subscribers without comma requirements and triggers collapse guard."""
+    from backend.invoice_parser import _records_from_meritain_statement, _is_fragment_name
+    from backend.learning_engine.validator import UnderwritingValidator
+    from backend.learning_engine.contracts import CheckStatus, IssueType
+
+    # Assert names without commas pass fragment check
+    assert _is_fragment_name("AHMAD SHAMANE") is False
+    assert _is_fragment_name("BEAVERS MOLLY") is False
+    assert _is_fragment_name("your convenience, you") is True
+
+    meritain_text = """
+    *PEACHTREE ORTHOPAEDIC CLINIC PA
+    DIVISION: A02 POSC BRONZE ADMIN VIS
+    Effective MED SPEC AGGR NETWORK ADMIN DEN
+    Name EE ID Date COV PREM PREM & UR FEES COV FLEX COBRA Total
+    BEAVERS MOLLY 4569628114 08-01-21 E 140.50 4.46 72.01 0.00 E 0.00 0.00 216.97
+    CHANEY LASASHA 8058505326 01-01-25 EC 462.90 4.46 72.01 0.00 EC 6.00 0.00 545.37
+    TOTAL FOR DIVISION: A02 POSC BRONZE 762.34
+    """
+    doc = RawDoc(path=Path("Meritain_Invoice.pdf"), ext=".pdf", text=meritain_text)
+    recs, meta = _records_from_meritain_statement(doc)
+    assert len(recs) == 2
+    assert recs[0].raw_name == "BEAVERS MOLLY"
+    assert recs[0].tier == "EE"
+    assert recs[0].plan == "Bronze"
+    assert recs[1].raw_name == "CHANEY LASASHA"
+    assert recs[1].tier == "EC"
+    assert recs[1].plan == "Bronze"
+
+    # Verify collapse guard
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    census = Census(people=[Person(record_id=f"e{i}", first=f"First{i}", last=f"Last{i}", role="EE", coverage="EE") for i in range(30)])
+    collapsed_findings = Findings()
+    collapsed_findings.invoice_employee_count = 1
+
+    report = validator.validate_full_pipeline(
+        prospect=Prospect(state="GA"),
+        routing=RoutingDecision(carrier=C.CARRIER_CIGNA, state="GA", is_florida=False),
+        census=census,
+        selected_invoices=[doc],
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=collapsed_findings,
+        results={},
+        roles={"census": [Path("census.xlsx")], "invoice": [doc]},
+    )
+    collapse_check = next((c for c in report.checks if c.rule_id == "RULE_26_INVOICE_EXTRACTION_FIDELITY"), None)
+    assert collapse_check is not None
+    assert collapse_check.status == CheckStatus.FAIL
+    assert any(i.issue_type == IssueType.INVOICE_EXTRACTION_COLLAPSE for i in report.issues)
+
+
+def test_repair_case_24_part_time_strict_exclusion_and_non_med_dependents():
+    """Verify Section 9.1 Part-Time exclusion and Section 9.2 Medical-Only dependent filtering."""
+    from backend.census_builder import refine_non_enrolled_statuses
+    from backend.learning_engine.validator import UnderwritingValidator
+    from backend.learning_engine.contracts import CheckStatus
+
+    ft_emp = Person(record_id="e1", first="John", last="Fulltime", role="EE", coverage="EE", worker_category="FT")
+    pt_emp = Person(record_id="e2", first="Jane", last="Parttime", role="EE", coverage="EE", worker_category="PT")
+    pt_dep = Person(record_id="d1", first="Baby", last="Parttime", role="CH", subscriber_id="e2")
+    pt_emp.dependents.append(pt_dep)
+
+    # Medical EE with child dependent -> child excluded under Section 9.2
+    ft_dep_non_med = Person(record_id="d2", first="Billy", last="Fulltime", role="CH", subscriber_id="e1")
+    ft_emp.dependents.append(ft_dep_non_med)
+
+    census = Census(people=[ft_emp, pt_emp, pt_dep, ft_dep_non_med])
+    assert len(census.employees) == 2
+    assert len(census.dependents) == 2
+
+    refine_non_enrolled_statuses(census)
+    # PT emp marked as EXCLUDE_PART_TIME and NE; dependents excluded
+    assert pt_emp.disposition == "EXCLUDE_PART_TIME"
+    assert pt_emp.coverage == "NE"
+    assert len(census.dependents) == 0
+    assert len(census.excluded_employees) == 1
+    assert len(census.excluded_dependents) == 2
+
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    report = validator.validate_full_pipeline(
+        prospect=Prospect(state="GA"),
+        routing=RoutingDecision(carrier=C.CARRIER_CIGNA, state="GA", is_florida=False),
+        census=census,
+        selected_invoices=[],
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=Findings(),
+        results={},
+        roles={"census": [Path("census.xlsx")]},
+    )
+    pt_check = next((c for c in report.checks if c.rule_id == "RULE_09_PART_TIME_EXCLUSION"), None)
+    assert pt_check is not None
+    assert pt_check.status == CheckStatus.PASS
+
+
+def test_phase1_match_percentage_and_conservation_guards():
+    """Phase 1: Verify null-bypass elimination on match percentage and census conservation."""
+    from backend.learning_engine.validator import UnderwritingValidator
+    from backend.learning_engine.contracts import CheckStatus, IssueType
+    from backend.models import Census, Person, Findings, RowResult, Prospect
+    from backend.router import RoutingDecision
+
+    # 1. Matching collapse: 10 enrolled emps, 10 invoice emps, but 0 matched
+    census = Census(people=[Person(record_id=f"e{i}", first=f"Emp{i}", last=f"Last{i}", role="EE", coverage="EE") for i in range(10)])
+    results = {id(p): RowResult(result="Not On Invoice") for p in census.employees}
+    findings = Findings()
+    findings.invoice_employee_count = 10
+
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    report = validator.validate_full_pipeline(
+        prospect=Prospect(state="GA"),
+        routing=RoutingDecision(carrier=C.CARRIER_CIGNA, state="GA", is_florida=False),
+        census=census,
+        selected_invoices=[RawDoc(path=Path("inv.pdf"), ext=".pdf", text="test invoice text")],
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=findings,
+        results=results,
+        roles={"census": [Path("census.xlsx")], "invoice": [Path("inv.pdf")]},
+    )
+    m_check = next((c for c in report.checks if c.rule_id == "RULE_18_MATCH_PERCENTAGE_FORMATTING"), None)
+    assert m_check is not None
+    assert m_check.status == CheckStatus.FAIL
+    assert "Matching collapse" in m_check.reason
+
+    # 2. Missing match_pct: inv_name present but match_pct is None
+    results_missing_pct = {id(census.employees[0]): RowResult(inv_name="LAST0 EMP0", match_pct=None, result="Match")}
+    report_missing = validator.validate_full_pipeline(
+        prospect=Prospect(state="GA"),
+        routing=RoutingDecision(carrier=C.CARRIER_CIGNA, state="GA", is_florida=False),
+        census=census,
+        selected_invoices=[RawDoc(path=Path("inv.pdf"), ext=".pdf", text="test invoice text")],
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=findings,
+        results=results_missing_pct,
+        roles={"census": [Path("census.xlsx")], "invoice": [Path("inv.pdf")]},
+    )
+    m_check_missing = next((c for c in report_missing.checks if c.rule_id == "RULE_18_MATCH_PERCENTAGE_FORMATTING"), None)
+    assert m_check_missing is not None
+    assert m_check_missing.status == CheckStatus.FAIL
+    assert "match_pct is missing/None" in m_check_missing.reason
+
+
 
 
 

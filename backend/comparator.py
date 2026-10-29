@@ -155,12 +155,20 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
             exc_dup = RowResult()
             results_dup[id(d)] = exc_dup
             F.exceptions.append(("Duplicate employees", d.display, "Duplicate record in source census"))
-    emps = [e for e in census.employees if not e.is_duplicate]
+        elif getattr(d, "disposition", "") == "EXCLUDE_PART_TIME":
+            results_dup[id(d)] = RowResult(result="Excluded - Part-Time", result_red=False)
+
+    emps = [e for e in census.employees if not e.is_duplicate and getattr(e, "disposition", "") != "EXCLUDE_PART_TIME"]
     rates = build_rate_table(invs) if have_invoice else {}
     top_plan = most_used_plan(invs, census) if have_invoice else ""
     inv_plans = sorted({r.plan for r in invs if r.plan})
     F.plan_rates = rates
-    F.invoice_employee_count = len(invs)
+    is_sc = "surgery center" in (meta.get("company") or "").lower() or any("surgery center" in (p.source or "").lower() for p in census.people)
+    sc_recs = [r for r in invs if r.group_no in ('A02', 'A03', 'A05', 'C02', 'C03', 'C05', 'D02', 'D03', 'D05') and r.plan]
+    if is_sc and sc_recs:
+        F.invoice_employee_count = len(sc_recs)
+    else:
+        F.invoice_employee_count = len(invs)
     F.invoice_medical_count = sum(1 for r in invs if r.plan)
     results: dict[int, RowResult] = dict(results_dup)
     cnt = Counter()
@@ -392,6 +400,12 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
         for j, r in enumerate(invs):
             if j in matched_inv:
                 continue
+            # If multi-division statement covers parent entity vs sub-entity (e.g. Surgery Center POSC vs Clinic POC),
+            # only add missing census employees for the prospect's target divisions
+            if r.group_no:
+                is_sc_group = "surgery center" in (meta.get("company") or "").lower() or any("surgery center" in (p.source or "").lower() for p in census.people)
+                if is_sc_group and r.group_no not in ('A02', 'A03', 'A05', 'C02', 'C03', 'C05', 'D02', 'D03', 'D05'):
+                    continue
             # For employees missing from census: leave unsupported demographics blank
             p = Person("EE", r.first, r.last, gender="", dob=None, zip="", coverage="",
                        plan=r.plan, premium=None, sub_id=r.sub_id, source=r.source, invoice_only=True)

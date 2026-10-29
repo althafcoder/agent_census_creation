@@ -306,6 +306,15 @@ def _eligibility_vals(r: _Row) -> dict:
         v = r.g(key)
         if v is not None and not is_blank(v):
             out[fld] = v
+    # Map status column values like 'FT', 'PT', 'Full Time', 'Part Time' to worker_category
+    st_val = clean(r.g("status") or "")
+    if st_val:
+        st_low = st_val.lower()
+        if st_low in ("pt", "part time", "part-time", "parttime") or re.search(r"\b(part[\s\-]?time|pt)\b", st_low):
+            out["worker_category"] = "PT"
+        elif st_low in ("ft", "full time", "full-time", "fulltime") or re.search(r"\b(full[\s\-]?time|ft)\b", st_low):
+            if "worker_category" not in out:
+                out["worker_category"] = "FT"
     return out
 
 
@@ -1043,14 +1052,34 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
 
     # Finalize eligibility_status, part-time exclusions, dispositions, and subscriber linkage on all people
     excluded_pt_deps: list[Person] = []
+    excluded_pt_emps: list[Person] = []
+    excluded_non_med_deps: list[Person] = []
+
     for e in census.employees:
         worker_info = f"{e.worker_category} {e.eligibility_class} {e.job_title} {e.position_status} {e.salary}".lower()
         m_hrs = re.search(r"(\d+(?:\.\d+)?)\s*(?:hrs?|hours?|hours?/week|hrs?/wk)", worker_info)
         is_pt = bool(
             re.search(r"\b(part[\s\-]?time|pt)\b", worker_info)
+            or (e.worker_category and e.worker_category.upper() == "PT")
             or (m_hrs and float(m_hrs.group(1)) < 30.0)
         )
-        if e.coverage in ("EE", "ES", "EC", "FAM", "EF", "COUPLE") or (e.plan and e.plan not in ("", "NA", "N/A")):
+        if is_pt:
+            e.eligibility_status = "EXCLUDED_PART_TIME"
+            e.disposition = "EXCLUDE_PART_TIME"
+            e.coverage = "NE"
+            if e not in census.excluded_employees:
+                census.excluded_employees.append(e)
+            excluded_pt_emps.append(e)
+            if e.dependents:
+                for dep in list(e.dependents):
+                    dep.disposition = "EXCLUDE_PART_TIME"
+                    dep.eligibility_status = "EXCLUDED_PART_TIME"
+                    dep.subscriber_id = e.record_id
+                    if dep not in census.excluded_dependents:
+                        census.excluded_dependents.append(dep)
+                    excluded_pt_deps.append(dep)
+                e.dependents.clear()
+        elif e.coverage in ("EE", "ES", "EC", "FAM", "EF", "COUPLE") or (e.plan and e.plan not in ("", "NA", "N/A")):
             e.eligibility_status = "ENROLLED"
             e.disposition = "INCLUDE_ACTIVE_MEDICAL"
         elif e.coverage == "WP":
@@ -1058,28 +1087,10 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
             e.disposition = "RETAIN_MEDICAL_STATUS"
         elif e.coverage == "WO":
             e.eligibility_status = "WAIVED"
-            e.disposition = "EXCLUDE_PART_TIME" if is_pt else "RETAIN_MEDICAL_STATUS"
-            if is_pt and e.dependents:
-                for dep in list(e.dependents):
-                    dep.disposition = "EXCLUDE_PART_TIME"
-                    dep.eligibility_status = "EXCLUDED_PART_TIME"
-                    dep.subscriber_id = e.record_id
-                    if dep not in census.excluded_dependents:
-                        census.excluded_dependents.append(dep)
-                    excluded_pt_deps.append(dep)
-                e.dependents.clear()
+            e.disposition = "RETAIN_MEDICAL_STATUS"
         elif e.coverage == "NE":
             e.eligibility_status = "NOT_ELIGIBLE"
-            e.disposition = "EXCLUDE_PART_TIME" if is_pt else "RETAIN_MEDICAL_STATUS"
-            if is_pt and e.dependents:
-                for dep in list(e.dependents):
-                    dep.disposition = "EXCLUDE_PART_TIME"
-                    dep.eligibility_status = "EXCLUDED_PART_TIME"
-                    dep.subscriber_id = e.record_id
-                    if dep not in census.excluded_dependents:
-                        census.excluded_dependents.append(dep)
-                    excluded_pt_deps.append(dep)
-                e.dependents.clear()
+            e.disposition = "RETAIN_MEDICAL_STATUS"
         elif e.coverage == "RC":
             e.eligibility_status = "REFUSED"
             e.disposition = "RETAIN_MEDICAL_STATUS"
@@ -1087,15 +1098,37 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
             e.eligibility_status = "UNRESOLVED"
             e.disposition = "UNRESOLVED"
 
-        for dep in e.dependents:
-            dep.eligibility_status = "DEPENDENT"
-            dep.subscriber_id = e.record_id
-            if not dep.disposition:
-                dep.disposition = "INCLUDE_ACTIVE_MEDICAL"
+        if not is_pt:
+            med_cov = (e.coverage or "").strip().upper()
+            for dep in list(e.dependents):
+                dep_rel = (dep.role or "").strip().upper()
+                # Under Section 9.2, include dependent only if covered under medical coverage tier
+                is_med_dep = False
+                if med_cov in ("ES", "EC", "FAM", "EF", "FAMILY"):
+                    if med_cov == "ES" and dep_rel == "CH":
+                        is_med_dep = False
+                    elif med_cov == "EC" and dep_rel == "SP":
+                        is_med_dep = False
+                    else:
+                        is_med_dep = True
+                if is_med_dep:
+                    dep.eligibility_status = "DEPENDENT"
+                    dep.subscriber_id = e.record_id
+                    if not dep.disposition:
+                        dep.disposition = "INCLUDE_ACTIVE_MEDICAL"
+                else:
+                    dep.disposition = "EXCLUDE_NON_MEDICAL"
+                    dep.eligibility_status = "EXCLUDED_NON_MEDICAL"
+                    dep.subscriber_id = e.record_id
+                    if dep not in census.excluded_dependents:
+                        census.excluded_dependents.append(dep)
+                    excluded_non_med_deps.append(dep)
+                    e.dependents.remove(dep)
 
-    if excluded_pt_deps:
-        pt_ids = {id(d) for d in excluded_pt_deps}
-        census.people = [p for p in census.people if id(p) not in pt_ids]
+    excluded_all = excluded_pt_deps + excluded_non_med_deps
+    if excluded_all:
+        ex_ids = {id(p) for p in excluded_all}
+        census.people = [p for p in census.people if id(p) not in ex_ids]
 
     recalculate_row_numbers(census)
     update_candidate_dispositions(census)

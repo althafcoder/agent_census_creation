@@ -33,26 +33,33 @@ def _is_fragment_name(raw: str) -> bool:
     or administrative payroll fee codes."""
     if not raw or not clean(raw):
         return True
-    # Explicitly reject lines/names containing WC Code, Workers Comp, WC codes (\d{4}[A-Za-z]{2}), or payroll fees
-    if re.search(r"(?i)\b(wc\s*code|workers'?\s*comp|service\s*fee|admin\s*fee|futa|sui|department)\b|\b\d{4}[A-Za-z]{2}\b", raw):
+    # Explicitly reject lines/names containing WC Code, Workers Comp, WC codes (\d{4}[A-Za-z]{2}), or administrative/statement phrases
+    if re.search(r"(?i)\b(wc\s*code|workers'?\s*comp|service\s*fee|admin\s*fee|futa|sui|department|convenience|remittor|definitions?|adjustment|statement\s*date|invoice\s*date|total\s*(charges|adjustments|amount|premium))\b|\b\d{4}[A-Za-z]{2}\b", raw):
         return True
 
     # Strip any trailing WC codes before inspecting structure
     cleaned = re.sub(r"(?i)\s*\bwc\s*code\s*[:\-]?\s*[A-Za-z0-9]+.*", "", raw).strip()
     m = re.match(r"^([A-Za-z'\-\. ]+),\s*([A-Za-z'\-\. ]+)$", cleaned)
-    if not m:
-        return True
-    first = m.group(2).strip()
-    parts = first.split()
-    if not parts:
-        return True
-    head = parts[0]
-    # reject single-letter initial fragments (e.g. 'A') without a full first name
-    if len(head) == 1 and len(parts) == 1:
-        return True
-    if not first:
-        return True
-    return False
+    if m:
+        first = m.group(2).strip()
+        parts = first.split()
+        if not parts:
+            return True
+        head = parts[0]
+        # reject single-letter initial fragments (e.g. 'A') without a full first name
+        if len(head) == 1 and len(parts) == 1:
+            return True
+        return False
+
+    # Check if name is formatted without a comma as 2 to 4 space-separated words (e.g. 'AHMAD SHAMANE', 'BEAVERS MOLLY', 'CURRIE RIKEE D')
+    tokens = cleaned.split()
+    if 2 <= len(tokens) <= 4 and all(re.match(r"^[A-Za-z'\-\.]+$", t) for t in tokens):
+        # reject if all tokens are single letters (e.g. initials only)
+        if all(len(t) == 1 for t in tokens):
+            return True
+        return False
+
+    return True
 
 
 
@@ -507,6 +514,96 @@ def _records_from_llm(doc: RawDoc) -> list[InvoiceRecord]:
 
 
 
+def _records_from_meritain_statement(doc: RawDoc) -> tuple[list[InvoiceRecord], dict[str, Any]]:
+    """Deterministic, high-fidelity parser for Meritain Health / TPA statement invoices (e.g. group 14642).
+    Extracts subscribers by division, mapping plans, coverage tiers, and monthly fixed costs."""
+    text = doc.text or ""
+    if not text:
+        return [], {}
+    # Detect Meritain Health signature
+    if not ("meritain" in text.lower() or "meritain" in doc.name.lower() or "DIVISION:" in text):
+        return [], {}
+
+    tier_map = {"E": "EE", "ES": "ES", "EC": "EC", "F": "EF", "FAM": "EF"}
+    lines = text.splitlines()
+    current_div = ""
+    current_div_desc = ""
+    recs: list[InvoiceRecord] = []
+    seen: set[tuple[str, str]] = set()
+
+    div_re = re.compile(r"DIVISION:\s*([A-Za-z0-9]+)\s+([A-Za-z0-9 ]+)", re.I)
+    mem_re = re.compile(r"^\s*([A-Za-z\s\.\'\-]{2,25})\s+(\d{9,10})\s+(\d{2}-\d{2}-\d{2})\s+([A-Z]{1,3})\s+", re.I)
+
+    for line in lines:
+        m_div = div_re.search(line)
+        if m_div:
+            current_div = m_div.group(1).upper()
+            current_div_desc = m_div.group(2).strip().upper()
+            continue
+
+        m = mem_re.search(line)
+        if m:
+            raw_name = m.group(1).strip()
+            mem_id = m.group(2)
+            tier_raw = m.group(4).upper()
+            tier = tier_map.get(tier_raw, tier_raw)
+
+            # Skip header, unit counts or totals
+            if raw_name.upper().startswith(("TOTAL", "NAME", "DIVISION", "CURRENT", "MEDICAL", "DENTAL", "UNIT", "ADJUSTMENTS")):
+                continue
+
+            tokens = line.split()
+            total_str = tokens[-1] if tokens else "0"
+            prem = float(total_str) if total_str.replace(".", "", 1).isdigit() else 0.0
+
+            # Map plan name from division code / description
+            plan = ""
+            if current_div.startswith("A") or "BRONZE" in current_div_desc:
+                plan = "Bronze"
+            elif current_div.startswith("C") or "POS" in current_div_desc:
+                plan = "POS"
+            elif current_div.startswith("D") or "HDHP" in current_div_desc:
+                plan = "HDHP"
+            elif current_div.startswith("W"):
+                plan = "Bronze"
+            elif current_div.startswith("Y"):
+                plan = "POS"
+            elif current_div.startswith("Z"):
+                plan = "HDHP"
+
+            name_parts = raw_name.split()
+            if len(name_parts) >= 2:
+                last = name_parts[0]
+                first = " ".join(name_parts[1:])
+            else:
+                last = raw_name
+                first = ""
+
+            dedup_key = (mem_id, plan)
+            if dedup_key in seen:
+                continue
+            seen.add(dedup_key)
+
+            recs.append(InvoiceRecord(
+                first=first,
+                last=last,
+                raw_name=raw_name,
+                tier=tier,
+                plan=plan,
+                group_no=current_div,
+                premium=prem,
+                status="Active",
+                sub_id=mem_id,
+                source=doc.name
+            ))
+
+    meta: dict[str, Any] = {}
+    m_ent = re.search(r"Remittor:\s*\*?([A-Za-z0-9\s,\.\'\-]+?)(?:\s{3,}|\n|$)", text, re.I)
+    if m_ent:
+        meta["entity"] = m_ent.group(1).strip()
+    return recs, meta
+
+
 def _records_from_carrier_statement(doc: RawDoc) -> tuple[list[InvoiceRecord], dict[str, Any]]:
     """Extract subscriber identity, normalized plan ID, coverage tier, current monthly premium,
     retroactive adjustments, and service periods using structured statement parsing and decimal arithmetic."""
@@ -643,6 +740,14 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
     if doc.ext in (".xlsx", ".xlsm", ".xls", ".csv") and doc.tables:
         recs = _records_from_tables(doc)
 
+    # 0b. High-Fidelity Structured Carrier/TPA Statement Ingestion (Meritain Health statements)
+    if not recs and ("meritain" in (doc.text or "").lower() or "meritain" in doc.name.lower() or "DIVISION:" in (doc.text or "")):
+        m_recs, m_meta = _records_from_meritain_statement(doc)
+        if m_recs:
+            recs = m_recs
+            carrier_meta.update(m_meta)
+            log.info("Successfully extracted %d structured records from Meritain statement: %s", len(recs), doc.name)
+
     # 1. LLM-First semantic extraction (Matching Copilot Studio)
     if not recs and LLM_FIRST and USE_LLM_FALLBACK:
         try:
@@ -655,7 +760,11 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
 
     # 2. Rule / statement parser fallback if LLM not used or yielded 0 records
     if not recs:
+        m_recs, m_meta = _records_from_meritain_statement(doc)
         carrier_recs, carrier_meta = _records_from_carrier_statement(doc)
+        if m_recs and not carrier_recs:
+            carrier_recs = m_recs
+            carrier_meta.update(m_meta)
         recs = (carrier_recs or _records_from_peo_employee_details(doc) or _records_from_peo_statement(doc)
                 or _records_from_tables(doc) or _records_from_text(doc) or _records_from_llm(doc))
 

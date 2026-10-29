@@ -24,7 +24,7 @@
     "status": "PASS"
   },
   "created_at": "2026-10-28T17:57:21.012296",
-  "updated_at": "2026-10-29T11:16:19.050604",
+  "updated_at": "2026-10-29T15:39:47.546336",
   "compatibility": {
     "instruction_hashes": [
       "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -99,11 +99,11 @@
       "RULE_16_PREFERRED_NAME_MATCHING"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-10-29T11:16:18.851362"
+    "last_verified_at": "2026-10-29T15:39:47.427572"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261029_111619",
+    "decision_ref": "verified_20261029_153947",
     "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
   },
   "usage": {

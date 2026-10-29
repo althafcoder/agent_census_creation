@@ -103,6 +103,8 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
     row = C.FIRST_DATA_ROW
     had_gap = False
     for p in census.people:
+        if p.is_duplicate or getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL"):
+            continue
         if p.invoice_only and not had_gap:
             row += 1  # Leave an empty row before invoice-only employees
             had_gap = True
@@ -261,7 +263,8 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     s.header(["Metric", "Value"])
     eff = prospect.effective_date.strftime("%m/%d/%Y") if hasattr(prospect.effective_date, "strftime") else str(prospect.effective_date or "")
     eff_dt = prospect.effective_date
-    census_emps = [p for p in census.employees if not p.invoice_only and not p.is_duplicate]
+    census_emps = [p for p in census.employees if not p.invoice_only and not p.is_duplicate and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"]
+    med_deps = [d for d in census.dependents if not d.is_duplicate and getattr(d, "disposition", "") not in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")]
     enrolled_count = sum(1 for p in census_emps if p.coverage in C.ACTIVE_TIERS)
     wp_count = sum(1 for p in census_emps if p.coverage == "WP")
     wo_count = sum(1 for p in census_emps if p.coverage == "WO")
@@ -282,7 +285,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
 
     rows = [
         ("Census Employees (full-time, in output)", len(census_emps)),
-        ("Census Dependents (medical)", len(census.dependents)),
+        ("Census Dependents (medical)", len(med_deps)),
         ("Invoice Employees", F.invoice_employee_count),
         ("Selected Invoice", F.selected_invoice),
         ("Selected Invoice Period", F.invoice_period),
@@ -379,6 +382,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     # ---- 6. Census Audit
     s.section("Census Audit")
     s.header(["Metric", "Count"])
+    pt_excluded_cnt = len({id(p) for p in census.employees if getattr(p, "disposition", "") == "EXCLUDE_PART_TIME"} | {id(p) for p in getattr(census, "excluded_employees", [])})
     for k, v in [("Source Employees", audit["src_employees"]),
                  ("Output Employees", audit["out_employees"]),
                  ("Source Dependents", audit["src_dependents"]),
@@ -387,7 +391,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
                  ("Added Invoice Employees", cnt.get("missing_census", 0)),
                  ("Duplicate Employees", census.duplicate_employees),
                  ("Unassigned Dependents", len(census.unassigned_dependents)),
-                 ("Part-Time / Seasonal / Intern Excluded", 0)]:
+                 ("Part-Time / Seasonal / Intern Excluded", pt_excluded_cnt)]:
         s.row([k, v], red=(k in {"Duplicate Employees", "Unassigned Dependents", "Missing Employees"} and v > 0))
     s.gap()
 
@@ -520,7 +524,7 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
         ws["H4"].value = prospect.sales_person
     if prospect.company:
         ws["B5"].value = prospect.company
-    ws["E5"].value = len([e for e in census.employees if not e.invoice_only and not e.is_duplicate])
+    ws["E5"].value = len([e for e in census.employees if not e.invoice_only and not e.is_duplicate and getattr(e, "disposition", "") != "EXCLUDE_PART_TIME"])
     if prospect.current_carrier:
         ws["H5"].value = prospect.current_carrier
     if prospect.address:
@@ -554,7 +558,7 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
     row = C.MARSH_FIRST_DATA_ROW
 
     for p in census.people:
-        if p.is_duplicate:
+        if p.is_duplicate or getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL"):
             continue
         r = row
         row += 1
@@ -663,7 +667,7 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
     row = C.SBU_FIRST_DATA_ROW
 
     for p in census.people:
-        if p.is_duplicate:
+        if p.is_duplicate or getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL"):
             continue
         r = row
         row += 1

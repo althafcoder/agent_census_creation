@@ -163,6 +163,7 @@ class Census:
     duplicate_employees: int = 0
     unassigned_dependents: list[Person] = field(default_factory=list)
     excluded_dependents: list[Person] = field(default_factory=list)
+    excluded_employees: list[Person] = field(default_factory=list)
     candidate_dispositions: list[dict] = field(default_factory=list)
     masked_dependent_slots: list[dict] = field(default_factory=list)
     files_used: list[str] = field(default_factory=list)

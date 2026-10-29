@@ -920,6 +920,126 @@ class LearningEngineOrchestrator:
                     "last_verified_at": datetime.now().isoformat(),
                 },
             ),
+            LearningRule(
+                learning_id="pattern_meritain_statement_parsing",
+                fingerprint="fp_meritain_statement_parsing_v1",
+                version=1,
+                patch_version="2.2.0",
+                pattern_state="VALIDATED",
+                generic_root_cause=(
+                    "Multi-division TPA billing statements (e.g. Meritain Health group 14642) format subscribers as "
+                    "'LAST FIRST' without commas and organize lines by DIVISION blocks. Strict comma requirements in "
+                    "fragment filters dropped valid subscribers, collapsing invoice counts and causing blank Match %."
+                ),
+                applicable_conditions=[
+                    "Invoice is a structured Meritain Health or TPA billing statement",
+                    "Document organizes subscribers under division headers with fixed-cost premiums",
+                    "Subscriber names are formatted without commas",
+                ],
+                required_validators=["RULE_26_INVOICE_EXTRACTION_FIDELITY", "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"],
+                regression_results={
+                    "cases_verified": ["case_meritain_statement_high_fidelity"],
+                    "status": "PASS",
+                },
+                compatibility={
+                    "instruction_hashes": [ctx.instruction_hash],
+                    "template_hashes": [],
+                    "parser_versions": [ctx.parser_version],
+                    "runtime_prompt_version": "1.0",
+                },
+                scope={
+                    "document_roles": ["invoice"],
+                    "file_types": ["pdf", "txt"],
+                    "carriers": ["Meritain", "Cigna", "Aetna"],
+                    "header_signature": ["division", "billing statement", "meritain"],
+                    "stage": "invoice_parsing",
+                },
+                trigger={
+                    "issue_type": "INVOICE_EXTRACTION_COLLAPSE",
+                    "field": "records",
+                    "conditions": ["invoice subscriber count collapsed relative to text volume"],
+                },
+                business_rule_refs=["Section 5.1", "Section 16.1", "Section 29.1"],
+                root_cause={
+                    "code": "INVOICE_EXTRACTION_COLLAPSE",
+                    "verification_status": "verified",
+                    "summary": "Deterministic statement parsing extracts division-specific subscribers and maps plans and fixed-cost monthly premiums without comma requirements.",
+                },
+                strategy={
+                    "action": "PARSE_MERITAIN_STATEMENT",
+                    "parameters": {"high_fidelity_statement_parser": True},
+                    "preconditions": ["invoice contains division headers and subscriber rows"],
+                    "exclusions": ["do not parse non-medical billing lines"],
+                },
+                verification={
+                    "case_successes": 1,
+                    "case_failures": 0,
+                    "regression_fixture_ids": ["reg_case_meritain"],
+                    "negative_fixture_ids": [],
+                    "checks_passed": ["RULE_26_INVOICE_EXTRACTION_FIDELITY", "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"],
+                    "promotion_eligible": True,
+                    "last_verified_at": datetime.now().isoformat(),
+                },
+            ),
+            LearningRule(
+                learning_id="pattern_part_time_strict_exclusion",
+                fingerprint="fp_part_time_strict_exclusion_v1",
+                version=1,
+                patch_version="2.2.0",
+                pattern_state="VALIDATED",
+                generic_root_cause=(
+                    "Under Section 9.1, employees identified as Part-Time (PT) must be excluded from the medical census "
+                    "regardless of whether medical coverage is indicated in the source file, preventing population inflation."
+                ),
+                applicable_conditions=[
+                    "Census contains Part-Time (PT) employees in employment status or worker category",
+                    "Part-time records must be excluded from employee totals, enrollment totals, and deliverable census",
+                ],
+                required_validators=["RULE_09_PART_TIME_EXCLUSION", "GATE_A_SOURCE_COVERAGE"],
+                regression_results={
+                    "cases_verified": ["case_part_time_strict_exclusion"],
+                    "status": "PASS",
+                },
+                compatibility={
+                    "instruction_hashes": [ctx.instruction_hash],
+                    "template_hashes": [],
+                    "parser_versions": [ctx.parser_version],
+                    "runtime_prompt_version": "1.0",
+                },
+                scope={
+                    "document_roles": ["census"],
+                    "file_types": ["xlsx", "xlsm", "xls", "csv"],
+                    "carriers": ["Florida Blue", "Cigna", "Aetna"],
+                    "header_signature": ["status", "employee status", "ft/pt", "worker category"],
+                    "stage": "eligibility",
+                },
+                trigger={
+                    "issue_type": "PART_TIME_EMPLOYEE_INCLUDED",
+                    "field": "worker_category",
+                    "conditions": ["part-time employee present in output census"],
+                },
+                business_rule_refs=["Section 9.1", "Repair Section 1"],
+                root_cause={
+                    "code": "PART_TIME_EMPLOYEE_INCLUDED",
+                    "verification_status": "verified",
+                    "summary": "Enforce strict Section 9.1 exclusion of part-time employees and attached dependents during census population finalization.",
+                },
+                strategy={
+                    "action": "EXCLUDE_PART_TIME_POPULATION",
+                    "parameters": {"exclude_part_time": True},
+                    "preconditions": ["record marked PT or part-time"],
+                    "exclusions": ["do not exclude full-time employees"],
+                },
+                verification={
+                    "case_successes": 1,
+                    "case_failures": 0,
+                    "regression_fixture_ids": ["reg_case_pt_strict"],
+                    "negative_fixture_ids": [],
+                    "checks_passed": ["RULE_09_PART_TIME_EXCLUSION"],
+                    "promotion_eligible": True,
+                    "last_verified_at": datetime.now().isoformat(),
+                },
+            ),
         ]
 
         for rule in core_patterns:

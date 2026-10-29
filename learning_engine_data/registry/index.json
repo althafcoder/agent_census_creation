@@ -5,7 +5,9 @@
     "pattern_hsa_medical_plan_classification",
     "pattern_match_percentage_and_workbook_formatting",
     "pattern_medical_only_disposition_and_status_precedence",
+    "pattern_meritain_statement_parsing",
     "pattern_multi_column_gender_sex_resolution",
+    "pattern_part_time_strict_exclusion",
     "pattern_post_sort_subscriber_row_recalculation",
     "pattern_preferred_name_and_middle_name_matching",
     "pattern_template_example_row_filtration"
@@ -17,12 +19,14 @@
     "pattern_hsa_medical_plan_classification",
     "pattern_match_percentage_and_workbook_formatting",
     "pattern_medical_only_disposition_and_status_precedence",
+    "pattern_meritain_statement_parsing",
     "pattern_multi_column_gender_sex_resolution",
+    "pattern_part_time_strict_exclusion",
     "pattern_post_sort_subscriber_row_recalculation",
     "pattern_preferred_name_and_middle_name_matching",
     "pattern_template_example_row_filtration"
   ],
-  "last_updated": "2026-10-29T11:16:19.146604",
+  "last_updated": "2026-10-29T15:39:47.758424",
   "validated_pattern_fingerprints": [
     "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1",
     "fp_dependent_cross_source_masked_override_v1",
@@ -30,6 +34,8 @@
     "fp_hsa_medical_plan_classification_v1",
     "fp_match_percentage_workbook_format_v1",
     "fp_medical_only_disposition_status_precedence_v1",
+    "fp_meritain_statement_parsing_v1",
+    "fp_part_time_strict_exclusion_v1",
     "fp_post_sort_subscriber_row_recalc_v1",
     "fp_preferred_name_middle_name_matching_v1",
     "fp_template_example_row_filtration_v1"

@@ -227,6 +227,7 @@ def body(df: pd.DataFrame, hdr: Header) -> pd.DataFrame:
 # ------------------------------------------------------- document roles -----
 ROLE_FILENAME = [
     ("deliverable", r"(- marsh census|- sbu census|marsh_census_|sbu_census_|rapt_census_)"),
+    ("claims", r"(claims?|large[_\-\s]*claim)"),
     ("payroll", r"(payroll|wage|earnings)"),
     ("invoice", r"(invoice|inv[_\-\s]|billing|bill[_\-\s]|statement|premium\s*bill)"),
     ("renewal", r"(renewal|renew|rate\s*(sheet|pass|card)|proposal)"),
@@ -236,6 +237,7 @@ ROLE_FILENAME = [
     ("plan_design", r"(plan[_\-\s]*design|summary[_\-\s]*of[_\-\s]*benefits?|sbc\b|benefit[_\-\s]*summary|\bplan\b.*(buy\s*up|base)|(buy\s*up|base)\s*plan)"),
 ]
 ROLE_CONTENT = {
+    "claims": [r"aggregate claims?", r"specific claims?", r"paid claims?", r"large claims?", r"stop loss"],
     "payroll": [r"payroll register", r"gross wages?", r"gross pay", r"service fee", r"\bfuta\b", r"\bsui\b",
                 r"social security", r"medicare", r"wc code", r"workers'? comp", r"associate id", r"paid-in department",
                 r"earnings", r"\bcheck ?#", r"file ?#"],
@@ -312,6 +314,9 @@ def classify(doc: RawDoc) -> str:
             from llm_client import classify_document
             llm_role = classify_document(doc.text, doc.name)
             if llm_role and llm_role != "unknown":
+                if llm_role == "census" and re.search(r"\b(claims?|large[_\-\s]*claim)\b", doc.name, re.I):
+                    log.info("LLM classified '%s' as census; overridden to claims based on claim document signature", doc.name)
+                    return "claims"
                 # Structural guard: a tabular employee roster (names + DOB header) that is not a
                 # payroll register must stay a census, even when it carries salary / WC-class /
                 # payroll-name columns that can mislead semantic classification.
@@ -354,6 +359,9 @@ def classify(doc: RawDoc) -> str:
             from llm_client import classify_document
             llm_role = classify_document(doc.text, doc.name)
             if llm_role and llm_role != "unknown":
+                if llm_role == "census" and re.search(r"\b(claims?|large[_\-\s]*claim)\b", doc.name, re.I):
+                    log.info("LLM classified '%s' as census; overridden to claims based on claim document signature", doc.name)
+                    return "claims"
                 return llm_role
         except Exception:
             pass

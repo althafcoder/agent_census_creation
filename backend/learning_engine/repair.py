@@ -318,6 +318,34 @@ class RepairEngine:
                 verification_checks=["RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"],
             )
 
+        if action == RepairAction.PARSE_MERITAIN_STATEMENT:
+            return RepairPatch(
+                patch_id=patch_id,
+                issue_ids=[issue.issue_id],
+                action=action,
+                scope_predicates={"stage": "invoice_parsing", "target": "meritain_statement"},
+                preconditions=["invoice is a structured Meritain Health / TPA billing statement"],
+                expected_old_state="collapsed invoice extraction with missing subscribers",
+                proposed_new_state="high-fidelity statement extraction across all divisions",
+                parameters={"action": "parse_meritain_statement"},
+                affected_stages=[EarliestStage.INVOICE_PARSING, EarliestStage.COMPARISON, EarliestStage.WRITER],
+                verification_checks=["RULE_26_INVOICE_EXTRACTION_FIDELITY"],
+            )
+
+        if action == RepairAction.EXCLUDE_PART_TIME_POPULATION:
+            return RepairPatch(
+                patch_id=patch_id,
+                issue_ids=[issue.issue_id],
+                action=action,
+                scope_predicates={"stage": "eligibility", "target": "part_time_employees"},
+                preconditions=["census contains part-time employees requiring Section 9.1 exclusion"],
+                expected_old_state="part-time employees included in medical output census",
+                proposed_new_state="part-time employees excluded from medical output population",
+                parameters={"action": "exclude_part_time_population"},
+                affected_stages=[EarliestStage.ELIGIBILITY, EarliestStage.COMPARISON, EarliestStage.WRITER],
+                verification_checks=["RULE_09_PART_TIME_EXCLUSION"],
+            )
+
         return None
 
     def execute_patch(
@@ -525,6 +553,39 @@ class RepairEngine:
                 )
                 working_state["results"] = recomputed
             log.info("Reconciled invoice presence false positives")
+
+        elif patch.action == RepairAction.PARSE_MERITAIN_STATEMENT:
+            inv_docs = working_state.get("invoice_docs", []) or working_state.get("invoices_raw", [])
+            from invoice_parser import _records_from_meritain_statement
+            parsed_recs = []
+            for doc in inv_docs:
+                r, _m = _records_from_meritain_statement(doc)
+                parsed_recs.extend(r)
+            if parsed_recs:
+                working_state["invs"] = parsed_recs
+                working_state["invoices"] = parsed_recs
+                census = working_state.get("census")
+                findings = working_state.get("findings")
+                if census and findings:
+                    from comparator import run_comparison
+                    recomputed = run_comparison(
+                        census=census,
+                        invs=parsed_recs,
+                        renewal=working_state.get("renewal"),
+                        meta=working_state.get("meta", {}),
+                        F=findings,
+                        have_invoice=True,
+                        renewal_required=getattr(findings, "renewal_required", True),
+                    )
+                    working_state["results"] = recomputed
+            log.info("Executed high-fidelity Meritain statement parsing repair")
+
+        elif patch.action == RepairAction.EXCLUDE_PART_TIME_POPULATION:
+            census = working_state.get("census")
+            if census:
+                from census_builder import refine_non_enrolled_statuses
+                refine_non_enrolled_statuses(census)
+            log.info("Executed strict Section 9.1 part-time population exclusion repair")
 
         tx.executed = True
         self.executed_patches.append(patch)

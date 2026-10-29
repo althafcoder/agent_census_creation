@@ -163,6 +163,67 @@ def get_official_instructions() -> str:
 get_official_rei_instructions = get_official_instructions
 
 
+def get_scoped_instructions(scope: str = "full") -> str:
+    """Return task-scoped instruction slices to prevent prompt dilution while preserving governing rules.
+    
+    Scopes:
+    - 'prospect': Sections 1, 3, 4, 22
+    - 'census': Sections 1, 6, 8, 9, 10, 17, 21
+    - 'invoice': Sections 1, 5, 11, 16, 18
+    - 'renewal': Sections 1, 13, 14, 19, 20
+    - 'full': All sections
+    """
+    full_inst = get_official_instructions()
+    if not scope or scope == "full":
+        return full_inst
+
+    scope_sections = {
+        "prospect": (1, 3, 4, 22),
+        "census": (1, 6, 8, 9, 10, 17, 21),
+        "invoice": (1, 5, 11, 16, 18),
+        "renewal": (1, 13, 14, 19, 20),
+    }
+    target_nums = set(scope_sections.get(scope, ()))
+    if not target_nums:
+        return full_inst
+
+    parts = re.split(r'(?m)\n(?=[0-9]{1,2}\.\s+[A-Z\s,/]{3,}\n)', full_inst)
+    if len(parts) <= 1:
+        return full_inst
+
+    selected_parts = [parts[0].strip()]
+    sec_re = re.compile(r'^([0-9]{1,2})\.\s+[A-Z\s,/]{3,}')
+    for part in parts[1:]:
+        m = sec_re.match(part.strip())
+        if m and int(m.group(1)) in target_nums:
+            selected_parts.append(part.strip())
+
+    if len(selected_parts) <= 1:
+        return full_inst
+
+    scoped = "\n\n\n".join(selected_parts)
+    return scoped
+
+
+def chunk_text(text: str, chunk_size: int = 50000, overlap: int = 2000) -> list[str]:
+    """Split long document text into overlapping chunks along newline boundaries."""
+    if not text or len(text) <= chunk_size:
+        return [text] if text else []
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = min(start + chunk_size, len(text))
+        if end < len(text):
+            nl = text.rfind("\n", start + chunk_size - overlap, end)
+            if nl != -1 and nl > start:
+                end = nl + 1
+        chunks.append(text[start:end])
+        if end >= len(text):
+            break
+        start = max(start + 1, end - overlap)
+    return chunks
+
+
 def get_system_prompt() -> str:
     """Dynamic deterministic system prompt referencing all active official instruction documents."""
     doc_str = get_instruction_doc_name()
@@ -593,7 +654,7 @@ def extract_prospect_fields(doc_text: str, rfp_text: str = "") -> dict:
         combined_text = f"--- SUBMISSION EMAIL / RFP NOTES ---\n{rfp_text[:15000]}\n\n--- GHQ / QUESTIONNAIRE ---\n{doc_text[:35000]}"
     else:
         combined_text = doc_text[:50000]
-    instructions = get_official_instructions()
+    instructions = get_scoped_instructions("prospect")
     doc_name = get_instruction_doc_name()
 
     prompt = f"""You are operating strictly under the official instructions from {doc_name}:
@@ -662,18 +723,24 @@ Return JSON only:
 
 
 def extract_invoice_rows(text: str) -> list[dict]:
-    """Extract subscriber rows strictly adhering to official invoice instructions."""
+    """Extract subscriber rows strictly adhering to official invoice instructions, chunking long documents."""
     set_current_tracking(step_name="invoice_rows_extraction")
-    instructions = get_official_instructions()
+    instructions = get_scoped_instructions("invoice")
     doc_name = get_instruction_doc_name()
 
-    prompt = f"""You are operating strictly under the official instructions from {doc_name}:
+    chunks = chunk_text(text, chunk_size=55000, overlap=2500) if len(text) > 60000 else [text[:60000]]
+    all_rows: list[dict] = []
+    seen_keys: set[tuple[str, str, str]] = set()
+
+    for idx, chunk in enumerate(chunks):
+        chunk_header = f"--- INVOICE DOCUMENT SECTION {idx+1}/{len(chunks)} ---\n" if len(chunks) > 1 else ""
+        prompt = f"""You are operating strictly under the official instructions from {doc_name}:
 
 OFFICIAL INSTRUCTIONS ({doc_name}):
 {instructions}
 
 INVOICE DOCUMENT EXCERPTS:
-{text[:60000]}
+{chunk_header}{chunk}
 
 Extract each subscriber employee row from the invoice.
 CRITICAL RULES:
@@ -684,49 +751,45 @@ CRITICAL RULES:
 - premium: The monthly total medical premium billed for this employee (numeric float).
 - status: Active, Terminated, COBRA, or current enrollment status.
 
-Keys required for each subscriber:
-- name: Exact subscriber name as printed on invoice (without WC or tax codes)
-- tier: Standard coverage tier abbreviation (EE, ES, EC, FAM)
-- dob: Date of birth (mm/dd/yyyy) if available, else null
-- gender: M or F if available, else null
-- zip: 5-digit ZIP code if available, else null
-- plan: Medical plan name enrolled
-- premium: Monthly total premium for the employee (numeric float)
-- status: Active, Terminated, COBRA, or current enrollment status
-- member_id: Member ID / Subscriber ID / Cert ID if available
-
-Return a JSON list of objects only:
+Return JSON array only:
 [
   {{
-    "name": "LAST, FIRST M",
+    "name": "LAST, FIRST",
     "tier": "EE",
-    "dob": "01/15/1985",
-    "gender": "M",
-    "zip": "10019",
     "plan": "Plan Name",
-    "premium": 450.00,
-    "status": "Active",
-    "member_id": "123456789"
+    "premium": 500.0,
+    "status": "Active"
   }}
 ]
 """
-    try:
-        data = extract_json(prompt, max_tokens=16000, effort="high")
-        if isinstance(data, list):
-            return _validate_invoice_rows(data)
-        if isinstance(data, dict):
-            for val in data.values():
-                if isinstance(val, list):
-                    return _validate_invoice_rows(val)
-    except Exception as exc:
-        log.warning("extract_invoice_rows failed: %s", exc)
-    return []
+        try:
+            parsed = extract_json(prompt, max_tokens=ANTHROPIC_MAX_TOKENS, effort="high")
+            if isinstance(parsed, list):
+                for r in parsed:
+                    if isinstance(r, dict):
+                        k = (r.get("member_id") or "", (r.get("name") or "").upper(), (r.get("plan") or "").upper())
+                        if k not in seen_keys:
+                            seen_keys.add(k)
+                            all_rows.append(r)
+            elif isinstance(parsed, dict):
+                for v in parsed.values():
+                    if isinstance(v, list):
+                        for r in v:
+                            if isinstance(r, dict):
+                                k = (r.get("member_id") or "", (r.get("name") or "").upper(), (r.get("plan") or "").upper())
+                                if k not in seen_keys:
+                                    seen_keys.add(k)
+                                    all_rows.append(r)
+        except Exception as exc:
+            log.warning("extract_invoice_rows failed on chunk %d: %s", idx, exc)
+
+    return all_rows
 
 
 def extract_renewal_rates(text: str) -> list[dict]:
     """Extract medical renewal rate tables strictly adhering to official instructions."""
     set_current_tracking(step_name="renewal_rates_extraction")
-    instructions = get_official_instructions()
+    instructions = get_scoped_instructions("renewal")
     doc_name = get_instruction_doc_name()
 
     prompt = f"""You are operating strictly under the official instructions from {doc_name}:
@@ -767,18 +830,24 @@ Return JSON list of objects only:
 
 
 def extract_census_rows(text: str) -> list[dict]:
-    """Extract employee and dependent records strictly adhering to official instructions."""
+    """Extract employee and dependent records strictly adhering to official instructions, chunking long documents."""
     set_current_tracking(step_name="census_rows_extraction")
-    instructions = get_official_instructions()
+    instructions = get_scoped_instructions("census")
     doc_name = get_instruction_doc_name()
 
-    prompt = f"""You are operating strictly under the official instructions from {doc_name}:
+    chunks = chunk_text(text, chunk_size=55000, overlap=2500) if len(text) > 60000 else [text[:60000]]
+    all_rows: list[dict] = []
+    seen_keys: set[tuple[str, str, str, str]] = set()
+
+    for idx, chunk in enumerate(chunks):
+        chunk_header = f"--- CENSUS DOCUMENT SECTION {idx+1}/{len(chunks)} ---\n" if len(chunks) > 1 else ""
+        prompt = f"""You are operating strictly under the official instructions from {doc_name}:
 
 OFFICIAL INSTRUCTIONS ({doc_name}):
 {instructions}
 
 CENSUS TEXT EXCERPTS:
-{text[:60000]}
+{chunk_header}{chunk}
 
 Extract all employee and dependent records:
 CRITICAL RULES FOR EMPLOYEES AND DEPENDENTS:
@@ -794,7 +863,7 @@ CRITICAL RULES FOR EMPLOYEES AND DEPENDENTS:
    - If the census document has wide columns for dependents (e.g., 'Spouse Name', 'Spouse DOB', 'Child 1 Name', 'Child 1 DOB', 'Dep 1 First Name', 'Dep 1 Last Name', etc.), you MUST create a separate object in the output list for EACH dependent!
    - For spouse: relationship 'SP'
    - For children: relationship 'CH'
-   - For all dependents: set subscriber_name to the employee's full name, and leave coverage BLANK ("").
+   - For all dependents: set subscriber_name to the employee full name, and leave coverage BLANK (empty string).
 3. Preserve all demographic and employment fields if present:
    - sub_id: Employee ID, Member ID, or Subscriber ID
    - hire_date: Date of hire (mm/dd/yyyy)
@@ -812,7 +881,7 @@ Keys required for each object:
 - zip: 5-digit ZIP code
 - relationship: EE for employee, SP for spouse, CH for children
 - subscriber_name: If dependent, the full name of the employee they belong to (empty for EE)
-- coverage: Approved codes (EE, ES, EC, FAM, WO, WP, NE, RC) for employees; leave blank ("") for dependents
+- coverage: Approved codes (EE, ES, EC, FAM, WO, WP, NE, RC) for employees; leave blank (empty string) for dependents
 - cobra: Y or N
 - plan: Medical plan name / code if specified
 - premium: Enrolled premium if specified
@@ -848,17 +917,26 @@ Return JSON list of objects only:
   }}
 ]
 """
-    try:
-        data = extract_json(prompt, max_tokens=16000, effort="high")
-        if isinstance(data, list):
-            return _validate_census_rows(data)
-        if isinstance(data, dict):
-            for v in data.values():
-                if isinstance(v, list):
-                    return _validate_census_rows(v)
-    except Exception as exc:
-        log.warning("extract_census_rows failed: %s", exc)
-    return []
+        try:
+            data = extract_json(prompt, max_tokens=16000, effort="high")
+            valid = []
+            if isinstance(data, list):
+                valid = _validate_census_rows(data)
+            elif isinstance(data, dict):
+                for v in data.values():
+                    if isinstance(v, list):
+                        valid = _validate_census_rows(v)
+                        break
+            for r in valid:
+                if isinstance(r, dict):
+                    k = ((r.get("sub_id") or "").strip(), (r.get("first_name") or "").upper(), (r.get("last_name") or "").upper(), (r.get("dob") or "").strip())
+                    if k not in seen_keys:
+                        seen_keys.add(k)
+                        all_rows.append(r)
+        except Exception as exc:
+            log.warning("extract_census_rows failed on chunk %d: %s", idx, exc)
+
+    return all_rows
 
 
 def classify_document(text: str, filename: str) -> str:

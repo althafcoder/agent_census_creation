@@ -86,6 +86,8 @@ def run_pipeline(
                 ProvenanceTracker,
                 SourceCoverageLedger,
                 UnderwritingValidator,
+                EngineStatus,
+                RepairPatch,
             )
             if LEARNING_ENGINE_ENABLED:
                 le_orchestrator = LearningEngineOrchestrator()
@@ -251,6 +253,7 @@ def run_pipeline(
         F.notes.append("No census / enrollment file was found among the uploads. Census comparison workbook was not generated.")
     else:
         census, meta = build_census(roles["census"], effective_date=prospect.effective_date, tracer=tracer)
+        meta["company"] = prospect.company
         if not census.employees:
             fallback_docs = [d for d in docs if d not in roles["census"] and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
             if fallback_docs:
@@ -391,14 +394,124 @@ def run_pipeline(
     # 7. QC audit numbers --------------------------------------------------------------------------
     src_emp = census.raw_employee_rows - census.cross_file_merges
     src_dep = census.raw_dependent_rows - census.dependent_merges
-    out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only])
-    out_dep = len([p for p in census.people if p.role != "EE"])
-    audit = {"src_employees": src_emp, "src_dependents": src_dep, "out_employees": out_emp,
-             "out_dependents": out_dep, "missing_employees": max(0, src_emp - out_emp)}
-    if audit["missing_employees"] or src_dep != out_dep:
+    out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"])
+    out_dep = len([p for p in census.people if p.role != "EE" and getattr(p, "disposition", "") not in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")])
+    pt_excluded = len({id(p) for p in census.people if getattr(p, "disposition", "") == "EXCLUDE_PART_TIME"} | {id(p) for p in getattr(census, "excluded_employees", [])})
+    non_med_dep_excluded = len({id(p) for p in census.people if getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")} | {id(p) for p in getattr(census, "excluded_dependents", [])})
+    audit = {
+        "src_employees": src_emp,
+        "src_dependents": src_dep,
+        "out_employees": out_emp,
+        "out_dependents": out_dep,
+        "pt_excluded": pt_excluded,
+        "non_med_dep_excluded": non_med_dep_excluded,
+        "missing_employees": max(0, src_emp - out_emp - pt_excluded)
+    }
+    unreconciled_dep = max(0, src_dep - out_dep - non_med_dep_excluded)
+    if audit["missing_employees"] or unreconciled_dep:
         F.notes.append("Census totals do not reconcile to the source census files - review required.")
-    log.info("      * Audit: Source EEs=%d, Source Deps=%d -> Output EEs=%d, Output Deps=%d",
-             src_emp, src_dep, out_emp, out_dep)
+    log.info("      * Audit: Source EEs=%d, Source Deps=%d -> Output EEs=%d, Output Deps=%d (PT Excluded=%d, Non-Med Deps Excluded=%d)",
+             src_emp, src_dep, out_emp, out_dep, pt_excluded, non_med_dep_excluded)
+
+    # Claims requirement check
+    claims_required, claims_reason = check_claims_required(
+        prospect, enrolled_medical_count=F.invoice_medical_count or len([p for p in census.employees if p.coverage in C.ACTIVE_TIERS]), docs=docs
+    )
+    if claims_required and claims_reason not in F.claims_notes:
+        F.claims_notes.append(claims_reason)
+
+    # 7.5 Learning Engine Pre-Release Validation & Closed-Loop Repair ------------------------------
+    le_status = "PASSED"
+    le_val_report = None
+    executed_repair_patches: list[RepairPatch] = []
+
+    if validator:
+        le_val_report = validator.validate_full_pipeline(
+            prospect=prospect, routing=routing, census=census, selected_invoices=selected,
+            renewal=renewal, ren_required=ren_required, claims_required=claims_required,
+            findings=F, results=results, roles=roles,
+        )
+        le_status = le_val_report.release_status.value
+
+        if le_orchestrator and le_ctx and (le_val_report.failed_checks > 0 or le_val_report.issues):
+            log.warning("⚠️ [LEARNING ENGINE] %d validation failure(s) detected. Entering closed-loop self-healing repair...", len(le_val_report.issues))
+            working_state = {
+                "census": census,
+                "invoices": invoice_records,
+                "invs": invoice_records,
+                "invoice_docs": inv_docs,
+                "selected_invoices": selected,
+                "results": results,
+                "findings": F,
+                "meta": meta,
+                "prospect": prospect,
+                "routing": routing,
+                "renewal": renewal,
+                "roles": roles,
+                "docs": docs,
+            }
+            repair_engine = le_orchestrator.repair_engine
+            repair_cycle = 0
+
+            while repair_cycle < repair_engine.max_cycles and (le_val_report.failed_checks > 0 or le_val_report.issues):
+                repair_cycle += 1
+                patches = repair_engine.propose_patches(le_val_report, working_state)
+                if not patches:
+                    break
+
+                for patch in patches:
+                    log.info("🔧 [SELF-HEALING] Applying repair patch: %s (%s)", patch.patch_id, patch.action.value)
+                    tx = repair_engine.execute_patch(patch, working_state)
+                    executed_repair_patches.append(patch)
+
+                # Re-sync modified pipeline objects
+                census = working_state.get("census", census)
+                selected = working_state.get("selected_invoices", selected)
+                invs_recs = working_state.get("invoices") or working_state.get("invs")
+                if isinstance(invs_recs, list) and invs_recs and hasattr(invs_recs[0], "first"):
+                    invoice_records = invs_recs
+                else:
+                    invoice_records = combine_records(selected)
+                have_invoice = bool(invoice_records)
+                renewal_to_use = renewal if ren_required else None
+                results = run_comparison(
+                    census=census,
+                    invs=invoice_records,
+                    renewal=renewal_to_use,
+                    meta=meta,
+                    F=F,
+                    have_invoice=have_invoice,
+                    renewal_required=ren_required,
+                    tracer=tracer,
+                )
+                working_state["results"] = results
+                working_state["findings"] = F
+
+                # Refresh claims requirement check after patch
+                claims_required, claims_reason = check_claims_required(
+                    prospect, enrolled_medical_count=F.invoice_medical_count or len([p for p in census.employees if p.coverage in C.ACTIVE_TIERS]), docs=docs
+                )
+                if claims_required and claims_reason not in F.claims_notes:
+                    F.claims_notes.append(claims_reason)
+
+                re_report = validator.validate_full_pipeline(
+                    prospect=prospect, routing=routing, census=census, selected_invoices=selected,
+                    renewal=renewal, ren_required=ren_required, claims_required=claims_required,
+                    findings=F, results=results, roles=roles,
+                )
+                if re_report.failed_checks < le_val_report.failed_checks or len(re_report.issues) < len(le_val_report.issues):
+                    log.info("✅ [SELF-HEALING] Repair cycle %d succeeded! Failures reduced: %d -> %d",
+                             repair_cycle, le_val_report.failed_checks, re_report.failed_checks)
+                    le_val_report = re_report
+                    if re_report.failed_checks == 0:
+                        le_val_report.release_status = EngineStatus.REPAIRED_AND_PASSED
+                        le_status = "REPAIRED_AND_PASSED"
+                        break
+                else:
+                    break
+
+            if executed_repair_patches:
+                le_orchestrator._persist_verified_learning(executed_repair_patches, le_ctx)
 
     # 8. write carrier-specific workbook(s) --------------------------------------------------------
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -432,10 +545,7 @@ def run_pipeline(
 
     # Deliverable 2: Missing Information Email ----------------------------------------------------
     log.info("[8/8] Generating ready-to-send Missing Information Email deliverable...")
-    claims_required, claims_reason = check_claims_required(
-        prospect, enrolled_medical_count=F.invoice_medical_count or len([p for p in census.employees if p.coverage in C.ACTIVE_TIERS]), docs=docs
-    )
-    if claims_required:
+    if claims_required and claims_reason not in F.claims_notes:
         F.claims_notes.append(claims_reason)
 
     email_content = generate_missing_information_email(
@@ -490,85 +600,84 @@ def run_pipeline(
                 "extracted_filename": d.extracted_text_path.name if getattr(d, "extracted_text_path", None) else None,
                 "text_snippet": getattr(d, "text", "")[:2000],
             })
-    le_status = "PASSED"
-    le_val_report = None
-    if validator:
+    if not le_val_report and validator:
         le_val_report = validator.validate_full_pipeline(
             prospect=prospect, routing=routing, census=census, selected_invoices=selected,
             renewal=renewal, ren_required=ren_required, claims_required=claims_required,
             findings=F, results=results, roles=roles,
         )
         le_status = le_val_report.release_status.value
-        if le_orchestrator and le_ctx:
-            try:
-                if not le_ctx.case_id or le_ctx.case_id == "case_default":
-                    slug = "".join(ch if ch.isalnum() else "_" for ch in (prospect.company or "case")).strip("_").lower()[:40]
-                    if slug:
-                        le_ctx.case_id = f"case_{slug}"
-                le_orchestrator._ensure_validated_repair_patterns(le_ctx, le_val_report)
-                case_audit = le_orchestrator._build_private_case_audit(
-                    ctx=le_ctx,
-                    docs=docs,
-                    coverage_ledger=coverage_ledger,
-                    census=census,
-                    report=le_val_report,
-                    executed_patches=[],
-                    attempt=0,
+
+    if le_val_report and le_orchestrator and le_ctx:
+        try:
+            if not le_ctx.case_id or le_ctx.case_id == "case_default":
+                slug = "".join(ch if ch.isalnum() else "_" for ch in (prospect.company or "case")).strip("_").lower()[:40]
+                if slug:
+                    le_ctx.case_id = f"case_{slug}"
+            le_orchestrator._ensure_validated_repair_patterns(le_ctx, le_val_report)
+            case_audit = le_orchestrator._build_private_case_audit(
+                ctx=le_ctx,
+                docs=docs,
+                coverage_ledger=coverage_ledger,
+                census=census,
+                report=le_val_report,
+                executed_patches=executed_repair_patches,
+                attempt=0,
+            )
+            le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "case_audit", case_audit)
+            le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "final_validation", le_val_report.to_dict())
+            if coverage_ledger:
+                le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "coverage_ledger", coverage_ledger.to_dict())
+            if provenance:
+                le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "provenance", provenance.to_dict())
+
+            gates = le_val_report.execution_gates or {}
+            gate_str = " | ".join(f"{k}={v.get('status', 'PASS')}" for k, v in gates.items())
+            pop_sum = case_audit.get("canonical_population_summary", {})
+            disp_counts = pop_sum.get("disposition_counts", {})
+            b_gate = gates.get("B_gender_resolution", {})
+            run_dir = le_orchestrator.memory_store.data_dir / "runs" / le_ctx.case_id / le_ctx.run_id
+            le_log = logging.getLogger("census.learning_engine.orchestrator")
+
+            banner_lines = [
+                "=" * 88,
+                f"[LEARNING ENGINE] VERIFICATION SUMMARY | Status={le_status} | Checks={le_val_report.passed_checks}/{le_val_report.total_checks} Passed",
+                f"  * [INSTRUCTION SNAPSHOT] Hash={le_snapshot.content_hash[:12] if le_snapshot else inst_hash} | Case={le_ctx.case_id} | Run={le_ctx.run_id}",
+                "  * [INSTRUCTION & REPAIR RULES APPLIED]:",
+            ]
+            for chk in le_val_report.checks:
+                st_val = chk.status.value if hasattr(chk.status, "value") else str(chk.status)
+                banner_lines.append(f"      - [{st_val}] {chk.rule_id} (Section {chk.section} - {chk.name}): {chk.reason}")
+
+            banner_lines.append("  * [VALIDATED LEARNING PATTERNS APPLIED]:")
+            for vp in le_orchestrator.memory_store.load_validated_patterns():
+                banner_lines.append(
+                    f"      - [{vp.get('pattern_state', 'VALIDATED')}] {vp.get('learning_id')} "
+                    f"(v{vp.get('version', 1)}, patch={vp.get('patch_version', '2.2.0')}, fp={vp.get('fingerprint', '')})"
                 )
-                le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "case_audit", case_audit)
-                le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "final_validation", le_val_report.to_dict())
-                if coverage_ledger:
-                    le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "coverage_ledger", coverage_ledger.to_dict())
-                if provenance:
-                    le_orchestrator.memory_store.record_run_data(le_ctx.case_id, le_ctx.run_id, "provenance", provenance.to_dict())
 
-                gates = le_val_report.execution_gates or {}
-                gate_str = " | ".join(f"{k}={v.get('status', 'PASS')}" for k, v in gates.items())
-                pop_sum = case_audit.get("canonical_population_summary", {})
-                disp_counts = pop_sum.get("disposition_counts", {})
-                b_gate = gates.get("B_gender_resolution", {})
-                run_dir = le_orchestrator.memory_store.data_dir / "runs" / le_ctx.case_id / le_ctx.run_id
-                le_log = logging.getLogger("census.learning_engine.orchestrator")
+            banner_lines.extend([
+                f"  * [POPULATION & DISPOSITIONS] CanonicalRows={pop_sum.get('total_canonical_rows', 0)} "
+                f"(Employees={pop_sum.get('canonical_employees', 0)}, ActiveMedDeps={pop_sum.get('active_medical_dependents', 0)}) | "
+                f"ExcludedNonMedDeps={pop_sum.get('excluded_non_medical_or_pt_dependents', 0)} | "
+                f"MaskedSlotsIgnored={pop_sum.get('masked_placeholder_slots_ignored', 0)} | Dispositions={disp_counts}",
+                f"  * [GENDER RESOLUTION] Resolved(M/F)={b_gate.get('resolved_m_f_count', 0)}/{b_gate.get('total_canonical_people', 0)} | "
+                f"UnresolvedBlank={b_gate.get('unresolved_missing_count', 0)} | Conflicts={b_gate.get('conflict_count', 0)}",
+                f"  * [EXECUTION GATES A-F] {gate_str}",
+                f"  * [AUDIT ARTIFACTS SAVED] {run_dir}",
+                f"[LEARNING ENGINE] ALL RULES APPLIED BASED ON ACTIVE INSTRUCTIONS -- LEARNING VERIFICATION COMPLETED (Status: {le_status})",
+                "=" * 88,
+            ])
 
-                banner_lines = [
-                    "=" * 88,
-                    f"[LEARNING ENGINE] VERIFICATION SUMMARY | Status={le_status} | Checks={le_val_report.passed_checks}/{le_val_report.total_checks} Passed",
-                    f"  * [INSTRUCTION SNAPSHOT] Hash={le_snapshot.content_hash[:12] if le_snapshot else inst_hash} | Case={le_ctx.case_id} | Run={le_ctx.run_id}",
-                    "  * [INSTRUCTION & REPAIR RULES APPLIED]:",
-                ]
-                for chk in le_val_report.checks:
-                    st_val = chk.status.value if hasattr(chk.status, "value") else str(chk.status)
-                    banner_lines.append(f"      - [{st_val}] {chk.rule_id} (Section {chk.section} - {chk.name}): {chk.reason}")
+            for bline in banner_lines:
+                le_log.info(bline)
+                if le_log.propagate is False:
+                    log.info(bline)
 
-                banner_lines.append("  * [VALIDATED LEARNING PATTERNS APPLIED]:")
-                for vp in le_orchestrator.memory_store.load_validated_patterns():
-                    banner_lines.append(
-                        f"      - [{vp.get('pattern_state', 'VALIDATED')}] {vp.get('learning_id')} "
-                        f"(v{vp.get('version', 1)}, patch={vp.get('patch_version', '2.2.0')}, fp={vp.get('fingerprint', '')})"
-                    )
-
-                banner_lines.extend([
-                    f"  * [POPULATION & DISPOSITIONS] CanonicalRows={pop_sum.get('total_canonical_rows', 0)} "
-                    f"(Employees={pop_sum.get('canonical_employees', 0)}, ActiveMedDeps={pop_sum.get('active_medical_dependents', 0)}) | "
-                    f"ExcludedNonMedDeps={pop_sum.get('excluded_non_medical_or_pt_dependents', 0)} | "
-                    f"MaskedSlotsIgnored={pop_sum.get('masked_placeholder_slots_ignored', 0)} | Dispositions={disp_counts}",
-                    f"  * [GENDER RESOLUTION] Resolved(M/F)={b_gate.get('resolved_m_f_count', 0)}/{b_gate.get('total_canonical_people', 0)} | "
-                    f"UnresolvedBlank={b_gate.get('unresolved_missing_count', 0)} | Conflicts={b_gate.get('conflict_count', 0)}",
-                    f"  * [EXECUTION GATES A-F] {gate_str}",
-                    f"  * [AUDIT ARTIFACTS SAVED] {run_dir}",
-                    f"[LEARNING ENGINE] ALL RULES APPLIED BASED ON ACTIVE INSTRUCTIONS -- LEARNING VERIFICATION COMPLETED (Status: {le_status})",
-                    "=" * 88,
-                ])
-
-                for bline in banner_lines:
-                    le_log.info(bline)
-                    if le_log.propagate is False:
-                        log.info(bline)
-
-                summary = summary + "\n\n" + "\n".join(banner_lines)
-                txt_path.write_text(summary, encoding="utf-8")
-            except Exception as _le_save_err:
-                log.warning("Learning Engine artifact persistence warning: %s", _le_save_err)
+            summary = summary + "\n\n" + "\n".join(banner_lines)
+            txt_path.write_text(summary, encoding="utf-8")
+        except Exception as _le_save_err:
+            log.warning("Learning Engine artifact persistence warning: %s", _le_save_err)
 
     return {
         "output_file": out_path,
