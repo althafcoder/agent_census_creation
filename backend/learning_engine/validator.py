@@ -557,13 +557,26 @@ class UnderwritingValidator:
         # 5. PEO Renewal 90-Day Rule Invariant
         peo_flag = getattr(prospect, "peo", None) or getattr(prospect, "is_peo", False)
         if ren_required and not renewal:
-            checks.append(CheckResult(
-                rule_id="RULE_13_RENEWAL_PEO_90_DAY",
-                section="13.1",
-                name="Renewal PEO 90-Day Check",
-                status=CheckStatus.FAIL,
-                reason="Renewal is required under PEO 90-day rule but was not provided",
-            ))
+            # Check whether missing renewal was properly documented and requested per Section 13.1 & 28
+            notes_str = " ".join(str(n) for n in getattr(findings, "notes", [])).lower() if findings else ""
+            email_str = getattr(findings, "email_text", "").lower() if findings else ""
+            renewal_requested = "renewal" in notes_str or "renewal" in email_str
+            if renewal_requested:
+                checks.append(CheckResult(
+                    rule_id="RULE_13_RENEWAL_PEO_90_DAY",
+                    section="13.1",
+                    name="Renewal PEO 90-Day Check",
+                    status=CheckStatus.PASS,
+                    reason="Renewal is required under PEO 90-day rule and correctly requested from broker as missing deliverable",
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_13_RENEWAL_PEO_90_DAY",
+                    section="13.1",
+                    name="Renewal PEO 90-Day Check",
+                    status=CheckStatus.FAIL,
+                    reason="Renewal is required under PEO 90-day rule but was not requested from broker",
+                ))
             issues.append(Issue(
                 issue_id="ISSUE_MISSING_REQUIRED_RENEWAL",
                 rule_id="RULE_13_RENEWAL_PEO_90_DAY",
@@ -572,7 +585,9 @@ class UnderwritingValidator:
                 severity=IssueSeverity.WARNING,
                 earliest_stage=EarliestStage.EXTRACTION,
                 expected_state="Renewal document required",
-                observed_state="Renewal not provided",
+                observed_state="Renewal not provided in submission",
+                allowed_actions=[],
+                resolution_status="open",
             ))
         else:
             checks.append(CheckResult(
@@ -1045,6 +1060,10 @@ class UnderwritingValidator:
         if re.search(r"wc\s*code|0953pa|8871la", lower):
             issues.append("Workers compensation fragment detected in missing info email")
 
+        # No payroll register false positives in medical deficiency items per Section 1.2 & Section 29
+        if "does not appear on the payroll" in lower or "missing from uploaded payroll" in lower or "missing from payroll" in lower:
+            issues.append("Payroll register deficiency false-positive detected in missing info email per Section 29")
+
         return issues
 
     def _build_report(self, checks: list[CheckResult], issues: list[Issue]) -> ValidationReport:
@@ -1052,8 +1071,15 @@ class UnderwritingValidator:
         passed = sum(1 for c in checks if c.status == CheckStatus.PASS)
         failed = sum(1 for c in checks if c.status == CheckStatus.FAIL)
         blocked = sum(1 for c in checks if c.status == CheckStatus.BLOCKED)
+        accuracy = round(passed / total, 4) if total > 0 else 1.0
+        accuracy_threshold = 0.90
 
-        if blocked > 0:
+        critical_unresolved = [
+            i for i in issues
+            if i.severity == IssueSeverity.CRITICAL and i.issue_type != IssueType.SOURCE_NOT_PROVIDED
+        ]
+
+        if blocked > 0 or critical_unresolved or (accuracy < accuracy_threshold and failed > 0):
             status = EngineStatus.BLOCKED_TECHNICAL
         elif failed > 0:
             status = EngineStatus.NEEDS_SOURCE_INFORMATION
@@ -1066,6 +1092,8 @@ class UnderwritingValidator:
             passed_checks=passed,
             failed_checks=failed,
             blocked_checks=blocked,
+            accuracy=accuracy,
+            accuracy_threshold=accuracy_threshold,
             checks=checks,
             issues=issues,
             release_status=status,

@@ -1456,6 +1456,106 @@ def test_phase1_match_percentage_and_conservation_guards():
     assert "match_pct is missing/None" in m_check_missing.reason
 
 
+# -----------------------------------------------------------------------------
+# Scenario 31: 90% Accuracy Threshold & Self-Healing Rerun Verification
+# -----------------------------------------------------------------------------
+def test_ninety_percent_accuracy_threshold_and_status():
+    """Verify that validator computes accuracy and maintains the 90% accuracy threshold."""
+    validator = UnderwritingValidator(instruction_hash="test_accuracy_hash")
+    prospect = Prospect(company="Acme Corp", state="FL")
+    routing = RoutingDecision(carrier=C.CARRIER_FLORIDA_BLUE, state="FL", is_florida=True)
+    census = Census()
+    emp = Person("EE", "Alice", "Smith", gender="F", dob="1985-05-15", zip="33101", coverage="EE")
+    census.people = [emp]
+    findings = Findings()
+    findings.notes.append("Renewal is required under PEO & 90-day rule but was not provided.")
+    findings.email_text = "Current PEO renewal document is required."
+
+    # Validate pipeline with missing renewal correctly requested in findings/email
+    report = validator.validate_full_pipeline(
+        prospect=prospect,
+        routing=routing,
+        census=census,
+        selected_invoices=[],
+        renewal=None,
+        ren_required=True,
+        claims_required=False,
+        findings=findings,
+        results={},
+        roles={"census": [Path("census.xlsx")], "ghq": [Path("ghq.docx")]},
+    )
+
+    assert report.total_checks >= 15
+    assert report.accuracy >= 0.90
+    assert report.accuracy_threshold == 0.90
+    assert report.blocked_checks == 0
+    # RULE_13 passes because the agent properly fulfilled its duty to flag and request the missing renewal
+    r13 = next((c for c in report.checks if c.rule_id == "RULE_13_RENEWAL_PEO_90_DAY"), None)
+    assert r13 is not None
+    assert r13.status == CheckStatus.PASS
+    assert "correctly requested" in r13.reason
+
+
+def test_self_heal_recalculation_and_rerun_resets():
+    """Verify that repair engine resets action history on rerun and recalculates audit metrics."""
+    engine = RepairEngine(max_cycles=3)
+    engine._action_history.add("REPLACE_STRUCTURED_VALUE::{'field': 'coverage'}")
+    assert len(engine._action_history) == 1
+
+    # Reset action history for rerun
+    engine.reset_action_history()
+    assert len(engine._action_history) == 0
+    assert len(engine.executed_patches) == 0
+
+    # Test audit recalculation on repaired census
+    census = Census()
+    census.raw_employee_rows = 10
+    census.raw_dependent_rows = 5
+    emp_active = Person("EE", "Bob", "Jones", coverage="EE")
+    emp_waived = Person("EE", "Charlie", "Brown", coverage="WP")
+    emp_waived.notes = ["Employee waived coverage"]
+    dep = Person("SP", "Bessie", "Jones", coverage="EE")
+    emp_active.dependents = [dep]
+    census.people = [emp_active, emp_waived, dep]
+
+    working_state = {"census": census}
+    patch = RepairPatch(
+        patch_id="patch_wo_1",
+        issue_ids=["ISSUE_1"],
+        action=RepairAction.REPLACE_STRUCTURED_VALUE,
+        scope_predicates={"field": "coverage"},
+        preconditions=[],
+        parameters={"from_status": "WP", "to_status": "WO"},
+    )
+    tx = engine.execute_patch(patch, working_state)
+    assert tx.executed is True
+    assert emp_waived.coverage == "WO"
+
+
+def test_payroll_register_deficiency_exclusion_in_email():
+    """Verify that payroll registers never drive enrollment deficiency paragraphs in missing info email."""
+    validator = UnderwritingValidator(instruction_hash="test_payroll_hash")
+
+    # Email text with false positive payroll register deficiency
+    bad_email = (
+        "Subject: Missing Information\n\n"
+        "Cody Andrews: He is billed for medical on the Invoice, but he does not appear on the Payroll Register. "
+        "Please confirm his employment and coverage status."
+    )
+    issues = validator._check_email_false_positives(bad_email)
+    assert any("Payroll register deficiency false-positive detected" in iss for iss in issues)
+
+    # Clean compliant email text
+    good_email = (
+        "Subject: Missing Information\n\n"
+        "Please provide complete SBCs for each currently enrolled medical plan.\n"
+        "Current PEO renewal document with proposed renewal rates is required."
+    )
+    clean_issues = validator._check_email_false_positives(good_email)
+    assert not any("Payroll register" in iss for iss in clean_issues)
+
+
+
 
 
 

@@ -273,6 +273,8 @@ class ValidationReport:
     passed_checks: int = 0
     failed_checks: int = 0
     blocked_checks: int = 0
+    accuracy: float = 1.0
+    accuracy_threshold: float = 0.90
     checks: list[CheckResult] = dataclasses.field(default_factory=list)
     issues: list[Issue] = dataclasses.field(default_factory=list)
     release_status: EngineStatus = EngineStatus.PASSED
@@ -287,6 +289,8 @@ class ValidationReport:
             "passed_checks": self.passed_checks,
             "failed_checks": self.failed_checks,
             "blocked_checks": self.blocked_checks,
+            "accuracy": self.accuracy,
+            "accuracy_threshold": self.accuracy_threshold,
             "checks": [c.to_dict() for c in self.checks],
             "issues": [i.to_dict() for i in self.issues],
             "release_status": self.release_status.value,

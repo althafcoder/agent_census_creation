@@ -149,6 +149,7 @@ class HealthResponse(BaseModel):
     poppler_configured: bool = Field(..., description="Whether Poppler binary path exists for PDF OCR rendering")
     output_dir: str = Field(..., description="Path to server output deliverables directory")
     instructions_doc: Optional[str] = Field(None, description="Active official instruction document")
+    device: Optional[dict] = Field(default_factory=dict, description="Active compute device telemetry")
 
 
 class PipelineResponse(BaseModel):

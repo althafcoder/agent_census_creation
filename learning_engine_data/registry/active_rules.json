@@ -149,7 +149,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.085650",
-    "updated_at": "2026-10-29T15:50:01.735624",
+    "updated_at": "2026-10-29T18:17:20.223910",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -243,11 +243,11 @@
         "RULE_10_GENDER_RESOLUTION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155001",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -283,7 +283,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.105085",
-    "updated_at": "2026-10-29T15:50:01.767019",
+    "updated_at": "2026-10-29T18:17:20.251362",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -360,11 +360,11 @@
         "RULE_09_DEPENDENT_DISPOSITION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155001",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -407,7 +407,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.124349",
-    "updated_at": "2026-10-29T15:50:01.794412",
+    "updated_at": "2026-10-29T18:17:20.279340",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -499,11 +499,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155001",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -538,7 +538,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.143900",
-    "updated_at": "2026-10-29T15:50:01.832441",
+    "updated_at": "2026-10-29T18:17:20.303145",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -611,11 +611,11 @@
         "RULE_09_SUBSCRIBER_ROW_LINKS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155001",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -650,7 +650,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:09:37.757118",
-    "updated_at": "2026-10-29T15:50:01.864035",
+    "updated_at": "2026-10-29T18:17:20.329307",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -724,11 +724,11 @@
         "RULE_18_MATCH_PERCENTAGE_FORMATTING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155001",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -763,7 +763,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:57:21.012296",
-    "updated_at": "2026-10-29T15:50:01.894798",
+    "updated_at": "2026-10-29T18:17:20.354955",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -838,11 +838,11 @@
         "RULE_16_PREFERRED_NAME_MATCHING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155001",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -876,7 +876,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.666013",
-    "updated_at": "2026-10-29T15:50:02.015681",
+    "updated_at": "2026-10-29T18:17:20.375624",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -950,11 +950,11 @@
         "RULE_08_EXAMPLE_ROWS_FILTERED"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155002",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -988,7 +988,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.687639",
-    "updated_at": "2026-10-29T15:50:02.063993",
+    "updated_at": "2026-10-29T18:17:20.403059",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -1064,11 +1064,11 @@
         "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155002",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1102,7 +1102,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.525959",
-    "updated_at": "2026-10-29T15:50:02.101953",
+    "updated_at": "2026-10-29T18:17:20.427148",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -1174,11 +1174,11 @@
         "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155002",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1211,7 +1211,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.543465",
-    "updated_at": "2026-10-29T15:50:02.145707",
+    "updated_at": "2026-10-29T18:17:20.454742",
     "compatibility": {
       "instruction_hashes": [
         "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
@@ -1284,11 +1284,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T15:50:01.728785"
+      "last_verified_at": "2026-10-29T18:17:20.219946"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_155002",
+      "decision_ref": "verified_20261029_181720",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {

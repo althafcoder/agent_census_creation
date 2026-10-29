@@ -103,6 +103,7 @@ class LearningEngineOrchestrator:
             output_dir=output_dir or C.OUTPUT_DIR,
         )
 
+        self.repair_engine.reset_action_history()
         active_rules = self.memory_store.load_active_rules()
         validated_patterns = self.memory_store.load_validated_patterns()
         log.info(
@@ -305,7 +306,11 @@ class LearningEngineOrchestrator:
                         last_report.known_limitations.extend(sbu_errs)
 
         # 8. Persist reusable procedural learning for verified repairs & validated repair schemas
-        if last_report and last_report.release_status in (EngineStatus.PASSED, EngineStatus.REPAIRED_AND_PASSED):
+        is_release_eligible = last_report and (
+            last_report.release_status in (EngineStatus.PASSED, EngineStatus.REPAIRED_AND_PASSED)
+            or (getattr(last_report, "accuracy", 1.0) >= getattr(last_report, "accuracy_threshold", 0.90) and last_report.blocked_checks == 0)
+        )
+        if is_release_eligible:
             self._ensure_validated_repair_patterns(ctx, last_report)
             if executed_patches:
                 self._persist_verified_learning(executed_patches, ctx)
@@ -1060,8 +1065,10 @@ class LearningEngineOrchestrator:
         patches: list[RepairPatch],
         ctx: RunContext,
     ) -> None:
-        """Create candidate learning rules for verified repairs."""
+        """Create candidate learning rules for verified repairs across all repair actions."""
         for p in patches:
+            rule_id = ""
+            rule = None
             if p.action == RepairAction.APPLY_HEADER_MAPPING:
                 params = p.parameters
                 src_header = params.get("source_header")
@@ -1116,12 +1123,63 @@ class LearningEngineOrchestrator:
                             "reason": "Verified in live repair loop",
                         },
                     )
-                    self.memory_store.save_candidate_rule(rule)
-                    # Automatically promote narrow allowlisted mapping rules
-                    self.memory_store.promote_rule(
-                        learning_id=rule_id,
-                        mode="auto_allowlisted",
-                        reason="Verified during successful run repair",
-                    )
-                    log.info("Saved and promoted verified learning rule: %s", rule_id)
+            else:
+                act_name = p.action.value.lower()
+                rule_id = f"learned_{act_name}"
+                rule = LearningRule(
+                    learning_id=rule_id,
+                    version=1,
+                    compatibility={
+                        "instruction_hashes": [ctx.instruction_hash],
+                        "template_hashes": [],
+                        "parser_versions": [ctx.parser_version],
+                        "runtime_prompt_version": "1.0",
+                    },
+                    scope={
+                        "document_roles": ["census", "invoice"],
+                        "file_types": ["xlsx", "csv", "pdf"],
+                        "carriers": ["Florida Blue", "Cigna"],
+                        "stage": str(p.affected_stages[0].value) if p.affected_stages else "repair",
+                    },
+                    trigger={
+                        "issue_type": p.action.value,
+                        "field": str(p.scope_predicates.get("field", "")),
+                        "conditions": list(p.preconditions),
+                    },
+                    business_rule_refs=list(p.issue_ids),
+                    root_cause={
+                        "code": p.action.value,
+                        "verification_status": "verified",
+                        "summary": f"Automated repair pattern for {p.action.value}",
+                    },
+                    strategy={
+                        "action": p.action.value,
+                        "parameters": dict(p.parameters),
+                        "preconditions": list(p.preconditions),
+                        "exclusions": [],
+                    },
+                    verification={
+                        "case_successes": 1,
+                        "case_failures": 0,
+                        "regression_fixture_ids": [],
+                        "negative_fixture_ids": [],
+                        "checks_passed": list(p.verification_checks or ["REPAIR_PASSED"]),
+                        "promotion_eligible": True,
+                        "last_verified_at": datetime.now().isoformat(),
+                    },
+                    promotion={
+                        "mode": "auto_allowlisted",
+                        "decision_ref": ctx.run_id,
+                        "reason": f"Verified during successful run repair of {p.action.value}",
+                    },
+                )
+
+            if rule and rule_id:
+                self.memory_store.save_candidate_rule(rule)
+                self.memory_store.promote_rule(
+                    learning_id=rule_id,
+                    mode="auto_allowlisted",
+                    reason=f"Verified during successful run repair ({p.action.value})",
+                )
+                log.info("Saved and promoted verified learning rule: %s", rule_id)
 

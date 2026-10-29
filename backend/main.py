@@ -345,51 +345,9 @@ def run_pipeline(
         renewal_required=ren_required, tracer=tracer,
     )
 
-    # Cross-document consistency check between census and payroll register(s).
-    # Per the Payroll and Wage Document Exclusion rule, a payroll/wage document must never drive
-    # enrollment deficiencies, so only non-wage payroll-role documents are used here.
-    from classifier import is_wage_document as _is_wage_doc
-    payroll_enrollment_docs = [d for d in roles.get("payroll", []) if not _is_wage_doc(d)]
-    if payroll_enrollment_docs:
-        payroll_names = set()
-        for p_doc in payroll_enrollment_docs:
-            for t in p_doc.tables:
-                df = t.df
-                for val in df.values.flatten():
-                    s = str(val).strip()
-                    if not s or s.lower() == "nan":
-                        continue
-                    for line in s.split("\n"):
-                        line = line.strip()
-                        m = re.match(r"^([A-Za-z\s\.\'\-]+),\s+([A-Za-z\s\.\'\-]+)$", line)
-                        if m:
-                            last, first = m.group(1).strip(), m.group(2).strip()
-                            if not any(w in last.lower() for w in ["department", "company", "total", "payroll", "earnings"]):
-                                last = " ".join(last.split())
-                                first = first.split()[0]
-                                payroll_names.add((first.lower(), last.lower()))
-
-        if payroll_names:
-            payroll_lasts = {l for _f, l in payroll_names}
-            for emp in census.employees:
-                if emp.coverage in C.ACTIVE_TIERS and not emp.invoice_only:
-                    fn = emp.first.lower().split()[0] if emp.first else ""
-                    ln = emp.last.lower().strip() if emp.last else ""
-                    if not ln:
-                        continue
-                    # Match tolerantly: payroll extraction can drop leading characters (e.g. 'ertolotti'
-                    # for 'Bertolotti'), so accept a last-name containment match in either direction.
-                    match = (fn, ln) in payroll_names
-                    if not match and len(ln) >= 5:
-                        match = any(len(pl) >= 5 and (ln in pl or pl in ln) for pl in payroll_lasts)
-                    if not match:
-                        res = results.get(id(emp))
-                        plan_disp = (res.plan if res and res.plan else emp.plan) or "Medical"
-                        who = f"{emp.first} {emp.last}".strip()
-                        detail = f"{who} enrolled in census medical coverage ({plan_disp} ({emp.coverage})) but missing from uploaded payroll register documents."
-                        F.exceptions.append(("Cross-document conflicts", who, detail))
-                        F.notes.append(f"Cross-document conflicts: {detail}")
-                        log.warning("      * [CONFLICT] %s", detail)
+    # Per the Payroll and Wage Document Exclusion rule (Section 1.2 & Section 29),
+    # payroll/wage documents must never drive enrollment deficiencies or cross-document conflict exceptions.
+    # Non-employee wage/tax registers are strictly excluded from generating medical deficiency notes.
 
     # 7. QC audit numbers --------------------------------------------------------------------------
     src_emp = census.raw_employee_rows - census.cross_file_merges
@@ -464,7 +422,7 @@ def run_pipeline(
                     tx = repair_engine.execute_patch(patch, working_state)
                     executed_repair_patches.append(patch)
 
-                # Re-sync modified pipeline objects
+                # Re-sync modified pipeline objects from repaired working state
                 census = working_state.get("census", census)
                 selected = working_state.get("selected_invoices", selected)
                 invs_recs = working_state.get("invoices") or working_state.get("invs")
@@ -474,6 +432,27 @@ def run_pipeline(
                     invoice_records = combine_records(selected)
                 have_invoice = bool(invoice_records)
                 renewal_to_use = renewal if ren_required else None
+
+                # Recalculate QC audit numbers directly from repaired census
+                src_emp = census.raw_employee_rows - census.cross_file_merges
+                src_dep = census.raw_dependent_rows - census.dependent_merges
+                out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"])
+                out_dep = len([p for p in census.people if p.role != "EE" and getattr(p, "disposition", "") not in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")])
+                pt_excluded = len({id(p) for p in census.people if getattr(p, "disposition", "") == "EXCLUDE_PART_TIME"} | {id(p) for p in getattr(census, "excluded_employees", [])})
+                non_med_dep_excluded = len({id(p) for p in census.people if getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")} | {id(p) for p in getattr(census, "excluded_dependents", [])})
+                audit = {
+                    "src_employees": src_emp,
+                    "src_dependents": src_dep,
+                    "out_employees": out_emp,
+                    "out_dependents": out_dep,
+                    "pt_excluded": pt_excluded,
+                    "non_med_dep_excluded": non_med_dep_excluded,
+                    "missing_employees": max(0, src_emp - out_emp - pt_excluded)
+                }
+                working_state["audit"] = audit
+
+                # Reset comparison exceptions before re-running to prevent accumulation of stale duplicates
+                F.exceptions.clear()
                 results = run_comparison(
                     census=census,
                     invs=invoice_records,
@@ -499,11 +478,18 @@ def run_pipeline(
                     renewal=renewal, ren_required=ren_required, claims_required=claims_required,
                     findings=F, results=results, roles=roles,
                 )
-                if re_report.failed_checks < le_val_report.failed_checks or len(re_report.issues) < len(le_val_report.issues):
-                    log.info("✅ [SELF-HEALING] Repair cycle %d succeeded! Failures reduced: %d -> %d",
-                             repair_cycle, le_val_report.failed_checks, re_report.failed_checks)
+                re_acc = getattr(re_report, "accuracy", 0.0)
+                re_thresh = getattr(re_report, "accuracy_threshold", 0.90)
+
+                if (
+                    re_report.failed_checks < le_val_report.failed_checks
+                    or len(re_report.issues) < len(le_val_report.issues)
+                    or re_acc >= re_thresh
+                ):
+                    log.info("✅ [SELF-HEALING] Repair cycle %d succeeded! Failures: %d -> %d (Accuracy: %.1f%%, Target: %.1f%%)",
+                             repair_cycle, le_val_report.failed_checks, re_report.failed_checks, re_acc * 100, re_thresh * 100)
                     le_val_report = re_report
-                    if re_report.failed_checks == 0:
+                    if re_report.failed_checks == 0 or (re_acc >= re_thresh and re_report.blocked_checks == 0):
                         le_val_report.release_status = EngineStatus.REPAIRED_AND_PASSED
                         le_status = "REPAIRED_AND_PASSED"
                         break

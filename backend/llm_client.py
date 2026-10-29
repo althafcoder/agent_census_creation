@@ -167,10 +167,10 @@ def get_scoped_instructions(scope: str = "full") -> str:
     """Return task-scoped instruction slices to prevent prompt dilution while preserving governing rules.
     
     Scopes:
-    - 'prospect': Sections 1, 3, 4, 22
-    - 'census': Sections 1, 6, 8, 9, 10, 17, 21
-    - 'invoice': Sections 1, 5, 11, 16, 18
-    - 'renewal': Sections 1, 13, 14, 19, 20
+    - 'prospect': Sections 1, 2, 3, 4, 5, 7, 22, 28, 29, 31
+    - 'census': Sections 1, 6, 8, 9, 10, 17, 21, 24, 25, 26, 29, 30, 31
+    - 'invoice': Sections 1, 5, 11, 12, 16, 18, 19, 20, 26, 28, 29, 30, 31
+    - 'renewal': Sections 1, 13, 14, 19, 20, 25, 26, 28, 29, 30, 31
     - 'full': All sections
     """
     full_inst = get_official_instructions()
@@ -178,16 +178,16 @@ def get_scoped_instructions(scope: str = "full") -> str:
         return full_inst
 
     scope_sections = {
-        "prospect": (1, 3, 4, 22),
-        "census": (1, 6, 8, 9, 10, 17, 21),
-        "invoice": (1, 5, 11, 16, 18),
-        "renewal": (1, 13, 14, 19, 20),
+        "prospect": (1, 2, 3, 4, 5, 7, 22, 28, 29, 31),
+        "census": (1, 6, 8, 9, 10, 17, 21, 24, 25, 26, 29, 30, 31),
+        "invoice": (1, 5, 11, 12, 16, 18, 19, 20, 26, 28, 29, 30, 31),
+        "renewal": (1, 13, 14, 19, 20, 25, 26, 28, 29, 30, 31),
     }
     target_nums = set(scope_sections.get(scope, ()))
     if not target_nums:
         return full_inst
 
-    parts = re.split(r'(?m)\n(?=[0-9]{1,2}\.\s+[A-Z\s,/]{3,}\n)', full_inst)
+    parts = re.split(r'(?m)\r?\n(?=[0-9]{1,2}\.\s+[A-Z\s,/]{3,}\r?\n)', full_inst)
     if len(parts) <= 1:
         return full_inst
 

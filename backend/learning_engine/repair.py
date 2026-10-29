@@ -60,6 +60,11 @@ class RepairEngine:
         self.executed_patches: list[RepairPatch] = []
         self._action_history: set[str] = set()
 
+    def reset_action_history(self) -> None:
+        """Clear action history for a fresh run or rerun."""
+        self._action_history.clear()
+        self.executed_patches.clear()
+
     def propose_patches(
         self,
         report: ValidationReport,
@@ -586,6 +591,14 @@ class RepairEngine:
                 from census_builder import refine_non_enrolled_statuses
                 refine_non_enrolled_statuses(census)
             log.info("Executed strict Section 9.1 part-time population exclusion repair")
+
+        elif patch.action == RepairAction.RESOLVE_CARRIER_CENSUS_LEGAL_NAME_AND_DEPENDENTS:
+            census = working_state.get("census")
+            if census:
+                from census_builder import recalculate_row_numbers, update_candidate_dispositions
+                recalculate_row_numbers(census)
+                update_candidate_dispositions(census)
+            log.info("Executed carrier census legal name and dependent linkage repair")
 
         tx.executed = True
         self.executed_patches.append(patch)

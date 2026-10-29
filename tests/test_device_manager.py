@@ -97,20 +97,21 @@ def test_paddle_ocr_gpu_init_failure_fallback_to_cpu():
     readers._paddle_ocr_engine = None
 
     with patch("device_manager.get_device_manager", return_value=fake_dm):
-        with patch("paddle.set_device"):
-            def mock_paddle_init(*args, **kwargs):
-                if kwargs.get("use_gpu") is True:
-                    raise RuntimeError("CUDA driver version is insufficient for CUDA runtime")
-                mock_cpu_engine = MagicMock()
-                mock_cpu_engine.ocr.return_value = []
-                return mock_cpu_engine
+        with patch.dict("sys.modules", {"paddle": MagicMock(), "paddleocr": MagicMock()}):
+            with patch("paddle.set_device"):
+                def mock_paddle_init(*args, **kwargs):
+                    if kwargs.get("use_gpu") is True:
+                        raise RuntimeError("CUDA driver version is insufficient for CUDA runtime")
+                    mock_cpu_engine = MagicMock()
+                    mock_cpu_engine.ocr.return_value = []
+                    return mock_cpu_engine
 
-            with patch("paddleocr.PaddleOCR", side_effect=mock_paddle_init):
-                engine = readers._get_paddle_ocr()
-                assert engine is not None
-                assert fake_dm.fallback_occurred is True
-                assert "CUDA driver version is insufficient" in fake_dm.fallback_reason
-                assert fake_dm.active_mode == "CPU"
+                with patch("paddleocr.PaddleOCR", side_effect=mock_paddle_init):
+                    engine = readers._get_paddle_ocr()
+                    assert engine is not None
+                    assert fake_dm.fallback_occurred is True
+                    assert "CUDA driver version is insufficient" in fake_dm.fallback_reason
+                    assert fake_dm.active_mode == "CPU"
 
 
 def test_paddle_ocr_cuda_oom_page_recovery():

@@ -599,28 +599,10 @@ def generate_missing_information_email(
             )
             comparison_items.append(paragraph)
 
-        # (B) Cross-document conflicts (Billed on invoice, missing from payroll)
-        if payroll_names and census:
-            for emp in census.employees:
-                if emp.coverage in C.ACTIVE_TIERS and not emp.invoice_only:
-                    fn = emp.first.lower().split()[0] if emp.first else ""
-                    ln = emp.last.lower().strip() if emp.last else ""
-                    if (fn, ln) not in payroll_names:
-                        res = results.get(id(emp)) if results else None
-                        if res and res.inv:
-                            who = f"{emp.first} {emp.last}".strip()
-                            conflict_handled.add(who.lower())
-                            p_subj_cap = "He" if emp.gender in ("M", "Male", "Man / Male") else ("She" if emp.gender in ("F", "Female", "Woman / Female") else "They")
-                            p_poss = "his" if emp.gender in ("M", "Male", "Man / Male") else ("her" if emp.gender in ("F", "Female", "Woman / Female") else "their")
-                            plan_disp = res.inv.plan or emp.plan
-                            tier_disp = "Employee Only" if res.inv.tier in ("EE", "Employee") else res.inv.tier
-                            prem_disp = f", ${res.inv.premium:.2f}" if res.inv.premium else ""
-                            paragraph = (
-                                f"{who}: {p_subj_cap} is billed for medical on the {inv_without_num} ({plan_disp}, {tier_disp}{prem_disp}), "
-                                f"but {p_subj_cap.lower()} does not appear on the {payroll_docs_desc}. "
-                                f"Please confirm {p_poss} employment and coverage status, including any termination date, leave or COBRA status."
-                            )
-                            comparison_items.append(paragraph)
+        # (B) Cross-document conflicts:
+        # Per Sections 1.2, 12, 28, and 29 of the Controlling Underwriting Instructions,
+        # payroll and wage documents must never drive enrollment deficiencies. Active medical employees
+        # billed on invoice are not questioned merely because they do not appear on a payroll register.
 
         # (C) Waiting Period Employees (coverage == WP)
         if census:
