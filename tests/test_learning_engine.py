@@ -1555,6 +1555,203 @@ def test_payroll_register_deficiency_exclusion_in_email():
     assert not any("Payroll register" in iss for iss in clean_issues)
 
 
+def test_repair_case_25_name_mismatch_metric_and_summary_reflection():
+    """Case 25: Name mismatch metric propagation to Summary Sheet and exceptions (Section 16.6, 23.2, 23.6)."""
+    import openpyxl
+    from backend.models import Person, Census, InvoiceRecord, RowResult, Prospect
+    from backend.comparator import run_comparison, Findings
+    from backend.workbook_writer import write_summary_sheet
+    from backend.main import exception_summary
+    from backend.learning_engine.validator import UnderwritingValidator
+    from backend.learning_engine.contracts import CheckStatus
+
+    # Setup Census employee Jennifer Moon (coverage ES, POS 200)
+    emp1 = Person(record_id="e1", first="Jennifer", last="Moon", role="EE", coverage="ES",
+                  plan="POS 200 $30/$50", premium=2285.85)
+    census = Census(people=[emp1])
+
+    # Setup Invoice subscriber SCHNETTLER, JENNIFER A (tier ES, POS 200)
+    inv1 = InvoiceRecord(
+        first="JENNIFER A", last="SCHNETTLER", raw_name="SCHNETTLER, JENNIFER A",
+        tier="ES", plan="Highmark POS 200 $35/$55 Copay", premium=2285.85, status="Active"
+    )
+    invs = [inv1]
+
+    F = Findings()
+    meta = {"saw_dependent_source": False}
+    results = run_comparison(census, invs, renewal=None, have_invoice=True, meta=meta, F=F)
+
+    # 1. Verify comparison result on census row
+    rr = results[id(emp1)]
+    assert rr.result == "Review - Name Mismatch"
+    assert rr.result_red is True
+    assert rr.match_pct == 62
+
+    # 2. Verify Findings counters & exceptions
+    assert F.counters.get("name_mismatch") == 1
+    assert any(cat == "Name mismatches" for cat, who, detail in F.exceptions)
+    assert any("Name Mismatch for Review" in n for n in F.notes)
+
+    # 3. Verify exception_summary text output
+    audit = {
+        "src_employees": 1,
+        "out_employees": 1,
+        "src_dependents": 0,
+        "out_dependents": 0,
+        "missing_employees": 0,
+    }
+    exc_text = exception_summary(F, census, audit)
+    assert "- Name mismatches: 1" in exc_text
+    assert "Jennifer Moon" in exc_text
+
+    # 4. Verify Summary sheet generation
+    wb = openpyxl.Workbook()
+    prospect = Prospect(company="Test Prospect", current_carrier="Cigna")
+    write_summary_sheet(wb, census, prospect, F, audit, results=results)
+    ws = wb["Summary"]
+
+    found_name_mismatch_metric = False
+    name_mismatch_value = None
+    for r in range(1, 40):
+        metric_name = ws.cell(r, 1).value
+        if metric_name == "Number of Name Mismatches":
+            found_name_mismatch_metric = True
+            name_mismatch_value = ws.cell(r, 2).value
+            break
+
+    assert found_name_mismatch_metric, "Number of Name Mismatches metric not found in Summary sheet"
+    assert name_mismatch_value == 1, f"Expected 1 name mismatch in Summary sheet, got {name_mismatch_value}"
+
+    # Verify Findings Notes section in Summary sheet includes the note
+    found_note = False
+    for r in range(1, 50):
+        val = str(ws.cell(r, 1).value or "")
+        if "Name Mismatch for Review" in val and "Jennifer Moon" in val:
+            found_note = True
+            break
+    assert found_note, "Name Mismatch for Review note not found in Summary sheet Findings Notes"
+
+    # 5. Verify Learning Engine validator check passes
+    from backend.router import RoutingDecision
+    import census_config as C
+    routing = RoutingDecision(carrier=C.CARRIER_CIGNA, state="NY", is_florida=False)
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    report = validator.validate_full_pipeline(
+        prospect=prospect,
+        routing=routing,
+        census=census,
+        selected_invoices=invs,
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=F,
+        results=results,
+        roles={},
+    )
+    chk = next((c for c in report.checks if c.rule_id == "RULE_16_NAME_MISMATCH_ACCOUNTING"), None)
+    assert chk is not None, "RULE_16_NAME_MISMATCH_ACCOUNTING check missing"
+    assert chk.status == CheckStatus.PASS
+
+
+def test_repair_case_26_dynamic_unspaced_name_matching():
+    """Case 26: Dynamic OCR column-collapse unspaced compound name matching and false-positive prevention."""
+    from backend.models import Person, Census, InvoiceRecord, RowResult, Prospect, Findings
+    from backend.invoice_parser import _is_fragment_name
+    from backend.comparator import match_employees, run_comparison
+    from backend.learning_engine.validator import UnderwritingValidator
+    from backend.learning_engine.contracts import CheckStatus, IssueType
+    from backend.readers import RawDoc
+    from backend.router import RoutingDecision
+    import census_config as C
+    from pathlib import Path
+
+    # 1. Verify dynamic _is_fragment_name filtering:
+    # Single-token compound words without numbers and not in _ADMIN_WORDS must be retained
+    assert _is_fragment_name("KAINROSS") is False
+    assert _is_fragment_name("DOEJOHN") is False
+    assert _is_fragment_name("TAYLORALEX") is False
+
+    # Administrative words, words with digits, or words < 4 chars must be excluded as fragments
+    assert _is_fragment_name("SUBTOTAL") is True
+    assert _is_fragment_name("PREMIUM") is True
+    assert _is_fragment_name("FICA") is True
+    assert _is_fragment_name("A12") is True
+
+    # 2. Verify dynamic match_employees Pass 2c:
+    emp1 = Person(record_id="e1", first="Ross", last="Kain", role="EE", coverage="EE")
+    emp2 = Person(record_id="e2", first="Alex", last="Taylor", role="EE", coverage="EE")
+    emps = [emp1, emp2]
+
+    inv1 = InvoiceRecord(raw_name="KAINROSS", tier="EE", plan="Highmark POS 200", premium=594.84)
+    inv2 = InvoiceRecord(raw_name="TAYLORALEX", tier="EE", plan="Highmark POS 200", premium=594.84)
+    invs = [inv1, inv2]
+
+    matches = match_employees(emps, invs)
+    assert 0 in matches
+    assert matches[0] == (0, 1.0)  # Ross Kain -> KAINROSS at 1.0
+    assert 1 in matches
+    assert matches[1] == (1, 1.0)  # Alex Taylor -> TAYLORALEX at 1.0
+
+    # 3. Verify validator detects false positive when unspaced name is in invoice text but marked 'Not On Invoice'
+    census = Census(people=[emp1])
+    results_defect = {id(emp1): RowResult(result="Not On Invoice", result_red=True)}
+
+    raw_doc = RawDoc(
+        path=Path("invoice.pdf"),
+        ext=".pdf",
+        text="Highmark Blue Cross Blue Shield Invoice\nKAINROSS XXXXX56250 POS Individual 10/31/2026 $594.84 $594.84\nTotal: $594.84",
+    )
+
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    prospect = Prospect(company="Lamb Farms Inc", state="NY")
+    routing = RoutingDecision(carrier=C.CARRIER_CIGNA, state="NY", is_florida=False)
+
+    report_defect = validator.validate_full_pipeline(
+        prospect=prospect,
+        routing=routing,
+        census=census,
+        selected_invoices=[raw_doc],
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=Findings(),
+        results=results_defect,
+        roles={"census": [Path("census.xlsx")], "invoice": [raw_doc]},
+    )
+
+    r29_defect = next((c for c in report_defect.checks if c.rule_id == "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"), None)
+    assert r29_defect is not None
+    assert r29_defect.status == CheckStatus.FAIL
+    assert any(i.issue_type == IssueType.INVOICE_PRESENCE_FALSE_POSITIVE for i in report_defect.issues)
+
+    # 4. Verify run_comparison correctly resolves the match and validator passes
+    F = Findings()
+    results_resolved = run_comparison(census, [inv1], renewal=None, have_invoice=True, meta={}, F=F)
+    rr = results_resolved[id(emp1)]
+    assert rr.result == "Match"
+    assert rr.match_pct == 100
+    assert rr.inv_name == "KAINROSS"
+
+    report_resolved = validator.validate_full_pipeline(
+        prospect=prospect,
+        routing=routing,
+        census=census,
+        selected_invoices=[raw_doc],
+        renewal=None,
+        ren_required=False,
+        claims_required=False,
+        findings=F,
+        results=results_resolved,
+        roles={"census": [Path("census.xlsx")], "invoice": [raw_doc]},
+    )
+
+    r29_resolved = next((c for c in report_resolved.checks if c.rule_id == "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"), None)
+    assert r29_resolved is not None
+    assert r29_resolved.status == CheckStatus.PASS
+
+
+
+
 
 
 

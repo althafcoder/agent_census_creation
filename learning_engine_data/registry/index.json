@@ -1,5 +1,7 @@
 {
   "active_rule_ids": [
+    "learned_reconcile_invoice_presence",
+    "learned_regenerate_workbook",
     "pattern_carrier_census_legal_name_and_dependent_subscriber_linkage",
     "pattern_cross_source_dependent_collection_and_masked_override",
     "pattern_hsa_medical_plan_classification",
@@ -15,6 +17,8 @@
   "rejected_rule_ids": [],
   "retired_rule_ids": [],
   "candidate_rule_ids": [
+    "learned_reconcile_invoice_presence",
+    "learned_regenerate_workbook",
     "pattern_cross_source_dependent_collection_and_masked_override",
     "pattern_hsa_medical_plan_classification",
     "pattern_match_percentage_and_workbook_formatting",
@@ -26,7 +30,7 @@
     "pattern_preferred_name_and_middle_name_matching",
     "pattern_template_example_row_filtration"
   ],
-  "last_updated": "2026-10-29T19:17:09.843767",
+  "last_updated": "2026-10-30T17:36:41.557235",
   "validated_pattern_fingerprints": [
     "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1",
     "fp_dependent_cross_source_masked_override_v1",
@@ -38,6 +42,8 @@
     "fp_part_time_strict_exclusion_v1",
     "fp_post_sort_subscriber_row_recalc_v1",
     "fp_preferred_name_middle_name_matching_v1",
-    "fp_template_example_row_filtration_v1"
+    "fp_template_example_row_filtration_v1",
+    "learned_reconcile_invoice_presence",
+    "learned_regenerate_workbook"
   ]
 }

@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "learned_reconcile_invoice_presence",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "learned_reconcile_invoice_presence",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Automated repair pattern for RECONCILE_INVOICE_PRESENCE",
+  "applicable_conditions": [
+    "employees appearing in invoice text marked missing"
+  ],
+  "required_validators": [
+    "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
+  ],
+  "regression_results": {},
+  "created_at": "2026-10-30T11:47:16.089543",
+  "updated_at": "2026-10-30T11:47:16.102974",
+  "compatibility": {
+    "instruction_hashes": [
+      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "stage": "COMPARISON"
+  },
+  "trigger": {
+    "issue_type": "RECONCILE_INVOICE_PRESENCE",
+    "field": "",
+    "conditions": [
+      "employees appearing in invoice text marked missing"
+    ]
+  },
+  "business_rule_refs": [
+    "ISSUE_INVOICE_PRESENCE_FALSE_POSITIVE"
+  ],
+  "root_cause": {
+    "code": "RECONCILE_INVOICE_PRESENCE",
+    "verification_status": "verified",
+    "summary": "Automated repair pattern for RECONCILE_INVOICE_PRESENCE"
+  },
+  "strategy": {
+    "action": "RECONCILE_INVOICE_PRESENCE",
+    "parameters": {
+      "action": "reconcile_invoice_presence"
+    },
+    "preconditions": [
+      "employees appearing in invoice text marked missing"
+    ],
+    "exclusions": []
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-30T11:47:16.089543"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261030_114716",
+    "reason": "Verified during successful run repair (RECONCILE_INVOICE_PRESENCE)"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

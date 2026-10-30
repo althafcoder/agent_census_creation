@@ -783,6 +783,42 @@ class UnderwritingValidator:
                 reason="Employees with preferred first name or middle name aliases correctly reconciled to invoice subscribers",
             ))
 
+        # 15b. Name Mismatch Accounting Check (Section 16.6 & 23.2)
+        name_mismatch_rows = 0
+        if results:
+            for rr in results.values():
+                if getattr(rr, "result", "") == "Review - Name Mismatch":
+                    name_mismatch_rows += 1
+        name_mismatch_cnt = (findings.counters.get("name_mismatch", 0) if findings and hasattr(findings, "counters") else 0)
+        has_nm_note = any("name mismatch" in n.lower() for n in getattr(findings, "notes", [])) if findings else True
+        if name_mismatch_rows > 0 and (name_mismatch_cnt != name_mismatch_rows or not has_nm_note):
+            checks.append(CheckResult(
+                rule_id="RULE_16_NAME_MISMATCH_ACCOUNTING",
+                section="16.6",
+                name="Name Mismatch Accounting & Summary Reflection Check",
+                status=CheckStatus.FAIL,
+                reason=f"Name mismatch detected ({name_mismatch_rows} row(s)) but summary counter is {name_mismatch_cnt} or missing from findings notes",
+            ))
+            issues.append(Issue(
+                issue_id="ISSUE_NAME_MISMATCH_UNACCOUNTED",
+                rule_id="RULE_16_NAME_MISMATCH_ACCOUNTING",
+                target_ref="comparison.findings.name_mismatch",
+                issue_type=IssueType.NAME_MISMATCH_UNACCOUNTED,
+                severity=IssueSeverity.WARNING,
+                earliest_stage=EarliestStage.COMPARISON,
+                expected_state="Name mismatch rows must be counted in findings.counters['name_mismatch'] and documented in findings.notes",
+                observed_state=f"Rows: {name_mismatch_rows}, Counter: {name_mismatch_cnt}",
+                allowed_actions=[RepairAction.RECOMPUTE_FINDINGS],
+            ))
+        else:
+            checks.append(CheckResult(
+                rule_id="RULE_16_NAME_MISMATCH_ACCOUNTING",
+                section="16.6",
+                name="Name Mismatch Accounting & Summary Reflection Check",
+                status=CheckStatus.PASS,
+                reason="Name mismatches accurately reflected in summary counters and findings notes" if name_mismatch_rows > 0 else "No name mismatches requiring review (or all accurately accounted)",
+            ))
+
         # 16. Template Example Row Filtering Check (Section 8.1)
         example_names = {
             ("john", "smith"), ("cindy", "parker"), ("robert", "johnson"),
@@ -850,6 +886,8 @@ class UnderwritingValidator:
                                 f"{fn} {ln}" in full_inv_text or
                                 f"{ln} {fn}" in full_inv_text or
                                 f"{ln},  {fn}" in full_inv_text or
+                                f"{ln}{fn}" in full_inv_text or
+                                f"{fn}{ln}" in full_inv_text or
                                 (len(fn) >= 4 and f"{ln} {fn[:4]}" in full_inv_text) or
                                 (len(fn) >= 4 and f"{ln}, {fn[:4]}" in full_inv_text)
                             )

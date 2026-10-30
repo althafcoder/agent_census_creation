@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "learned_regenerate_workbook",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "learned_regenerate_workbook",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Automated repair pattern for REGENERATE_WORKBOOK",
+  "applicable_conditions": [],
+  "required_validators": [
+    "REPAIR_PASSED"
+  ],
+  "regression_results": {},
+  "created_at": "2026-10-30T11:47:16.125479",
+  "updated_at": "2026-10-30T17:36:39.514742",
+  "compatibility": {
+    "instruction_hashes": [
+      "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "stage": "WRITER"
+  },
+  "trigger": {
+    "issue_type": "REGENERATE_WORKBOOK",
+    "field": "",
+    "conditions": []
+  },
+  "business_rule_refs": [
+    "ISSUE_SUMMARY_PLAN_TABLE_INCOMPLETE"
+  ],
+  "root_cause": {
+    "code": "REGENERATE_WORKBOOK",
+    "verification_status": "verified",
+    "summary": "Automated repair pattern for REGENERATE_WORKBOOK"
+  },
+  "strategy": {
+    "action": "REGENERATE_WORKBOOK",
+    "parameters": {
+      "action": "regenerate_workbook"
+    },
+    "preconditions": [],
+    "exclusions": []
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "REPAIR_PASSED"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-30T17:36:39.507741"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261030_173639",
+    "reason": "Verified during successful run repair (REGENERATE_WORKBOOK)"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

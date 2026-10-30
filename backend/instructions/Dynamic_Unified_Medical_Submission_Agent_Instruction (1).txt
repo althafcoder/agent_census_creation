@@ -770,11 +770,12 @@ Use the comparison fields required by the approved template. The legacy comparis
 Place these only in the approved comparison area; do not insert them into SBU.
 
 16.3 Employee matching
-Normalize names before matching. Treat name-order and minor-format variations such as:
+Normalize names before matching. Treat name-order, delimiter, and formatting variations such as:
 - John Smith
 - Smith, John
 - Smith John
-as the same person when supported by other identifiers.
+- Unspaced or concatenated OCR tokens resulting from column or whitespace collapse (e.g., SmithJohn or JohnSmith)
+as the same person when supported by other identifiers or plan/tier alignment.
 
 Use Subscriber ID and other available identity fields to improve matching.
 Name order, capitalization, punctuation, or spacing alone is not a material employee mismatch.
@@ -795,6 +796,7 @@ If an employee exists on invoice but not census:
 Identify when supported:
 - Employee missing from invoice.
 - Employee missing from census.
+- Name mismatch requiring review / clarification.
 - Coverage-tier mismatch.
 - Plan mismatch.
 - Active coverage mismatch.
@@ -1021,6 +1023,7 @@ Include, when applicable:
 - Renewal Effective Date.
 - Number of Missing Census Employees.
 - Number of Missing Invoice Employees.
+- Number of Name Mismatches.
 - Number of Tier Mismatches.
 - Number of Coverage Mismatches.
 - Number of Dependents Without Subscriber Match.
@@ -1063,6 +1066,7 @@ Include and reconcile, as applicable:
 Keep exceptions in the Summary Sheet rather than creating an unauthorized separate worksheet. Include applicable:
 - Employees missing from invoice.
 - Employees missing from census.
+- Name mismatches.
 - Tier mismatches.
 - Coverage mismatches.
 - Invalid dependent structures.

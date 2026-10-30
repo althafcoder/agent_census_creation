@@ -112,6 +112,27 @@ def match_employees(emps: list[Person], invs: list[InvoiceRecord]) -> dict[int, 
                 used.add(best_j)
                 break
 
+    # pass 2c - compound / concatenated unspaced name matching (e.g. KAINROSS == Kain + Ross)
+    for i, e in enumerate(emps):
+        if i in res or not e.first or not e.last:
+            continue
+        e_first_clean = clean(e.first).lower()
+        e_last_clean = clean(e.last).lower()
+        if len(e_first_clean) < 2 or len(e_last_clean) < 2:
+            continue
+        compound_cands = {
+            f"{e_last_clean}{e_first_clean}",
+            f"{e_first_clean}{e_last_clean}",
+        }
+        for j, inv in enumerate(invs):
+            if j in used:
+                continue
+            inv_raw_clean = re.sub(r"[^a-z]", "", (inv.raw_name or "").lower())
+            if inv_raw_clean and inv_raw_clean in compound_cands:
+                res[i] = (j, 1.0)
+                used.add(j)
+                break
+
     # pass 3 - fuzzy (typos, middle names); greedy best-first
     pairs = []
     for i, e in enumerate(emps):
@@ -319,7 +340,11 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     exc("Premium discrepancies", who, f"Census {e.premium:,.2f} vs Invoice {inv.premium:,.2f}")
                 if 0.60 <= sim < 0.70:
                     rr.result = "Review - Name Mismatch"
-                    rr.notes.append((f"Name mismatch - census name differs from invoice subscriber; matched on plan/tier/coverage. Invoice Name: {inv.raw_name}", False))
+                    rr.result_red = True
+                    cnt["name_mismatch"] += 1
+                    exc("Name mismatches", who, f"Census '{e.display}' vs Invoice '{inv.raw_name}' (matched on plan/tier)")
+                    rr.notes.append((f"Name mismatch - census name differs from invoice subscriber; matched on plan/tier/coverage. Invoice Name: {inv.raw_name}", True))
+                    F.notes.append(f"Name Mismatch for Review: Census employee '{e.display}' matched to invoice subscriber '{inv.raw_name}' based on plan and tier - verify identity.")
                 else:
                     rr.result = "Match" if not issues else "Mismatch: " + "; ".join(issues)
                     rr.result_red = red_issue

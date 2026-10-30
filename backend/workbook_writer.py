@@ -292,6 +292,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
         ("Renewal Effective Date", ren_disp),
         ("Number of Missing Census Employees (on invoice, not in census)", cnt.get("missing_census", 0)),
         ("Number of Missing Invoice Employees (in census, not on invoice)", cnt.get("missing_invoice", 0)),
+        ("Number of Name Mismatches", cnt.get("name_mismatch", 0)),
         ("Number of Tier Mismatches", cnt.get("tier_mismatch", 0)),
         ("Number of Coverage Mismatches", cnt.get("coverage_mismatch", 0) + cnt.get("coverage_status_mismatch", 0)
          + cnt.get("dependent_mismatch", 0)),

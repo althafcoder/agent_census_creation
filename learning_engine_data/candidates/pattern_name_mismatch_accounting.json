@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_name_mismatch_accounting",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_name_mismatch_accounting_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "When census employee first name matches invoice subscriber with corroborating plan/tier but surname differs, comparison assigns Review - Name Mismatch. This mismatch must be propagated to findings counters, exceptions, and summary notes so the Findings Summary and exception reports faithfully reflect the census worksheet warning.",
+  "applicable_conditions": [
+    "Comparison result is Review - Name Mismatch",
+    "First name matches with matching plan/tier and coverage",
+    "Surname differs between census employee and invoice subscriber"
+  ],
+  "required_validators": [
+    "RULE_16_NAME_MISMATCH_ACCOUNTING",
+    "RULE_18_MATCH_PERCENTAGE_FORMATTING",
+    "GATE_E_RECONCILIATION"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_name_mismatch_accounting_verification"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-10-30T15:13:00.000000",
+  "updated_at": "2026-10-30T15:13:00.000000",
+  "compatibility": {
+    "instruction_hashes": [],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna",
+      "Aetna",
+      "Anthem"
+    ],
+    "header_signature": [
+      "first name",
+      "last name",
+      "subscriber name"
+    ],
+    "stage": "comparison"
+  },
+  "trigger": {
+    "issue_type": "NAME_MISMATCH_UNACCOUNTED",
+    "field": "name_mismatch",
+    "conditions": [
+      "employee comparison yields Review - Name Mismatch but summary counter or findings notes omit the discrepancy"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 16.6",
+    "Section 23.2",
+    "Section 23.6"
+  ],
+  "root_cause": {
+    "code": "NAME_MISMATCH_UNACCOUNTED",
+    "verification_status": "verified",
+    "summary": "Propagate Review - Name Mismatch to findings counters, exceptions list, and summary findings notes to guarantee 100% agreement between Census worksheet flags and the Summary Sheet."
+  },
+  "strategy": {
+    "action": "ACCOUNT_NAME_MISMATCH_IN_SUMMARY",
+    "parameters": {
+      "increment_counter": true,
+      "record_exception": true,
+      "add_findings_note": true
+    },
+    "preconditions": [
+      "comparison row receives Review - Name Mismatch"
+    ],
+    "exclusions": [
+      "do not count clean 100% or alias 95% matches as name mismatches"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_name_mismatch"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_16_NAME_MISMATCH_ACCOUNTING"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-10-30T15:13:00.000000"
+  },
+  "promotion": {
+    "mode": "auto",
+    "review_status": "APPROVED",
+    "promoted_by": "learning_engine_reconciliation_pipeline",
+    "promoted_at": "2026-10-30T15:13:00.000000"
+  },
+  "usage": {
+    "attempted": 1,
+    "successful": 1,
+    "rolled_back": 0
+  }
+}
+

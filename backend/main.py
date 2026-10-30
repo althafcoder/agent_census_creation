@@ -730,7 +730,8 @@ def exception_summary(F: Findings, census, audit: dict) -> str:
         "EXCEPTION SUMMARY",
         f"- Census: {audit['out_employees']} employees / {audit['out_dependents']} dependents",
         f"- Missing from invoice: {c.get('missing_invoice', 0)} | Missing from census: {c.get('missing_census', 0)}",
-        f"- Tier mismatches: {c.get('tier_mismatch', 0)} | Coverage/structure mismatches: "
+        f"- Name mismatches: {c.get('name_mismatch', 0)} | Tier mismatches: {c.get('tier_mismatch', 0)}",
+        f"- Coverage/structure mismatches: "
         f"{c.get('coverage_mismatch', 0) + c.get('coverage_status_mismatch', 0) + c.get('dependent_mismatch', 0)}",
         f"- Premium discrepancies: {c.get('premium_discrepancy', 0)} | Eligibility conflicts: "
         f"{c.get('eligibility_conflict', 0)}",

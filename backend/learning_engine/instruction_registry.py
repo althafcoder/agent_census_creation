@@ -357,6 +357,15 @@ def build_instruction_registry(instruction_hash: str) -> dict[str, RuleSpec]:
             RepairAction.RESOLVE_CARRIER_CENSUS_LEGAL_NAME_AND_DEPENDENTS,
         ],
     ))
+    _reg(RuleSpec(
+        rule_id="RULE_16_NAME_MISMATCH_ACCOUNTING",
+        section="16.6",
+        name="Name Mismatch Comparison & Summary Accounting",
+        obligation="When name mismatch occurs between census and invoice subscriber, account for it in summary metrics, exceptions, and findings notes.",
+        precedence=3,
+        severity=IssueSeverity.WARNING,
+        allowed_remediations=[RepairAction.RECOMPUTE_FINDINGS],
+    ))
 
     # Section 17: Coverage Tier & Dependent Validation
     _reg(RuleSpec(

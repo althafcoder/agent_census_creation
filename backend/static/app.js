@@ -305,9 +305,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     progressBar.style.width = "10%";
     const steps = [
-      { id: "step-1", pct: "25%", text: "Reading & Classifying Documents (PDF, Excel, OCR)" },
+      { id: "step-1", pct: "25%", text: "Reading & Classifying Documents" },
       { id: "step-2", pct: "45%", text: "Consolidating Census & Matching Dependents" },
-      { id: "step-3", pct: "65%", text: "Extracting Invoice Subscribers (Claude Anthropic)" },
+      { id: "step-3", pct: "65%", text: "Extracting Invoice Subscribers" },
       { id: "step-4", pct: "85%", text: "Applying Underwriting Rules & Rate Tables" },
       { id: "step-5", pct: "95%", text: "Generating Master Excel Workbook & Exceptions" },
     ];
@@ -429,7 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const tr = document.createElement("tr");
           const isOcr = d.scanned || (d.extraction_method && d.extraction_method.includes("PaddleOCR"));
           const modeTag = isOcr 
-            ? `<span style="color: var(--amber); font-weight: 600;">⚡ PaddleOCR (Scanned)</span>` 
+            ? `<span style="color: var(--amber); font-weight: 600;">⚡ Scanned Document</span>` 
             : `<span style="color: var(--emerald); font-weight: 500;">📄 ${d.extraction_method || 'Digital Extraction'}</span>`;
           
           const charStr = (d.char_count || 0).toLocaleString();
@@ -537,7 +537,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!textModal) return;
     modalDocTitle.textContent = doc.name;
     const isOcr = doc.scanned || (doc.extraction_method && doc.extraction_method.includes("PaddleOCR"));
-    modalDocSub.textContent = isOcr ? "Extracted via PaddleOCR (Scanned Document)" : `Extracted via ${doc.extraction_method || 'Digital Parser'}`;
+    modalDocSub.textContent = isOcr ? "Extracted via OCR (Scanned Document)" : `Extracted via ${doc.extraction_method || 'Digital Parser'}`;
     modalStats.textContent = `${(doc.char_count || 0).toLocaleString()} characters extracted${doc.table_count ? ` | ${doc.table_count} tables` : ''}`;
     modalPreContent.textContent = "Loading extracted text from disk...";
     
@@ -594,40 +594,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 3500);
   }
 
-  // --------------------------------------------------------------------------
-  // Dynamic Active Model Status, Instruction Badge & Compute Device
-  // --------------------------------------------------------------------------
-  fetch("/api/health")
-    .then(res => res.json())
-    .then(data => {
-      const modelBadge = document.getElementById("model-badge");
-      if (modelBadge && data.model) {
-        modelBadge.innerHTML = `<span class="pulse-dot"></span> Model: Claude (${data.model})`;
-      }
-      const instBadge = document.getElementById("instruction-badge");
-      if (instBadge && data.instructions_doc) {
-        instBadge.title = data.instructions_doc;
-        let displayName = data.instructions_doc;
-        displayName = displayName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").trim();
-        if (displayName.length > 32) {
-          displayName = displayName.substring(0, 30) + "...";
-        }
-        instBadge.innerHTML = `<span class="pulse-dot purple"></span> Instruction: ${displayName}`;
-      }
-      const ocrBadge = document.getElementById("ocr-badge");
-      if (ocrBadge && data.device) {
-        const dev = data.device;
-        if (dev.mode === "GPU") {
-          ocrBadge.className = "badge badge-emerald";
-          ocrBadge.title = `Hardware Accelerated: ${dev.name || "CUDA GPU"} (${dev.engine})`;
-          ocrBadge.innerHTML = `<span class="pulse-dot"></span> ⚡ GPU: PaddleOCR`;
-        } else {
-          ocrBadge.className = "badge badge-cyan";
-          const fallbackNote = dev.fallback ? " (Fallback active)" : "";
-          ocrBadge.title = `Running on CPU${fallbackNote}: ${dev.name || "Standard Compute"} (${dev.engine})`;
-          ocrBadge.innerHTML = `<span class="pulse-dot cyan"></span> 💻 CPU: PaddleOCR`;
-        }
-      }
-    })
-    .catch(() => {});
 });

@@ -22,10 +22,10 @@
     "status": "PASS"
   },
   "created_at": "2026-10-29T13:24:05.543465",
-  "updated_at": "2026-10-29T19:17:09.821246",
+  "updated_at": "2026-10-30T17:36:41.535390",
   "compatibility": {
     "instruction_hashes": [
-      "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+      "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
     ],
     "template_hashes": [],
     "parser_versions": [
@@ -95,11 +95,11 @@
       "RULE_09_PART_TIME_EXCLUSION"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-10-29T19:17:09.414895"
+    "last_verified_at": "2026-10-30T17:36:41.257042"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261029_191709",
+    "decision_ref": "verified_20261030_173641",
     "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
   },
   "usage": {

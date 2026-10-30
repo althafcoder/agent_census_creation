@@ -59,6 +59,20 @@ def _is_fragment_name(raw: str) -> bool:
             return True
         return False
 
+    # Single-token compound / concatenated subscriber name (e.g. 'KAINROSS' from OCR column-collapse)
+    if len(tokens) == 1:
+        tok = tokens[0]
+        _ADMIN_WORDS = {
+            "total", "subtotal", "balance", "amount", "charge", "charges", "adjustment",
+            "adjustments", "premium", "premiums", "summary", "description", "department",
+            "employee", "employees", "employer", "employers", "subscriber", "subscribers",
+            "dependent", "dependents", "invoice", "statement", "payroll", "gross", "futa",
+            "sui", "fica", "medicare", "coverage", "benefit", "benefits", "service", "admin"
+        }
+        if not re.search(r"\d", tok) and tok.lower() not in _ADMIN_WORDS and len(tok) >= 4:
+            if re.match(r"^[A-Za-z'\-]+$", tok):
+                return False
+
     return True
 
 
