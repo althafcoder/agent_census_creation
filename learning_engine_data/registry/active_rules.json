@@ -920,7 +920,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.085650",
-    "updated_at": "2026-11-02T16:06:03.208650",
+    "updated_at": "2026-11-02T18:44:04.053481",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1014,11 +1014,11 @@
         "RULE_10_GENDER_RESOLUTION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.041482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1054,7 +1054,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.105085",
-    "updated_at": "2026-11-02T16:06:03.253366",
+    "updated_at": "2026-11-02T18:44:04.085389",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1131,11 +1131,11 @@
         "RULE_09_DEPENDENT_DISPOSITION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1178,7 +1178,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.124349",
-    "updated_at": "2026-11-02T16:06:03.286414",
+    "updated_at": "2026-11-02T18:44:04.118041",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1270,11 +1270,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1309,7 +1309,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.143900",
-    "updated_at": "2026-11-02T16:06:03.327930",
+    "updated_at": "2026-11-02T18:44:04.153564",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1382,11 +1382,11 @@
         "RULE_09_SUBSCRIBER_ROW_LINKS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1421,7 +1421,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:09:37.757118",
-    "updated_at": "2026-11-02T16:06:03.360318",
+    "updated_at": "2026-11-02T18:44:04.183564",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1495,11 +1495,11 @@
         "RULE_18_MATCH_PERCENTAGE_FORMATTING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1534,7 +1534,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:57:21.012296",
-    "updated_at": "2026-11-02T16:06:03.405237",
+    "updated_at": "2026-11-02T18:44:04.215570",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1609,11 +1609,11 @@
         "RULE_16_PREFERRED_NAME_MATCHING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1647,7 +1647,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.666013",
-    "updated_at": "2026-11-02T16:06:03.440727",
+    "updated_at": "2026-11-02T18:44:04.245116",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1721,11 +1721,11 @@
         "RULE_08_EXAMPLE_ROWS_FILTERED"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1759,7 +1759,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.687639",
-    "updated_at": "2026-11-02T16:06:03.473714",
+    "updated_at": "2026-11-02T18:44:04.274107",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1835,11 +1835,11 @@
         "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1873,7 +1873,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.525959",
-    "updated_at": "2026-11-02T16:06:03.509094",
+    "updated_at": "2026-11-02T18:44:04.305107",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -1945,11 +1945,11 @@
         "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1982,7 +1982,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.543465",
-    "updated_at": "2026-11-02T16:06:03.550807",
+    "updated_at": "2026-11-02T18:44:04.334305",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -2055,11 +2055,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2092,7 +2092,7 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T12:00:30.051455",
-    "updated_at": "2026-11-02T16:06:03.588227",
+    "updated_at": "2026-11-02T18:44:04.368305",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -2163,11 +2163,11 @@
         "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2200,7 +2200,7 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T12:00:30.099949",
-    "updated_at": "2026-11-02T16:06:03.626370",
+    "updated_at": "2026-11-02T18:44:04.399441",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -2269,11 +2269,11 @@
         "RULE_06_CENSUS_CONSERVATION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2307,7 +2307,7 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T13:10:56.063185",
-    "updated_at": "2026-11-02T16:06:03.667675",
+    "updated_at": "2026-11-02T18:44:04.428093",
     "compatibility": {
       "instruction_hashes": [
         "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -2381,12 +2381,237 @@
         "RULE_21_ELIGIBILITY_AND_DOB_CONFLICT"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-02T16:06:03.201023"
+      "last_verified_at": "2026-11-02T18:44:04.042482"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261102_160603",
+      "decision_ref": "verified_20261102_184404",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_waived_employee_and_dependent_coverage_reconciliation",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_waived_employee_and_dependent_coverage_reconciliation_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Under Section 2.3, 9.2, and 21.1, employees who have waived coverage or have explicit waiver reasons must be strictly coded as WO with plan NA and cobra N, must NEVER have active tiers derived from dependents, and must NEVER have Most Used Plan applied or be flagged as Not On Invoice. Linked dependents of waived employees, and dependents with their own waiver evidence, must be excluded from active medical census (EXCLUDE_NON_MEDICAL_ONLY).",
+    "applicable_conditions": [
+      "Employee or dependent has explicit waiver reason or waived status on census",
+      "Coverage tier unassigned or defaulting to active tiers (EF/FAM/EE/ES/EC) from linked dependents",
+      "Waived employee incorrectly flagged as Not On Invoice with Most Used Plan applied"
+    ],
+    "required_validators": [
+      "RULE_21_STATUS_HANDLING",
+      "RULE_09_DEPENDENT_DISPOSITION",
+      "RULE_20_MOST_USED_PLAN"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_waived_employee_baldwin"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-11-02T19:36:37.561623",
+    "updated_at": "2026-11-02T19:36:37.561623",
+    "compatibility": {
+      "instruction_hashes": [
+        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.2.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna",
+        "Health Net",
+        "Anthem",
+        "UHC"
+      ],
+      "header_signature": [
+        "coverage details",
+        "waive reason",
+        "medical coverage"
+      ],
+      "stage": "normalization"
+    },
+    "trigger": {
+      "issue_type": "WAIVED_COVERAGE_OR_DEPENDENT_DEFECT",
+      "field": "census.employees.coverage",
+      "conditions": [
+        "waived employee or dependent assigned active coverage tier or included in active medical census"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 2.3",
+      "Section 9.2",
+      "Section 21.1"
+    ],
+    "root_cause": {
+      "code": "WAIVED_COVERAGE_OR_DEPENDENT_DEFECT",
+      "verification_status": "verified",
+      "summary": "Enforce authoritative WO coverage for waived employees, exclude waived dependents as non-medical, and ensure waived employees are Expected - Not Enrolled without Most Used Plan."
+    },
+    "strategy": {
+      "action": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
+      "parameters": {
+        "enforce_wo_status": true,
+        "exclude_waived_dependents": true,
+        "clear_mup_and_missing_invoice": true
+      },
+      "preconditions": [
+        "employee or dependent has waiver evidence"
+      ],
+      "exclusions": []
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_waived_employee_baldwin"
+      ],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_21_STATUS_HANDLING",
+        "RULE_09_DEPENDENT_DISPOSITION"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-11-02T19:36:37.561623"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261102_193637",
+      "reason": "Validated against Section 2.3, 9.2, and 21.1 invariants"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "pattern_census_total_rate_premium_reconciliation",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "fp_census_total_rate_premium_reconciliation_v1",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Under Section 22.1 & 22.2, when a source census document specifies a Total Rate or combination of Employee Contribution and Employer Contribution that matches the billed invoice premium, the census premium must be recognized at full total rate rather than employer contribution only, and false-positive Premium Discrepancy flags must not be recorded.",
+    "applicable_conditions": [
+      "Source census specifies Total Rate column or Employee Contribution + Employer Contribution",
+      "Census total rate matches invoice premium but false Premium Discrepancy was reported",
+      "Premium alias mapping omitted Total Rate or Employee Contribution"
+    ],
+    "required_validators": [
+      "RULE_22_PREMIUM_RECONCILIATION"
+    ],
+    "regression_results": {
+      "cases_verified": [
+        "case_total_rate_banks"
+      ],
+      "status": "PASS"
+    },
+    "created_at": "2026-11-02T19:36:37.561623",
+    "updated_at": "2026-11-02T19:36:37.561623",
+    "compatibility": {
+      "instruction_hashes": [
+        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.2.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna",
+        "Health Net",
+        "Anthem",
+        "UHC"
+      ],
+      "header_signature": [
+        "total rate",
+        "employee contribution",
+        "employer contribution"
+      ],
+      "stage": "comparison"
+    },
+    "trigger": {
+      "issue_type": "PREMIUM_RECONCILIATION_DEFECT",
+      "field": "comparison.results.premium",
+      "conditions": [
+        "false premium discrepancy where census total rate matches invoice premium"
+      ]
+    },
+    "business_rule_refs": [
+      "Section 22.1",
+      "Section 22.2"
+    ],
+    "root_cause": {
+      "code": "PREMIUM_RECONCILIATION_DEFECT",
+      "verification_status": "verified",
+      "summary": "Recognize Total Rate as primary census premium and reconcile with invoice premium to eliminate false discrepancy exceptions."
+    },
+    "strategy": {
+      "action": "RECONCILE_PREMIUM_RATE_DISCREPANCY",
+      "parameters": {
+        "recognize_total_rate": true,
+        "clear_false_premium_discrepancies": true
+      },
+      "preconditions": [
+        "census row contains rate matching invoice premium"
+      ],
+      "exclusions": []
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [
+        "reg_case_total_rate_banks"
+      ],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_22_PREMIUM_RECONCILIATION"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-11-02T19:36:37.561623"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261102_193637",
+      "reason": "Validated against Section 22 premium reconciliation invariants"
     },
     "usage": {
       "attempted": 0,

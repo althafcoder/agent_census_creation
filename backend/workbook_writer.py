@@ -103,7 +103,7 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
     row = C.FIRST_DATA_ROW
     had_gap = False
     for p in census.people:
-        if p.is_duplicate or getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL"):
+        if p.is_duplicate or getattr(p, "disposition", "").startswith("EXCLUDE_"):
             continue
         if p.invoice_only and not had_gap:
             row += 1  # Leave an empty row before invoice-only employees
@@ -264,7 +264,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     eff = prospect.effective_date.strftime("%m/%d/%Y") if hasattr(prospect.effective_date, "strftime") else str(prospect.effective_date or "")
     eff_dt = prospect.effective_date
     census_emps = [p for p in census.employees if not p.invoice_only and not p.is_duplicate and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"]
-    med_deps = [d for d in census.dependents if not d.is_duplicate and getattr(d, "disposition", "") not in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")]
+    med_deps = [d for d in census.dependents if not d.is_duplicate and not getattr(d, "disposition", "").startswith("EXCLUDE_")]
     enrolled_count = sum(1 for p in census_emps if p.coverage in C.ACTIVE_TIERS)
     wp_count = sum(1 for p in census_emps if p.coverage == "WP")
     wo_count = sum(1 for p in census_emps if p.coverage == "WO")
@@ -559,7 +559,7 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
     row = C.MARSH_FIRST_DATA_ROW
 
     for p in census.people:
-        if p.is_duplicate or getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL"):
+        if p.is_duplicate or getattr(p, "disposition", "").startswith("EXCLUDE_"):
             continue
         r = row
         row += 1
@@ -668,7 +668,7 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
     row = C.SBU_FIRST_DATA_ROW
 
     for p in census.people:
-        if p.is_duplicate or getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL"):
+        if p.is_duplicate or getattr(p, "disposition", "").startswith("EXCLUDE_"):
             continue
         r = row
         row += 1

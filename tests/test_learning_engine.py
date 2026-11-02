@@ -2213,6 +2213,125 @@ def test_reconcile_abbreviated_first_name_invoice_subscriber():
     assert getattr(report_repaired, "accuracy", 0.0) >= 0.90
 
 
+def test_waived_employee_coverage_and_dependents_reconciliation():
+    """Verify that employees with waiver evidence retain WO coverage rather than family tiers from dependents,
+    that waived dependents are excluded from active medical count, and that waived employees are Expected - Not Enrolled."""
+    from models import InvoiceRecord
+    from comparator import run_comparison
+    snapshot = resolve_instruction_snapshot()
+    validator = UnderwritingValidator(instruction_hash=snapshot.content_hash)
+
+    # 1. Setup census table with waived employee having spouse and child dependents (all waived)
+    headers = ["First Name", "Last Name", "Relationship", "Sex", "Birth Date", "Zip", "Coverage Details", "Waive Reason", "Total Rate"]
+    rows = [
+        headers,
+        ["Gabriel", "Baldwin", "Employee", "Male", "1977-02-04", "92010", "Waived", "Spouse's group plan", ""],
+        ["Jocelyn", "Baldwin", "Spouse", "Female", "1980-03-28", "92010", "Waived", "Spouse's group plan", ""],
+        ["Julius", "Baldwin", "Child", "Male", "2012-04-25", "92010", "Waived", "Spouse's group plan", ""],
+        ["Miles", "Baldwin", "Child", "Male", "2014-01-31", "92010", "Waived", "Spouse's group plan", ""],
+    ]
+    df = pd.DataFrame(rows)
+    raw_doc = RawDoc(path=Path("sample_census.xlsx"), ext=".xlsx", text="")
+    raw_doc.tables = [RawTable(name="Roster", df=df)]
+
+    census, meta = build_census([raw_doc])
+    refine_non_enrolled_statuses(census)
+
+    # Verify normalization & eligibility
+    emp = census.employees[0]
+    assert emp.first == "Gabriel" and emp.last == "Baldwin"
+    assert emp.coverage == "WO"
+    assert emp.plan == "NA"
+    assert emp.eligibility_status == "WAIVED"
+    assert len(emp.dependents) == 0
+    assert len(census.dependents) == 0
+    assert len(census.people) == 1  # Only the employee in people, waived deps excluded
+    assert len(census.excluded_dependents) == 3
+
+    # 2. Run comparison against an invoice containing other employees
+    invoices = [
+        InvoiceRecord(first="Theresa", last="Banks", raw_name="BANKS, THERESA", plan="Plan Gold", tier="EE", premium=1000.0, status="Active")
+    ]
+    prospect = Prospect(company="Law Firm APC", state="CA")
+    routing = RoutingDecision(carrier=C.CARRIER_CIGNA, state="CA", is_florida=False)
+    findings = Findings()
+    results = run_comparison(census, invoices, None, {"company": "Law Firm APC"}, findings, True)
+
+    r_emp = results.get(id(emp))
+    assert r_emp is not None
+    assert r_emp.result == "Expected - Not Enrolled"
+    assert not r_emp.result_red
+    assert r_emp.plan is None
+    assert not any("Not Found On Invoice" in str(n) for n in r_emp.notes)
+
+    # 3. Validate with Learning Engine
+    report = validator.validate_full_pipeline(
+        prospect=prospect, routing=routing, census=census, selected_invoices=[],
+        renewal=None, ren_required=False, claims_required=False,
+        findings=findings, results=results,
+        roles={"census": [Path("sample_census.xlsx")], "invoice": []}
+    )
+    r21 = next((c for c in report.checks if c.rule_id == "RULE_21_STATUS_HANDLING"), None)
+    assert r21 is not None
+    assert r21.status == CheckStatus.PASS
+    assert getattr(report, "accuracy", 0.0) >= 0.90
+
+
+def test_census_total_rate_premium_reconciliation():
+    """Verify that census Total Rate is recognized as full premium rather than employer contribution only,
+    preventing false Premium Discrepancy exceptions when total rate matches billed invoice premium."""
+    from models import InvoiceRecord
+    from comparator import run_comparison
+    snapshot = resolve_instruction_snapshot()
+    validator = UnderwritingValidator(instruction_hash=snapshot.content_hash)
+
+    # Setup active census row with Total Rate, Employee Contribution, and Employer Contribution
+    headers = ["First Name", "Last Name", "Relationship", "Sex", "Birth Date", "Zip", "Plan Admin Name", "Coverage Details", "Total Rate", "Employee Contribution", "Employer Contribution"]
+    rows = [
+        headers,
+        ["Theresa", "Banks", "Employee", "Female", "1963-05-29", "92019", "2026 Health Net Gold", "Employee", "1351.48", "303.26", "1048.22"],
+    ]
+    df = pd.DataFrame(rows)
+    raw_doc = RawDoc(path=Path("sample_census.xlsx"), ext=".xlsx", text="")
+    raw_doc.tables = [RawTable(name="Roster", df=df)]
+
+    census, meta = build_census([raw_doc])
+    refine_non_enrolled_statuses(census)
+
+    emp = census.employees[0]
+    assert emp.premium == 1351.48  # Total rate recognized, not er_cost (1048.22)
+    assert emp.plan == "2026 Health Net Gold"
+    assert emp.coverage == "EE"
+
+    # Compare against invoice with matching premium
+    invoices = [
+        InvoiceRecord(first="Theresa", last="Banks", raw_name="BANKS, THERESA", plan="2026 Health Net Gold", tier="EE", premium=1351.48, status="Active")
+    ]
+    prospect = Prospect(company="Law Firm APC", state="CA")
+    routing = RoutingDecision(carrier=C.CARRIER_CIGNA, state="CA", is_florida=False)
+    findings = Findings()
+    results = run_comparison(census, invoices, None, {"company": "Law Firm APC"}, findings, True)
+
+    r_emp = results.get(id(emp))
+    assert r_emp is not None
+    assert r_emp.result == "Match"
+    assert not any("Premium Discrepancy" in str(n) for n in r_emp.notes)
+    assert not any(e[0] == "Premium discrepancies" for e in findings.exceptions)
+
+    # Validate with Learning Engine
+    report = validator.validate_full_pipeline(
+        prospect=prospect, routing=routing, census=census, selected_invoices=[],
+        renewal=None, ren_required=False, claims_required=False,
+        findings=findings, results=results,
+        roles={"census": [Path("sample_census.xlsx")], "invoice": []}
+    )
+    r22 = next((c for c in report.checks if c.rule_id == "RULE_22_PREMIUM_RECONCILIATION"), None)
+    assert r22 is not None
+    assert r22.status == CheckStatus.PASS
+    assert getattr(report, "accuracy", 0.0) >= 0.90
+
+
+
 
 
 

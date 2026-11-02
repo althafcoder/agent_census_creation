@@ -410,6 +410,34 @@ class RepairEngine:
                 verification_checks=["RULE_16_ABBREVIATED_NAME_MATCHING"],
             )
 
+        if action == RepairAction.RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS:
+            return RepairPatch(
+                patch_id=patch_id,
+                issue_ids=[issue.issue_id],
+                action=action,
+                scope_predicates={"stage": "normalization", "target": "waived_employees_and_dependents"},
+                preconditions=["employee or dependent has waiver evidence but was assigned active coverage, active dependents, or Not On Invoice"],
+                expected_old_state="active coverage / active dependents / Not On Invoice",
+                proposed_new_state="coverage=WO, plan=NA, dependents excluded as non-medical, result=Expected - Not Enrolled",
+                parameters={"action": "reconcile_waived_coverage_and_dependents"},
+                affected_stages=[EarliestStage.NORMALIZATION, EarliestStage.ELIGIBILITY, EarliestStage.COMPARISON, EarliestStage.WRITER],
+                verification_checks=["RULE_21_STATUS_HANDLING", "RULE_09_DEPENDENT_DISPOSITION"],
+            )
+
+        if action == RepairAction.RECONCILE_PREMIUM_RATE_DISCREPANCY:
+            return RepairPatch(
+                patch_id=patch_id,
+                issue_ids=[issue.issue_id],
+                action=action,
+                scope_predicates={"stage": "comparison", "target": "premium_rate_discrepancy"},
+                preconditions=["census row has total rate or contribution matching invoice premium but false discrepancy was reported"],
+                expected_old_state="Premium Discrepancy note and exception reported",
+                proposed_new_state="emp.premium aligned with total rate, false discrepancy note and exception cleared",
+                parameters={"action": "reconcile_premium_rate_discrepancy"},
+                affected_stages=[EarliestStage.COMPARISON, EarliestStage.WRITER],
+                verification_checks=["RULE_22_PREMIUM_RECONCILIATION"],
+            )
+
         return None
 
     def execute_patch(
@@ -881,6 +909,14 @@ class RepairEngine:
             self._reconcile_abbreviated_name_subscribers_in_state(working_state)
             log.info("Reconciled abbreviated name subscribers against invoice")
 
+        elif patch.action == RepairAction.RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS:
+            self._reconcile_waived_coverage_and_dependents_in_state(working_state)
+            log.info("Reconciled waived coverage and excluded dependents")
+
+        elif patch.action == RepairAction.RECONCILE_PREMIUM_RATE_DISCREPANCY:
+            self._reconcile_premium_rate_discrepancies_in_state(working_state)
+            log.info("Reconciled premium rate discrepancies from census total rate")
+
         tx.executed = True
         self.executed_patches.append(patch)
         return tx
@@ -1258,3 +1294,141 @@ class RepairEngine:
                     findings.invoice_employee_count = getattr(findings, "invoice_employee_count", 0) + 1
                     if matched_rec.premium and matched_rec.premium > 0:
                         findings.plan_rates[(res.plan_enrolled or emp.plan, emp.coverage)] = matched_rec.premium
+
+    def _reconcile_waived_coverage_and_dependents_in_state(self, working_state: dict[str, Any]) -> None:
+        """Dynamically reconcile any waived employees or dependents."""
+        census = working_state.get("census")
+        results = working_state.get("results", {})
+        findings = working_state.get("findings")
+        if not census:
+            return
+
+        from utils import clean
+        from census_builder import recalculate_row_numbers, update_candidate_dispositions
+
+        for emp in getattr(census, "employees", []):
+            notes_str = " ".join(str(n) for n in (emp.notes or [])).lower() if isinstance(emp.notes, list) else str(emp.notes or "").lower()
+            cov_raw_str = clean(getattr(emp, "cov_raw", "")).lower()
+            w_reason = getattr(emp, "waive_reason", "")
+            is_waived = bool(
+                w_reason or
+                (emp.coverage and emp.coverage.upper() == "WO") or
+                any(k in cov_raw_str for k in ("waived", "wo", "waiver", "opt out", "opted out")) or
+                "waived" in notes_str
+            )
+            if not is_waived:
+                continue
+
+            emp.coverage = "WO"
+            emp.plan = "NA"
+            emp.cobra = "N"
+            emp.eligibility_status = "WAIVED"
+            emp.disposition = "RETAIN_MEDICAL_STATUS"
+
+            # Exclude all linked dependents
+            if hasattr(emp, "dependents") and emp.dependents:
+                for dep in list(emp.dependents):
+                    dep.disposition = "EXCLUDE_NON_MEDICAL_ONLY"
+                    dep.eligibility_status = "EXCLUDED_NON_MEDICAL"
+                    if dep not in getattr(census, "excluded_dependents", []):
+                        census.excluded_dependents.append(dep)
+                emp.dependents.clear()
+
+            # Fix comparison results
+            res = results.get(id(emp))
+            if res:
+                res.status = "Not on invoice"
+                res.result = "Expected - Not Enrolled"
+                res.result_red = False
+                res.plan = None
+                res.tier = None
+                res.inv_premium = None
+                res.match_pct = None
+                res.inv_name = None
+                if isinstance(res.notes, list):
+                    res.notes = [n for n in res.notes if "not found on invoice" not in str(n).lower() and "most used" not in str(n).lower()]
+
+            # Remove from findings exceptions
+            if findings and hasattr(findings, "exceptions"):
+                if isinstance(findings.exceptions, dict):
+                    for cat in ("Employees missing from invoice", "Tier mismatches"):
+                        if cat in findings.exceptions:
+                            findings.exceptions[cat] = [e for e in findings.exceptions[cat] if e[0] != emp.display]
+                    if "missing_invoice" in findings.counters:
+                        findings.counters["missing_invoice"] = len(findings.exceptions.get("Employees missing from invoice", []))
+                elif isinstance(findings.exceptions, list):
+                    findings.exceptions = [
+                        e for e in findings.exceptions
+                        if not (e[0] in ("Missing from invoice", "Employees missing from invoice") and emp.display.lower() in str(e[1]).lower())
+                    ]
+
+        # Check all dependents
+        for dep in getattr(census, "dependents", []):
+            d_cov = clean(getattr(dep, "cov_raw", "")).lower()
+            d_waived = bool(
+                getattr(dep, "waive_reason", "") or
+                (getattr(dep, "coverage", "") and dep.coverage.upper() in ("WO", "RC", "NE", "WP")) or
+                any(k in d_cov for k in ("waived", "wo", "waiver", "opt out", "opted out")) or
+                (getattr(dep, "employee", None) and getattr(dep.employee, "coverage", "") in ("WO", "RC", "NE", "WP"))
+            )
+            if d_waived:
+                dep.disposition = "EXCLUDE_NON_MEDICAL_ONLY"
+                dep.eligibility_status = "EXCLUDED_NON_MEDICAL"
+                if dep not in getattr(census, "excluded_dependents", []):
+                    census.excluded_dependents.append(dep)
+
+        # Refresh census.people to exclude non-medical
+        census.people = [
+            p for p in census.people
+            if not getattr(p, "disposition", "").startswith("EXCLUDE_")
+        ]
+        recalculate_row_numbers(census)
+        update_candidate_dispositions(census)
+
+    def _reconcile_premium_rate_discrepancies_in_state(self, working_state: dict[str, Any]) -> None:
+        """Dynamically reconcile census total rates against invoice premiums to clear false discrepancy flags."""
+        census = working_state.get("census")
+        results = working_state.get("results", {})
+        findings = working_state.get("findings")
+        if not census:
+            return
+
+        from utils import to_money
+
+        for emp in getattr(census, "employees", []):
+            res = results.get(id(emp))
+            if not res or not getattr(res, "notes", []):
+                continue
+            r_notes = [str(n[0]) if isinstance(n, tuple) else str(n) for n in res.notes]
+            if not any("Premium Discrepancy" in n for n in r_notes):
+                continue
+
+            inv_p = getattr(res, "inv_premium", None)
+            if inv_p is None:
+                continue
+
+            raw_dict = getattr(emp, "raw_data", {}).get("row", {})
+            matched_rate = False
+            if isinstance(raw_dict, dict):
+                for k, v in raw_dict.items():
+                    val = to_money(v)
+                    if val is not None and abs(val - inv_p) < 0.01:
+                        matched_rate = True
+                        break
+
+            if matched_rate:
+                emp.premium = inv_p
+                # Remove premium discrepancy note
+                if isinstance(res.notes, list):
+                    res.notes = [n for n in res.notes if "premium discrepancy" not in (str(n[0]) if isinstance(n, tuple) else str(n)).lower()]
+                if findings and hasattr(findings, "exceptions"):
+                    if isinstance(findings.exceptions, dict):
+                        if "Premium discrepancies" in findings.exceptions:
+                            findings.exceptions["Premium discrepancies"] = [e for e in findings.exceptions["Premium discrepancies"] if e[0] != emp.display]
+                        if "premium_discrepancy" in findings.counters:
+                            findings.counters["premium_discrepancy"] = len(findings.exceptions.get("Premium discrepancies", []))
+                    elif isinstance(findings.exceptions, list):
+                        findings.exceptions = [
+                            e for e in findings.exceptions
+                            if not (e[0] == "Premium discrepancies" and emp.display.lower() in str(e[1]).lower())
+                        ]

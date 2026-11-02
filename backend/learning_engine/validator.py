@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import census_config as C
+from utils import clean, to_money
 from .contracts import (
     CheckResult,
     CheckStatus,
@@ -300,6 +301,9 @@ class UnderwritingValidator:
 
             # 3. Status Handling: Waived must be WO not WP; Most Used Plan restrictions
             invalid_wp_wo = []
+            invalid_waived_active = []
+            invalid_waived_deps = []
+            false_premium_discrepancies = []
             mup_violations = []
             part_time_violations = []
             gender_unresolved_issues = []
@@ -309,10 +313,33 @@ class UnderwritingValidator:
                 if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False):
                     continue
                 cov = (emp.coverage or "").strip().upper()
-                # Check for Waived incorrectly mapped as WP
                 notes_str = " ".join(str(n) for n in (emp.notes or [])).lower()
-                if "waived" in notes_str and cov == "WP":
+                cov_raw_str = clean(getattr(emp, "cov_raw", "")).lower()
+                has_waiver_ev = bool(
+                    getattr(emp, "waive_reason", "") or
+                    any(k in cov_raw_str for k in ("waived", "wo", "waiver", "opt out", "opted out")) or
+                    "waived" in notes_str
+                )
+                res = results.get(id(emp))
+
+                # Check for Waived incorrectly mapped as WP or active tiers
+                if has_waiver_ev and cov == "WP":
                     invalid_wp_wo.append(f"{emp.first} {emp.last} (notes='{notes_str}', cov='WP')")
+                elif has_waiver_ev and (cov in C.ACTIVE_TIERS or getattr(emp, "dependents", []) or (res and getattr(res, "result", "") == "Not On Invoice")):
+                    invalid_waived_active.append(f"{emp.first} {emp.last} (cov='{cov}', deps={len(getattr(emp, 'dependents', []))}, result='{getattr(res, 'result', '') if res else ''}')")
+
+                # Check for false premium discrepancies where census rate actually matches invoice premium
+                if res and getattr(res, "notes", []):
+                    r_notes = [str(n[0]) if isinstance(n, tuple) else str(n) for n in res.notes]
+                    if any("Premium Discrepancy" in n for n in r_notes):
+                        inv_p = getattr(res, "inv_premium", None)
+                        raw_dict = getattr(emp, "raw_data", {}).get("row", {})
+                        if inv_p is not None and isinstance(raw_dict, dict):
+                            for k, v in raw_dict.items():
+                                val = to_money(v)
+                                if val is not None and abs(val - inv_p) < 0.01:
+                                    false_premium_discrepancies.append(f"{emp.display} (census={val} vs invoice={inv_p})")
+                                    break
 
                 # Check Part-Time in active medical census or with active dependents
                 is_pt_rec = bool(
@@ -324,11 +351,25 @@ class UnderwritingValidator:
                     part_time_violations.append(f"{emp.first} {emp.last}")
 
                 # Check Most Used Plan: never apply to non-enrolled WP/NE/WO/RC
-                res = results.get(id(emp))
                 if res and res.plan and cov in ("WP", "NE", "WO", "RC"):
                     res_notes = " ".join(str(n) for n in res.notes).lower() if isinstance(res.notes, list) else str(res.notes or "").lower()
                     if "most used" in res_notes or "mup" in res_notes:
                         mup_violations.append(f"{emp.first} {emp.last} (cov='{cov}', plan='{res.plan}')")
+
+            # Check for waived dependents inappropriately categorized as active medical
+            for dep in getattr(census, "dependents", []):
+                d_cov = clean(getattr(dep, "cov_raw", "")).lower()
+                dep_waived = bool(
+                    getattr(dep, "waive_reason", "") or
+                    (getattr(dep, "coverage", "") and dep.coverage.upper() in ("WO", "RC", "NE", "WP")) or
+                    any(k in d_cov for k in ("waived", "wo", "waiver", "opt out", "opted out")) or
+                    (getattr(dep, "employee", None) and (
+                        getattr(dep.employee, "waive_reason", "") or
+                        (dep.employee.coverage and dep.employee.coverage.upper() in ("WO", "RC", "NE", "WP"))
+                    ))
+                )
+                if dep_waived and getattr(dep, "disposition", "") == "INCLUDE_ACTIVE_MEDICAL":
+                    invalid_waived_deps.append(f"{dep.display}")
 
             # Gate B: Gender & Sex Field Resolution Check across all people
             for p in getattr(census, "people", []):
@@ -438,24 +479,25 @@ class UnderwritingValidator:
                     reason="All dependent subscriber row links match final ordered employee row numbers",
                 ))
 
-            if invalid_wp_wo:
+            all_waived_defects = invalid_wp_wo + invalid_waived_active + invalid_waived_deps
+            if all_waived_defects:
                 checks.append(CheckResult(
                     rule_id="RULE_21_STATUS_HANDLING",
                     section="21.1",
                     name="Waived Status WO Coding Check",
                     status=CheckStatus.FAIL,
-                    reason=f"Waived employees coded as WP instead of WO: {invalid_wp_wo[:3]}",
+                    reason=f"Waived employees/dependents misclassified: {all_waived_defects[:3]}",
                 ))
                 issues.append(Issue(
-                    issue_id="ISSUE_WAIVED_CODED_AS_WP",
+                    issue_id="ISSUE_WAIVED_EMPLOYEE_OR_DEPENDENT_MISCLASSIFIED",
                     rule_id="RULE_21_STATUS_HANDLING",
                     target_ref="census.employees.coverage",
-                    issue_type=IssueType.INCORRECT_NORMALIZATION,
+                    issue_type=IssueType.WAIVED_COVERAGE_OR_DEPENDENT_DEFECT,
                     severity=IssueSeverity.CRITICAL,
                     earliest_stage=EarliestStage.NORMALIZATION,
-                    expected_state="WO",
-                    observed_state="WP",
-                    allowed_actions=[RepairAction.REPLACE_STRUCTURED_VALUE],
+                    expected_state="Waived employees coded as WO with no active tiers or dependents; waived dependents excluded",
+                    observed_state=f"Defects: {all_waived_defects[:3]}",
+                    allowed_actions=[RepairAction.RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS, RepairAction.REPLACE_STRUCTURED_VALUE],
                 ))
             else:
                 checks.append(CheckResult(
@@ -463,7 +505,35 @@ class UnderwritingValidator:
                     section="21.1",
                     name="Waived Status WO Coding Check",
                     status=CheckStatus.PASS,
-                    reason="All waived employees correctly mapped to WO",
+                    reason="All waived employees correctly mapped to WO and waived dependents properly excluded",
+                ))
+
+            if false_premium_discrepancies:
+                checks.append(CheckResult(
+                    rule_id="RULE_22_PREMIUM_RECONCILIATION",
+                    section="22.1",
+                    name="Census Total Rate Premium Reconciliation Check",
+                    status=CheckStatus.FAIL,
+                    reason=f"False premium discrepancies detected where census rate matches invoice: {false_premium_discrepancies[:3]}",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_PREMIUM_RATE_DISCREPANCY_FALSE_POSITIVE",
+                    rule_id="RULE_22_PREMIUM_RECONCILIATION",
+                    target_ref="comparison.results.premium",
+                    issue_type=IssueType.PREMIUM_RECONCILIATION_DEFECT,
+                    severity=IssueSeverity.WARNING,
+                    earliest_stage=EarliestStage.COMPARISON,
+                    expected_state="Census premium aligned with total rate matching invoice premium",
+                    observed_state=f"False discrepancies: {false_premium_discrepancies[:3]}",
+                    allowed_actions=[RepairAction.RECONCILE_PREMIUM_RATE_DISCREPANCY],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_22_PREMIUM_RECONCILIATION",
+                    section="22.1",
+                    name="Census Total Rate Premium Reconciliation Check",
+                    status=CheckStatus.PASS,
+                    reason="All census premiums reconciled with invoice premiums without false discrepancies",
                 ))
 
             # Section 21.2 & 30.6: Eligibility Conflict & DOB Discrepancy Check

@@ -45,7 +45,7 @@
     "pattern_same_name_dob_disambiguation",
     "pattern_template_example_row_filtration"
   ],
-  "last_updated": "2026-11-02T16:06:03.690375",
+  "last_updated": "2026-11-02T18:44:04.452801",
   "validated_pattern_fingerprints": [
     "fp_abbreviated_first_name_invoice_matching_v1",
     "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1",
@@ -68,5 +68,21 @@
     "learned_reconcile_invoice_presence",
     "learned_regenerate_workbook",
     "learned_repair_linkage_or_normalization"
-  ]
+  ],
+  "pattern_waived_employee_and_dependent_coverage_reconciliation": {
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "version": 1,
+    "fingerprint": "fp_waived_employee_and_dependent_coverage_reconciliation_v1",
+    "patch_version": "2.2.0",
+    "updated_at": "2026-11-02T19:36:37.561623"
+  },
+  "pattern_census_total_rate_premium_reconciliation": {
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "version": 1,
+    "fingerprint": "fp_census_total_rate_premium_reconciliation_v1",
+    "patch_version": "2.2.0",
+    "updated_at": "2026-11-02T19:36:37.561623"
+  }
 }

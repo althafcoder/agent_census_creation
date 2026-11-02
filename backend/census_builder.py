@@ -273,6 +273,11 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
                 break
     p.cov_raw = clean(cov)
     p.coverage = std_coverage(cov)
+    w_reason = clean(row_vals.get("waive_reason", getattr(p, "waive_reason", "")))
+    if w_reason:
+        p.waive_reason = w_reason
+    if clean(cov).lower() in ("waived", "wo", "waiver", "opt out", "opted out") or (not p.coverage and w_reason):
+        p.coverage = "WO"
     if is_employee and clean(cov) and not p.coverage and clean(cov).lower() not in ("enrolled", "active", "yes"):
         p.note(f"Invalid Coverage Code: '{clean(cov)}'", red=True)
     if is_employee:
@@ -296,7 +301,7 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
         p.eligibility_class = clean(row_vals.get("eligibility_class"))
         p.worker_category = clean(row_vals.get("worker_category"))
         p.position_status = clean(row_vals.get("position_status"))
-        p.waive_reason = clean(row_vals.get("waive_reason"))
+        p.waive_reason = clean(row_vals.get("waive_reason")) or getattr(p, "waive_reason", "")
         p.job_title = clean(row_vals.get("job_title"))
         p.salary = clean(row_vals.get("salary"))
         if p.coverage == "WO":
@@ -306,6 +311,7 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
                 p.plan = ""
     else:
         p.cobra = std_cobra(row_vals.get("cobra")) or "N"
+        p.waive_reason = clean(row_vals.get("waive_reason")) or getattr(p, "waive_reason", "")
 
     if not p.first or not p.last:
         p.note("Missing Employee Name" if is_employee else "Missing Dependent Name")
@@ -1328,9 +1334,21 @@ def _link_dependents(st: _State, effective_date=None) -> None:
 
     # Partition candidate dependents into active medical vs excluded non-medical-only
     for emp in st.employees:
+        emp_is_waived = bool(
+            getattr(emp, "waive_reason", "") or
+            (emp.cov_raw and clean(emp.cov_raw).lower() in ("waived", "wo", "waiver", "opt out", "opted out")) or
+            (emp.coverage and emp.coverage.upper() in ("WO", "RC", "NE", "WP"))
+        )
         for d in cand_deps_by_emp.get(id(emp), []):
-            has_med = getattr(d, "_saw_med_obs", False) or any(
-                a.get("is_medical", True) for a in d.coverage_associations
+            d_is_waived = bool(
+                getattr(d, "waive_reason", "") or
+                (getattr(d, "cov_raw", "") and clean(d.cov_raw).lower() in ("waived", "wo", "waiver", "opt out", "opted out")) or
+                (getattr(d, "coverage", "") and d.coverage.upper() in ("WO", "RC", "NE", "WP"))
+            )
+            has_med = (not emp_is_waived and not d_is_waived) and (
+                getattr(d, "_saw_med_obs", False) or any(
+                    a.get("is_medical", True) for a in d.coverage_associations
+                )
             )
             if has_med:
                 d.disposition = "INCLUDE_ACTIVE_MEDICAL"
@@ -1350,6 +1368,15 @@ def _link_dependents(st: _State, effective_date=None) -> None:
     has_medical_roster = st.has_cov_col or any(e.plan for e in st.employees)
 
     for emp in st.employees:
+        # If employee has explicit waiver evidence, enforce WO immediately
+        if getattr(emp, "waive_reason", "") or (emp.cov_raw and clean(emp.cov_raw).lower() in ("waived", "wo", "waiver", "opt out", "opted out")):
+            emp.coverage = "WO"
+            if not emp.plan:
+                emp.plan = "NA"
+            if not emp.cobra:
+                emp.cobra = "N"
+            continue
+
         # Determine employee coverage tier if unassigned or generic "enrolled"
         if not emp.coverage or emp.coverage.lower() in ("enrolled", "active", "yes", "y", "true"):
             if emp.cov_raw and emp.cov_raw.upper() in ("WO", "WAIVED", "NE", "WP", "RC"):
@@ -1405,8 +1432,14 @@ def _order_output(st: _State) -> None:
         if getattr(emp, "disposition", "") == "EXCLUDE_PART_TIME":
             continue
         out.append(emp)
-        out.extend(emp.dependents)
-    out.extend(st.census.unassigned_dependents)
+        for dep in emp.dependents:
+            if getattr(dep, "disposition", "").startswith("EXCLUDE_"):
+                continue
+            out.append(dep)
+    for dep in st.census.unassigned_dependents:
+        if getattr(dep, "disposition", "").startswith("EXCLUDE_"):
+            continue
+        out.append(dep)
     st.census.people = out
     st.census.raw_dependent_rows = len([p for p in out if p.role != "EE"]) + st.census.dependent_merges
 
