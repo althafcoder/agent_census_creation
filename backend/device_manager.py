@@ -121,8 +121,10 @@ class DeviceManager:
         if self.cuda_available and self.force_device in ("auto", "gpu"):
             self.active_mode = "GPU"
             self.active_engine = "PaddleOCR-CUDA"
-            log.info("Compute device selected: GPU (%s, CUDA %s, %s MB VRAM)",
-                     self.gpu_name, self.cuda_version or "Unknown", self.vram_total_mb or "N/A")
+            if self.gpu_mem_limit_mb <= 0 and self.vram_total_mb:
+                self.gpu_mem_limit_mb = int(self.vram_total_mb * 0.60)
+            log.info("Compute device selected: GPU (%s, CUDA %s, %s MB VRAM | 60%% cap: %s MB)",
+                     self.gpu_name, self.cuda_version or "Unknown", self.vram_total_mb or "N/A", self.gpu_mem_limit_mb or "Auto")
         else:
             self.active_mode = "CPU"
             self.active_engine = "PaddleOCR-CPU"

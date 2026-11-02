@@ -149,10 +149,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.085650",
-    "updated_at": "2026-10-29T19:17:09.423895",
+    "updated_at": "2026-10-30T13:13:57.719584",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -243,11 +243,11 @@
         "RULE_10_GENDER_RESOLUTION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131357",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -283,10 +283,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.105085",
-    "updated_at": "2026-10-29T19:17:09.468553",
+    "updated_at": "2026-10-30T13:13:57.763624",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -360,11 +360,11 @@
         "RULE_09_DEPENDENT_DISPOSITION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131357",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -407,10 +407,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.124349",
-    "updated_at": "2026-10-29T19:17:09.506547",
+    "updated_at": "2026-10-30T13:13:57.815535",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -499,11 +499,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131357",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -538,10 +538,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.143900",
-    "updated_at": "2026-10-29T19:17:09.551530",
+    "updated_at": "2026-10-30T13:13:57.867420",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -611,11 +611,11 @@
         "RULE_09_SUBSCRIBER_ROW_LINKS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131357",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -650,10 +650,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:09:37.757118",
-    "updated_at": "2026-10-29T19:17:09.607160",
+    "updated_at": "2026-10-30T13:13:57.923329",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -724,11 +724,11 @@
         "RULE_18_MATCH_PERCENTAGE_FORMATTING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131357",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -763,10 +763,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:57:21.012296",
-    "updated_at": "2026-10-29T19:17:09.656141",
+    "updated_at": "2026-10-30T13:13:57.976431",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -838,11 +838,11 @@
         "RULE_16_PREFERRED_NAME_MATCHING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131357",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -876,10 +876,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.666013",
-    "updated_at": "2026-10-29T19:17:09.697966",
+    "updated_at": "2026-10-30T13:13:58.026193",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -950,11 +950,11 @@
         "RULE_08_EXAMPLE_ROWS_FILTERED"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131358",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -988,10 +988,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.687639",
-    "updated_at": "2026-10-29T19:17:09.739305",
+    "updated_at": "2026-10-30T13:13:58.076904",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -1064,11 +1064,11 @@
         "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131358",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1102,10 +1102,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.525959",
-    "updated_at": "2026-10-29T19:17:09.777303",
+    "updated_at": "2026-10-30T13:13:58.130785",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -1174,11 +1174,11 @@
         "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131358",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1211,10 +1211,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.543465",
-    "updated_at": "2026-10-29T19:17:09.821246",
+    "updated_at": "2026-10-30T13:13:58.182365",
     "compatibility": {
       "instruction_hashes": [
-        "e4b3d00df06ad07dca70230ec26f8f20122c2f10e83d2a697d2b2544e324ae54"
+        "909cd634e32beb53e3bff2facbd36a70b16617b6720607ae49786c904b58ce98"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -1284,11 +1284,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-10-29T19:17:09.414895"
+      "last_verified_at": "2026-10-30T13:13:57.703805"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261029_191709",
+      "decision_ref": "verified_20261030_131358",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {

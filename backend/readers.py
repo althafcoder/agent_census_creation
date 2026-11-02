@@ -278,16 +278,48 @@ def _get_paddle_ocr():
     from device_manager import get_device_manager
     dm = get_device_manager()
 
+    # Try centralized SafePaddleOCREngine (core_gpu) first.
+    # It routes inference cleanly to the persistent GPU pool or isolated worker,
+    # completely eliminating pybind11 'ProgramDescTracer is already registered!' collisions on Windows.
+    try:
+        import sys
+        sales_root = str(Path(__file__).resolve().parents[1])
+        if sales_root not in sys.path:
+            sys.path.insert(0, sales_root)
+        from core_gpu import get_gpu_engine
+        engine = get_gpu_engine().get_paddle_ocr(lang="en", use_angle_cls=True)
+        if engine is not None:
+            _paddle_ocr_engine = engine
+            mode = "GPU" if getattr(engine, "use_gpu", False) else "CPU"
+            dm.record_active_mode(mode, f"PaddleOCR-{mode}-SafePool")
+            log.info("✅ PaddleOCR initialized via SafePool on %s (%s)", mode, dm.gpu_name or "Active Device")
+            return _paddle_ocr_engine
+    except Exception as exc:
+        log.warning("SafePaddleOCREngine acquisition deferred (%s), attempting direct fallback...", exc)
+
     if dm.should_use_gpu():
         try:
             log.info("⚡ Attempting GPU-accelerated PaddleOCR on %s...", dm.gpu_name or "CUDA device")
+            os.environ["FLAGS_allocator_strategy"] = "auto_growth"
+            os.environ["FLAGS_fraction_of_gpu_memory_to_use"] = "0.6"
             import paddle
+            try:
+                paddle.set_flags({
+                    "FLAGS_allocator_strategy": "auto_growth",
+                    "FLAGS_fraction_of_gpu_memory_to_use": 0.6,
+                })
+            except Exception:
+                pass
             paddle.set_device(f"gpu:{dm.gpu_device_id}")
             from paddleocr import PaddleOCR
+            gpu_mem = dm.gpu_mem_limit_mb if (dm.gpu_mem_limit_mb and dm.gpu_mem_limit_mb > 0) else 9000
             try:
-                engine = PaddleOCR(use_angle_cls=True, lang="en", show_log=False, use_gpu=True)
+                engine = PaddleOCR(use_angle_cls=True, lang="en", show_log=False, use_gpu=True, gpu_mem=gpu_mem)
             except TypeError:
-                engine = PaddleOCR(use_angle_cls=True, lang="en", use_gpu=True)
+                try:
+                    engine = PaddleOCR(use_angle_cls=True, lang="en", use_gpu=True, gpu_mem=gpu_mem)
+                except TypeError:
+                    engine = PaddleOCR(use_angle_cls=True, lang="en", use_gpu=True)
             _run_ocr_smoke_test(engine)
             _paddle_ocr_engine = engine
             dm.record_active_mode("GPU", "PaddleOCR-CUDA")
