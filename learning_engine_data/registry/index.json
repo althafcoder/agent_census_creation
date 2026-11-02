@@ -1,9 +1,16 @@
 {
   "active_rule_ids": [
+    "learned_deduplicate_census_employees",
+    "learned_disambiguate_same_name_persons",
+    "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_invoice_presence",
     "learned_regenerate_workbook",
+    "learned_repair_linkage_or_normalization",
+    "pattern_abbreviated_first_name_invoice_matching",
     "pattern_carrier_census_legal_name_and_dependent_subscriber_linkage",
+    "pattern_census_cross_source_deduplication",
     "pattern_cross_source_dependent_collection_and_masked_override",
+    "pattern_eligibility_and_dob_conflict_reconciliation",
     "pattern_hsa_medical_plan_classification",
     "pattern_match_percentage_and_workbook_formatting",
     "pattern_medical_only_disposition_and_status_precedence",
@@ -12,14 +19,21 @@
     "pattern_part_time_strict_exclusion",
     "pattern_post_sort_subscriber_row_recalculation",
     "pattern_preferred_name_and_middle_name_matching",
+    "pattern_same_name_dob_disambiguation",
     "pattern_template_example_row_filtration"
   ],
   "rejected_rule_ids": [],
   "retired_rule_ids": [],
   "candidate_rule_ids": [
+    "learned_deduplicate_census_employees",
+    "learned_disambiguate_same_name_persons",
+    "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_invoice_presence",
     "learned_regenerate_workbook",
+    "learned_repair_linkage_or_normalization",
+    "pattern_census_cross_source_deduplication",
     "pattern_cross_source_dependent_collection_and_masked_override",
+    "pattern_eligibility_and_dob_conflict_reconciliation",
     "pattern_hsa_medical_plan_classification",
     "pattern_match_percentage_and_workbook_formatting",
     "pattern_medical_only_disposition_and_status_precedence",
@@ -28,12 +42,16 @@
     "pattern_part_time_strict_exclusion",
     "pattern_post_sort_subscriber_row_recalculation",
     "pattern_preferred_name_and_middle_name_matching",
+    "pattern_same_name_dob_disambiguation",
     "pattern_template_example_row_filtration"
   ],
-  "last_updated": "2026-10-30T17:36:41.557235",
+  "last_updated": "2026-11-02T16:06:03.690375",
   "validated_pattern_fingerprints": [
+    "fp_abbreviated_first_name_invoice_matching_v1",
     "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1",
+    "fp_census_cross_source_dedup_v1",
     "fp_dependent_cross_source_masked_override_v1",
+    "fp_eligibility_and_dob_conflict_reconciliation_v1",
     "fp_gender_multi_col_sex_self_id_v1",
     "fp_hsa_medical_plan_classification_v1",
     "fp_match_percentage_workbook_format_v1",
@@ -42,8 +60,13 @@
     "fp_part_time_strict_exclusion_v1",
     "fp_post_sort_subscriber_row_recalc_v1",
     "fp_preferred_name_middle_name_matching_v1",
+    "fp_same_name_dob_disambiguation_v1",
     "fp_template_example_row_filtration_v1",
+    "learned_deduplicate_census_employees",
+    "learned_disambiguate_same_name_persons",
+    "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_invoice_presence",
-    "learned_regenerate_workbook"
+    "learned_regenerate_workbook",
+    "learned_repair_linkage_or_normalization"
   ]
 }

@@ -144,6 +144,22 @@ def extract_prospect_state(prospect: Prospect, docs: list[RawDoc] | None = None)
                         if st:
                             _record(st, f"{d.name} State field")
 
+    # 3. Check invoice / renewal headers for prospect company billing/business address per Section 4.1
+    if not detected_states and docs:
+        for d in docs:
+            role = getattr(d, "role", "")
+            if role in ("invoice", "renewal", "census") or not role:
+                text_sample = (d.text or "")[:3500]
+                m_addr = re.search(
+                    r"(?m)^\s*(\d+[\s\w.,#-]+(?:DR|DRIVE|ST|STREET|RD|ROAD|AVE|AVENUE|BLVD|BOULEVARD|WAY|LANE|LN|PKWY|PARKWAY|SUITE|STE|PL|CT|CIR|CIRCLE|COURT|HWY|HIGHWAY|TRAIL|TRL|TERRACE|TER)[^\n]*)\s*\n\s*([A-Za-z\s.\-]+?)[,\s]+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)\b",
+                    text_sample,
+                    re.I,
+                )
+                if m_addr:
+                    st = normalize_state(m_addr.group(3))
+                    if st:
+                        _record(st, f"{d.name} company billing/business address")
+
     if not detected_states:
         return "", False, "Prospect primary business state could not be identified."
 

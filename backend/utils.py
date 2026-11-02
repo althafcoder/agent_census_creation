@@ -27,6 +27,42 @@ def clean(v) -> str:
     return "" if is_blank(v) else re.sub(r"\s+", " ", str(v)).strip()
 
 
+def clean_company_name(name: str) -> str:
+    """Clean company name by removing table delimiters, extra whitespace, and trailing punctuation."""
+    if is_blank(name):
+        return ""
+    s = str(name).strip()
+    # Strip table bar artifacts like '| National Insurance Brokerage of NY Inc | | | |'
+    if "|" in s:
+        parts = [p.strip() for p in s.split("|") if p.strip()]
+        s = parts[0] if parts else s
+    # Strip leading/trailing formatting artifacts and punctuation
+    s = re.sub(r"^[\s|:;,.\-_]+|[\s|:;,.\-_]+$", "", s).strip()
+    s = re.sub(r"\s+", " ", s)
+    return s
+
+
+def sanitize_filename(name: str, max_length: int = 50, default: str = "Output") -> str:
+    """Sanitize a string to be completely safe for use in filenames on Windows, Mac, and Linux.
+
+    Removes invalid filesystem characters: < > : " / \\ | ? * and ASCII control characters.
+    Collapses whitespace and underscores, and trims leading/trailing dots, spaces, and underscores.
+    """
+    if is_blank(name):
+        return default
+    # If table pipe artifacts exist, clean company name first
+    s = clean_company_name(str(name))
+    # Remove characters forbidden in Windows and POSIX filenames
+    s = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", s)
+    # Replace whitespace with underscore
+    s = re.sub(r"\s+", "_", s)
+    # Collapse multiple underscores
+    s = re.sub(r"_+", "_", s).strip("_. ")
+    if not s:
+        return default
+    return s[:max_length]
+
+
 def norm_key(s: str) -> str:
     """Lower-case, alphanumerics only - used for header / plan matching."""
     return re.sub(r"[^a-z0-9]", "", clean(s).lower())

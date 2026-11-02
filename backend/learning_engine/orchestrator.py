@@ -1045,6 +1045,189 @@ class LearningEngineOrchestrator:
                     "last_verified_at": datetime.now().isoformat(),
                 },
             ),
+            LearningRule(
+                learning_id="pattern_same_name_dob_disambiguation",
+                fingerprint="fp_same_name_dob_disambiguation_v1",
+                version=1,
+                patch_version="2.2.0",
+                pattern_state="VALIDATED",
+                generic_root_cause=(
+                    "Multiple distinct employees share the exact same surname and first name but have different dates of birth "
+                    "or Member IDs (e.g. Frank Cormio Sr. vs Jr.), causing invoice parsing to collapse them into a single record "
+                    "or leaving one individual flagged as Not On Invoice."
+                ),
+                applicable_conditions=[
+                    "Census contains >= 2 employees with matching surname and first name but distinct DOBs",
+                    "Invoice contains multiple entries or text for that name with distinct subscriber/member IDs",
+                ],
+                required_validators=["RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE", "RULE_06_CENSUS_CONSERVATION"],
+                regression_results={
+                    "cases_verified": ["case_same_name_different_dob_cormio"],
+                    "status": "PASS",
+                },
+                compatibility={
+                    "instruction_hashes": [ctx.instruction_hash],
+                    "template_hashes": [],
+                    "parser_versions": [ctx.parser_version],
+                    "runtime_prompt_version": "1.0",
+                },
+                scope={
+                    "document_roles": ["census", "invoice"],
+                    "file_types": ["xlsx", "csv", "pdf"],
+                    "carriers": ["Florida Blue", "Cigna"],
+                    "header_signature": ["employee name", "dob", "member id"],
+                    "stage": "comparison",
+                },
+                trigger={
+                    "issue_type": "SAME_NAME_DIFFERENT_DOB_COLLAPSE",
+                    "field": "invoice_match",
+                    "conditions": ["distinct DOBs for same name", "missing invoice flag on one individual"],
+                },
+                business_rule_refs=["Section 16.6", "Section 29.1", "Section 29.3"],
+                root_cause={
+                    "code": "SAME_NAME_DIFFERENT_DOB_COLLAPSE",
+                    "verification_status": "verified",
+                    "summary": "Disambiguate distinct individuals sharing the same name by matching distinct invoice line records by Member ID or DOB.",
+                },
+                strategy={
+                    "action": "DISAMBIGUATE_SAME_NAME_PERSONS",
+                    "parameters": {"disambiguate_by_dob_and_sub_id": True},
+                    "preconditions": ["distinct DOBs or Member IDs on same-name individuals"],
+                    "exclusions": [],
+                },
+                verification={
+                    "case_successes": 1,
+                    "case_failures": 0,
+                    "regression_fixture_ids": ["reg_case_same_name_disambiguation"],
+                    "negative_fixture_ids": [],
+                    "checks_passed": ["RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"],
+                    "promotion_eligible": True,
+                    "last_verified_at": datetime.now().isoformat(),
+                },
+            ),
+            LearningRule(
+                learning_id="pattern_census_cross_source_deduplication",
+                fingerprint="fp_census_cross_source_dedup_v1",
+                version=1,
+                patch_version="2.2.0",
+                pattern_state="VALIDATED",
+                generic_root_cause=(
+                    "An employee appears across multiple census source files with identical or nickname names and matching "
+                    "home addresses/ZIPs, but minor variations in DOB (e.g. 1-year discrepancy) or status (active vs waiver), "
+                    "causing redundant duplicate rows in the census."
+                ),
+                applicable_conditions=[
+                    "Multiple census files ingested with overlapping employees",
+                    "Matching name and address with <= 1 year DOB difference",
+                    "One record is actively enrolled or on invoice while the other is marked waiver/non-enrolled",
+                ],
+                required_validators=["RULE_06_CENSUS_CONSERVATION"],
+                regression_results={
+                    "cases_verified": ["case_cross_source_duplicate_cormio_tall"],
+                    "status": "PASS",
+                },
+                compatibility={
+                    "instruction_hashes": [ctx.instruction_hash],
+                    "template_hashes": [],
+                    "parser_versions": [ctx.parser_version],
+                    "runtime_prompt_version": "1.0",
+                },
+                scope={
+                    "document_roles": ["census"],
+                    "file_types": ["xlsx", "csv"],
+                    "carriers": ["Florida Blue", "Cigna"],
+                    "header_signature": ["name", "dob", "address", "zip"],
+                    "stage": "normalization",
+                },
+                trigger={
+                    "issue_type": "DUPLICATE_EMPLOYEE_DETECTED",
+                    "field": "census_headcount",
+                    "conditions": ["cross-source duplicate records with identical address and near-identical DOB"],
+                },
+                business_rule_refs=["Section 6.0", "Section 9.1", "Section 21.1"],
+                root_cause={
+                    "code": "DUPLICATE_EMPLOYEE_DETECTED",
+                    "verification_status": "verified",
+                    "summary": "Consolidate duplicate census records into the active enrolled employee and remove the redundant waiver entry.",
+                },
+                strategy={
+                    "action": "DEDUPLICATE_CENSUS_EMPLOYEES",
+                    "parameters": {"prioritize_active_enrollment": True},
+                    "preconditions": ["duplicate name, address, and DOB within 1 year"],
+                    "exclusions": [],
+                },
+                verification={
+                    "case_successes": 1,
+                    "case_failures": 0,
+                    "regression_fixture_ids": ["reg_case_census_deduplication"],
+                    "negative_fixture_ids": [],
+                    "checks_passed": ["RULE_06_CENSUS_CONSERVATION"],
+                    "promotion_eligible": True,
+                    "last_verified_at": datetime.now().isoformat(),
+                },
+            ),
+            LearningRule(
+                learning_id="pattern_eligibility_and_dob_conflict_reconciliation",
+                fingerprint="fp_eligibility_and_dob_conflict_reconciliation_v1",
+                version=1,
+                patch_version="2.2.0",
+                pattern_state="VALIDATED",
+                generic_root_cause=(
+                    "Under Section 21.2 & 30.6, when a primary census states an employee is Waiver / Not Enrolled (WO/NE) "
+                    "or Refused Coverage (RC), but an active carrier invoice lists active medical coverage (or with DOB variation), "
+                    "the census waiver election must be preserved, the comparison result flagged as Eligibility Conflict in red, "
+                    "and any DOB discrepancy annotated in comparison notes and findings exceptions."
+                ),
+                applicable_conditions=[
+                    "Employee marked as Waiver / Not Enrolled (WO/NE) or RC on census",
+                    "Active medical coverage found for subscriber on carrier invoice",
+                    "DOB variation exists between census and invoice/carrier records",
+                ],
+                required_validators=["RULE_21_ELIGIBILITY_AND_DOB_CONFLICT", "RULE_21_STATUS_HANDLING"],
+                regression_results={
+                    "cases_verified": ["case_eligibility_and_dob_conflict_cormio"],
+                    "status": "PASS",
+                },
+                compatibility={
+                    "instruction_hashes": [ctx.instruction_hash],
+                    "template_hashes": [],
+                    "parser_versions": [ctx.parser_version],
+                    "runtime_prompt_version": "1.0",
+                },
+                scope={
+                    "document_roles": ["census", "invoice"],
+                    "file_types": ["xlsx", "csv", "pdf"],
+                    "carriers": ["Florida Blue", "Cigna", "Anthem", "UHC", "Aetna"],
+                    "header_signature": ["coverage", "dob", "medical plan", "invoice status"],
+                    "stage": "comparison",
+                },
+                trigger={
+                    "issue_type": "ELIGIBILITY_CONFLICT_UNRESOLVED",
+                    "field": "eligibility_conflict",
+                    "conditions": ["non-enrolled employee with active medical invoice or unannotated DOB conflict"],
+                },
+                business_rule_refs=["Section 21.2", "Section 30.6"],
+                root_cause={
+                    "code": "ELIGIBILITY_CONFLICT_UNRESOLVED",
+                    "verification_status": "verified",
+                    "summary": "Preserve authoritative census waiver election (WO/NE) during cross-source deduplication, assign Eligibility Conflict with red highlight, and annotate DOB conflicts dynamically in notes and exception reports.",
+                },
+                strategy={
+                    "action": "RECONCILE_ELIGIBILITY_AND_DOB_CONFLICT",
+                    "parameters": {"preserve_census_waivers": True, "annotate_carrier_dob_conflict": True},
+                    "preconditions": ["census non-enrolled employee with active medical invoice"],
+                    "exclusions": [],
+                },
+                verification={
+                    "case_successes": 1,
+                    "case_failures": 0,
+                    "regression_fixture_ids": ["reg_case_eligibility_and_dob_conflict"],
+                    "negative_fixture_ids": [],
+                    "checks_passed": ["RULE_21_ELIGIBILITY_AND_DOB_CONFLICT"],
+                    "promotion_eligible": True,
+                    "last_verified_at": datetime.now().isoformat(),
+                },
+            ),
         ]
 
         for rule in core_patterns:

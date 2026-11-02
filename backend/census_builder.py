@@ -104,12 +104,28 @@ class _Row:
                     idx = self.h.columns["gender"]
                     col_pairs.append((idx, self.h.labels[idx] if idx < len(self.h.labels) else "gender"))
         else:
-            emp_cands = getattr(self.h, "candidate_columns", {}).get("gender", [])
-            if emp_cands:
-                col_pairs.extend(emp_cands)
-            elif "gender" in self.h.columns:
-                idx = self.h.columns["gender"]
-                col_pairs.append((idx, self.h.labels[idx] if idx < len(self.h.labels) else "gender"))
+            if not demo_is_employee:
+                # When this row represents a dependent (e.g. Spouse/Child) in a stacked roster,
+                # the generic 'gender' column belongs to the dependent, NOT to the employee.
+                # Only collect explicit employee gender candidate columns ('emp_gender').
+                emp_cands = getattr(self.h, "candidate_columns", {}).get("emp_gender", [])
+                if emp_cands:
+                    col_pairs.extend(emp_cands)
+                elif "emp_gender" in self.h.columns:
+                    idx = self.h.columns["emp_gender"]
+                    col_pairs.append((idx, self.h.labels[idx] if idx < len(self.h.labels) else "emp_gender"))
+            else:
+                emp_cands = getattr(self.h, "candidate_columns", {}).get("emp_gender", [])
+                if not emp_cands:
+                    emp_cands = getattr(self.h, "candidate_columns", {}).get("gender", [])
+                if emp_cands:
+                    col_pairs.extend(emp_cands)
+                elif "emp_gender" in self.h.columns:
+                    idx = self.h.columns["emp_gender"]
+                    col_pairs.append((idx, self.h.labels[idx] if idx < len(self.h.labels) else "emp_gender"))
+                elif "gender" in self.h.columns:
+                    idx = self.h.columns["gender"]
+                    col_pairs.append((idx, self.h.labels[idx] if idx < len(self.h.labels) else "gender"))
 
         out: list[dict] = []
         for idx, lab in col_pairs:

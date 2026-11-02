@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_eligibility_and_dob_conflict_reconciliation",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_eligibility_and_dob_conflict_reconciliation_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Under Section 21.2 & 30.6, when a primary census states an employee is Waiver / Not Enrolled (WO/NE) or Refused Coverage (RC), but an active carrier invoice lists active medical coverage (or with DOB variation), the census waiver election must be preserved, the comparison result flagged as Eligibility Conflict in red, and any DOB discrepancy annotated in comparison notes and findings exceptions.",
+  "applicable_conditions": [
+    "Employee marked as Waiver / Not Enrolled (WO/NE) or RC on census",
+    "Active medical coverage found for subscriber on carrier invoice",
+    "DOB variation exists between census and invoice/carrier records"
+  ],
+  "required_validators": [
+    "RULE_21_ELIGIBILITY_AND_DOB_CONFLICT",
+    "RULE_21_STATUS_HANDLING"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_eligibility_and_dob_conflict_cormio"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-11-02T13:10:56.063185",
+  "updated_at": "2026-11-02T16:06:03.667675",
+  "compatibility": {
+    "instruction_hashes": [
+      "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna",
+      "Anthem",
+      "UHC",
+      "Aetna"
+    ],
+    "header_signature": [
+      "coverage",
+      "dob",
+      "medical plan",
+      "invoice status"
+    ],
+    "stage": "comparison"
+  },
+  "trigger": {
+    "issue_type": "ELIGIBILITY_CONFLICT_UNRESOLVED",
+    "field": "eligibility_conflict",
+    "conditions": [
+      "non-enrolled employee with active medical invoice or unannotated DOB conflict"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 21.2",
+    "Section 30.6"
+  ],
+  "root_cause": {
+    "code": "ELIGIBILITY_CONFLICT_UNRESOLVED",
+    "verification_status": "verified",
+    "summary": "Preserve authoritative census waiver election (WO/NE) during cross-source deduplication, assign Eligibility Conflict with red highlight, and annotate DOB conflicts dynamically in notes and exception reports."
+  },
+  "strategy": {
+    "action": "RECONCILE_ELIGIBILITY_AND_DOB_CONFLICT",
+    "parameters": {
+      "preserve_census_waivers": true,
+      "annotate_carrier_dob_conflict": true
+    },
+    "preconditions": [
+      "census non-enrolled employee with active medical invoice"
+    ],
+    "exclusions": []
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_eligibility_and_dob_conflict"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_21_ELIGIBILITY_AND_DOB_CONFLICT"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-11-02T16:06:03.201023"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261102_160603",
+    "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

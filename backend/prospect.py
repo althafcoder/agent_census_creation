@@ -6,7 +6,7 @@ import re
 
 from models import Prospect
 from readers import RawDoc
-from utils import clean, norm_key, parse_date
+from utils import clean, clean_company_name, norm_key, parse_date
 
 log = logging.getLogger("census.prospect")
 
@@ -89,7 +89,10 @@ def _kv_pairs(doc: RawDoc) -> dict[str, str]:
                 continue
             k, _, v = line.partition(":")
             if 0 < len(k.strip()) <= 45 and clean(v):
-                pairs.setdefault(norm_key(k), clean(v))
+                cleaned_v = clean(v)
+                if norm_key(k) in LABELS["company"]:
+                    cleaned_v = clean_company_name(cleaned_v)
+                pairs.setdefault(norm_key(k), cleaned_v)
     for t in doc.tables:
         grid = t.df.values.tolist()
         for row in grid:
@@ -99,7 +102,10 @@ def _kv_pairs(doc: RawDoc) -> dict[str, str]:
                     nxt = next((x for x in cells[i + 1:] if x), "")
                     k = norm_key(c.rstrip(":"))
                     if nxt and k and k not in pairs:
-                        pairs[k] = nxt
+                        cleaned_nxt = clean(nxt)
+                        if k in LABELS["company"]:
+                            cleaned_nxt = clean_company_name(cleaned_nxt)
+                        pairs[k] = cleaned_nxt
     return pairs
 
 
@@ -151,7 +157,7 @@ def _is_garbage_val(val: str) -> bool:
 
 def _apply_llm_prospect(merged: dict, llm_res: dict) -> None:
     if llm_res.get("company_name") and (_is_garbage_val(merged.get("company", "")) or not merged.get("company")):
-        merged["company"] = llm_res["company_name"]
+        merged["company"] = clean_company_name(llm_res["company_name"])
     if llm_res.get("proposed_effective_date") and (not merged.get("effective_date") or len(str(llm_res["proposed_effective_date"])) > 2):
         merged["effective_date"] = str(llm_res["proposed_effective_date"])
     if llm_res.get("sic_naics_code") and not _is_invalid_sic(llm_res["sic_naics_code"]):
@@ -383,7 +389,7 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
                 if v and not merged.get(k):
                     merged[k] = v
                     found_in_other = True
-            # Deterministic invoice header address/CSZ extraction when missing from GHQ/RFP
+            # Deterministic invoice/statement header address/CSZ extraction when missing from GHQ/RFP
             if d.text and (not merged.get("address") or not merged.get("csz") or not re.search(r"\b\d{5}\b", merged.get("csz", ""))):
                 m_inv_addr = re.search(
                     r"Address\s+Contact\s+Information[\s\S]{0,160}?\n\s*(\d+\s+[A-Za-z0-9\s.\-]+?)(?:\s{2,}|\n)[\s\S]{0,160}?\n\s*([A-Za-z .\-]+,\s*[A-Z]{2},?\s*\d{5}(?:-\d{4})?)",
@@ -396,6 +402,35 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
                     if not merged.get("csz") or not re.search(r"\b\d{5}\b", merged.get("csz", "")):
                         merged["csz"] = clean(m_inv_addr.group(2))
                     found_in_other = True
+                elif not merged.get("address") or not merged.get("state"):
+                    m_addr_block = re.search(
+                        r"(?m)^\s*(\d+[\s\w.,#-]+(?:DR|DRIVE|ST|STREET|RD|ROAD|AVE|AVENUE|BLVD|BOULEVARD|WAY|LANE|LN|PKWY|PARKWAY|SUITE|STE|PL|CT|CIR|CIRCLE|COURT|HWY|HIGHWAY|TRAIL|TRL|TERRACE|TER)[^\n]*)\s*\n\s*([A-Za-z\s.\-]+?)[,\s]+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)\b",
+                        d.text[:3500],
+                        re.I,
+                    )
+                    if m_addr_block:
+                        st_code = m_addr_block.group(3).upper()
+                        from router import US_STATES
+                        if st_code in US_STATES:
+                            if not merged.get("address"):
+                                merged["address"] = clean(m_addr_block.group(1))
+                            if not merged.get("city"):
+                                merged["city"] = clean(m_addr_block.group(2))
+                            if not merged.get("state"):
+                                merged["state"] = st_code
+                            if not merged.get("zip"):
+                                merged["zip"] = m_addr_block.group(4)
+                            if not merged.get("csz") or not re.search(r"\b\d{5}\b", merged.get("csz", "")):
+                                merged["csz"] = f"{clean(m_addr_block.group(2))}, {st_code} {m_addr_block.group(4)}"
+                            # Check if company name is directly preceding the address block
+                            if not merged.get("company"):
+                                pre_text = d.text[:m_addr_block.start()]
+                                pre_lines = [l.strip() for l in pre_text.splitlines() if l.strip()]
+                                for pl in reversed(pre_lines[-4:]):
+                                    if any(w in pl.upper() for w in ["INC", "LLC", "CORP", "COMPANY", "GROUP", "BROKERAGE", "SERVICES", "PARTNERS", "HOLDINGS", "LTD"]):
+                                        merged["company"] = clean_company_name(pl)
+                                        break
+                            found_in_other = True
             # Collect census notes/company tabs and headers
             for t in getattr(d, "tables", []):
                 t_lower = t.name.lower()
@@ -433,7 +468,7 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
     d = parse_date(merged.get("effective_date"))
     pr.effective_date = d
     pr.sic = merged.get("sic", "")
-    pr.company = re.sub(r"[,.]+$", "", merged.get("company", "")).strip()
+    pr.company = clean_company_name(merged.get("company", ""))
     pr.address = merged.get("address", "")
     pr.city = merged.get("city", "")
     pr.state = merged.get("state", "")

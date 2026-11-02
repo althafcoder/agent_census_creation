@@ -437,7 +437,10 @@ def _ocr_pdf(path: Path) -> str:
         log.warning("%s looks scanned but pdf2image/numpy are missing: %s", path.name, exc)
         return ""
 
-    poppler = POPPLER_PATH if POPPLER_PATH and Path(POPPLER_PATH).exists() else None
+    try:
+        poppler = POPPLER_PATH if POPPLER_PATH and Path(POPPLER_PATH).exists() else None
+    except (OSError, PermissionError):
+        poppler = None
     try:
         pages = convert_from_path(str(path), dpi=200, poppler_path=poppler)
     except Exception as exc:

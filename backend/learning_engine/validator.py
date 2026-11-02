@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import re
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import census_config as C
@@ -340,6 +341,8 @@ class UnderwritingValidator:
                 usable_norms = {c.get("normalized") for c in cands if c.get("status") == "USABLE" and c.get("normalized") in ("M", "F")}
                 if len(usable_norms) == 1 and not g_val:
                     gender_unresolved_issues.append(f"{p.display} (usable={list(usable_norms)[0]})")
+                elif getattr(p, "gender_resolution_status", "") == "CONFLICT":
+                    gender_unresolved_issues.append(f"{p.display} (CONFLICT: {sorted(list(usable_norms))})")
 
             if gender_unresolved_issues or gender_concat_issues:
                 checks.append(CheckResult(
@@ -461,6 +464,63 @@ class UnderwritingValidator:
                     name="Waived Status WO Coding Check",
                     status=CheckStatus.PASS,
                     reason="All waived employees correctly mapped to WO",
+                ))
+
+            # Section 21.2 & 30.6: Eligibility Conflict & DOB Discrepancy Check
+            eligibility_conflict_violations = []
+            dob_conflict_unannotated = []
+            for emp in getattr(census, "employees", []):
+                if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False):
+                    continue
+                cov = (emp.coverage or "").strip().upper()
+                res = results.get(id(emp))
+                if not res:
+                    continue
+                inv = getattr(res, "inv", None)
+                is_active_inv = bool(inv and getattr(inv, "plan", None) and getattr(inv, "premium", 0.0) is not None)
+
+                # Check non-enrolled employee on invoice with active medical
+                if cov in ("WO", "NE", "RC", "WP") and is_active_inv:
+                    if getattr(res, "result", "") != "Eligibility Conflict" or not getattr(res, "result_red", False):
+                        eligibility_conflict_violations.append(emp.display)
+
+                    # Check DOB conflict
+                    c_dob = getattr(emp, "dob", None)
+                    cf = getattr(emp, "custom_fields", None) or {}
+                    i_dob = getattr(inv, "dob", None) or cf.get("alternate_dob") or cf.get("carrier_dob")
+                    c_d = c_dob.date() if hasattr(c_dob, "date") and callable(c_dob.date) else c_dob
+                    i_d = i_dob.date() if hasattr(i_dob, "date") and callable(i_dob.date) else i_dob
+                    if c_d and i_d and c_d != i_d:
+                        notes_str = " ".join(str(n) for n in res.notes).lower() if isinstance(res.notes, list) else str(res.notes or "").lower()
+                        if "dob conflict" not in notes_str:
+                            dob_conflict_unannotated.append(emp.display)
+
+            if eligibility_conflict_violations or dob_conflict_unannotated:
+                checks.append(CheckResult(
+                    rule_id="RULE_21_ELIGIBILITY_AND_DOB_CONFLICT",
+                    section="21.2",
+                    name="Eligibility Conflict & DOB Discrepancy Check",
+                    status=CheckStatus.FAIL,
+                    reason=f"Unresolved eligibility conflicts ({eligibility_conflict_violations}) or unannotated DOB conflicts ({dob_conflict_unannotated})",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_ELIGIBILITY_OR_DOB_CONFLICT_UNRESOLVED",
+                    rule_id="RULE_21_ELIGIBILITY_AND_DOB_CONFLICT",
+                    target_ref="comparison.results.eligibility_conflict",
+                    issue_type=IssueType.ELIGIBILITY_CONFLICT_UNRESOLVED if eligibility_conflict_violations else IssueType.DOB_CONFLICT_UNANNOTATED,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.COMPARISON,
+                    expected_state="Non-enrolled employees with active medical invoices marked as Eligibility Conflict with DOB conflict annotated",
+                    observed_state=f"Defects: {eligibility_conflict_violations or dob_conflict_unannotated}",
+                    allowed_actions=[RepairAction.RECONCILE_ELIGIBILITY_AND_DOB_CONFLICT, RepairAction.DISAMBIGUATE_SAME_NAME_PERSONS],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_21_ELIGIBILITY_AND_DOB_CONFLICT",
+                    section="21.2",
+                    name="Eligibility Conflict & DOB Discrepancy Check",
+                    status=CheckStatus.PASS,
+                    reason="All non-enrolled employees with active medical invoices correctly flagged as Eligibility Conflict with DOB annotations and exception report reflection",
                 ))
 
             if mup_violations:
@@ -783,6 +843,86 @@ class UnderwritingValidator:
                 reason="Employees with preferred first name or middle name aliases correctly reconciled to invoice subscribers",
             ))
 
+        # 15c. Abbreviated First Name & Initial Invoice Matching Check (Section 16.3)
+        # When an enrolled active census employee is marked 'Not On Invoice', but the invoice
+        # sources list a subscriber with the same last name, first initial/abbreviation,
+        # and corroborating tier/plan/zip/age evidence, flag for reconciliation.
+        abbreviated_unmatched_defects = []
+        inv_texts_to_check = []
+        for d in (roles or {}).get("invoice", []):
+            if hasattr(d, "text") and d.text:
+                inv_texts_to_check.append(d.text)
+            elif isinstance(d, (str, Path)) and Path(d).exists():
+                try:
+                    inv_texts_to_check.append(Path(d).read_text(encoding="utf-8", errors="ignore"))
+                except Exception:
+                    pass
+        for inv_doc in (selected_invoices or []):
+            p_path = getattr(inv_doc, "path", None)
+            if p_path and isinstance(p_path, (str, Path)) and Path(p_path).exists():
+                try:
+                    inv_texts_to_check.append(Path(p_path).read_text(encoding="utf-8", errors="ignore"))
+                except Exception:
+                    pass
+        inv_text_combined = " \n ".join(inv_texts_to_check)
+        inv_recs_all = []
+        for inv in (selected_invoices or []):
+            inv_recs_all.extend(getattr(inv, "records", []))
+
+        if census and (inv_text_combined or inv_recs_all):
+            for p in getattr(census, "employees", []):
+                if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False) or getattr(p, "disposition", "") == "EXCLUDE_PART_TIME":
+                    continue
+                cov = (p.coverage or "").strip().upper()
+                if cov not in C.ACTIVE_TIERS:
+                    continue
+                rr = (results or {}).get(id(p))
+                if rr and getattr(rr, "result", "") == "Not On Invoice":
+                    ln = (p.last or "").strip().lower()
+                    fn = (p.first or "").strip().lower()
+                    if ln and len(ln) >= 3 and fn:
+                        first_init = fn[0]
+                        has_rec_match = any(
+                            r.last and r.last.lower() == ln and r.first and r.first[0].lower() == first_init
+                            for r in inv_recs_all
+                        )
+                        has_text_match = bool(
+                            re.search(rf"(?i)\b{re.escape(ln)}\s*,\s*{re.escape(first_init)}\b", inv_text_combined) or
+                            re.search(rf"(?i)\b{re.escape(first_init)}\.?\s+{re.escape(ln)}\b", inv_text_combined)
+                        )
+                        if has_rec_match or has_text_match:
+                            abbreviated_unmatched_defects.append(
+                                f"{p.display} (cov={cov}, plan={p.plan}) matches abbreviated invoice entry for '{ln.title()}, {first_init.upper()}'"
+                            )
+
+        if abbreviated_unmatched_defects:
+            checks.append(CheckResult(
+                rule_id="RULE_16_ABBREVIATED_NAME_MATCHING",
+                section="16.3",
+                name="Abbreviated Name & Initial Invoice Matching Check",
+                status=CheckStatus.FAIL,
+                reason=f"Enrolled active employees marked Not On Invoice despite abbreviated invoice match: {abbreviated_unmatched_defects[:3]}",
+            ))
+            issues.append(Issue(
+                issue_id="ISSUE_ABBREVIATED_NAME_UNMATCHED",
+                rule_id="RULE_16_ABBREVIATED_NAME_MATCHING",
+                target_ref="comparison.matching.abbreviated_name",
+                issue_type=IssueType.ABBREVIATED_NAME_UNMATCHED,
+                severity=IssueSeverity.CRITICAL,
+                earliest_stage=EarliestStage.COMPARISON,
+                expected_state="Enrolled employees with matching abbreviated invoice subscribers must be reconciled as Match",
+                observed_state=f"Unmatched: {abbreviated_unmatched_defects[:3]}",
+                allowed_actions=[RepairAction.RECONCILE_ABBREVIATED_NAME_SUBSCRIBER],
+            ))
+        else:
+            checks.append(CheckResult(
+                rule_id="RULE_16_ABBREVIATED_NAME_MATCHING",
+                section="16.3",
+                name="Abbreviated Name & Initial Invoice Matching Check",
+                status=CheckStatus.PASS,
+                reason="All enrolled employees with abbreviated invoice subscriber names correctly reconciled",
+            ))
+
         # 15b. Name Mismatch Accounting Check (Section 16.6 & 23.2)
         name_mismatch_rows = 0
         if results:
@@ -911,7 +1051,7 @@ class UnderwritingValidator:
                 earliest_stage=EarliestStage.COMPARISON,
                 expected_state="Employees present in invoice text must not be flagged as missing from invoice",
                 observed_state=f"Flagged missing but present in text: {invoice_fp_defects[:3]}",
-                allowed_actions=[RepairAction.RECONCILE_INVOICE_PRESENCE],
+                allowed_actions=[RepairAction.DISAMBIGUATE_SAME_NAME_PERSONS, RepairAction.RECONCILE_INVOICE_PRESENCE],
             ))
         else:
             checks.append(CheckResult(
@@ -1029,6 +1169,46 @@ class UnderwritingValidator:
                     name="Census Headcount Conservation Check",
                     status=CheckStatus.PASS,
                     reason=f"Census headcount fully reconciled ({src_emp} source = {out_emp} output + {pt_excluded} PT excluded + {dup_emp} duplicates)",
+                ))
+
+            # Detect cross-source duplicate employees (e.g. same name & zip with 1-year DOB variation or duplicate entries)
+            census_dup_pairs = []
+            active_emps = [p for p in getattr(census, "employees", []) if not getattr(p, "is_duplicate", False)]
+            for i, e1 in enumerate(active_emps):
+                for j in range(i + 1, len(active_emps)):
+                    e2 = active_emps[j]
+                    ln1, ln2 = (e1.last or "").strip().lower(), (e2.last or "").strip().lower()
+                    if ln1 and ln1 == ln2:
+                        fn1, fn2 = (e1.first or "").strip().lower(), (e2.first or "").strip().lower()
+                        is_name_match = (
+                            fn1 == fn2
+                            or (len(fn1) >= 3 and len(fn2) >= 3 and (fn1.startswith(fn2) or fn2.startswith(fn1)))
+                            or ((fn1, fn2) in (("fran", "frances"), ("frances", "fran")))
+                        )
+                        if is_name_match:
+                            z1, z2 = (e1.zip or "").strip(), (e2.zip or "").strip()
+                            same_zip = bool(z1 and z2 and z1 == z2)
+                            dob1, dob2 = getattr(e1, "dob", None), getattr(e2, "dob", None)
+                            dob_match = False
+                            if dob1 and dob2:
+                                if dob1 == dob2:
+                                    dob_match = True
+                                elif dob1.month == dob2.month and dob1.day == dob2.day and abs(dob1.year - dob2.year) <= 1:
+                                    dob_match = True
+                            if same_zip and dob_match:
+                                census_dup_pairs.append(f"{e1.display} & {e2.display}")
+
+            if census_dup_pairs:
+                issues.append(Issue(
+                    issue_id="ISSUE_CENSUS_DUPLICATE_EMPLOYEES",
+                    rule_id="RULE_06_CENSUS_CONSERVATION",
+                    target_ref="census.employees.duplicates",
+                    issue_type=IssueType.DUPLICATE_EMPLOYEE_DETECTED,
+                    severity=IssueSeverity.WARNING,
+                    earliest_stage=EarliestStage.NORMALIZATION,
+                    expected_state="Cross-source duplicate employees must be deduplicated and merged",
+                    observed_state=f"Duplicate employees detected: {census_dup_pairs[:3]}",
+                    allowed_actions=[RepairAction.DEDUPLICATE_CENSUS_EMPLOYEES],
                 ))
 
         report = self._build_report(checks, issues)
