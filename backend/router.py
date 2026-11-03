@@ -31,6 +31,7 @@ from typing import Optional
 import census_config as C
 from models import Census, Findings, InvoiceDoc, InvoiceRecord, Person, Prospect, RowResult
 from readers import RawDoc
+from utils import is_valid_person_name
 
 log = logging.getLogger("census.router")
 
@@ -537,88 +538,99 @@ def generate_missing_information_email(
     comparison_items = []
     if not have_census and have_invoice:
         comparison_items.append("Employee census document was not provided. Census creation and comparison could not be completed.")
-    elif have_census and not have_invoice:
-        comparison_items.append("Current medical invoice or Benefit Enrollment Register was not provided. Full census versus invoice comparison could not be completed.")
-    elif have_census and have_invoice:
-        pay_date, med_deductions, payroll_docs_desc, payroll_names = _extract_payroll_info(roles, docs)
+    elif have_census:
+        if not have_invoice:
+            comparison_items.append("Current medical invoice or Benefit Enrollment Register was not provided. Full census versus invoice comparison could not be completed.")
 
-        # Invoice details
-        inv_doc = selected_invoices[0] if selected_invoices else None
-        inv_num = inv_doc.number if inv_doc else ""
-        inv_period = inv_doc.period_start.strftime("%B %Y") if inv_doc and inv_doc.period_start else ""
-        inv_base = f"{inv_period} Benefit Invoice" if inv_period else "Benefit Invoice"
-        inv_with_num = f"{inv_base} (#{inv_num})" if inv_num else inv_base
-        inv_without_num = inv_base
+        # Check for missing required demographics (Section 10.3 / 10.4)
+        if census:
+            for emp in census.employees:
+                if not getattr(emp, "invoice_only", False) and getattr(emp, "disposition", "") != "EXCLUDE_PART_TIME":
+                    if not emp.first or not str(emp.first).strip() or not is_valid_person_name(emp.first):
+                        comparison_items.append(f"{emp.last}: First name is missing or illegible in the uploaded census. Please provide the employee's full legal name.")
+                    if emp.coverage == "WP" and (not emp.plan or emp.plan.upper() in ("NA", "N/A", "NONE", "")) and not have_invoice:
+                        comparison_items.append(f"{emp.last}: No medical election is on file. Please confirm whether {emp.last} will elect medical coverage upon completing the waiting period.")
 
         unbilled_handled = set()
         conflict_handled = set()
 
-        # (A) Unbilled Active Employees (enrolled on census, missing from invoice)
-        unbilled_active = []
-        if census:
-            for emp in census.employees:
-                if emp.coverage in C.ACTIVE_TIERS and not emp.invoice_only:
-                    res = results.get(id(emp)) if results else None
-                    if not res or not res.inv or getattr(res, "status", "") == "Unbilled Active":
-                        unbilled_active.append(emp)
+        if have_invoice:
+            pay_date, med_deductions, payroll_docs_desc, payroll_names = _extract_payroll_info(roles, docs)
 
-        for idx, emp in enumerate(unbilled_active):
-            who = f"{emp.first} {emp.last}".strip()
-            unbilled_handled.add(who.lower())
-            p_obj = "him" if emp.gender in ("M", "Male", "Man / Male") else ("her" if emp.gender in ("F", "Female", "Woman / Female") else "them")
-            p_subj = "he" if emp.gender in ("M", "Male", "Man / Male") else ("she" if emp.gender in ("F", "Female", "Woman / Female") else "they")
-            p_subj_cap = p_subj.capitalize()
-            p_poss = "his" if emp.gender in ("M", "Male", "Man / Male") else ("her" if emp.gender in ("F", "Female", "Woman / Female") else "their")
+            # Invoice details
+            inv_doc = selected_invoices[0] if selected_invoices else None
+            inv_num = inv_doc.number if inv_doc else ""
+            inv_period = inv_doc.period_start.strftime("%B %Y") if inv_doc and inv_doc.period_start else ""
+            inv_base = f"{inv_period} Benefit Invoice" if inv_period else "Benefit Invoice"
+            inv_with_num = f"{inv_base} (#{inv_num})" if inv_num else inv_base
+            inv_without_num = inv_base
 
-            # Coverage tier text
-            if emp.coverage == "EE":
-                tier_str = "Employee Only"
-            elif emp.coverage == "ES":
-                sp = next((d for d in emp.dependents if getattr(d, "role", "") == "SP" or getattr(d, "relationship", "") == "SP"), None)
-                if sp:
-                    tier_str = f"Employee + Spouse (spouse {sp.first} {sp.last})"
+            # (A) Unbilled Active Employees (enrolled on census, missing from invoice)
+            unbilled_active = []
+            if census:
+                for emp in census.employees:
+                    if emp.coverage in C.ACTIVE_TIERS and not emp.invoice_only:
+                        res = results.get(id(emp)) if results else None
+                        if not res or not res.inv or getattr(res, "status", "") == "Unbilled Active":
+                            unbilled_active.append(emp)
+
+            for idx, emp in enumerate(unbilled_active):
+                who = f"{emp.first} {emp.last}".strip()
+                unbilled_handled.add(who.lower())
+                p_obj = "him" if emp.gender in ("M", "Male", "Man / Male") else ("her" if emp.gender in ("F", "Female", "Woman / Female") else "them")
+                p_subj = "he" if emp.gender in ("M", "Male", "Man / Male") else ("she" if emp.gender in ("F", "Female", "Woman / Female") else "they")
+                p_subj_cap = p_subj.capitalize()
+                p_poss = "his" if emp.gender in ("M", "Male", "Man / Male") else ("her" if emp.gender in ("F", "Female", "Woman / Female") else "their")
+
+                # Coverage tier text
+                if emp.coverage == "EE":
+                    tier_str = "Employee Only"
+                elif emp.coverage == "ES":
+                    sp = next((d for d in emp.dependents if getattr(d, "role", "") == "SP" or getattr(d, "relationship", "") == "SP"), None)
+                    if sp:
+                        tier_str = f"Employee + Spouse (spouse {sp.first} {sp.last})"
+                    else:
+                        tier_str = "Employee + Spouse"
+                elif emp.coverage == "EC":
+                    chs = [d for d in emp.dependents if getattr(d, "role", "") == "CH" or getattr(d, "relationship", "") == "CH"]
+                    if chs:
+                        tier_str = f"Employee + Child(ren) (child {', '.join(d.first + ' ' + d.last for d in chs)})"
+                    else:
+                        tier_str = "Employee + Child(ren)"
+                elif emp.coverage == "FAM":
+                    deps = emp.dependents
+                    if deps:
+                        tier_str = f"Family ({', '.join(d.first + ' ' + d.last for d in deps)})"
+                    else:
+                        tier_str = "Family"
                 else:
-                    tier_str = "Employee + Spouse"
-            elif emp.coverage == "EC":
-                chs = [d for d in emp.dependents if getattr(d, "role", "") == "CH" or getattr(d, "relationship", "") == "CH"]
-                if chs:
-                    tier_str = f"Employee + Child(ren) (child {', '.join(d.first + ' ' + d.last for d in chs)})"
+                    tier_str = emp.coverage
+
+                eff_str = f", effective {emp.effective_date:%m/%d/%Y}" if getattr(emp, "effective_date", None) else ""
+
+                fn = emp.first.lower().split()[0] if emp.first else ""
+                ln = emp.last.lower().strip() if emp.last else ""
+                ded_amt = med_deductions.get((fn, ln))
+
+                inv_ref = inv_with_num if idx == 0 else inv_without_num
+
+                if ded_amt is not None:
+                    ded_clause = f", and the {pay_date} payroll deducts ${ded_amt:.2f} for medical"
+                    inv_clause = f"However, {p_subj} is not billed for medical on the {inv_ref}."
                 else:
-                    tier_str = "Employee + Child(ren)"
-            elif emp.coverage == "FAM":
-                deps = emp.dependents
-                if deps:
-                    tier_str = f"Family ({', '.join(d.first + ' ' + d.last for d in deps)})"
-                else:
-                    tier_str = "Family"
-            else:
-                tier_str = emp.coverage
+                    ded_clause = ""
+                    inv_clause = f"{p_subj_cap} is not billed for medical on the {inv_ref}."
 
-            eff_str = f", effective {emp.effective_date:%m/%d/%Y}" if getattr(emp, "effective_date", None) else ""
+                paragraph = (
+                    f"{who}: The enrollment report shows {p_obj} on {emp.plan}, {tier_str}{eff_str}{ded_clause}. "
+                    f"{inv_clause} Please confirm {p_poss} coverage status and provide a corrected invoice or Benefit Enrollment Register."
+                )
+                comparison_items.append(paragraph)
 
-            fn = emp.first.lower().split()[0] if emp.first else ""
-            ln = emp.last.lower().strip() if emp.last else ""
-            ded_amt = med_deductions.get((fn, ln))
-
-            inv_ref = inv_with_num if idx == 0 else inv_without_num
-
-            if ded_amt is not None:
-                ded_clause = f", and the {pay_date} payroll deducts ${ded_amt:.2f} for medical"
-                inv_clause = f"However, {p_subj} is not billed for medical on the {inv_ref}."
-            else:
-                ded_clause = ""
-                inv_clause = f"{p_subj_cap} is not billed for medical on the {inv_ref}."
-
-            paragraph = (
-                f"{who}: The enrollment report shows {p_obj} on {emp.plan}, {tier_str}{eff_str}{ded_clause}. "
-                f"{inv_clause} Please confirm {p_poss} coverage status and provide a corrected invoice or Benefit Enrollment Register."
-            )
-            comparison_items.append(paragraph)
-
-        # (B) Cross-document conflicts:
-        # Per Sections 1.2, 12, 28, and 29 of the Controlling Underwriting Instructions,
-        # payroll and wage documents must never drive enrollment deficiencies. Active medical employees
-        # billed on invoice are not questioned merely because they do not appear on a payroll register.
+            # (B) Cross-document conflicts:
+            # Per Sections 1.2, 12, 28, and 29 of the Controlling Underwriting Instructions,
+            # payroll and wage documents must never drive enrollment deficiencies. Active medical employees
+            # billed on invoice are not questioned merely because they do not appear on a payroll register.
 
         # (C) Waiting Period Employees (coverage == WP)
         if census:

@@ -13,7 +13,7 @@ from classifier import Header, body, detect_header
 from models import Census, Person
 from readers import RawDoc
 from utils import (build_gender_candidate, clean, display_name, is_blank, is_unavailable_gender,
-                   name_key, parse_date, resolve_gender_candidates, split_full_name,
+                   is_valid_person_name, name_key, parse_date, recover_ocr_name, resolve_gender_candidates, split_full_name,
                    std_cobra, std_coverage, std_gender, std_relationship, std_zip, to_money)
 
 log = logging.getLogger("census.builder")
@@ -148,52 +148,61 @@ def _is_masked_or_empty(s: str) -> bool:
 
 
 def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
-    combined = f"{clean(plan_name)} {clean(plan_type)}".lower()
+    combined = f"{clean(plan_name)} {clean(plan_type)}".lower().strip()
+    if not combined:
+        return False
+    # Demographic / relationship terms (e.g. 'Dependent', 'Child', 'Spouse') are not benefit types
+    cleaned = re.sub(r"\b(dependents?|dep|child|children|spouse)\b", " ", combined).strip()
+    if not cleaned:
+        return False
 
     # Core medical plan signals (network types, plan acronyms, benefit designs)
     med_signals = (
         "ppo", "pos", "cpos", "cposii", "hmo", "epo", "oaas", "oap", "afa", "sgp", "awh",
         "open access", "hdhp", "cdhp", "copay", "coinsurance", "deductible", "medical"
     )
-    has_medical_signal = any(s in combined for s in med_signals)
+    has_medical_signal = any(s in cleaned for s in med_signals)
 
     # Strong, unambiguous non-medical line signals take priority: provider/plan codes such as
     # AETDEN / AET-DMO DEN / VSP / METLDI LIF / METLDI LTD. These override weak tokens like 'ppo'
     # that appear inside dental provider codes (e.g. 'AET-APPO').
-    if re.search(r"\b(den|dmo|dmd|dnt|vsp|wis|ltl)\b", combined):
+    if re.search(r"\b(den|dental|dmo|dmd|dnt|vsp|wis|ltl)\b", cleaned):
         return True
-    if re.search(r"\blif\b|\bltd\b|\bstd\b", combined):
+    if re.search(r"\b(life|lif|ltd|std)\b", cleaned):
         return True
 
     # Standalone HSA spending accounts (without medical plan indicators)
-    if re.search(r"\b(hsa\s*(?:fee|contribution|spending|deposit|account|bank|admin))\b", combined):
+    if re.search(r"\b(hsa\s*(?:fee|contribution|spending|deposit|account|bank|admin))\b", cleaned):
         return True
-    if combined.strip() in ("hsa", "hsa account", "hsa contribution", "hsa fee", "hsa bank"):
+    if cleaned in ("hsa", "hsa account", "hsa contribution", "hsa fee", "hsa bank"):
         return True
 
     # Non-medical lines (excluding 'hsa' because high-deductible medical plans routinely include 'HSA' in plan titles)
-    non_med_words = (
-        "dent", "vis", "life", "lif", "disab", "ltd", "std", "accid", "fsa",
-        "legal", "pet", "indemn", "crit", "identity", "ad&d", "spending",
-        "401k", "401(k)", "401 k", "retirement", "pension", "commuter", "transit", "parking", "eap"
+    non_med_res = (
+        r"\b(dent|dental)\b", r"\b(vis|vision)\b", r"\b(life|lif)\b", r"\b(disab|disability)\b",
+        r"\b(ltd|std)\b", r"\b(accid|accident)\b", r"\b(fsa)\b", r"\b(legal)\b", r"\b(pet)\b",
+        r"\b(indemn|indemnity)\b", r"\b(crit|critical)\b", r"\b(identity)\b", r"\bad&d\b",
+        r"\b(spending|401k|401\(k\)|401\s*k|retirement|pension|commuter|transit|parking|eap)\b"
     )
 
-    if any(w in combined for w in non_med_words):
+    if any(re.search(pat, cleaned) for pat in non_med_res):
         if not has_medical_signal:
             return True
 
     pt = clean(plan_type).lower().strip()
     if pt:
-        if pt == "medical" or "med" in pt or "health" in pt:
+        pt_cleaned = re.sub(r"\b(dependents?|dep|child|children|spouse)\b", " ", pt).strip()
+        if pt_cleaned == "medical" or "med" in pt_cleaned or "health" in pt_cleaned:
             return False
-        if any(w in pt for w in non_med_words):
+        if any(re.search(pat, pt_cleaned) for pat in non_med_res):
             return True
-        if not has_medical_signal:
+        if not has_medical_signal and pt_cleaned:
             return True
 
     pn = clean(plan_name).lower()
     if pn:
-        if any(k in pn for k in non_med_words) and not has_medical_signal:
+        pn_cleaned = re.sub(r"\b(dependents?|dep|child|children|spouse)\b", " ", pn).strip()
+        if any(re.search(pat, pn_cleaned) for pat in non_med_res) and not has_medical_signal:
             return True
     return False
 
@@ -276,7 +285,7 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
     w_reason = clean(row_vals.get("waive_reason", getattr(p, "waive_reason", "")))
     if w_reason:
         p.waive_reason = w_reason
-    if clean(cov).lower() in ("waived", "wo", "waiver", "opt out", "opted out") or (not p.coverage and w_reason):
+    if clean(cov).lower() in ("waived", "wo", "waiver", "opt out", "opted out", "w") or (not p.coverage and w_reason):
         p.coverage = "WO"
     if is_employee and clean(cov) and not p.coverage and clean(cov).lower() not in ("enrolled", "active", "yes"):
         p.note(f"Invalid Coverage Code: '{clean(cov)}'", red=True)
@@ -304,10 +313,13 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
         p.waive_reason = clean(row_vals.get("waive_reason")) or getattr(p, "waive_reason", "")
         p.job_title = clean(row_vals.get("job_title"))
         p.salary = clean(row_vals.get("salary"))
-        if p.coverage == "WO":
-            if p.plan and p.plan.lower() in ("cost", "waived", "other", "other coverage", "spouse", "spousal", "medicare", "va", "none", "na", "n/a"):
+        if p.coverage in ("WO", "RC"):
+            if p.plan and p.plan.lower() in ("cost", "waive", "waived", "waiver", "opt out", "opted out", "other", "other coverage", "spouse", "spousal", "medicare", "va", "none", "na", "n/a", "declined", "decline", "refused", "refuse"):
                 if not p.waive_reason:
                     p.waive_reason = p.plan
+                p.plan = ""
+        elif p.coverage == "WP":
+            if p.plan and p.plan.lower() in ("waiting period", "wp", "waiting", "in waiting period"):
                 p.plan = ""
     else:
         p.cobra = std_cobra(row_vals.get("cobra")) or "N"
@@ -514,6 +526,10 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
                                             "first_name", "last_name", "full_name",
                                             "emp_first", "emp_last", "emp_full", "sub_id"))):
         return False
+    # Attestation / ownership tables (e.g. 'Owner/Controller?' with no dob/coverage/plan/hire) are not census tables
+    if any(re.search(r"\b(owner\s*/\s*controller|beneficial\s*owner)\b", str(lab), re.I) for lab in hdr.labels):
+        if not any(k in cols for k in ("dob", "gender", "coverage", "plan", "hire_date", "salary")):
+            return False
 
     st.has_cov_col |= "coverage" in cols
     st.has_hire_col |= "hire_date" in cols
@@ -1369,7 +1385,7 @@ def _link_dependents(st: _State, effective_date=None) -> None:
 
     for emp in st.employees:
         # If employee has explicit waiver evidence, enforce WO immediately
-        if getattr(emp, "waive_reason", "") or (emp.cov_raw and clean(emp.cov_raw).lower() in ("waived", "wo", "waiver", "opt out", "opted out")):
+        if getattr(emp, "waive_reason", "") or (emp.cov_raw and clean(emp.cov_raw).lower() in ("waived", "wo", "waiver", "opt out", "opted out", "w")):
             emp.coverage = "WO"
             if not emp.plan:
                 emp.plan = "NA"
@@ -1379,8 +1395,18 @@ def _link_dependents(st: _State, effective_date=None) -> None:
 
         # Determine employee coverage tier if unassigned or generic "enrolled"
         if not emp.coverage or emp.coverage.lower() in ("enrolled", "active", "yes", "y", "true"):
-            if emp.cov_raw and emp.cov_raw.upper() in ("WO", "WAIVED", "NE", "WP", "RC"):
-                emp.coverage = emp.cov_raw.upper()
+            notes_str = " ".join(str(n) for n in (emp.notes or [])).lower()
+            if emp.cov_raw and (emp.cov_raw.upper() in ("WO", "WAIVED", "NE", "WP", "RC", "W", "P") or clean(emp.cov_raw).lower() in ("probation", "probationary")):
+                if emp.cov_raw.upper() in ("WO", "WAIVED", "W"):
+                    emp.coverage = "WO"
+                elif emp.cov_raw.upper() in ("WP", "P") or clean(emp.cov_raw).lower() in ("probation", "probationary"):
+                    emp.coverage = "WP"
+                else:
+                    emp.coverage = emp.cov_raw.upper()
+            elif any(k in notes_str for k in ("probation", "probationary", "waiting period", "not yet eligible")):
+                emp.coverage = "WP"
+            elif any(k in notes_str for k in ("waived", "opt out", "declined")):
+                emp.coverage = "WO"
             elif emp.cov_raw and emp.cov_raw.lower() in ("enrolled", "active", "yes", "y", "true"):
                 emp.coverage = tier_from_deps(emp)
             elif has_medical_roster and not emp.plan:
@@ -1425,7 +1451,7 @@ def _order_output(st: _State) -> None:
         if e.coverage in ("EE", "ES", "EC", "FAM", "EF", "COUPLE") or (e.plan and e.plan.upper() not in ("", "NA", "N/A"))
     ]
     non_enrolled_emps = [e for e in st.employees if e not in enrolled_emps]
-    non_enrolled_emps.sort(key=lambda e: (e.last.lower(), e.first.lower()))
+    non_enrolled_emps.sort(key=lambda e: ((e.last or "").lower(), (e.first or "").lower()))
 
     out: list[Person] = []
     for emp in enrolled_emps + non_enrolled_emps:
@@ -1533,16 +1559,64 @@ def _extract_census_rows_smart(doc: RawDoc) -> list[dict]:
 def _parse_llm_census_rows(doc: RawDoc, rows: list[dict], st: _State) -> bool:
     count = 0
     for r in rows:
-        fn = clean(r.get("first_name"))
-        ln = clean(r.get("last_name"))
-        if not (fn or ln):
+        flags = r.get("flags") or r.get("validation_flags") or []
+        flag_text = " ".join(str(f) for f in flags) if isinstance(flags, list) else str(flags or "")
+
+        raw_fn = clean(r.get("first_name"))
+        raw_ln = clean(r.get("last_name"))
+        fn = raw_fn
+        ln = raw_ln
+
+        # Validate first name: if non-name OCR noise / symbols / digits (e.g. 'P6T&L'), check if it starts with enrollment code
+        cov_from_fn = ""
+        if fn and not is_valid_person_name(fn):
+            low_f = fn.strip().lower()
+            if low_f.startswith(('p', 'probation')):
+                cov_from_fn = "WP"
+            elif low_f.startswith(('w', 'waiv')):
+                cov_from_fn = "WO"
+            # Section 10.3: Leave blank, do not guess
+            fn = ""
+
+        if ln and not is_valid_person_name(ln):
+            if "," in ln or " " in ln:
+                parts = split_full_name(ln)
+                if parts and is_valid_person_name(parts[0]) and is_valid_person_name(parts[1]):
+                    fn, ln = parts[0], parts[1]
+
+        # Recover missing first name if compound last name or valid OCR token reported in validation flags
+        if not fn:
+            if ln and ("," in ln or " " in ln):
+                parts = split_full_name(ln)
+                if parts and is_valid_person_name(parts[0]) and is_valid_person_name(parts[1]):
+                    fn, ln = parts[0], parts[1]
+            elif flag_text:
+                m_raw_fn = re.search(r"first name\b[^\'\"]*[\'\"`:=]+\s*([A-Za-z0-9&@\$\+\!\-]+)", flag_text, re.I)
+                if m_raw_fn:
+                    cand_fn = recover_ocr_name(m_raw_fn.group(1))
+                    if cand_fn and len(cand_fn) >= 2 and is_valid_person_name(cand_fn):
+                        fn = cand_fn
+
+        cov_val = clean(r.get("coverage", "")) or cov_from_fn
+        # Recover waiting period (WP) or waived (WO) if indicated in validation flags, raw text, or single-letter code
+        if not cov_val or cov_val.lower() in ("enrolled", "active", "yes", "y", "true", ""):
+            low_flags = (flag_text + " " + raw_fn).lower()
+            if any(k in low_flags for k in ("probation", "probationary", "waiting period", "not yet eligible")) or re.search(r"\b(enroll\s*(?:code)?\s*[\'\"`:=]*\s*p)\b", low_flags) or re.search(r"\b([pP][0-9&@\$%\*\+=\<\>_\#/\\\|\?]+)\b", flag_text):
+                cov_val = "WP"
+            elif any(k in low_flags for k in ("waived", "waiving", "opt out", "declined")):
+                cov_val = "WO"
+        if not (fn or ln or raw_fn):
             continue
         rel = std_relationship(r.get("relationship", "EE")) or "EE"
-        p = Person(rel, fn, ln, source=doc.name)
+        p = Person(rel, fn if is_valid_person_name(fn) else None, ln if is_valid_person_name(ln) else (ln or None), source=doc.name)
         p.record_id = _next_record_id(st)
         p.sub_id = clean(r.get("sub_id", ""))
+        if flags:
+            for f in flags:
+                p.note(str(f))
+        if raw_fn and not is_valid_person_name(raw_fn):
+            p.note(f"Raw first name OCR token: '{raw_fn}'")
 
-        cov_val = clean(r.get("coverage", ""))
         if cov_val:
             st.has_cov_col = True
         hire_val = clean(r.get("hire_date", ""))
@@ -1554,9 +1628,9 @@ def _parse_llm_census_rows(doc: RawDoc, rows: list[dict], st: _State) -> bool:
             "dob": r.get("dob"),
             "zip": r.get("zip"),
             "coverage": cov_val,
-            "cobra": r.get("cobra"),
-            "plan": r.get("plan"),
-            "premium": r.get("premium"),
+            "cobra": "N" if cov_val in ("WO", "WP") else r.get("cobra"),
+            "plan": "NA" if cov_val in ("WO", "WP") else r.get("plan"),
+            "premium": None if cov_val in ("WO", "WP") else r.get("premium"),
             "hire": hire_val,
             "effective_date": r.get("effective_date"),
             "eligibility_class": r.get("eligibility_class", ""),
@@ -1566,6 +1640,12 @@ def _parse_llm_census_rows(doc: RawDoc, rows: list[dict], st: _State) -> bool:
             "job_title": r.get("job_title", ""),
             "salary": r.get("salary", ""),
         }, is_employee=(rel == "EE"), st=st)
+
+        if cov_val == "WP":
+            p.coverage = "WP"
+            p.plan = "NA"
+            p.cobra = "N"
+            p.eligibility_status = "WAITING_PERIOD"
 
         if rel == "EE":
             st.census.raw_employee_rows += 1
@@ -1646,7 +1726,16 @@ def _prepare_doc_tables(doc: RawDoc) -> list[tuple[str, pd.DataFrame]]:
 # ----------------------------------------------------------------- public ---
 def build_census(census_docs: list[RawDoc], effective_date=None, tracer=None) -> tuple[Census, dict]:
     st = _State()
-    for doc in census_docs:
+    # Prioritize primary dedicated census spreadsheets over auxiliary documents
+    ordered_docs = sorted(
+        census_docs,
+        key=lambda d: (
+            0 if getattr(d, "path", None) and getattr(d.path, "suffix", "").lower() in (".xlsx", ".xls", ".csv") and "census" in d.name.lower()
+            else (1 if getattr(d, "path", None) and getattr(d.path, "suffix", "").lower() in (".xlsx", ".xls", ".csv")
+            else (2 if "census" in d.name.lower() else 3))
+        )
+    )
+    for doc in ordered_docs:
         used_any = False
         from census_config import LLM_FIRST, USE_LLM_FALLBACK
 

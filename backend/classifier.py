@@ -54,7 +54,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
                      "dependentbeneficiaryrelationship", "dependentbeneficiaryrel", "depbeneficiaryrel",
                      "statusrelationship", "statusrelation", "typeemployeespousechild", "typeeespch",
                      "type", "eetype", "memberrole", "role", "dependenttype", "relationshiptype",
-                     "typeemployeespousechildren", "relationshipemployeespouseorchild", "relationshiptoinsured"],
+                     "typeemployeespousechildren", "relationshipemployeespouseorchild", "relationshiptoinsured",
+                     "employeedependent", "employeeordependent", "employeedep", "employeeanddependent", "eeordep", "eeanddep"],
     "coverage": ["coverage", "coveragetier", "tier", "coveragelevel", "enrollmenttier", "plantier",
                  "coveragetype", "election", "coveragecode", "enrollmentlevel", "benefittier", "ratetier",
                  "householdtier", "medicaltier", "coveragestatus", "coveragelevelvalue", "coveragelevelamount",
@@ -62,7 +63,9 @@ FIELD_ALIASES: dict[str, list[str]] = {
                  "medicalelection", "medicalelectioneees", "medicalelectioneeesec",
                  "coveragedetails", "coverageelection", "electedcoverage", "coveragedescription", "coverageoption",
                  "tierdescription", "medicalcoveragedetails", "benefitcoverage", "benefitcoveragetier", "coveragename",
-                 "medical1coveragelevel", "medicalcoveragetier", "medical1coveragetier", "medical1tier", "medical1election"],
+                 "medical1coveragelevel", "medicalcoveragetier", "medical1coveragetier", "medical1tier", "medical1election",
+                 "medicalcoveragelevel", "currentanticipatedhealthcoveragelevel", "anticipatedhealthcoveragelevel",
+                 "currenthealthcoveragelevel", "currentanticipatedcoveragelevel"],
     "status": ["status", "employeestatus", "memberstatus", "billingstatus", "policystatus",
                "enrollmentstatus", "enrolled", "coveragestatus", "medicalstatus", "medicalenrollment",
                "employeesstatus", "employeesstatusftfulltimeptparttime", "employeestatusftfulltimeptparttime"],
@@ -72,7 +75,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
              "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan",
              "planadminname", "adminplanname", "planadministrator", "medicalplandescription", "electedplan",
              "planenrolledname", "enrolledplanname", "benefitplan", "planadmin", "plannameadmin",
-             "medical1planname", "medical1plan", "medical1plancode"],
+             "medical1planname", "medical1plan", "medical1plancode",
+             "medicalplanselected", "planselected", "selectedplan", "selectedmedicalplan"],
     "plan_type": ["plantype", "benefittype", "lineofcoverage", "producttype", "benefitplantype"],
     "plan_category": ["plancategory", "benefitcategory", "productcategory", "benefitplancategory"],
     "carrier": ["carrier", "provider", "carriercode", "carriername", "insurancecarrier", "vendor",
@@ -89,7 +93,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
                 "currentcharge", "totalamount", "currentamountdue", "monthlycost", "premiumamount",
                 "totalrate", "monthlyrate", "totalmonthlyrate", "premiumrate", "totalpremiumrate", "fullrate",
                 "ratetotal", "rateamount", "totalmonthlypremium",
-                "currentrate", "billedrate", "totalbilled", "totalcost", "cost", "totalamountbilled", "billedcost"],
+                "currentrate", "billedrate", "totalbilled", "totalcost", "cost", "totalamountbilled", "billedcost",
+                "planrate", "medicalrate"],
     "sub_id": ["subscriberid", "memberid", "employeeid", "eeid", "empid", "id", "ssn", "ssnlast4",
                "certificate", "certno", "certificatenumber", "memberno", "subscriberssn", "employeessn",
                "eessn", "subscribernumber", "employeenumber", "empno", "idnumber", "ssn4", "last4ssn",
@@ -330,7 +335,7 @@ def classify(doc: RawDoc) -> str:
                 # Structural guard: a tabular employee roster (names + DOB header) that is not a
                 # payroll register must stay a census, even when it carries salary / WC-class /
                 # payroll-name columns that can mislead semantic classification.
-                if llm_role in {"payroll", "invoice", "rfp", "plan_design"} and _looks_like_roster(doc):
+                if llm_role in {"payroll", "invoice", "rfp", "plan_design"} and _looks_like_roster(doc) and not re.search(r"\b(rfp|request\s*for\s*proposal)\b", doc.name, re.I):
                     log.info("LLM-First classified '%s' as %s; overridden to census (employee roster "
                              "header detected, not a payroll register)", doc.name, llm_role)
                     return "census"

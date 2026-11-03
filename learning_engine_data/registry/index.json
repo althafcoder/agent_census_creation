@@ -4,6 +4,7 @@
     "learned_disambiguate_same_name_persons",
     "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_invoice_presence",
+    "learned_reconcile_waived_coverage_and_dependents",
     "learned_regenerate_workbook",
     "learned_repair_linkage_or_normalization",
     "pattern_abbreviated_first_name_invoice_matching",
@@ -29,6 +30,7 @@
     "learned_disambiguate_same_name_persons",
     "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_invoice_presence",
+    "learned_reconcile_waived_coverage_and_dependents",
     "learned_regenerate_workbook",
     "learned_repair_linkage_or_normalization",
     "pattern_census_cross_source_deduplication",
@@ -45,7 +47,7 @@
     "pattern_same_name_dob_disambiguation",
     "pattern_template_example_row_filtration"
   ],
-  "last_updated": "2026-11-02T18:44:04.452801",
+  "last_updated": "2026-11-03T16:54:25.185082",
   "validated_pattern_fingerprints": [
     "fp_abbreviated_first_name_invoice_matching_v1",
     "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1",
@@ -66,6 +68,7 @@
     "learned_disambiguate_same_name_persons",
     "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_invoice_presence",
+    "learned_reconcile_waived_coverage_and_dependents",
     "learned_regenerate_workbook",
     "learned_repair_linkage_or_normalization"
   ],

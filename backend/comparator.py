@@ -491,6 +491,11 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
     for d in census.unassigned_dependents:
         exc("Invalid dependent structures", d.display, "Unassigned dependent - no matching subscriber")
 
+    for d in census.dependents:
+        rr_dep = RowResult()
+        rr_dep.result = "Dependent"
+        results[id(d)] = rr_dep
+
     # Renewal rates for plan tables (only when renewal is required and provided)
     if renewal:
         plans = {p for (p, _t) in list(rates) + list(F.plan_enrollment)}

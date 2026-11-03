@@ -273,14 +273,15 @@ _COVERAGE_MAP = {
     "employeechildren": "EC", "empchild": "EC", "empchildren": "EC", "eechildren": "EC",
     "fam": "FAM", "family": "FAM", "employeefamily": "FAM", "eefamily": "FAM",
     "employeeplusfamily": "FAM", "subscriberfamily": "FAM", "eefam": "FAM", "empfamily": "FAM",
-    "ef": "FAM", "ee+f": "FAM", "eef": "FAM",
+    "ef": "FAM", "ee+f": "FAM", "eef": "FAM", "f": "FAM",
     "ne": "NE", "noteligible": "NE", "ineligible": "NE", "noteligibleforcoverage": "NE",
     "wp": "WP", "waitingperiod": "WP", "waiting": "WP", "inwaitingperiod": "WP", "waitperiod": "WP",
+    "probation": "WP", "probationary": "WP", "probationaryperiod": "WP", "p": "WP",
     "rc": "RC", "refused": "RC", "refusedcoverage": "RC", "refusingcoverage": "RC",
     "declined": "RC", "refuse": "RC", "refusal": "RC",
     "wo": "WO", "waived": "WO", "waive": "WO", "waivedothercoverage": "WO",
     "waivingforothercoverage": "WO", "waiver": "WO", "optout": "WO", "optedout": "WO",
-    "waivedcoverage": "WO", "otherCoverage".lower(): "WO",
+    "waivedcoverage": "WO", "w": "WO", "otherCoverage".lower(): "WO",
 }
 
 
@@ -301,7 +302,7 @@ def std_coverage(v) -> str:
         return "ES"
     if re.search(r"(child|kid)", low):
         return "EC"
-    if re.search(r"wait", low):
+    if re.search(r"wait", low) or re.search(r"\bprobation(ary)?\b", low) or low in ("p", "probation", "probationary"):
         return "WP"
     if re.search(r"(waiv|opt)", low):
         return "WO"
@@ -388,4 +389,40 @@ def match_plan(plan: str, candidates: list[str]) -> Optional[str]:
     second = sorted((SequenceMatcher(None, pk, plan_key(c)).ratio() for c in candidates), reverse=True)[1:2]
     if best and score >= 0.88 and (not second or score - second[0] > 0.05):
         return best
-    return None
+
+
+def is_valid_person_name(v: Any) -> bool:
+    """Check if a string represents a plausible human name rather than OCR noise,
+    form codes (e.g. 'P6T&L'), digits, or unparsed junk.
+    Controlling Underwriting Rule (Sec 10.3):
+    If a required value remains unavailable: Leave it blank. Do not guess.
+    """
+    if is_blank(v):
+        return False
+    s = clean(v).strip()
+    if len(s) < 2:
+        return False
+    # If it contains digits (0-9) or code symbols (&, @, $, %, *, +, =, <, >, _, #, /, \, |, ?)
+    # it is OCR noise / form grid artifacts / code, not a legitimate human name.
+    if re.search(r"[\d&@\$%\*\+=\<\>_\#/\\\|\?]", s):
+        return False
+    # Must contain at least two alphabetic characters
+    alpha_chars = [c for c in s if c.isalpha()]
+    if len(alpha_chars) < 2:
+        return False
+    # Acceptable characters in human names: letters, spaces, hyphens, apostrophes, periods
+    if not re.fullmatch(r"[A-Za-z\s\.\'\-]+", s):
+        return False
+    return True
+
+
+def recover_ocr_name(v) -> str:
+    """Validate and clean person name if valid, otherwise return empty string
+    in compliance with Section 10.3 (leave blank, do not guess).
+    """
+    if is_blank(v):
+        return ""
+    s = clean(v).strip().strip("'\"[](){}<>")
+    if is_valid_person_name(s):
+        return " ".join(w.capitalize() for w in s.split() if w)
+    return ""

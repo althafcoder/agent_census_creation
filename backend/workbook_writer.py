@@ -14,6 +14,7 @@ from openpyxl.utils import get_column_letter
 import census_config as C
 from comparator import tier_from_deps
 from models import Census, Findings, Prospect, RowResult
+from utils import is_valid_person_name
 
 THIN = Side(style="thin", color="FFBFBFBF")
 BOX = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
@@ -122,8 +123,8 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
 
         if p.invoice_only:
             ws.cell(r, tc["data_row"], None)
-            ws.cell(r, tc["first"], p.first or None)
-            ws.cell(r, tc["last"], p.last or None)
+            ws.cell(r, tc["first"], p.first if is_valid_person_name(p.first) else None)
+            ws.cell(r, tc["last"], p.last if is_valid_person_name(p.last) else (p.last or None))
             ws.cell(r, tc["gender"], None)
             ws.cell(r, tc["dob"], None)
             ws.cell(r, tc["zip"], None)
@@ -135,8 +136,8 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
             ws.cell(r, tc["premium"], None)
         else:
             ws.cell(r, tc["data_row"], p.row_no or None)
-            ws.cell(r, tc["first"], p.first or None)
-            ws.cell(r, tc["last"], p.last or None)
+            ws.cell(r, tc["first"], p.first if is_valid_person_name(p.first) else None)
+            ws.cell(r, tc["last"], p.last if is_valid_person_name(p.last) else (p.last or None))
             ws.cell(r, tc["gender"], p.gender or None)
             if p.dob:
                 ws.cell(r, tc["dob"], p.dob).number_format = "mm/dd/yyyy"
@@ -146,20 +147,27 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
             ws.cell(r, tc["relationship"], p.role)
             if p.role != "EE" and p.employee is not None:
                 ws.cell(r, tc["dep_of"], p.employee.row_no or None)
-            ws.cell(r, tc["coverage"], p.coverage or None)
-            ws.cell(r, tc["cobra"], p.cobra or None)
-            if p.coverage not in ("WO", "WP") and p.plan and p.plan.upper() not in ("NA", "N/A", "NOT ELIGIBLE", "WAIVED", "COST", "NONE"):
-                ws.cell(r, tc["plan"], p.plan or None)
-                if p.role == "EE" and p.premium is not None:
-                    ws.cell(r, tc["premium"], p.premium).number_format = '#,##0.00'
-
-        rr = results.get(id(p))
-        notes = list(p.notes)
-        if rr:
-            notes = notes + rr.notes
-            base = C.COMPARISON_START_COL  # Col M (13)
-            ws.cell(r, base, rr.inv_name or None)                                # Col M (13): Invoice Employee Name
             if p.role == "EE":
+                ws.cell(r, tc["coverage"], p.coverage or None)
+                ws.cell(r, tc["cobra"], p.cobra or None)
+                if p.coverage not in ("WO", "WP") and p.plan and p.plan.upper() not in ("NA", "N/A", "NOT ELIGIBLE", "WAIVED", "COST", "NONE"):
+                    ws.cell(r, tc["plan"], p.plan or None)
+                    if p.premium is not None:
+                        ws.cell(r, tc["premium"], p.premium).number_format = '#,##0.00'
+            else:
+                # Dependent row: Demographics and sub row only; plan/coverage/cobra/premium remain blank
+                ws.cell(r, tc["coverage"], None)
+                ws.cell(r, tc["cobra"], None)
+                ws.cell(r, tc["plan"], None)
+                ws.cell(r, tc["premium"], None)
+
+        if p.role == "EE":
+            rr = results.get(id(p))
+            notes = list(p.notes)
+            if rr:
+                notes = notes + rr.notes
+                base = C.COMPARISON_START_COL  # Col M (13)
+                ws.cell(r, base, rr.inv_name or None)                                # Col M (13): Invoice Employee Name
                 m_val = None
                 if rr.match_pct is not None:
                     m_val = 1 if rr.match_pct >= 100 else (0 if rr.match_pct == 0 else (round(rr.match_pct / 100.0, 2) if rr.match_pct > 1 else rr.match_pct))
@@ -171,32 +179,42 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
                     m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.ORANGE)
                 elif m_val is not None:
                     m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
-            else:
-                ws.cell(r, base + 1, None)
 
-            ws.cell(r, base + 2, rr.plan or None)                                # Col O (15): Invoice Plan
-            ws.cell(r, base + 3, rr.tier or None)                                # Col P (16): Invoice Tier
-            ws.cell(r, base + 4, rr.status or None)                              # Col Q (17): Invoice Status
-            if rr.inv_premium is not None:
-                ws.cell(r, base + 5, rr.inv_premium).number_format = '#,##0.00'  # Col R (18): Invoice Premium
-            if rr.renewal_premium is not None:
-                ws.cell(r, base + 6, rr.renewal_premium).number_format = '#,##0.00' # Col S (19): Renewal Premium
-            res = ws.cell(r, base + 7, rr.result or None)                        # Col T (20): Comparison Result
-            if rr.result == "Match":
-                res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
-            elif rr.result in ("Eligibility Conflict", "Missing From Census", "Invoice Employee Not Found In Census") or rr.result_red:
-                res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
-        _set_notes(ws.cell(r, C.COMPARISON_START_COL + 8), notes, base_font)     # Col U (21): Notes
+                ws.cell(r, base + 2, rr.plan or None)                                # Col O (15): Invoice Plan
+                ws.cell(r, base + 3, rr.tier or None)                                # Col P (16): Invoice Tier
+                ws.cell(r, base + 4, rr.status or None)                              # Col Q (17): Invoice Status
+                if rr.inv_premium is not None:
+                    ws.cell(r, base + 5, rr.inv_premium).number_format = '#,##0.00'  # Col R (18): Invoice Premium
+                if rr.renewal_premium is not None:
+                    ws.cell(r, base + 6, rr.renewal_premium).number_format = '#,##0.00' # Col S (19): Renewal Premium
+                res = ws.cell(r, base + 7, rr.result or None)                        # Col T (20): Comparison Result
+                if rr.result == "Match":
+                    res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
+                elif rr.result in ("Eligibility Conflict", "Missing From Census", "Invoice Employee Not Found In Census") or rr.result_red:
+                    res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
+            _set_notes(ws.cell(r, C.COMPARISON_START_COL + 8), notes, base_font)     # Col U (21): Notes
+        else:
+            for col_idx in range(C.COMPARISON_START_COL, C.COMPARISON_START_COL + len(C.COMPARISON_HEADERS)):
+                ws.cell(r, col_idx, None)
+            res = ws.cell(r, C.COMPARISON_START_COL + 7, "Dependent")            # Col T (20): Comparison Result
+            res.font = Font(name=base_font.name, sz=base_font.sz)
 
         if tracer:
             tracer.record_workbook_output(
                 p.record_id, p.display, r, p.row_no or 0, p.first, p.last, p.gender,
                 str(p.dob) if p.dob else "", p.zip, p.role,
                 p.employee.row_no if (p.role != "EE" and p.employee) else None,
-                p.coverage, p.cobra, p.plan, p.premium,
-                rr.inv_name if rr else "", rr.match_pct if rr else None,
-                rr.plan if rr else "", rr.tier if rr else "", rr.inv_premium if rr else None,
-                rr.renewal_premium if rr else None, rr.result if rr else ""
+                p.coverage if p.role == "EE" else None,
+                p.cobra if p.role == "EE" else None,
+                p.plan if p.role == "EE" else None,
+                p.premium if p.role == "EE" else None,
+                (rr.inv_name if rr else "") if p.role == "EE" else "",
+                (rr.match_pct if rr else None) if p.role == "EE" else None,
+                (rr.plan if rr else "") if p.role == "EE" else "",
+                (rr.tier if rr else "") if p.role == "EE" else "",
+                (rr.inv_premium if rr else None) if p.role == "EE" else None,
+                (rr.renewal_premium if rr else None) if p.role == "EE" else None,
+                (rr.result if rr else "") if p.role == "EE" else "Dependent"
             )
 
 
@@ -574,8 +592,8 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
                                                   horizontal="left" if col in (11, 14, 17, 21) else "center")
 
         ws.cell(r, 1, p.row_no)
-        ws.cell(r, 2, p.first or None)
-        ws.cell(r, 3, p.last or None)
+        ws.cell(r, 2, p.first if is_valid_person_name(p.first) else None)
+        ws.cell(r, 3, p.last if is_valid_person_name(p.last) else (p.last or None))
         ws.cell(r, 4, p.gender or None)
         if p.dob:
             ws.cell(r, 5, p.dob).number_format = "mm/dd/yyyy"
@@ -595,25 +613,27 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
             m_type = "CH"
         ws.cell(r, 7, m_type)
 
-        # Medical Coverage: EE/ES/EC/EF/WO/WP/OC/RC/NE (FAM -> EF)
-        cov = (p.coverage or "").strip().upper()
-        if cov in ("FAM", "FAMILY"):
-            cov = "EF"
-        ws.cell(r, 8, cov or None)
-        ws.cell(r, 9, p.cobra or ("N" if p.role in ("SP", "CH", "DP") or cov in ("WO", "WP") else "N"))
-
-        plan = p.plan
-        if plan:
-            plan = re.sub(r"\s+copy\b", "", plan, flags=re.I).strip()
-        plan = plan if cov not in ("WO", "WP") else None
-        if plan and plan.upper() in ("NA", "N/A", "NONE", "WAIVED", "NOT ELIGIBLE"):
-            plan = None
-        ws.cell(r, 10, plan)
-
-        # Comparison columns
-        rr = results.get(id(p))
-        notes = list(p.notes)
+        # Medical Coverage, Cobra, Plan, Comparison & Notes: ONLY for Employee rows (p.role == "EE")
+        # Dependents only have demographic information (Cols 1-7).
         if p.role == "EE":
+            # Medical Coverage: EE/ES/EC/EF/WO/WP/OC/RC/NE (FAM -> EF)
+            cov = (p.coverage or "").strip().upper()
+            if cov in ("FAM", "FAMILY"):
+                cov = "EF"
+            ws.cell(r, 8, cov or None)
+            ws.cell(r, 9, p.cobra or ("N" if cov in ("WO", "WP") else "N"))
+
+            plan = p.plan
+            if plan:
+                plan = re.sub(r"\s+copy\b", "", plan, flags=re.I).strip()
+            plan = plan if cov not in ("WO", "WP") else None
+            if plan and plan.upper() in ("NA", "N/A", "NONE", "WAIVED", "NOT ELIGIBLE"):
+                plan = None
+            ws.cell(r, 10, plan)
+
+            # Comparison columns
+            rr = results.get(id(p))
+            notes = list(p.notes)
             if rr:
                 notes = notes + rr.notes
                 base = C.MARSH_COMPARISON_START_COL  # Col K (11)
@@ -649,12 +669,16 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
                     res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
             _set_notes(ws.cell(r, C.MARSH_COMPARISON_START_COL + 10), notes, base_font)
         else:
-            for col_idx in range(C.MARSH_COMPARISON_START_COL, C.MARSH_COMPARISON_START_COL + 10):
+            # Dependent row: Demographics only (Cols 1-7).
+            # Plan name, coverage type, cobra, comparison columns, and discrepancies/notes remain blank,
+            # except Comparison Result which indicates 'Dependent'.
+            ws.cell(r, 8, None)
+            ws.cell(r, 9, None)
+            ws.cell(r, 10, None)
+            for col_idx in range(C.MARSH_COMPARISON_START_COL, C.MARSH_COMPARISON_START_COL + len(C.MARSH_COMPARISON_HEADERS)):
                 ws.cell(r, col_idx, None)
-            sub_name = p.employee.display if p.employee else ""
-            dep_note = f"Dependent of {sub_name}" if sub_name else ""
-            notes = [(dep_note, False)] if dep_note else []
-            _set_notes(ws.cell(r, C.MARSH_COMPARISON_START_COL + 10), notes, base_font)
+            res = ws.cell(r, C.MARSH_COMPARISON_START_COL + 9, "Dependent")       # Col T (20): Comparison Result
+            res.font = Font(name=base_font.name, sz=base_font.sz)
 
     # Clear pre-populated row numbers in unused rows
     for r in range(row, 520):
@@ -677,8 +701,8 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
             if not cell.has_style or cell.border.left.style is None:
                 _copy_style(body_src[col], cell)
 
-        ws_census.cell(r, 1, p.first or None)
-        ws_census.cell(r, 2, p.last or None)
+        ws_census.cell(r, 1, p.first if is_valid_person_name(p.first) else None)
+        ws_census.cell(r, 2, p.last if is_valid_person_name(p.last) else (p.last or None))
 
         # Type: Employee, Spouse, Partner, Child
         if p.role == "EE":

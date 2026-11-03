@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import census_config as C
-from utils import clean, to_money
+from utils import clean, is_valid_person_name, to_money
 from .contracts import (
     CheckResult,
     CheckStatus,
@@ -303,6 +303,8 @@ class UnderwritingValidator:
             invalid_wp_wo = []
             invalid_waived_active = []
             invalid_waived_deps = []
+            invalid_wp_misclassified = []
+            invalid_wp_false_discrepancy = []
             false_premium_discrepancies = []
             mup_violations = []
             part_time_violations = []
@@ -315,18 +317,53 @@ class UnderwritingValidator:
                 cov = (emp.coverage or "").strip().upper()
                 notes_str = " ".join(str(n) for n in (emp.notes or [])).lower()
                 cov_raw_str = clean(getattr(emp, "cov_raw", "")).lower()
+                plan_str = clean(getattr(emp, "plan", "")).lower()
+                w_reason = clean(getattr(emp, "waive_reason", "")).lower()
+
+                # Dynamic evidence for waived status
                 has_waiver_ev = bool(
-                    getattr(emp, "waive_reason", "") or
+                    w_reason or
+                    cov_raw_str in ("w", "wo", "waive", "waived", "waiver", "opt out", "opted out") or
                     any(k in cov_raw_str for k in ("waived", "wo", "waiver", "opt out", "opted out")) or
-                    "waived" in notes_str
+                    plan_str in ("w", "waive", "waived", "waiver") or
+                    any(k in plan_str for k in ("waived", "waiver", "opt out", "opted out")) or
+                    "waived" in notes_str or "opt out" in notes_str
                 )
+
+                # Dynamic evidence for waiting period status
+                has_wp_ev = bool(
+                    cov_raw_str in ("wp", "waiting", "waiting period", "wait period", "probation", "probationary", "p") or
+                    any(k in cov_raw_str for k in ("waiting period", "wait period", "probation", "in waiting")) or
+                    plan_str in ("wp", "waiting", "waiting period", "wait period", "probation", "probationary", "p") or
+                    any(k in plan_str for k in ("waiting period", "wait period", "probation", "awaiting eligibility")) or
+                    any(k in notes_str for k in ("waiting period", "awaiting eligibility", "wp employee", "probation", "probationary", "not yet eligible")) or
+                    re.search(r"\b(enroll\s*(?:code)?\s*[\'\"`:=]*\s*p)\b", notes_str) or
+                    re.search(r"\b([pP][0-9&@\$%\*\+=\<\>_\#/\\\|\?]+)\b", notes_str) or
+                    (emp.first and not is_valid_person_name(emp.first) and str(emp.first).strip().upper().startswith("P"))
+                )
+
                 res = results.get(id(emp))
+                is_active_inv = bool(res and res.inv and getattr(res.inv, "plan", ""))
 
                 # Check for Waived incorrectly mapped as WP or active tiers
                 if has_waiver_ev and cov == "WP":
                     invalid_wp_wo.append(f"{emp.first} {emp.last} (notes='{notes_str}', cov='WP')")
                 elif has_waiver_ev and (cov in C.ACTIVE_TIERS or getattr(emp, "dependents", []) or (res and getattr(res, "result", "") == "Not On Invoice")):
                     invalid_waived_active.append(f"{emp.first} {emp.last} (cov='{cov}', deps={len(getattr(emp, 'dependents', []))}, result='{getattr(res, 'result', '') if res else ''}')")
+                elif has_waiver_ev and res and any("Census Employee Not Found On Invoice" in str(n) for n in getattr(res, "notes", [])):
+                    invalid_waived_active.append(f"{emp.first} {emp.last} (waived employee flagged as missing on invoice)")
+
+                # Check for Waiting Period incorrectly mapped as WO or active tiers
+                if has_wp_ev and not is_active_inv:
+                    if cov == "WO":
+                        invalid_wp_misclassified.append(f"{emp.first} {emp.last} (waiting period employee misclassified as cov='WO')")
+                    elif cov in C.ACTIVE_TIERS:
+                        invalid_wp_misclassified.append(f"{emp.first} {emp.last} (waiting period employee misclassified as active '{cov}')")
+                    elif res and (getattr(res, "result", "") == "Not On Invoice" or any("Census Employee Not Found On Invoice" in str(n) for n in getattr(res, "notes", []))):
+                        invalid_wp_false_discrepancy.append(f"{emp.first} {emp.last} (waiting period flagged as missing on invoice instead of Expected - Waiting Period)")
+                elif cov == "WP" and not is_active_inv and res:
+                    if getattr(res, "result", "") == "Not On Invoice" or any("Census Employee Not Found On Invoice" in str(n) for n in getattr(res, "notes", [])):
+                        invalid_wp_false_discrepancy.append(f"{emp.first} {emp.last} (WP employee flagged as missing on invoice)")
 
                 # Check for false premium discrepancies where census rate actually matches invoice premium
                 if res and getattr(res, "notes", []):
@@ -413,6 +450,60 @@ class UnderwritingValidator:
                     reason="All same-person gender/sex candidates resolved consistently to M/F",
                 ))
 
+            # Gate B2: Required Demographics Check (Section 10.1 & 10.3)
+            # Obligation: Normalize Name, DOB, Gender, Zip, Coverage Tier, Plan. Preserve legitimate source blanks.
+            missing_demographics: list[str] = []
+            for emp in getattr(census, "employees", []):
+                if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False) or getattr(emp, "disposition", "") == "EXCLUDE_PART_TIME":
+                    continue
+                invalid_fields = []
+                # Check for un-normalized OCR noise or junk symbols (e.g. 'P6T&L')
+                if emp.first and not is_valid_person_name(emp.first):
+                    invalid_fields.append(f"invalid first_name '{emp.first}'")
+                if emp.last and not is_valid_person_name(emp.last):
+                    invalid_fields.append(f"invalid last_name '{emp.last}'")
+                if not emp.coverage or not str(emp.coverage).strip():
+                    invalid_fields.append("missing coverage")
+
+                # If first name is completely blank:
+                # Per Section 10.3: Preserve legitimate source blank if flagged/documented for Missing Information Email.
+                if not emp.first or not str(emp.first).strip():
+                    notes_t = " ".join(str(n) for n in (emp.notes or [])).lower()
+                    is_documented_blank = any(k in notes_t for k in ("missing", "illegible", "inquiry", "unconfirmed", "blank", "flagged"))
+                    if not is_documented_blank:
+                        invalid_fields.append("unaccounted missing first_name")
+
+                if invalid_fields:
+                    missing_demographics.append(f"{emp.display}: {', '.join(invalid_fields)}")
+
+            if missing_demographics:
+                checks.append(CheckResult(
+                    rule_id="RULE_10_REQUIRED_FIELDS",
+                    section="10.1",
+                    name="Census Required Demographic Fields Check",
+                    status=CheckStatus.FAIL,
+                    reason=f"Census employees missing required demographic fields: {missing_demographics[:3]}",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_MISSING_REQUIRED_DEMOGRAPHICS",
+                    rule_id="RULE_10_REQUIRED_FIELDS",
+                    target_ref="census.employees.demographics",
+                    issue_type=IssueType.MISSING_REQUIRED_DEMOGRAPHIC,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.NORMALIZATION,
+                    expected_state="All census employees have required first_name, last_name, and coverage tier",
+                    observed_state=f"Missing: {missing_demographics[:3]}",
+                    allowed_actions=[RepairAction.RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS, RepairAction.REPLACE_STRUCTURED_VALUE],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_10_REQUIRED_FIELDS",
+                    section="10.1",
+                    name="Census Required Demographic Fields Check",
+                    status=CheckStatus.PASS,
+                    reason=f"All {len(getattr(census, 'employees', []))} census employees have required demographics (first name, last name, coverage)"
+                ))
+
             # Gate C: Dependent Disposition & Medical-Only Population Check
             non_med_dep_leaks = []
             stale_sub_links = []
@@ -479,33 +570,33 @@ class UnderwritingValidator:
                     reason="All dependent subscriber row links match final ordered employee row numbers",
                 ))
 
-            all_waived_defects = invalid_wp_wo + invalid_waived_active + invalid_waived_deps
-            if all_waived_defects:
+            all_status_defects = invalid_wp_wo + invalid_waived_active + invalid_waived_deps + invalid_wp_misclassified + invalid_wp_false_discrepancy
+            if all_status_defects:
                 checks.append(CheckResult(
                     rule_id="RULE_21_STATUS_HANDLING",
                     section="21.1",
-                    name="Waived Status WO Coding Check",
+                    name="Waived (WO) and Waiting Period (WP) Status Coding Check",
                     status=CheckStatus.FAIL,
-                    reason=f"Waived employees/dependents misclassified: {all_waived_defects[:3]}",
+                    reason=f"Status codes WP/WO misclassified or defective: {all_status_defects[:3]}",
                 ))
                 issues.append(Issue(
-                    issue_id="ISSUE_WAIVED_EMPLOYEE_OR_DEPENDENT_MISCLASSIFIED",
+                    issue_id="ISSUE_STATUS_CODE_WP_WO_DEFECT",
                     rule_id="RULE_21_STATUS_HANDLING",
                     target_ref="census.employees.coverage",
                     issue_type=IssueType.WAIVED_COVERAGE_OR_DEPENDENT_DEFECT,
                     severity=IssueSeverity.CRITICAL,
                     earliest_stage=EarliestStage.NORMALIZATION,
-                    expected_state="Waived employees coded as WO with no active tiers or dependents; waived dependents excluded",
-                    observed_state=f"Defects: {all_waived_defects[:3]}",
+                    expected_state="Waived coded as WO (Expected - Not Enrolled); Waiting Period coded as WP (Expected - Waiting Period); no false missing invoice flags",
+                    observed_state=f"Defects: {all_status_defects[:3]}",
                     allowed_actions=[RepairAction.RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS, RepairAction.REPLACE_STRUCTURED_VALUE],
                 ))
             else:
                 checks.append(CheckResult(
                     rule_id="RULE_21_STATUS_HANDLING",
                     section="21.1",
-                    name="Waived Status WO Coding Check",
+                    name="Waived (WO) and Waiting Period (WP) Status Coding Check",
                     status=CheckStatus.PASS,
-                    reason="All waived employees correctly mapped to WO and waived dependents properly excluded",
+                    reason="All waived (WO) and waiting period (WP) employees correctly mapped with zero false invoice discrepancies",
                 ))
 
             if false_premium_discrepancies:
@@ -1294,7 +1385,7 @@ class UnderwritingValidator:
                 "roles_detected": {k: len(v) for k, v in (roles or {}).items()},
             },
             "B_gender_resolution": {
-                "status": check_map.get("RULE_10_GENDER_RESOLUTION", "PASS"),
+                "status": "PASS" if check_map.get("RULE_10_GENDER_RESOLUTION", "PASS") == "PASS" and check_map.get("RULE_10_REQUIRED_FIELDS", "PASS") == "PASS" else "FAIL",
                 "total_canonical_people": len(active_people),
                 "resolved_m_f_count": resolved_genders,
                 "conflict_count": conflict_genders,

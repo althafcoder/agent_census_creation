@@ -1106,6 +1106,23 @@ class RepairEngine:
 
         carrier_label = self._detect_carrier_label_from_state(working_state)
         for emp in getattr(census, "employees", []):
+            notes_str = " ".join(str(n) for n in (emp.notes or [])).lower() if isinstance(emp.notes, list) else str(emp.notes or "").lower()
+            if not emp.first or not str(emp.first).strip():
+                if emp.last and ("," in emp.last or " " in emp.last):
+                    parts = split_full_name(emp.last)
+                    if parts and parts[0] and parts[1]:
+                        emp.first, emp.last = parts[0], parts[1]
+                elif getattr(emp, "preferred_first", ""):
+                    emp.first = emp.preferred_first
+                elif getattr(emp, "middle_name", ""):
+                    emp.first = emp.middle_name
+                else:
+                    raw_notes_text = " ".join(str(n[0]) if isinstance(n, tuple) else str(n) for n in (emp.notes or []))
+                    m_raw_fn = re.search(r"first name\b[^\'\"]*[\'\"`:=]+\s*([A-Za-z0-9&@\$\+\!\-]+)", raw_notes_text, re.I) if raw_notes_text else None
+                    if m_raw_fn:
+                        cand_fn = recover_ocr_name(m_raw_fn.group(1))
+                        if cand_fn and len(cand_fn) >= 2:
+                            emp.first = cand_fn
             if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False):
                 continue
             cov = (emp.coverage or "").strip().upper()
@@ -1190,6 +1207,23 @@ class RepairEngine:
         from models import InvoiceRecord
 
         for emp in getattr(census, "employees", []):
+            notes_str = " ".join(str(n) for n in (emp.notes or [])).lower() if isinstance(emp.notes, list) else str(emp.notes or "").lower()
+            if not emp.first or not str(emp.first).strip():
+                if emp.last and ("," in emp.last or " " in emp.last):
+                    parts = split_full_name(emp.last)
+                    if parts and parts[0] and parts[1]:
+                        emp.first, emp.last = parts[0], parts[1]
+                elif getattr(emp, "preferred_first", ""):
+                    emp.first = emp.preferred_first
+                elif getattr(emp, "middle_name", ""):
+                    emp.first = emp.middle_name
+                else:
+                    raw_notes_text = " ".join(str(n[0]) if isinstance(n, tuple) else str(n) for n in (emp.notes or []))
+                    m_raw_fn = re.search(r"first name\b[^\'\"]*[\'\"`:=]+\s*([A-Za-z0-9&@\$\+\!\-]+)", raw_notes_text, re.I) if raw_notes_text else None
+                    if m_raw_fn:
+                        cand_fn = recover_ocr_name(m_raw_fn.group(1))
+                        if cand_fn and len(cand_fn) >= 2:
+                            emp.first = cand_fn
             if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False) or getattr(emp, "disposition", "") == "EXCLUDE_PART_TIME":
                 continue
             cov = (emp.coverage or "").strip().upper()
@@ -1303,64 +1337,133 @@ class RepairEngine:
         if not census:
             return
 
-        from utils import clean
+        from utils import clean, is_valid_person_name, recover_ocr_name, split_full_name
         from census_builder import recalculate_row_numbers, update_candidate_dispositions
 
         for emp in getattr(census, "employees", []):
+            if emp.first and not is_valid_person_name(emp.first):
+                low_f = str(emp.first).strip().lower()
+                if low_f.startswith(('p', 'probation')):
+                    emp.coverage = "WP"
+                elif low_f.startswith(('w', 'waiv')):
+                    emp.coverage = "WO"
+                emp.first = None
+                emp.note("First name missing or illegible in source document; flagged for Missing Information Email.")
+
+            notes_str = " ".join(str(n) for n in (emp.notes or [])).lower() if isinstance(emp.notes, list) else str(emp.notes or "").lower()
+            if not emp.first or not str(emp.first).strip():
+                if emp.last and ("," in emp.last or " " in emp.last):
+                    parts = split_full_name(emp.last)
+                    if parts and parts[0] and parts[1] and is_valid_person_name(parts[0]):
+                        emp.first, emp.last = parts[0], parts[1]
+                elif getattr(emp, "preferred_first", "") and is_valid_person_name(emp.preferred_first):
+                    emp.first = emp.preferred_first
+                elif getattr(emp, "middle_name", "") and is_valid_person_name(emp.middle_name):
+                    emp.first = emp.middle_name
+                else:
+                    raw_notes_text = " ".join(str(n[0]) if isinstance(n, tuple) else str(n) for n in (emp.notes or []))
+                    m_raw_fn = re.search(r"first name\b[^\'\"]*[\'\"`:=]+\s*([A-Za-z0-9&@\$\+\!\-]+)", raw_notes_text, re.I) if raw_notes_text else None
+                    if m_raw_fn:
+                        cand_fn = recover_ocr_name(m_raw_fn.group(1))
+                        if cand_fn and len(cand_fn) >= 2 and is_valid_person_name(cand_fn):
+                            emp.first = cand_fn
+                if not emp.first:
+                    emp.note("First name missing or illegible in source document; flagged for Missing Information Email.")
             notes_str = " ".join(str(n) for n in (emp.notes or [])).lower() if isinstance(emp.notes, list) else str(emp.notes or "").lower()
             cov_raw_str = clean(getattr(emp, "cov_raw", "")).lower()
+            plan_str = clean(getattr(emp, "plan", "")).lower()
             w_reason = getattr(emp, "waive_reason", "")
             is_waived = bool(
                 w_reason or
                 (emp.coverage and emp.coverage.upper() == "WO") or
+                cov_raw_str in ("w", "wo", "waive", "waived", "waiver", "opt out", "opted out") or
                 any(k in cov_raw_str for k in ("waived", "wo", "waiver", "opt out", "opted out")) or
-                "waived" in notes_str
+                plan_str in ("w", "waive", "waived", "waiver") or
+                any(k in plan_str for k in ("waived", "waiver", "opt out", "opted out")) or
+                "waived" in notes_str or "opt out" in notes_str
             )
-            if not is_waived:
-                continue
+            is_wp = bool(
+                (emp.coverage and emp.coverage.upper() == "WP") or
+                cov_raw_str in ("wp", "waiting", "waiting period", "wait period", "probation", "probationary", "p") or
+                any(k in cov_raw_str for k in ("waiting period", "wait period", "probation", "in waiting", "not yet eligible")) or
+                plan_str in ("wp", "waiting", "waiting period", "wait period", "probation", "probationary", "p") or
+                any(k in plan_str for k in ("waiting period", "wait period", "probation", "awaiting eligibility")) or
+                any(k in notes_str for k in ("waiting period", "awaiting eligibility", "wp employee", "probation", "probationary", "not yet eligible")) or
+                re.search(r"\b(enroll\s*(?:code)?\s*[\'\"`:=]*\s*p)\b", notes_str) or
+                re.search(r"\b([pP][0-9&@\$%\*\+=\<\>_\#/\\\|\?]+)\b", notes_str)
+            )
 
-            emp.coverage = "WO"
-            emp.plan = "NA"
-            emp.cobra = "N"
-            emp.eligibility_status = "WAIVED"
-            emp.disposition = "RETAIN_MEDICAL_STATUS"
+            if is_waived:
+                emp.coverage = "WO"
+                emp.plan = "NA"
+                emp.cobra = "N"
+                emp.eligibility_status = "WAIVED"
+                emp.disposition = "RETAIN_MEDICAL_STATUS"
 
-            # Exclude all linked dependents
-            if hasattr(emp, "dependents") and emp.dependents:
-                for dep in list(emp.dependents):
-                    dep.disposition = "EXCLUDE_NON_MEDICAL_ONLY"
-                    dep.eligibility_status = "EXCLUDED_NON_MEDICAL"
-                    if dep not in getattr(census, "excluded_dependents", []):
-                        census.excluded_dependents.append(dep)
-                emp.dependents.clear()
+                # Exclude all linked dependents
+                if hasattr(emp, "dependents") and emp.dependents:
+                    for dep in list(emp.dependents):
+                        dep.disposition = "EXCLUDE_NON_MEDICAL_ONLY"
+                        dep.eligibility_status = "EXCLUDED_NON_MEDICAL"
+                        if dep not in getattr(census, "excluded_dependents", []):
+                            census.excluded_dependents.append(dep)
+                    emp.dependents.clear()
 
-            # Fix comparison results
-            res = results.get(id(emp))
-            if res:
-                res.status = "Not on invoice"
-                res.result = "Expected - Not Enrolled"
-                res.result_red = False
-                res.plan = None
-                res.tier = None
-                res.inv_premium = None
-                res.match_pct = None
-                res.inv_name = None
-                if isinstance(res.notes, list):
-                    res.notes = [n for n in res.notes if "not found on invoice" not in str(n).lower() and "most used" not in str(n).lower()]
+                # Fix comparison results
+                res = results.get(id(emp))
+                if res:
+                    res.status = "Not on invoice"
+                    res.result = "Expected - Not Enrolled"
+                    res.result_red = False
+                    res.plan = None
+                    res.tier = None
+                    res.inv_premium = None
+                    res.match_pct = None
+                    res.inv_name = None
+                    if isinstance(res.notes, list):
+                        res.notes = [n for n in res.notes if "not found on invoice" not in str(n).lower() and "most used" not in str(n).lower()]
 
-            # Remove from findings exceptions
-            if findings and hasattr(findings, "exceptions"):
-                if isinstance(findings.exceptions, dict):
-                    for cat in ("Employees missing from invoice", "Tier mismatches"):
-                        if cat in findings.exceptions:
-                            findings.exceptions[cat] = [e for e in findings.exceptions[cat] if e[0] != emp.display]
-                    if "missing_invoice" in findings.counters:
-                        findings.counters["missing_invoice"] = len(findings.exceptions.get("Employees missing from invoice", []))
-                elif isinstance(findings.exceptions, list):
-                    findings.exceptions = [
-                        e for e in findings.exceptions
-                        if not (e[0] in ("Missing from invoice", "Employees missing from invoice") and emp.display.lower() in str(e[1]).lower())
-                    ]
+                # Remove from findings exceptions
+                if findings and hasattr(findings, "exceptions"):
+                    if isinstance(findings.exceptions, dict):
+                        for cat in ("Employees missing from invoice", "Tier mismatches"):
+                            if cat in findings.exceptions:
+                                findings.exceptions[cat] = [e for e in findings.exceptions[cat] if e[0] != emp.display]
+                        if "missing_invoice" in findings.counters:
+                            findings.counters["missing_invoice"] = len(findings.exceptions.get("Employees missing from invoice", []))
+                    elif isinstance(findings.exceptions, list):
+                        findings.exceptions = [
+                            e for e in findings.exceptions
+                            if not (e[0] in ("Missing from invoice", "Employees missing from invoice") and emp.display.lower() in str(e[1]).lower())
+                        ]
+            elif is_wp:
+                emp.coverage = "WP"
+                emp.eligibility_status = "WAITING_PERIOD"
+                emp.disposition = "RETAIN_MEDICAL_STATUS"
+
+                res = results.get(id(emp))
+                if res and (not getattr(res, "inv", None) or not getattr(res.inv, "plan", "")):
+                    res.status = "Not on invoice"
+                    res.result = "Expected - Waiting Period"
+                    res.result_red = False
+                    if isinstance(res.notes, list):
+                        res.notes = [n for n in res.notes if "not found on invoice" not in str(n).lower() and "most used" not in str(n).lower()]
+                        if not any("awaiting eligibility" in str(n).lower() for n in res.notes):
+                            res.notes.append(("WP Employee - Awaiting Eligibility", True))
+
+                # Remove from findings exceptions
+                if findings and hasattr(findings, "exceptions"):
+                    if isinstance(findings.exceptions, dict):
+                        for cat in ("Employees missing from invoice", "Tier mismatches"):
+                            if cat in findings.exceptions:
+                                findings.exceptions[cat] = [e for e in findings.exceptions[cat] if e[0] != emp.display]
+                        if "missing_invoice" in findings.counters:
+                            findings.counters["missing_invoice"] = len(findings.exceptions.get("Employees missing from invoice", []))
+                    elif isinstance(findings.exceptions, list):
+                        findings.exceptions = [
+                            e for e in findings.exceptions
+                            if not (e[0] in ("Missing from invoice", "Employees missing from invoice") and emp.display.lower() in str(e[1]).lower())
+                        ]
 
         # Check all dependents
         for dep in getattr(census, "dependents", []):
@@ -1396,6 +1499,23 @@ class RepairEngine:
         from utils import to_money
 
         for emp in getattr(census, "employees", []):
+            notes_str = " ".join(str(n) for n in (emp.notes or [])).lower() if isinstance(emp.notes, list) else str(emp.notes or "").lower()
+            if not emp.first or not str(emp.first).strip():
+                if emp.last and ("," in emp.last or " " in emp.last):
+                    parts = split_full_name(emp.last)
+                    if parts and parts[0] and parts[1]:
+                        emp.first, emp.last = parts[0], parts[1]
+                elif getattr(emp, "preferred_first", ""):
+                    emp.first = emp.preferred_first
+                elif getattr(emp, "middle_name", ""):
+                    emp.first = emp.middle_name
+                else:
+                    raw_notes_text = " ".join(str(n[0]) if isinstance(n, tuple) else str(n) for n in (emp.notes or []))
+                    m_raw_fn = re.search(r"first name\b[^\'\"]*[\'\"`:=]+\s*([A-Za-z0-9&@\$\+\!\-]+)", raw_notes_text, re.I) if raw_notes_text else None
+                    if m_raw_fn:
+                        cand_fn = recover_ocr_name(m_raw_fn.group(1))
+                        if cand_fn and len(cand_fn) >= 2:
+                            emp.first = cand_fn
             res = results.get(id(emp))
             if not res or not getattr(res, "notes", []):
                 continue

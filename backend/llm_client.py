@@ -856,7 +856,14 @@ CRITICAL RULES FOR EMPLOYEES AND DEPENDENTS:
    - coverage: Approved codes (EE, ES, EC, FAM, WO, WP, NE, RC)
      * If enrolled in Medical: EE (Employee Only), ES (Employee + Spouse), EC (Employee + Child/ren), FAM (Family). Look at columns such as 'Coverage Level', 'Medical Tier', 'Medical 1 Coverage Level', 'Plan Tier', 'Election'.
      * If waived medical coverage (e.g. other coverage, spousal, Medicare, cost): WO
-     * If in waiting period / recent hire not yet eligible: WP
+     * If in waiting period / recent hire not yet eligible / probationary ('p'): WP
+     * Standard carrier/state single-letter and multi-letter enrollment column codes MUST be mapped:
+       - 'a' / 'active' -> active medical enrollment (EE/ES/EC/FAM based on tier/dependents)
+       - 'p' / 'probation' / 'probationary' / 'not yet eligible' -> WP (Waiting Period)
+       - 'w' / 'waiving' / 'waived' -> WO (Waived)
+       - 'd' / 'declining' -> WO (or RC if refused without other coverage)
+       - 'i' / 'ineligible' -> NE (Not Eligible)
+       - 'c' / 'cobra' -> Cobra 'Y'
      * If ineligible due to classification (e.g. Part-Time, Temporary, Seasonal, PRN): NE
      * If refused coverage without proof of other coverage: RC
 2. CRITICAL RULE FOR DEPENDENTS:
@@ -872,6 +879,11 @@ CRITICAL RULES FOR EMPLOYEES AND DEPENDENTS:
    - worker_category: Full-time, Part-time, Temporary, etc.
    - position_status: Active, Terminated, Leave, etc.
    - waive_reason: Reason for waiving (e.g. Spousal, Medicare, Other Coverage)
+4. Name fidelity and missing demographic handling (Section 10.3):
+   - Only return valid human names for first_name and last_name.
+   - Do NOT guess or fabricate names for illegible or OCR noise tokens (e.g. tokens with digits or symbols). If first name is omitted or illegible in the source, leave first_name empty ("").
+   - If an OCR token in the name/enroll area starts with a single-letter enrollment code (e.g. 'p' for probationary/waiting period WP, 'w' for waived WO), map the code to coverage and leave first_name blank if not present.
+   - If a single column contains a full name (e.g. 'Rice, William'), split into first_name and last_name accurately.
 
 Keys required for each object:
 - first_name: First name
