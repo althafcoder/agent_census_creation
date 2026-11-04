@@ -13,7 +13,7 @@
   ],
   "regression_results": {},
   "created_at": "2026-10-30T11:47:16.125479",
-  "updated_at": "2026-10-30T17:36:39.514742",
+  "updated_at": "2026-11-03T10:28:15.256310",
   "compatibility": {
     "instruction_hashes": [
       "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
@@ -70,11 +70,11 @@
       "REPAIR_PASSED"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-10-30T17:36:39.507741"
+    "last_verified_at": "2026-11-03T10:28:15.256310"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261030_173639",
+    "decision_ref": "verified_20261103_102815",
     "reason": "Verified during successful run repair (REGENERATE_WORKBOOK)"
   },
   "usage": {

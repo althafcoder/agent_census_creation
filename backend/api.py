@@ -455,15 +455,19 @@ async def process_files(
 
         log.info(">>> [API] Starting Census Comparison Pipeline on %d files...", len(saved_paths))
         res = run_pipeline(saved_paths, C_local.OUTPUT_DIR)
-        out_file = Path(res["output_file"])
-        txt_file = Path(res["txt_file"])
+        out_file = Path(res["output_file"]) if res.get("output_file") else None
+        txt_file = Path(res["txt_file"]) if res.get("txt_file") else None
 
         log.info(">>> [API] Pipeline completed successfully!")
         log.info("    * Carrier Routing: %s (State: %s)", res.get("carrier"), res.get("state"))
-        log.info("    * Primary Workbook: %s", out_file.name)
+        if out_file:
+            log.info("    * Primary Workbook: %s", out_file.name)
+        else:
+            log.info("    * Primary Workbook: None (Carrier workbook withheld per Section 4.2 / Section 25)")
         if res.get("sbu_output_file"):
             log.info("    * SBU Workbook    : %s", Path(res["sbu_output_file"]).name)
-        log.info("    * Exceptions Audit: %s", txt_file.name)
+        if txt_file:
+            log.info("    * Exceptions Audit: %s", txt_file.name)
         if res.get("email_file"):
             log.info("    * Missing Info Email: %s", Path(res["email_file"]).name)
         log.info("=" * 70)
@@ -475,7 +479,8 @@ async def process_files(
             out_deps = audit_info.get("out_dependents", 0)
             carrier = res.get("carrier", "Unknown")
             state = res.get("state", "")
-            log_universal("BENEFITS_UW", "process", primary_name, "SUCCESS", f"Carrier: {carrier} ({state}) | Generated {out_file.name} ({out_emps} emps / {out_deps} deps)", processed_by)
+            wb_name = out_file.name if out_file else "None"
+            log_universal("BENEFITS_UW", "process", primary_name, "SUCCESS", f"Carrier: {carrier} ({state}) | Generated {wb_name} ({out_emps} emps / {out_deps} deps)", processed_by)
         except Exception:
             pass
 
@@ -530,22 +535,27 @@ async def test_folder(req: FolderTestRequest, request: Request = None):
 
     try:
         res = run_pipeline(p, C_local.OUTPUT_DIR)
-        out_file = Path(res["output_file"])
-        txt_file = Path(res["txt_file"])
+        out_file = Path(res["output_file"]) if res.get("output_file") else None
+        txt_file = Path(res["txt_file"]) if res.get("txt_file") else None
 
         log.info(">>> [API] Folder pipeline completed successfully!")
         log.info("    * Carrier Routing: %s (State: %s)", res.get("carrier"), res.get("state"))
-        log.info("    * Primary Workbook: %s", out_file.name)
+        if out_file:
+            log.info("    * Primary Workbook: %s", out_file.name)
+        else:
+            log.info("    * Primary Workbook: None (withheld)")
         if res.get("sbu_output_file"):
             log.info("    * SBU Workbook    : %s", Path(res["sbu_output_file"]).name)
-        log.info("    * Exceptions Audit: %s", txt_file.name)
+        if txt_file:
+            log.info("    * Exceptions Audit: %s", txt_file.name)
         log.info("=" * 70)
 
         try:
             from database.poc_db import log_universal
             carrier = res.get("carrier", "Unknown")
             state = res.get("state", "")
-            log_universal("BENEFITS_UW", "folder_test", p.name, "SUCCESS", f"Carrier: {carrier} ({state}) | Generated {out_file.name}", processed_by)
+            wb_name = out_file.name if out_file else "None"
+            log_universal("BENEFITS_UW", "folder_test", p.name, "SUCCESS", f"Carrier: {carrier} ({state}) | Generated {wb_name}", processed_by)
         except Exception:
             pass
 

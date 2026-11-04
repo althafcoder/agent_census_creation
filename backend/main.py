@@ -44,6 +44,7 @@ from router import (
     generate_missing_information_email,
 )
 from tracer import DiagnosticTracer
+from utils import sanitize_filename
 from workbook_writer import (
     save_marsh_workbook,
     save_rapt_workbook,
@@ -501,7 +502,7 @@ def run_pipeline(
 
     # 8. write carrier-specific workbook(s) --------------------------------------------------------
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    name = (prospect.company or "Prospect").replace("/", "-").strip()[:40]
+    name = sanitize_filename(prospect.company or "Prospect", max_length=40)
 
     out_path: Path | None = None
     sbu_path: Path | None = None
@@ -511,18 +512,18 @@ def run_pipeline(
     elif routing.carrier == C.CARRIER_FLORIDA_BLUE or routing.is_florida:
         # Florida Blue -> RAPT Census Comparison Workbook only
         log.info("[7/8] Generating Florida Blue RAPT Census Excel workbook...")
-        out_path = output_dir / f"RAPT_Census_{name}_{stamp}.xlsx".replace(" ", "_")
+        out_path = output_dir / f"RAPT_Census_{name}_{stamp}.xlsx"
         save_rapt_workbook(C.RAPT_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
         log.info("      * Saved Florida Blue Excel: %s", out_path.name)
     elif routing.carrier == C.CARRIER_CIGNA or (routing.state and routing.state.upper() not in ("FL", "UNKNOWN", "CONFLICTING")):
         # Confirmed Non-Florida (Cigna routing) -> Marsh Primary + SBU Deliverables
         log.info("[7/8] Generating Cigna Marsh PEO Practice Census Comparison workbook...")
-        out_path = output_dir / f"Marsh_Census_{name}_{stamp}.xlsx".replace(" ", "_")
+        out_path = output_dir / f"Marsh_Census_{name}_{stamp}.xlsx"
         save_marsh_workbook(C.MARSH_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
         log.info("      * Saved Marsh Cigna Excel: %s", out_path.name)
 
         log.info("      * Generating SBU Census Template deliverable from finalized census...")
-        sbu_path = output_dir / f"SBU_Census_{name}_{stamp}.xlsx".replace(" ", "_")
+        sbu_path = output_dir / f"SBU_Census_{name}_{stamp}.xlsx"
         save_sbu_workbook(C.SBU_TEMPLATE_PATH, sbu_path, census, prospect)
         log.info("      * Saved SBU Cigna Excel: %s", sbu_path.name)
     else:
@@ -552,14 +553,14 @@ def run_pipeline(
         results=results,
         docs=docs,
     )
-    email_path = output_dir / f"Missing_Information_Email_{name}_{stamp}.txt".replace(" ", "_")
+    email_path = output_dir / f"Missing_Information_Email_{name}_{stamp}.txt"
     email_path.write_text(email_content, encoding="utf-8")
     F.email_text = email_content
     log.info("      * Saved Missing Information Email: %s", email_path.name)
 
     # Diagnostic Trace deliverable
     trace_summary = tracer.format_summary()
-    trace_path = output_dir / f"Diagnostic_Trace_{name}_{stamp}.txt".replace(" ", "_")
+    trace_path = output_dir / f"Diagnostic_Trace_{name}_{stamp}.txt"
     trace_path.write_text(trace_summary, encoding="utf-8")
     log.info("      * Saved Diagnostic Trace: %s", trace_path.name)
 
@@ -567,7 +568,7 @@ def run_pipeline(
     if out_path:
         txt_path = output_dir / out_path.name.replace(".xlsx", "_exceptions.txt")
     else:
-        txt_path = output_dir / f"Exceptions_Audit_{name}_{stamp}.txt".replace(" ", "_")
+        txt_path = output_dir / f"Exceptions_Audit_{name}_{stamp}.txt"
     txt_path.write_text(summary, encoding="utf-8")
     log.info("      * Saved Exceptions Report: %s", txt_path.name)
     log.info("\n" + summary)

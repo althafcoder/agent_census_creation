@@ -18,6 +18,10 @@ from protected_files import (
 from readers import read_all
 
 BW_DIR = Path(r"C:\Users\c1755\Documents\copilot_new_agent\Census_input-files\Proctected Files\FW__Company__BW_Cyber_LLC\FW__Company__BW_Cyber_LLC")
+try:
+    _BW_EXISTS = BW_DIR.exists()
+except (OSError, PermissionError):
+    _BW_EXISTS = False
 
 
 def test_clean_password_candidate():
@@ -43,7 +47,7 @@ def test_discover_passwords_from_text():
     assert cands[0].value == "BW Cyber"
 
 
-@pytest.mark.skipif(not BW_DIR.exists(), reason="BW Cyber test files folder not found")
+@pytest.mark.skipif(not _BW_EXISTS, reason="BW Cyber test files folder not found")
 def test_detect_file_encryption():
     emp_census = BW_DIR / "Employee Census.xlsx"
     dep_info = BW_DIR / "Dependent Information.xlsx"
@@ -52,7 +56,7 @@ def test_detect_file_encryption():
     assert detect_file_encryption(dep_info) == (False, "none")
 
 
-@pytest.mark.skipif(not BW_DIR.exists(), reason="BW Cyber test files folder not found")
+@pytest.mark.skipif(not _BW_EXISTS, reason="BW Cyber test files folder not found")
 def test_unlock_office_file():
     emp_census = BW_DIR / "Employee Census.xlsx"
 
@@ -68,7 +72,7 @@ def test_unlock_office_file():
     assert tmp.stat().st_size > 0
 
 
-@pytest.mark.skipif(not BW_DIR.exists(), reason="BW Cyber test files folder not found")
+@pytest.mark.skipif(not _BW_EXISTS, reason="BW Cyber test files folder not found")
 def test_execute_access_preflight_end_to_end():
     docs, access_records = execute_access_preflight(BW_DIR)
 

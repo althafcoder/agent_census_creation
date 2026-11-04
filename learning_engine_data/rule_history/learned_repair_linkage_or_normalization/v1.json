@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "learned_repair_linkage_or_normalization",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "learned_repair_linkage_or_normalization",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Automated repair pattern for REPAIR_LINKAGE_OR_NORMALIZATION",
+  "applicable_conditions": [
+    "subscriber exists in census employees"
+  ],
+  "required_validators": [
+    "REPAIR_PASSED"
+  ],
+  "regression_results": {},
+  "created_at": "2026-11-02T10:38:22.526324",
+  "updated_at": "2026-11-02T14:26:04.063311",
+  "compatibility": {
+    "instruction_hashes": [
+      "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "stage": "LINKAGE"
+  },
+  "trigger": {
+    "issue_type": "REPAIR_LINKAGE_OR_NORMALIZATION",
+    "field": "",
+    "conditions": [
+      "subscriber exists in census employees"
+    ]
+  },
+  "business_rule_refs": [
+    "ISSUE_UNLINKED_DEPENDENTS"
+  ],
+  "root_cause": {
+    "code": "REPAIR_LINKAGE_OR_NORMALIZATION",
+    "verification_status": "verified",
+    "summary": "Automated repair pattern for REPAIR_LINKAGE_OR_NORMALIZATION"
+  },
+  "strategy": {
+    "action": "REPAIR_LINKAGE_OR_NORMALIZATION",
+    "parameters": {
+      "action": "link_by_last_name_and_address"
+    },
+    "preconditions": [
+      "subscriber exists in census employees"
+    ],
+    "exclusions": []
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "REPAIR_PASSED"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-11-02T14:26:04.053978"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261102_142604",
+    "reason": "Verified during successful run repair (REPAIR_LINKAGE_OR_NORMALIZATION)"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

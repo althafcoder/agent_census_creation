@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "learned_reconcile_abbreviated_name_subscriber",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "learned_reconcile_abbreviated_name_subscriber",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Automated repair pattern for RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
+  "applicable_conditions": [
+    "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
+  ],
+  "required_validators": [
+    "RULE_16_ABBREVIATED_NAME_MATCHING"
+  ],
+  "regression_results": {},
+  "created_at": "2026-11-02T15:48:45.134690",
+  "updated_at": "2026-11-03T10:47:36.488585",
+  "compatibility": {
+    "instruction_hashes": [
+      "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv",
+      "pdf"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "stage": "COMPARISON"
+  },
+  "trigger": {
+    "issue_type": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
+    "field": "",
+    "conditions": [
+      "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
+    ]
+  },
+  "business_rule_refs": [
+    "ISSUE_ABBREVIATED_NAME_UNMATCHED"
+  ],
+  "root_cause": {
+    "code": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
+    "verification_status": "verified",
+    "summary": "Automated repair pattern for RECONCILE_ABBREVIATED_NAME_SUBSCRIBER"
+  },
+  "strategy": {
+    "action": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
+    "parameters": {
+      "action": "reconcile_abbreviated_name_subscriber"
+    },
+    "preconditions": [
+      "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
+    ],
+    "exclusions": []
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_16_ABBREVIATED_NAME_MATCHING"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-11-03T10:47:36.481038"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261103_104736",
+    "reason": "Verified during successful run repair (RECONCILE_ABBREVIATED_NAME_SUBSCRIBER)"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}
