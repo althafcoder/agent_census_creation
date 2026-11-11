@@ -781,12 +781,14 @@ class RepairEngine:
                                             note_parts.append(dob_conflict_str)
 
                                         res.notes = [(" ".join(note_parts), True)]
-                                        exc_detail = f"Marked {cov}, active on invoice (Plan: {res.plan}, Tier: {res.tier}, Premium: ${res.premium:,.2f})"
+                                        prem_val = getattr(res, "premium", None) if getattr(res, "premium", None) is not None else getattr(res, "inv_premium", None)
+                                        prem_str = f", Premium: ${prem_val:,.2f}" if prem_val is not None else ""
+                                        exc_detail = f"Marked {cov}, active on invoice (Plan: {res.plan}, Tier: {res.tier}{prem_str})"
                                         if dob_conflict_str:
                                             exc_detail += f"; {dob_conflict_str}"
                                         self._add_or_update_exception(findings, "Eligibility conflicts", emp.display, exc_detail)
 
-                                        fn_note = f"Eligibility Conflict: {emp.display} marked Waiver / Not Enrolled ({cov}) on census but active {carrier_label} medical coverage found on invoice (Plan: {res.plan}, Tier: {res.tier}, Premium: ${res.premium:,.2f})"
+                                        fn_note = f"Eligibility Conflict: {emp.display} marked Waiver / Not Enrolled ({cov}) on census but active {carrier_label} medical coverage found on invoice (Plan: {res.plan}, Tier: {res.tier}{prem_str})"
                                         if dob_conflict_str:
                                             fn_note += f"; {dob_conflict_str}"
                                         if fn_note not in findings.notes:

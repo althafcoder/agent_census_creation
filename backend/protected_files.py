@@ -499,6 +499,21 @@ def execute_access_preflight(
         elif p.is_file():
             paths.append(p)
 
+    # Expand any ZIP archives present in the input file set
+    from archive_utils import is_zip_archive, unpack_zip_archive
+    expanded_paths: list[Path] = []
+    for p in paths:
+        if is_zip_archive(p):
+            import tempfile
+            archive_work = Path(tempfile.mkdtemp(prefix=f"zip_unpack_{p.stem}_"))
+            store.register_temp_file(archive_work)
+            unpacked = unpack_zip_archive(p, archive_work)
+            log.info("   [ARCHIVE] Expanded '%s' into %d file(s)", p.name, len(unpacked))
+            expanded_paths.extend(unpacked)
+        else:
+            expanded_paths.append(p)
+    paths = expanded_paths
+
     access_records: dict[str, FileAccessRecord] = {}
     accessible_docs: list[RawDoc] = []
     locked_queue: list[Path] = []

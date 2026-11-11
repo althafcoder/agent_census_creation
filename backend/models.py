@@ -145,6 +145,7 @@ class Prospect:
     contact_email: str = ""
     contact_phone: str = ""
     ft_employees: Optional[int] = None          # employer-declared full-time employee count
+    ft_employees_source: str = ""               # document the declared FT count was read from
 
     @property
     def zip(self) -> str:

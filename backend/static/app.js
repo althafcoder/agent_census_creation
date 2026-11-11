@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Result Elements
   const btnDownloadXlsx = document.getElementById("btn-download-xlsx");
+  const btnDownloadAll = document.getElementById("btn-download-all");
   const btnDownloadTxt = document.getElementById("btn-download-txt");
   const outputCompanyName = document.getElementById("output-company-name");
   const outputMeta = document.getElementById("output-meta");
@@ -131,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function guessRole(filename) {
     const fn = filename.toLowerCase();
+    if (fn.endsWith(".zip")) return { role: "archive", label: "ZIP Archive" };
     if (/ghq|questionnaire|rfp/.test(fn)) return { role: "ghq", label: "GHQ / RFP" };
     if (/invoice|bill|statement|premium/.test(fn)) return { role: "invoice", label: "Invoice" };
     if (/renewal|renew|rate|proposal/.test(fn)) return { role: "renewal", label: "Renewal" };
@@ -357,6 +359,18 @@ document.addEventListener("DOMContentLoaded", () => {
       // Download links
       btnDownloadXlsx.href = data.download_xlsx_url;
       btnDownloadTxt.href = data.download_txt_url;
+
+      // All Files (.zip) one-click download button
+      if (btnDownloadAll) {
+        if (data.download_all_zip_url) {
+          btnDownloadAll.href = data.download_all_zip_url;
+          btnDownloadAll.style.display = "inline-flex";
+        } else if (data.output_filename) {
+          const cleanSuffix = data.output_filename.replace(/\.[^/.]+$/, "").replace(/^(?:Marsh_Census_|RAPT_Census_)/, "");
+          btnDownloadAll.href = `/api/download/All_Deliverables_${cleanSuffix}.zip`;
+          btnDownloadAll.style.display = "inline-flex";
+        }
+      }
 
       // Dynamic label based on carrier
       const btnXlsxLabel = document.getElementById("btn-download-xlsx-label");

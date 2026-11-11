@@ -453,6 +453,13 @@ class UnderwritingValidator:
             # Gate B2: Required Demographics Check (Section 10.1 & 10.3)
             # Obligation: Normalize Name, DOB, Gender, Zip, Coverage Tier, Plan. Preserve legitimate source blanks.
             missing_demographics: list[str] = []
+            # Blank/invalid coverage queued as an agent clarification (Missing Information Email)
+            # is a documented legitimate source blank per Section 10.3, not a normalization defect.
+            try:
+                from clarifications import unresolved_coverage_items
+                _queued_cov = {n.lower() for it in unresolved_coverage_items(census) for n in it.employees}
+            except Exception:
+                _queued_cov = set()
             for emp in getattr(census, "employees", []):
                 if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False) or getattr(emp, "disposition", "") == "EXCLUDE_PART_TIME":
                     continue
@@ -462,7 +469,7 @@ class UnderwritingValidator:
                     invalid_fields.append(f"invalid first_name '{emp.first}'")
                 if emp.last and not is_valid_person_name(emp.last):
                     invalid_fields.append(f"invalid last_name '{emp.last}'")
-                if not emp.coverage or not str(emp.coverage).strip():
+                if (not emp.coverage or not str(emp.coverage).strip()) and emp.display.lower() not in _queued_cov:
                     invalid_fields.append("missing coverage")
 
                 # If first name is completely blank:
@@ -892,6 +899,55 @@ class UnderwritingValidator:
                     status=CheckStatus.PASS,
                     reason="Email passed all Section 29 false-positive checks",
                 ))
+
+        # 7b. Section 25 Agent Clarification Completeness (false-NEGATIVE prevention)
+        # Every detected clarification (blank/invalid coverage, interpreted coverage codes such as
+        # 'QW', payroll employees absent from the census, declared-vs-census headcount) must be asked.
+        try:
+            from clarifications import collect_clarifications, missing_from_email
+            clar_items = collect_clarifications(prospect, census, roles=roles, docs=None,
+                                                invoice_records=[r for inv in (selected_invoices or []) for r in (getattr(inv, "records", []) or [])])
+        except Exception:
+            clar_items = []
+        if email_text and clar_items:
+            omitted = missing_from_email(clar_items, email_text)
+            if omitted:
+                checks.append(CheckResult(
+                    rule_id="RULE_25_AGENT_CLARIFICATIONS",
+                    section="25.2",
+                    name="Agent Clarification Completeness Check",
+                    status=CheckStatus.FAIL,
+                    reason=f"Detected clarifications not raised in Missing Information Email: {omitted[:5]}",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_EMAIL_CLARIFICATION_OMITTED",
+                    rule_id="RULE_25_AGENT_CLARIFICATIONS",
+                    target_ref="findings.email_text",
+                    issue_type=IssueType.BUSINESS_RULE_MISAPPLIED,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.RELEASE,
+                    expected_state="All detected census clarifications are listed in the Missing Information Email",
+                    observed_state=f"Omitted: {omitted[:5]}",
+                    allowed_actions=[RepairAction.RECOMPUTE_FINDINGS],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_25_AGENT_CLARIFICATIONS",
+                    section="25.2",
+                    name="Agent Clarification Completeness Check",
+                    status=CheckStatus.PASS,
+                    reason=f"All {len(clar_items)} detected clarification item(s) raised in the email: "
+                           f"{sorted({c.category for c in clar_items})}",
+                ))
+        else:
+            checks.append(CheckResult(
+                rule_id="RULE_25_AGENT_CLARIFICATIONS",
+                section="25.2",
+                name="Agent Clarification Completeness Check",
+                status=CheckStatus.PASS,
+                reason=(f"{len(clar_items)} clarification item(s) queued for the Missing Information Email"
+                        if clar_items else "No census clarifications required"),
+            ))
 
         # 8. Section 18 Match Percentage & Formatting Check
         match_format_defects = []

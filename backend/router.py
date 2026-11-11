@@ -690,6 +690,23 @@ def generate_missing_information_email(
     if comparison_items:
         sections.append(("Census vs. Invoice Comparison", comparison_items))
 
+    # 4b. Census Clarification Section (data-driven; shared with Learning Engine validator)
+    #     Unresolved/invalid coverage codes, heuristically interpreted codes (e.g. QW),
+    #     payroll employees absent from the census, and declared-vs-census headcount.
+    if have_census and census:
+        try:
+            from clarifications import collect_clarifications
+            _, _, _, _pay_names = _extract_payroll_info(roles, docs)
+            clar = collect_clarifications(prospect, census, roles=roles, docs=docs,
+                                          invoice_records=invoice_records, extra_payroll_names=_pay_names)
+            existing_low = "\n".join(comparison_items).lower()
+            clar_items = [c.text for c in clar if c.text and c.text.lower() not in existing_low]
+            if clar_items:
+                sections.append(("Census Clarification", clar_items))
+        except Exception as _clar_err:  # never break email generation
+            import logging as _lg
+            _lg.getLogger("census.router").warning("Clarification detection skipped: %s", _clar_err)
+
     # 5. Renewal Section (Include ONLY when renewal is required under PEO & 90-day rule)
     if renewal_required and not have_renewal:
         sections.append(("Renewal", [

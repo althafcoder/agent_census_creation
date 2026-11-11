@@ -350,7 +350,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
         inv_only_on_plan = [p for p in census.people if getattr(p, "invoice_only", False) and p.plan == plan]
         if inv_only_on_plan:
             p_names = ", ".join(f"{p.first} {p.last}".strip() for p in inv_only_on_plan)
-            census_match_prem = sum(F.plan_rates.get((plan, t), 0) * F.plan_enrollment.get((plan, t), 0) for t in C.ACTIVE_TIERS)
+            census_match_prem = sum((F.plan_rates.get((plan, t)) or 0.0) * F.plan_enrollment.get((plan, t), 0) for t in C.ACTIVE_TIERS)
             s.line(f"{plan} invoice count includes {p_names} (invoice-only; reported term). Census-matched {plan} premium = ${census_match_prem:,.2f}.")
         s.gap()
 
@@ -468,8 +468,12 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     if inv_only_all:
         for p in inv_only_all:
             rr = res_map.get(id(p))
-            prem_str = f", ${rr.inv_premium:,.2f}" if rr and rr.inv_premium else ""
-            s.row(["Employee missing from census", f"{p.last}, {p.first}", f"On invoice ({p.plan}, Employee Only{prem_str}); broker reports recent term"])
+            prem_str = f", ${rr.inv_premium:,.2f}" if (rr and rr.inv_premium is not None) else ""
+            plan_str = p.plan or "Medical"
+            tier_str = (rr.tier if rr and rr.tier else "Employee Only")
+            is_term = any("recent term" in str(n).lower() or "term" in str(n).lower() for n, _ in (rr.notes if rr else []))
+            term_str = "; broker reports recent term" if is_term else "; demographics not available"
+            s.row(["Employee missing from census", f"{p.last}, {p.first}", f"On invoice ({plan_str}, {tier_str}{prem_str}){term_str}"])
     else:
         s.row(["Employee missing from census", "None", ""])
 

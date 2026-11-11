@@ -302,7 +302,8 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                 rr.plan, rr.tier, rr.inv_premium = inv.plan or e.plan, inv.tier, inv.premium
                 if "premium due" in (inv.status or "").lower():
                     rr.status = "Active - Premium Due (Adjustment)"
-                    rr.notes.append((f"Invoice shows medical as PREMIUM DUE adjustment (${inv.premium:,.2f}) rather than payroll deduction - verify billing", False))
+                    prem_str = f" (${inv.premium:,.2f})" if inv.premium is not None else ""
+                    rr.notes.append((f"Invoice shows medical as PREMIUM DUE adjustment{prem_str} rather than payroll deduction - verify billing", False))
                 else:
                     rr.status = inv.status or "Active"
 
@@ -465,7 +466,12 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     F.renewal_unmapped_plans.add(r.plan)
             results[id(p)] = rr
             cnt["missing_census"] += 1
-            exc("Employee missing from census", r.raw_name, f"On invoice ({r.plan}, {r.tier or 'Employee Only'}, ${r.premium:,.2f}); broker reports recent term")
+            prem_clause = f", ${r.premium:,.2f}" if r.premium is not None else ""
+            plan_clause = r.plan or "Medical"
+            tier_clause = r.tier or "Employee Only"
+            is_term = bool(broker_info and ("recent term" in broker_info.lower() or "term" in broker_info.lower()))
+            term_clause = "; broker reports recent term" if is_term else "; demographics not available"
+            exc("Employee missing from census", r.raw_name, f"On invoice ({plan_clause}, {tier_clause}{prem_clause}){term_clause}")
 
     # ---- RowResult for dependents (covered under subscriber tier)
     for dep in census.dependents:

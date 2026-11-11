@@ -14,7 +14,8 @@ from models import Census, Person
 from readers import RawDoc
 from utils import (build_gender_candidate, clean, display_name, is_blank, is_unavailable_gender,
                    is_valid_person_name, name_key, parse_date, recover_ocr_name, resolve_gender_candidates, split_full_name,
-                   std_cobra, std_coverage, std_gender, std_relationship, std_zip, to_money)
+                   std_cobra, std_coverage, std_gender, std_relationship, std_zip, to_money,
+                   coverage_code_inferred)
 
 log = logging.getLogger("census.builder")
 
@@ -69,6 +70,15 @@ class _Row:
 
     def t(self, f: str) -> str:
         return clean(self.g(f))
+
+    def col_label(self, f: str) -> str:
+        """Original source header text of the column mapped to field ``f`` (blank if unmapped)."""
+        try:
+            i = self.h.columns.get(f)
+            labels = getattr(self.h, "labels", None) or []
+            return clean(labels[i]) if i is not None and i < len(labels) else ""
+        except Exception:
+            return ""
 
     def gender_candidates(
         self,
@@ -132,6 +142,11 @@ class _Row:
             raw_v = self.s.iloc[idx] if idx < len(self.s) else None
             out.append(build_gender_candidate(raw_v, source=source_file, column_index=idx, header=lab))
         return out
+
+
+def _col_label(r: "_Row", f: str) -> str:
+    """Original source header text of the column mapped to field ``f`` (blank if unmapped)."""
+    return r.col_label(f)
 
 
 def _is_masked_or_empty(s: str) -> bool:
@@ -282,6 +297,15 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
                 break
     p.cov_raw = clean(cov)
     p.coverage = std_coverage(cov)
+    if row_vals.get("coverage_header"):
+        p.raw_data["coverage_header"] = clean(row_vals.get("coverage_header"))
+    if is_employee and p.coverage and coverage_code_inferred(cov):
+        # Non-standard source code standardized heuristically (e.g. 'QW' -> WO); keep the
+        # source code as evidence and flag it for agent confirmation.
+        p.raw_data["coverage_inferred_from"] = clean(cov)
+        if p.coverage in ("WO", "RC") and not getattr(p, "waive_reason", ""):
+            p.waive_reason = f"Source code '{clean(cov)}'"
+        p.note(f"Coverage code '{clean(cov)}' interpreted as {p.coverage} - confirm with agent", orange=True)
     w_reason = clean(row_vals.get("waive_reason", getattr(p, "waive_reason", "")))
     if w_reason:
         p.waive_reason = w_reason
@@ -607,7 +631,7 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
                             prem = round(ee_c + er_c, 2)
                     values.update({"coverage": r.g("coverage"), "cobra": r.g("cobra"),
                                    "plan": r.g("plan"), "premium": prem, "effective_date": r.g("effective_date"),
-                                   "salary": r.g("salary")})
+                                   "salary": r.g("salary"), "coverage_header": _col_label(r, "coverage")})
                 p_emp = Person("EE", ef, el, source=fname, sub_id=r.t("sub_id"), rel_raw="EE")
                 p_emp.record_id = _next_record_id(st)
                 p_emp.raw_data = {"file": fname, "table": tname, "row": series.to_dict()}
@@ -722,6 +746,7 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
                   "preferred_first": r.t("preferred_first") if "preferred_first" in cols else "",
                   "middle_name": r.t("middle_name") if "middle_name" in cols else "",
                   "coverage": r.g("coverage") if not is_non_med else "",
+                  "coverage_header": _col_label(r, "coverage"),
                   "cobra": r.g("cobra") if not is_non_med else "",
                   "plan": r.g("plan") if not is_non_med else "",
                   "premium": prem if not is_non_med else None,

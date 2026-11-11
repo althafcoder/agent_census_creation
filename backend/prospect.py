@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Optional
 
 from models import Prospect
 from readers import RawDoc
@@ -329,6 +330,62 @@ def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[Raw
             _FULLTIME_RE.search("\n".join(d.text or "" for d in primary_docs))
         if m:
             merged["ft_employees"] = int(m.group(1))
+    if not merged.get("ft_employees"):
+        # Grid / spreadsheet layouts: label cell in one row, value in the same column below.
+        hit = _grid_label_value(_FT_LABEL_CELL_RE, primary_docs) or _grid_label_value(_FT_LABEL_CELL_RE, fallback_docs)
+        if hit:
+            merged["ft_employees"], merged["ft_employees_source"] = hit
+    if merged.get("ft_employees") and not merged.get("ft_employees_source"):
+        merged["ft_employees_source"] = ", ".join(d.name for d in primary_docs[:2])
+
+
+# A cell that is (only) a full-time-employee-count label, e.g. "# of FT employees:".
+_FT_LABEL_CELL_RE = re.compile(
+    r"^\s*(?:#|no\.?|number|total)?\s*(?:of\s+)?(?:FT|full[\s\-]?time)\s+(?:benefit[\s\-]?eligible\s+)?"
+    r"(?:employees?|ees?|staff)\s*[:\-]?\s*$", re.I)
+
+
+def _grid_label_value(label_re: "re.Pattern[str]", docs: list[RawDoc]) -> Optional[tuple[int, str]]:
+    """Resolve a numeric value (and its source document name) for a label cell in pipe-delimited grid text.
+
+    Looks to the right of the label on the same row first, then in the same column on the
+    next few non-empty rows (header row above a value row is common in RFP/GHQ workbooks).
+    """
+    def _num(s: str) -> Optional[int]:
+        s = (s or "").strip().replace(",", "")
+        if re.fullmatch(r"\d{1,6}(?:\.0+)?", s):
+            v = int(float(s))
+            return v if 0 < v < 1_000_000 else None
+        return None
+
+    for d in docs or []:
+        lines = (d.text or "").splitlines()
+        for i, line in enumerate(lines):
+            if "|" not in line:
+                continue
+            cells = [c.strip() for c in line.split("|")]
+            for j, c in enumerate(cells):
+                if not label_re.match(c):
+                    continue
+                for k in range(j + 1, len(cells)):
+                    if cells[k]:
+                        v = _num(cells[k])
+                        if v is not None:
+                            return v, d.name
+                        break
+                seen = 0
+                for nxt in lines[i + 1:i + 6]:
+                    if "|" not in nxt:
+                        continue
+                    seen += 1
+                    ncells = [c.strip() for c in nxt.split("|")]
+                    if j < len(ncells):
+                        v = _num(ncells[j])
+                        if v is not None:
+                            return v, d.name
+                    if seen >= 2:
+                        break
+    return None
 
 
 def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: list[RawDoc] | None = None) -> tuple[Prospect, bool, bool]:
@@ -482,6 +539,7 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
     pr.contact_email = merged.get("contact_email", "")
     pr.contact_phone = merged.get("contact_phone", "")
     if merged.get("ft_employees"):
+        pr.ft_employees_source = str(merged.get("ft_employees_source") or "")
         try:
             pr.ft_employees = int(merged["ft_employees"])
         except (TypeError, ValueError):

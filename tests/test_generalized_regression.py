@@ -23,6 +23,7 @@ from utils import name_key
 from invoice_parser import combine_records
 from tracer import DiagnosticTracer
 from caching.local_cache import LocalPromptCache
+from comparator import run_comparison
 
 
 def test_dependent_linking_order_independence():
@@ -139,3 +140,55 @@ def test_cache_bypass_flag(tmp_path):
     # Lookup with bypass_cache=True must return None
     miss = cache.get(prompt, model, step_name="test_step", bypass_cache=True)
     assert miss is None
+
+
+def test_comparison_invoice_only_none_premium():
+    """Verify invoice-only employee with None premium does not raise TypeError during comparison."""
+    census = Census()
+    emp = Person(role="EE", first="Alice", last="Wonderland", coverage="EE", plan="Gold PPO", source="census.xlsx")
+    census.employees.append(emp)
+    census.people.append(emp)
+
+    # Invoice has Alice (matches) and Bob (invoice-only, with premium=None)
+    inv_alice = InvoiceRecord(first="Alice", last="Wonderland", raw_name="WONDERLAND, ALICE", plan="Gold PPO", tier="EE", premium=500.0)
+    inv_bob = InvoiceRecord(first="Bob", last="Builder", raw_name="BUILDER, BOB", plan="Gold PPO", tier="EE", premium=None)
+
+    findings = Findings()
+    results = run_comparison(census, [inv_alice, inv_bob], renewal=None, meta={}, F=findings, have_invoice=True)
+
+    # Bob should be added to census as invoice_only
+    bob_person = next((p for p in census.people if getattr(p, "invoice_only", False)), None)
+    assert bob_person is not None
+    assert bob_person.last == "Builder"
+
+    # Bob's row result should exist
+    rr = results[id(bob_person)]
+    assert rr.result == "Invoice Employee Not Found In Census"
+    assert rr.inv_premium is None
+
+    # Findings should have exception without crashing on string formatting
+    exc_entries = [e for e in findings.exceptions if e[0] == "Employee missing from census"]
+    assert len(exc_entries) == 1
+    assert "BUILDER, BOB" in exc_entries[0][1]
+    assert "Gold PPO" in exc_entries[0][2]
+
+
+def test_comparison_premium_due_adjustment_none_premium():
+    """Verify employee with 'premium due' status and None premium formats note safely."""
+    census = Census()
+    emp = Person(role="EE", first="Charlie", last="Brown", coverage="EE", plan="Silver HMO", source="census.xlsx")
+    census.employees.append(emp)
+    census.people.append(emp)
+
+    inv_charlie = InvoiceRecord(first="Charlie", last="Brown", raw_name="BROWN, CHARLIE", plan="Silver HMO", tier="EE",
+                                status="Active - Premium Due", premium=None)
+
+    findings = Findings()
+    results = run_comparison(census, [inv_charlie], renewal=None, meta={}, F=findings, have_invoice=True)
+
+    rr = results[id(emp)]
+    assert "Premium Due" in rr.status
+    # Verify note was appended without error
+    note_texts = [text for text, _ in rr.notes]
+    assert any("PREMIUM DUE adjustment" in t for t in note_texts)
+

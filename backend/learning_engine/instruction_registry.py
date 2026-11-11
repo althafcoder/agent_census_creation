@@ -282,6 +282,17 @@ def build_instruction_registry(instruction_hash: str) -> dict[str, RuleSpec]:
 
     # Section 11: Invoice / BER Selection & Acceptability
     _reg(RuleSpec(
+        rule_id="RULE_25_AGENT_CLARIFICATIONS",
+        section="25.2",
+        name="Agent Clarification Completeness",
+        obligation=("Every census employee with a blank or invalid coverage value, every non-standard coverage code "
+                    "interpreted heuristically (e.g. QW as Waived), every payroll employee absent from the census, and "
+                    "any GHQ/RFP vs census full-time headcount mismatch must be raised in the Missing Information Email."),
+        precedence=3,
+        severity=IssueSeverity.CRITICAL,
+        allowed_remediations=[RepairAction.RECOMPUTE_FINDINGS],
+    ))
+    _reg(RuleSpec(
         rule_id="RULE_11_INVOICE_SELECTION",
         section="11.2",
         name="Latest Medical Invoice Selection",

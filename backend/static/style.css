@@ -589,6 +589,7 @@ body {
 .role-invoice { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
 .role-renewal { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 .role-ghq { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+.role-archive { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
 
 .btn-remove-file {
   background: none;
@@ -949,6 +950,27 @@ body {
 .banner-actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-download-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #ffffff;
+  text-decoration: none;
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s ease;
+}
+.btn-download-all:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.55);
 }
 
 .btn-download-xlsx {

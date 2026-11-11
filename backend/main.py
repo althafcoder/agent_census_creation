@@ -33,7 +33,7 @@ from census_builder import build_census, extract_waiting_period_rule, refine_non
 from classifier import classify, detect_header
 from comparator import run_comparison
 from invoice_parser import combine_records, parse_invoice, select_invoices
-from models import Findings
+from models import Census, Findings
 from prospect import build_prospect
 from readers import read_all
 from renewal_parser import parse_renewal, select_renewal

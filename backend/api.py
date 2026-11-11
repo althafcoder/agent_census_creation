@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import Optional
 
@@ -162,6 +164,8 @@ class PipelineResponse(BaseModel):
     download_sbu_url: Optional[str] = Field(None, description="URL to download SBU Excel workbook")
     email_filename: Optional[str] = Field(None, description="Missing Information Email deliverable filename")
     download_email_url: Optional[str] = Field(None, description="URL to download email text file")
+    all_zip_filename: Optional[str] = Field(None, description="Combined ZIP archive containing all run deliverables")
+    download_all_zip_url: Optional[str] = Field(None, description="URL to download all deliverables bundled as a ZIP archive")
     email_text: str = Field("", description="Pre-composed email text ready to send to broker/client")
     carrier: str = Field("", description="Determined Carrier Routing (Florida Blue or Cigna)")
     state: str = Field("", description="Determined Business State")
@@ -208,7 +212,14 @@ async def index():
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
         return JSONResponse({"message": "UI not initialized yet."})
-    return FileResponse(index_file)
+    return FileResponse(
+        index_file,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 @app.get("/swagger", include_in_schema=False)
@@ -316,6 +327,26 @@ def _pipeline_response(res: dict) -> dict:
     txt_file = Path(res["txt_file"]) if res.get("txt_file") else None
     sbu_file = Path(res["sbu_output_file"]) if res.get("sbu_output_file") else None
     email_file = Path(res["email_file"]) if res.get("email_file") else None
+    trace_file = Path(res["trace_file"]) if res.get("trace_file") else None
+
+    # Generate bundled "All Deliverables" ZIP package for one-click download
+    all_zip_file = None
+    deliverables = [f for f in (out_file, sbu_file, email_file, txt_file, trace_file) if f and f.exists()]
+    if deliverables:
+        ref_file = out_file or txt_file or deliverables[0]
+        base_stem = ref_file.stem
+        clean_suffix = re.sub(r"^(?:Marsh_Census_|RAPT_Census_|Exceptions_Audit_)", "", base_stem)
+        zip_name = f"All_Deliverables_{clean_suffix}.zip"
+        zip_path = C.OUTPUT_DIR / zip_name
+        try:
+            import zipfile
+            with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                for d in deliverables:
+                    zf.write(d, arcname=d.name)
+            all_zip_file = zip_path
+            log.info("      * Bundled All Deliverables ZIP Package: %s (%d files)", zip_name, len(deliverables))
+        except Exception as _zip_err:
+            log.warning("Failed to create all-deliverables zip package: %s", _zip_err)
 
     prospect_block = res.get("prospect") or {}
     eff_date = (
@@ -359,6 +390,8 @@ def _pipeline_response(res: dict) -> dict:
         "download_sbu_url": f"/api/download/{sbu_file.name}" if sbu_file else None,
         "email_filename": email_file.name if email_file else None,
         "download_email_url": f"/api/download/{email_file.name}" if email_file else None,
+        "all_zip_filename": all_zip_file.name if all_zip_file else None,
+        "download_all_zip_url": f"/api/download/{all_zip_file.name}" if all_zip_file else None,
         "email_text": res.get("email_text", ""),
         "carrier": res.get("carrier", ""),
         "state": res.get("state", ""),
@@ -447,14 +480,24 @@ async def process_files(
             log.info("    * Uploaded: %-40s (%d bytes)", safe_name, dest.stat().st_size)
 
         primary_name = saved_paths[0].name if saved_paths else "census_files"
+
+        # Expand any uploaded ZIP archives into in_dir so all contained files are processed
+        from archive_utils import expand_all_archives
+        pipeline_paths, extracted_from_zip = expand_all_archives(saved_paths, in_dir)
+        if extracted_from_zip:
+            log.info(">>> [API] Unpacked %d file(s) from uploaded ZIP archive(s)", len(extracted_from_zip))
+            if not any(f != saved_paths[0] for f in saved_paths) and extracted_from_zip:
+                # If a single ZIP was uploaded, name the process after the primary extracted file
+                primary_name = f"{saved_paths[0].name} ({len(extracted_from_zip)} files)"
+
         try:
             from database.poc_db import log_universal
-            log_universal("BENEFITS_UW", "process", primary_name, "STARTED", f"Ingesting {len(saved_paths)} submission file(s)", processed_by)
+            log_universal("BENEFITS_UW", "process", primary_name, "STARTED", f"Ingesting {len(pipeline_paths)} submission file(s)", processed_by)
         except Exception:
             pass
 
-        log.info(">>> [API] Starting Census Comparison Pipeline on %d files...", len(saved_paths))
-        res = run_pipeline(saved_paths, C_local.OUTPUT_DIR)
+        log.info(">>> [API] Starting Census Comparison Pipeline on %d files...", len(pipeline_paths))
+        res = run_pipeline(pipeline_paths, C_local.OUTPUT_DIR)
         out_file = Path(res["output_file"]) if res.get("output_file") else None
         txt_file = Path(res["txt_file"]) if res.get("txt_file") else None
 
@@ -643,11 +686,14 @@ async def download_output(filename: str):
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=f"File {safe_name} not found.")
 
-    media_type = (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        if safe_name.endswith(".xlsx")
-        else "text/plain; charset=utf-8"
-    )
+    if safe_name.endswith(".xlsx"):
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    elif safe_name.endswith(".txt"):
+        media_type = "text/plain; charset=utf-8"
+    elif safe_name.endswith(".zip"):
+        media_type = "application/zip"
+    else:
+        media_type = "application/octet-stream"
     return FileResponse(file_path, filename=safe_name, media_type=media_type)
 
 
@@ -735,10 +781,15 @@ async def legacy_process(files: list[UploadFile] = File(...)):
     in_dir = work / "in"
     in_dir.mkdir(parents=True, exist_ok=True)
     try:
+        saved = []
         for f in files:
-            with open(in_dir / Path(f.filename or "file").name, "wb") as out:
+            p = in_dir / Path(f.filename or "file").name
+            with open(p, "wb") as out:
                 shutil.copyfileobj(f.file, out)
-        res = run_pipeline(in_dir, C.OUTPUT_DIR)
+            saved.append(p)
+        from archive_utils import expand_all_archives
+        pipeline_paths, _ = expand_all_archives(saved, in_dir)
+        res = run_pipeline(pipeline_paths, C.OUTPUT_DIR)
         out_file = Path(res["output_file"])
         return FileResponse(
             out_file,

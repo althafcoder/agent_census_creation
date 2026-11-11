@@ -306,11 +306,23 @@ def std_coverage(v) -> str:
         return "WP"
     if re.search(r"(waiv|opt)", low):
         return "WO"
+    # Qualified / spousal / other-coverage waiver shorthand codes (e.g. 'QW', 'SW', 'OW',
+    # 'Q-W', 'Qual W'): a short alpha code whose final token is a bare 'W' denotes a waiver.
+    if re.fullmatch(r"(?:q|qual|qualified|s|sp|o|oc|other)[\s\-_/]*w", low):
+        return "WO"
     if re.search(r"(refus|declin)", low):
         return "RC"
     if re.search(r"(not eligible|ineligible)", low):
         return "NE"
     return ""
+
+
+def coverage_code_inferred(v) -> bool:
+    """True when ``v`` mapped to a coverage code only through a heuristic fallback
+    (i.e. it is not an approved/known coverage spelling). Such values are standardized
+    but should be confirmed with the agent in the Missing Information Email."""
+    k = norm_key(v)
+    return bool(k) and k not in _COVERAGE_MAP and bool(std_coverage(v))
 
 
 def std_relationship(v) -> str:

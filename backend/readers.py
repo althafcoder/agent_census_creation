@@ -17,7 +17,7 @@ import pandas as pd
 
 log = logging.getLogger("census.readers")
 
-SUPPORTED = {".xlsx", ".xlsm", ".xls", ".csv", ".pdf", ".docx", ".txt"}
+SUPPORTED = {".xlsx", ".xlsm", ".xls", ".csv", ".pdf", ".docx", ".txt", ".zip"}
 
 
 @dataclass
