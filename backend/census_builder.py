@@ -13,7 +13,7 @@ from classifier import Header, body, detect_header
 from models import Census, Person
 from readers import RawDoc
 from utils import (build_gender_candidate, clean, display_name, is_blank, is_unavailable_gender,
-                   is_valid_person_name, name_key, parse_date, recover_ocr_name, resolve_gender_candidates, split_full_name,
+                   is_valid_person_name, name_key, norm_key, parse_date, recover_ocr_name, resolve_gender_candidates, split_full_name,
                    std_cobra, std_coverage, std_gender, std_relationship, std_zip, to_money,
                    coverage_code_inferred)
 
@@ -1516,6 +1516,40 @@ def _doc_to_census_text(doc: RawDoc) -> str:
     return "\n".join(parts)
 
 
+NON_CENSUS_SHEET_NAMES = {
+    "data", "generic conv", "generic_conv", "data validation", "data_validation",
+    "validation", "lookup", "lookups", "codes", "code", "reference", "ref",
+    "instructions", "instruction", "dropdowns", "dropdown", "config", "settings",
+    "example", "sample", "metadata", "summary", "census summary", "rate sheet",
+    "rates", "plans", "tier rates"
+}
+
+
+def _is_candidate_census_table(tname: str, df: pd.DataFrame) -> bool:
+    """Return True if this sheet/table plausibly contains employee census rows."""
+    if not isinstance(df, pd.DataFrame) or df.empty:
+        return False
+    clean_name = str(tname or "").strip().lower()
+    if clean_name in NON_CENSUS_SHEET_NAMES:
+        return False
+    # Safety cap: Fallback LLM extraction is designed for small/unstructured rosters.
+    # Large sheets with >500 rows are database tables or internal reference data, never individual prospect rosters.
+    if len(df) > 500:
+        return False
+    # Check headers and top sample rows for at least 2 distinct census markers
+    census_markers = ("first", "last", "name", "dob", "birth", "ssn", "tier", "plan", "cov", "relation", "gender", "ee", "subscriber")
+    found_markers = set()
+    all_check_vals = [norm_key(clean(c)) for c in df.columns]
+    sample_rows = min(10, len(df))
+    for idx in range(sample_rows):
+        all_check_vals.extend(norm_key(clean(c)) for c in df.iloc[idx].tolist())
+    for val in all_check_vals:
+        for m in census_markers:
+            if m in val:
+                found_markers.add(m)
+    return len(found_markers) >= 2
+
+
 def _extract_census_rows_smart(doc: RawDoc) -> list[dict]:
     """Extract census rows using Claude Anthropic, with smart chunking for large rosters."""
     from llm_client import extract_census_rows
@@ -1523,6 +1557,9 @@ def _extract_census_rows_smart(doc: RawDoc) -> list[dict]:
     all_rows: list[dict] = []
     if doc.tables:
         for t in doc.tables:
+            if not _is_candidate_census_table(t.name, t.df):
+                log.debug("Skipping non-census/reference sheet %s in %s", t.name, doc.name)
+                continue
             df = t.df.dropna(how="all").reset_index(drop=True)
             if df.empty:
                 continue
@@ -1545,12 +1582,17 @@ def _extract_census_rows_smart(doc: RawDoc) -> list[dict]:
                     r_str = " | ".join("" if pd.isna(c) else str(c).strip() for c in row)
                     if r_str.replace("|", "").strip():
                         table_lines.append(r_str)
-                batch = extract_census_rows("\n".join(table_lines))
+                batch = extract_census_rows("\n".join(table_lines), file_name=f"{doc.name} [{t.name}]", max_chunks=5)
                 if batch:
                     all_rows.extend(batch)
             else:
                 batch_size = 25
+                max_chunks = 10
+                chunks_done = 0
                 for s_i in range(0, len(data_rows), batch_size):
+                    if chunks_done >= max_chunks:
+                        log.warning("Reached safety limit of %d batch chunks for %s/%s", max_chunks, doc.name, t.name)
+                        break
                     e_i = min(s_i + batch_size, len(data_rows))
                     chunk_df = data_rows.iloc[s_i:e_i]
                     chunk_lines = [f"=== Sheet: {t.name} (Rows {s_i + 1} to {e_i}) ===", header_row]
@@ -1559,24 +1601,31 @@ def _extract_census_rows_smart(doc: RawDoc) -> list[dict]:
                         if r_str.replace("|", "").strip():
                             chunk_lines.append(r_str)
                     batch_txt = "\n".join(chunk_lines)
-                    batch = extract_census_rows(batch_txt)
+                    batch = extract_census_rows(batch_txt, file_name=f"{doc.name} [{t.name}]", max_chunks=2)
                     if batch:
                         all_rows.extend(batch)
+                    chunks_done += 1
     elif doc.text:
         lines = [l for l in doc.text.splitlines() if l.strip()]
         if len(lines) <= 25:
-            batch = extract_census_rows(doc.text)
+            batch = extract_census_rows(doc.text, file_name=doc.name, max_chunks=5)
             if batch:
                 all_rows.extend(batch)
         else:
             header_line = lines[0]
             batch_size = 25
+            max_chunks = 10
+            chunks_done = 0
             for s_i in range(1, len(lines), batch_size):
+                if chunks_done >= max_chunks:
+                    log.warning("Reached safety limit of %d batch chunks for %s", max_chunks, doc.name)
+                    break
                 e_i = min(s_i + batch_size, len(lines))
                 chunk_lines = [header_line] + lines[s_i:e_i]
-                batch = extract_census_rows("\n".join(chunk_lines))
+                batch = extract_census_rows("\n".join(chunk_lines), file_name=doc.name, max_chunks=2)
                 if batch:
                     all_rows.extend(batch)
+                chunks_done += 1
     return all_rows
 
 
@@ -1763,6 +1812,8 @@ def build_census(census_docs: list[RawDoc], effective_date=None, tracer=None) ->
     for doc in ordered_docs:
         used_any = False
         from census_config import LLM_FIRST, USE_LLM_FALLBACK
+        from llm_client import set_current_tracking
+        set_current_tracking(file_name=doc.name, step_name="census_rows_extraction")
 
         # 1. High-Fidelity Tabular Parsing (for structured Excel/CSV censuses with recognized headers)
         # Direct column alignment is used for tabular sheets to guarantee zero dropped records and zero token truncation on large enterprise rosters
@@ -1778,15 +1829,18 @@ def build_census(census_docs: list[RawDoc], effective_date=None, tracer=None) ->
                 st.census.census_notes.append(f"Census table {tname} in {doc.name} failed parsing: {exc}")
 
             # Table-level fallback if this specific table failed but document had other tables
-            if not parsed_ok and USE_LLM_FALLBACK and not tdf.empty:
+            if not parsed_ok and USE_LLM_FALLBACK and _is_candidate_census_table(tname, tdf):
                 try:
                     from llm_client import extract_census_rows
-                    t_rows = extract_census_rows(tdf.to_string(index=False))
+                    csv_text = f"=== Sheet: {tname} ===\n" + tdf.to_csv(index=False)
+                    t_rows = extract_census_rows(csv_text, file_name=f"{doc.name} [{tname}]", max_chunks=5)
                     if t_rows and _parse_llm_census_rows(doc, t_rows, st):
                         used_any = True
                         log.info("Table-level fallback extracted %d records from %s/%s", len(t_rows), doc.name, tname)
                 except Exception as _fb_exc:
                     log.debug("Table-level fallback skipped for %s/%s: %s", doc.name, tname, _fb_exc)
+            elif not parsed_ok and not tdf.empty and not _is_candidate_census_table(tname, tdf):
+                log.info("Skipping table-level LLM fallback for %s/%s (not a candidate census roster)", doc.name, tname)
 
         # 2. LLM-First Semantic Extraction (for unstructured documents, PDF rosters, emails, or tables without recognized headers)
         if not used_any and (LLM_FIRST or USE_LLM_FALLBACK):
@@ -1804,7 +1858,7 @@ def build_census(census_docs: list[RawDoc], effective_date=None, tracer=None) ->
         if not used_any and (doc.text or "").strip() and USE_LLM_FALLBACK:
             try:
                 from llm_client import extract_census_rows
-                rows = extract_census_rows(doc.text)
+                rows = extract_census_rows(doc.text, file_name=doc.name, max_chunks=5)
                 if rows:
                     used_any = _parse_llm_census_rows(doc, rows, st)
             except Exception as exc:

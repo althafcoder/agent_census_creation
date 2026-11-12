@@ -31,9 +31,9 @@ _CURRENT_STEP: contextvars.ContextVar[str] = contextvars.ContextVar("census_curr
 
 def set_current_tracking(file_name: str | None = None, step_name: str | None = None) -> None:
     """Set current file and processing step for dynamic token usage tracking."""
-    if file_name:
-        _CURRENT_FILE.set(file_name)
-    if step_name:
+    if file_name is not None:
+        _CURRENT_FILE.set(file_name or "benefits_census_submission")
+    if step_name is not None:
         _CURRENT_STEP.set(step_name)
 
 
@@ -620,7 +620,7 @@ def reconcile_records(
     invoice_records: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """Reconcile census records with invoice records using high-effort LLM reasoning and conflict detection."""
-    set_current_tracking(step_name="llm_reconciliation")
+    set_current_tracking(file_name="census_vs_invoice_reconciliation", step_name="llm_reconciliation")
     prompt = (
         "Reconcile census records with invoice records. Identify matching subscribers, compare coverage tiers, "
         "and flag any discrepancies.\n"
@@ -647,9 +647,9 @@ def reconcile_records(
     return rec
 
 
-def extract_prospect_fields(doc_text: str, rfp_text: str = "") -> dict:
+def extract_prospect_fields(doc_text: str, rfp_text: str = "", file_name: str | None = None) -> dict:
     """Extract prospect information adhering solely to official instructions."""
-    set_current_tracking(step_name="prospect_extraction")
+    set_current_tracking(file_name=file_name or "prospect_rfp_ghq", step_name="prospect_extraction")
     if rfp_text:
         combined_text = f"--- SUBMISSION EMAIL / RFP NOTES ---\n{rfp_text[:15000]}\n\n--- GHQ / QUESTIONNAIRE ---\n{doc_text[:35000]}"
     else:
@@ -722,13 +722,20 @@ Return JSON only:
         return {}
 
 
-def extract_invoice_rows(text: str) -> list[dict]:
+def extract_invoice_rows(text: str, file_name: str | None = None, max_chunks: int = 10) -> list[dict]:
     """Extract subscriber rows strictly adhering to official invoice instructions, chunking long documents."""
-    set_current_tracking(step_name="invoice_rows_extraction")
+    set_current_tracking(file_name=file_name or "invoice_extraction", step_name="invoice_rows_extraction")
     instructions = get_scoped_instructions("invoice")
     doc_name = get_instruction_doc_name()
 
     chunks = chunk_text(text, chunk_size=55000, overlap=2500) if len(text) > 60000 else [text[:60000]]
+    if len(chunks) > max_chunks:
+        log.warning(
+            "Invoice text produced %d chunks, exceeding safety limit of %d chunks (source: %s). "
+            "Truncating to first %d chunks to prevent runaway LLM calls.",
+            len(chunks), max_chunks, file_name or "unknown", max_chunks
+        )
+        chunks = chunks[:max_chunks]
     all_rows: list[dict] = []
     seen_keys: set[tuple[str, str, str]] = set()
 
@@ -786,9 +793,9 @@ Return JSON array only:
     return all_rows
 
 
-def extract_renewal_rates(text: str) -> list[dict]:
+def extract_renewal_rates(text: str, file_name: str | None = None) -> list[dict]:
     """Extract medical renewal rate tables strictly adhering to official instructions."""
-    set_current_tracking(step_name="renewal_rates_extraction")
+    set_current_tracking(file_name=file_name or "renewal_rates_extraction", step_name="renewal_rates_extraction")
     instructions = get_scoped_instructions("renewal")
     doc_name = get_instruction_doc_name()
 
@@ -829,13 +836,20 @@ Return JSON list of objects only:
     return []
 
 
-def extract_census_rows(text: str) -> list[dict]:
+def extract_census_rows(text: str, file_name: str | None = None, max_chunks: int = 10) -> list[dict]:
     """Extract employee and dependent records strictly adhering to official instructions, chunking long documents."""
-    set_current_tracking(step_name="census_rows_extraction")
+    set_current_tracking(file_name=file_name or "census_extraction", step_name="census_rows_extraction")
     instructions = get_scoped_instructions("census")
     doc_name = get_instruction_doc_name()
 
     chunks = chunk_text(text, chunk_size=55000, overlap=2500) if len(text) > 60000 else [text[:60000]]
+    if len(chunks) > max_chunks:
+        log.warning(
+            "Census text produced %d chunks, exceeding safety limit of %d chunks (source: %s). "
+            "Truncating to first %d chunks to prevent runaway LLM calls.",
+            len(chunks), max_chunks, file_name or "unknown", max_chunks
+        )
+        chunks = chunks[:max_chunks]
     all_rows: list[dict] = []
     seen_keys: set[tuple[str, str, str, str]] = set()
 

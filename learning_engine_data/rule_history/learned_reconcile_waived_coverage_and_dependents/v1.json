@@ -16,10 +16,10 @@
   ],
   "regression_results": {},
   "created_at": "2026-11-03T16:54:24.242112",
-  "updated_at": "2026-11-11T12:20:54.012219",
+  "updated_at": "2026-11-11T14:53:08.591760",
   "compatibility": {
     "instruction_hashes": [
-      "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+      "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
     ],
     "template_hashes": [],
     "parser_versions": [
@@ -78,11 +78,11 @@
       "RULE_09_DEPENDENT_DISPOSITION"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-11-11T12:20:54.001281"
+    "last_verified_at": "2026-11-11T14:53:08.571991"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261111_122054",
+    "decision_ref": "verified_20261111_145308",
     "reason": "Verified during successful run repair (RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS)"
   },
   "usage": {

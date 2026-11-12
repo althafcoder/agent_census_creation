@@ -7,6 +7,7 @@ Or from backend/:
 """
 from __future__ import annotations
 
+import importlib.util
 import logging
 import os
 import re
@@ -26,11 +27,45 @@ from pydantic import BaseModel, Field
 # Ensure backend directory is in path
 BACKEND_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BACKEND_DIR.parent
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.append(str(BACKEND_DIR))
+backend_str = str(BACKEND_DIR)
+if backend_str not in sys.path:
+    sys.path.insert(0, backend_str)
 
 import census_config as C
-from main import run_pipeline
+
+
+def _load_run_pipeline():
+    """Import and return run_pipeline from the census backend main.py safely without clashing with sys.modules['main']."""
+    main_py = BACKEND_DIR / "main.py"
+    backend_path_str = str(BACKEND_DIR)
+    if backend_path_str in sys.path:
+        sys.path.remove(backend_path_str)
+    sys.path.insert(0, backend_path_str)
+
+    # Check if sys.modules['main'] is already this module
+    curr_main = sys.modules.get("main")
+    if curr_main and getattr(curr_main, "__file__", None) and Path(curr_main.__file__).resolve() == main_py.resolve():
+        if hasattr(curr_main, "run_pipeline"):
+            return curr_main.run_pipeline
+
+    # Check if already loaded under our isolated namespace
+    if "census_main" in sys.modules and hasattr(sys.modules["census_main"], "run_pipeline"):
+        return sys.modules["census_main"].run_pipeline
+
+    # Load explicitly under isolated namespace 'census_main'
+    spec = importlib.util.spec_from_file_location("census_main", str(main_py))
+    if spec and spec.loader:
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["census_main"] = mod
+        spec.loader.exec_module(mod)
+        return mod.run_pipeline
+    raise ImportError(f"Could not load run_pipeline from {main_py}")
+
+
+try:
+    run_pipeline = _load_run_pipeline()
+except Exception:
+    run_pipeline = None
 
 # Ensure unbuffered standard streams so terminal logs appear instantly
 os.environ["PYTHONUNBUFFERED"] = "1"
@@ -429,8 +464,9 @@ def _pipeline_response(res: dict) -> dict:
 def _prepare_pipeline_env():
     """Ensure the census agent backend directory is in sys.path without hijacking global config."""
     backend_str = str(BACKEND_DIR)
-    if backend_str not in sys.path:
-        sys.path.append(backend_str)
+    if backend_str in sys.path:
+        sys.path.remove(backend_str)
+    sys.path.insert(0, backend_str)
 
 
 @app.post(
@@ -451,7 +487,7 @@ async def process_files(
         raise HTTPException(status_code=400, detail="No files uploaded.")
 
     _prepare_pipeline_env()
-    from main import run_pipeline
+    run_pipeline = _load_run_pipeline()
     import census_config as C_local
 
     processed_by = (
@@ -556,7 +592,7 @@ async def process_files(
 async def test_folder(req: FolderTestRequest, request: Request = None):
     """Run pipeline directly on a folder path on disk."""
     _prepare_pipeline_env()
-    from main import run_pipeline
+    run_pipeline = _load_run_pipeline()
     import census_config as C_local
 
     processed_by = (request.headers.get("x-user-email") if request else None) or "SYSTEM"
@@ -626,7 +662,7 @@ async def test_folder(req: FolderTestRequest, request: Request = None):
 async def test_sample(request: Request = None):
     """Quick one-click test running the default input/ folder."""
     _prepare_pipeline_env()
-    from main import run_pipeline
+    run_pipeline = _load_run_pipeline()
     import census_config as C_local
 
     processed_by = (request.headers.get("x-user-email") if request else None) or "SYSTEM"

@@ -842,99 +842,6 @@
   },
   {
     "schema_version": "1.1",
-    "learning_id": "learned_reconcile_waived_coverage_and_dependents",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "learned_reconcile_waived_coverage_and_dependents",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Automated repair pattern for RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
-    "applicable_conditions": [
-      "employee or dependent has waiver evidence but was assigned active coverage, active dependents, or Not On Invoice"
-    ],
-    "required_validators": [
-      "RULE_21_STATUS_HANDLING",
-      "RULE_09_DEPENDENT_DISPOSITION"
-    ],
-    "regression_results": {},
-    "created_at": "2026-11-03T16:54:24.242112",
-    "updated_at": "2026-11-11T12:20:54.012219",
-    "compatibility": {
-      "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census",
-        "invoice"
-      ],
-      "file_types": [
-        "xlsx",
-        "csv",
-        "pdf"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "stage": "NORMALIZATION"
-    },
-    "trigger": {
-      "issue_type": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
-      "field": "",
-      "conditions": [
-        "employee or dependent has waiver evidence but was assigned active coverage, active dependents, or Not On Invoice"
-      ]
-    },
-    "business_rule_refs": [
-      "ISSUE_MISSING_REQUIRED_DEMOGRAPHICS"
-    ],
-    "root_cause": {
-      "code": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
-      "verification_status": "verified",
-      "summary": "Automated repair pattern for RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS"
-    },
-    "strategy": {
-      "action": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
-      "parameters": {
-        "action": "reconcile_waived_coverage_and_dependents"
-      },
-      "preconditions": [
-        "employee or dependent has waiver evidence but was assigned active coverage, active dependents, or Not On Invoice"
-      ],
-      "exclusions": []
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [],
-      "negative_fixture_ids": [],
-      "checks_passed": [
-        "RULE_21_STATUS_HANDLING",
-        "RULE_09_DEPENDENT_DISPOSITION"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T12:20:54.001281"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_122054",
-      "reason": "Verified during successful run repair (RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS)"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
     "learning_id": "pattern_agent_clarification_completeness",
     "version": 1,
     "status": "active",
@@ -1053,281 +960,6 @@
   },
   {
     "schema_version": "1.1",
-    "learning_id": "learned_reconcile_abbreviated_name_subscriber",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "learned_reconcile_abbreviated_name_subscriber",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Automated repair pattern for RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
-    "applicable_conditions": [
-      "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
-    ],
-    "required_validators": [
-      "RULE_16_ABBREVIATED_NAME_MATCHING"
-    ],
-    "regression_results": {},
-    "created_at": "2026-11-02T15:48:45.134690",
-    "updated_at": "2026-11-11T14:55:08.600772",
-    "compatibility": {
-      "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census",
-        "invoice"
-      ],
-      "file_types": [
-        "xlsx",
-        "csv",
-        "pdf"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "stage": "COMPARISON"
-    },
-    "trigger": {
-      "issue_type": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
-      "field": "",
-      "conditions": [
-        "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
-      ]
-    },
-    "business_rule_refs": [
-      "ISSUE_ABBREVIATED_NAME_UNMATCHED"
-    ],
-    "root_cause": {
-      "code": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
-      "verification_status": "verified",
-      "summary": "Automated repair pattern for RECONCILE_ABBREVIATED_NAME_SUBSCRIBER"
-    },
-    "strategy": {
-      "action": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
-      "parameters": {
-        "action": "reconcile_abbreviated_name_subscriber"
-      },
-      "preconditions": [
-        "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
-      ],
-      "exclusions": []
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [],
-      "negative_fixture_ids": [],
-      "checks_passed": [
-        "RULE_16_ABBREVIATED_NAME_MATCHING"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T14:55:08.600772"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_145508",
-      "reason": "Verified during successful run repair (RECONCILE_ABBREVIATED_NAME_SUBSCRIBER)"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
-    "learning_id": "learned_disambiguate_same_name_persons",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "learned_disambiguate_same_name_persons",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Automated repair pattern for DISAMBIGUATE_SAME_NAME_PERSONS",
-    "applicable_conditions": [
-      "same-name employees with distinct DOBs or invoice IDs"
-    ],
-    "required_validators": [
-      "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE",
-      "RULE_06_CENSUS_CONSERVATION"
-    ],
-    "regression_results": {},
-    "created_at": "2026-11-02T12:23:09.807555",
-    "updated_at": "2026-11-11T14:55:08.638293",
-    "compatibility": {
-      "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census",
-        "invoice"
-      ],
-      "file_types": [
-        "xlsx",
-        "csv",
-        "pdf"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "stage": "COMPARISON"
-    },
-    "trigger": {
-      "issue_type": "DISAMBIGUATE_SAME_NAME_PERSONS",
-      "field": "",
-      "conditions": [
-        "same-name employees with distinct DOBs or invoice IDs"
-      ]
-    },
-    "business_rule_refs": [
-      "ISSUE_INVOICE_PRESENCE_FALSE_POSITIVE"
-    ],
-    "root_cause": {
-      "code": "DISAMBIGUATE_SAME_NAME_PERSONS",
-      "verification_status": "verified",
-      "summary": "Automated repair pattern for DISAMBIGUATE_SAME_NAME_PERSONS"
-    },
-    "strategy": {
-      "action": "DISAMBIGUATE_SAME_NAME_PERSONS",
-      "parameters": {
-        "action": "disambiguate_same_name_persons"
-      },
-      "preconditions": [
-        "same-name employees with distinct DOBs or invoice IDs"
-      ],
-      "exclusions": []
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [],
-      "negative_fixture_ids": [],
-      "checks_passed": [
-        "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE",
-        "RULE_06_CENSUS_CONSERVATION"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T14:55:08.621539"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_145508",
-      "reason": "Verified during successful run repair (DISAMBIGUATE_SAME_NAME_PERSONS)"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
-    "learning_id": "learned_repair_linkage_or_normalization",
-    "version": 1,
-    "status": "active",
-    "pattern_state": "VALIDATED",
-    "fingerprint": "learned_repair_linkage_or_normalization",
-    "patch_version": "2.2.0",
-    "generic_root_cause": "Automated repair pattern for REPAIR_LINKAGE_OR_NORMALIZATION",
-    "applicable_conditions": [
-      "subscriber exists in census employees"
-    ],
-    "required_validators": [
-      "REPAIR_PASSED"
-    ],
-    "regression_results": {},
-    "created_at": "2026-11-02T10:38:22.526324",
-    "updated_at": "2026-11-11T15:17:43.394617",
-    "compatibility": {
-      "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
-      ],
-      "template_hashes": [],
-      "parser_versions": [
-        "2.1.0"
-      ],
-      "runtime_prompt_version": "1.0"
-    },
-    "scope": {
-      "document_roles": [
-        "census",
-        "invoice"
-      ],
-      "file_types": [
-        "xlsx",
-        "csv",
-        "pdf"
-      ],
-      "carriers": [
-        "Florida Blue",
-        "Cigna"
-      ],
-      "stage": "LINKAGE"
-    },
-    "trigger": {
-      "issue_type": "REPAIR_LINKAGE_OR_NORMALIZATION",
-      "field": "",
-      "conditions": [
-        "subscriber exists in census employees"
-      ]
-    },
-    "business_rule_refs": [
-      "ISSUE_UNLINKED_DEPENDENTS"
-    ],
-    "root_cause": {
-      "code": "REPAIR_LINKAGE_OR_NORMALIZATION",
-      "verification_status": "verified",
-      "summary": "Automated repair pattern for REPAIR_LINKAGE_OR_NORMALIZATION"
-    },
-    "strategy": {
-      "action": "REPAIR_LINKAGE_OR_NORMALIZATION",
-      "parameters": {
-        "action": "link_by_last_name_and_address"
-      },
-      "preconditions": [
-        "subscriber exists in census employees"
-      ],
-      "exclusions": []
-    },
-    "verification": {
-      "case_successes": 1,
-      "case_failures": 0,
-      "regression_fixture_ids": [],
-      "negative_fixture_ids": [],
-      "checks_passed": [
-        "REPAIR_PASSED"
-      ],
-      "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:17:43.375873"
-    },
-    "promotion": {
-      "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_151743",
-      "reason": "Verified during successful run repair (REPAIR_LINKAGE_OR_NORMALIZATION)"
-    },
-    "usage": {
-      "attempted": 0,
-      "successful": 0,
-      "rolled_back": 0
-    }
-  },
-  {
-    "schema_version": "1.1",
     "learning_id": "learned_filter_template_example_rows",
     "version": 1,
     "status": "active",
@@ -1419,6 +1051,556 @@
   },
   {
     "schema_version": "1.1",
+    "learning_id": "learned_repair_linkage_or_normalization",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "learned_repair_linkage_or_normalization",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Automated repair pattern for REPAIR_LINKAGE_OR_NORMALIZATION",
+    "applicable_conditions": [
+      "subscriber exists in census employees"
+    ],
+    "required_validators": [
+      "REPAIR_PASSED"
+    ],
+    "regression_results": {},
+    "created_at": "2026-11-02T10:38:22.526324",
+    "updated_at": "2026-11-11T10:32:56.520830",
+    "compatibility": {
+      "instruction_hashes": [
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "stage": "LINKAGE"
+    },
+    "trigger": {
+      "issue_type": "REPAIR_LINKAGE_OR_NORMALIZATION",
+      "field": "",
+      "conditions": [
+        "subscriber exists in census employees"
+      ]
+    },
+    "business_rule_refs": [
+      "ISSUE_UNLINKED_DEPENDENTS"
+    ],
+    "root_cause": {
+      "code": "REPAIR_LINKAGE_OR_NORMALIZATION",
+      "verification_status": "verified",
+      "summary": "Automated repair pattern for REPAIR_LINKAGE_OR_NORMALIZATION"
+    },
+    "strategy": {
+      "action": "REPAIR_LINKAGE_OR_NORMALIZATION",
+      "parameters": {
+        "action": "link_by_last_name_and_address"
+      },
+      "preconditions": [
+        "subscriber exists in census employees"
+      ],
+      "exclusions": []
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "REPAIR_PASSED"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-11-11T10:32:56.507250"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261111_103256",
+      "reason": "Verified during successful run repair (REPAIR_LINKAGE_OR_NORMALIZATION)"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "learned_recompute_findings",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "learned_recompute_findings",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Automated repair pattern for RECOMPUTE_FINDINGS",
+    "applicable_conditions": [
+      "state routing updated or findings inconsistent"
+    ],
+    "required_validators": [
+      "REPAIR_PASSED"
+    ],
+    "regression_results": {},
+    "created_at": "2026-11-11T13:24:31.434031",
+    "updated_at": "2026-11-11T13:24:31.454345",
+    "compatibility": {
+      "instruction_hashes": [
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "stage": "RELEASE"
+    },
+    "trigger": {
+      "issue_type": "RECOMPUTE_FINDINGS",
+      "field": "",
+      "conditions": [
+        "state routing updated or findings inconsistent"
+      ]
+    },
+    "business_rule_refs": [
+      "ISSUE_PART_TIME_INCLUDED"
+    ],
+    "root_cause": {
+      "code": "RECOMPUTE_FINDINGS",
+      "verification_status": "verified",
+      "summary": "Automated repair pattern for RECOMPUTE_FINDINGS"
+    },
+    "strategy": {
+      "action": "RECOMPUTE_FINDINGS",
+      "parameters": {
+        "action": "recompute_all_findings"
+      },
+      "preconditions": [
+        "state routing updated or findings inconsistent"
+      ],
+      "exclusions": []
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "REPAIR_PASSED"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-11-11T13:24:31.434031"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261111_132431",
+      "reason": "Verified during successful run repair (RECOMPUTE_FINDINGS)"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "learned_resolve_multi_column_gender",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "learned_resolve_multi_column_gender",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Automated repair pattern for RESOLVE_MULTI_COLUMN_GENDER",
+    "applicable_conditions": [
+      "same-person usable gender/sex candidate exists across columns or linked files"
+    ],
+    "required_validators": [
+      "RULE_10_GENDER_RESOLUTION"
+    ],
+    "regression_results": {},
+    "created_at": "2026-11-11T13:24:31.392331",
+    "updated_at": "2026-11-11T14:53:08.541415",
+    "compatibility": {
+      "instruction_hashes": [
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "stage": "MAPPING"
+    },
+    "trigger": {
+      "issue_type": "RESOLVE_MULTI_COLUMN_GENDER",
+      "field": "gender",
+      "conditions": [
+        "same-person usable gender/sex candidate exists across columns or linked files"
+      ]
+    },
+    "business_rule_refs": [
+      "ISSUE_MULTI_COL_GENDER_UNRESOLVED"
+    ],
+    "root_cause": {
+      "code": "RESOLVE_MULTI_COLUMN_GENDER",
+      "verification_status": "verified",
+      "summary": "Automated repair pattern for RESOLVE_MULTI_COLUMN_GENDER"
+    },
+    "strategy": {
+      "action": "RESOLVE_MULTI_COLUMN_GENDER",
+      "parameters": {
+        "action": "resolve_multi_column_gender"
+      },
+      "preconditions": [
+        "same-person usable gender/sex candidate exists across columns or linked files"
+      ],
+      "exclusions": []
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_10_GENDER_RESOLUTION"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-11-11T14:53:08.516236"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261111_145308",
+      "reason": "Verified during successful run repair (RESOLVE_MULTI_COLUMN_GENDER)"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "learned_reconcile_waived_coverage_and_dependents",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "learned_reconcile_waived_coverage_and_dependents",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Automated repair pattern for RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
+    "applicable_conditions": [
+      "employee or dependent has waiver evidence but was assigned active coverage, active dependents, or Not On Invoice"
+    ],
+    "required_validators": [
+      "RULE_21_STATUS_HANDLING",
+      "RULE_09_DEPENDENT_DISPOSITION"
+    ],
+    "regression_results": {},
+    "created_at": "2026-11-03T16:54:24.242112",
+    "updated_at": "2026-11-11T14:53:08.591760",
+    "compatibility": {
+      "instruction_hashes": [
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "stage": "NORMALIZATION"
+    },
+    "trigger": {
+      "issue_type": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
+      "field": "",
+      "conditions": [
+        "employee or dependent has waiver evidence but was assigned active coverage, active dependents, or Not On Invoice"
+      ]
+    },
+    "business_rule_refs": [
+      "ISSUE_MISSING_REQUIRED_DEMOGRAPHICS"
+    ],
+    "root_cause": {
+      "code": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
+      "verification_status": "verified",
+      "summary": "Automated repair pattern for RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS"
+    },
+    "strategy": {
+      "action": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
+      "parameters": {
+        "action": "reconcile_waived_coverage_and_dependents"
+      },
+      "preconditions": [
+        "employee or dependent has waiver evidence but was assigned active coverage, active dependents, or Not On Invoice"
+      ],
+      "exclusions": []
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_21_STATUS_HANDLING",
+        "RULE_09_DEPENDENT_DISPOSITION"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-11-11T14:53:08.571991"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261111_145308",
+      "reason": "Verified during successful run repair (RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS)"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "learned_disambiguate_same_name_persons",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "learned_disambiguate_same_name_persons",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Automated repair pattern for DISAMBIGUATE_SAME_NAME_PERSONS",
+    "applicable_conditions": [
+      "same-name employees with distinct DOBs or invoice IDs"
+    ],
+    "required_validators": [
+      "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE",
+      "RULE_06_CENSUS_CONSERVATION"
+    ],
+    "regression_results": {},
+    "created_at": "2026-11-02T12:23:09.807555",
+    "updated_at": "2026-11-11T15:13:04.294945",
+    "compatibility": {
+      "instruction_hashes": [
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "stage": "COMPARISON"
+    },
+    "trigger": {
+      "issue_type": "DISAMBIGUATE_SAME_NAME_PERSONS",
+      "field": "",
+      "conditions": [
+        "same-name employees with distinct DOBs or invoice IDs"
+      ]
+    },
+    "business_rule_refs": [
+      "ISSUE_INVOICE_PRESENCE_FALSE_POSITIVE"
+    ],
+    "root_cause": {
+      "code": "DISAMBIGUATE_SAME_NAME_PERSONS",
+      "verification_status": "verified",
+      "summary": "Automated repair pattern for DISAMBIGUATE_SAME_NAME_PERSONS"
+    },
+    "strategy": {
+      "action": "DISAMBIGUATE_SAME_NAME_PERSONS",
+      "parameters": {
+        "action": "disambiguate_same_name_persons"
+      },
+      "preconditions": [
+        "same-name employees with distinct DOBs or invoice IDs"
+      ],
+      "exclusions": []
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE",
+        "RULE_06_CENSUS_CONSERVATION"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-11-11T15:13:04.264828"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261111_151304",
+      "reason": "Verified during successful run repair (DISAMBIGUATE_SAME_NAME_PERSONS)"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
+    "learning_id": "learned_reconcile_abbreviated_name_subscriber",
+    "version": 1,
+    "status": "active",
+    "pattern_state": "VALIDATED",
+    "fingerprint": "learned_reconcile_abbreviated_name_subscriber",
+    "patch_version": "2.2.0",
+    "generic_root_cause": "Automated repair pattern for RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
+    "applicable_conditions": [
+      "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
+    ],
+    "required_validators": [
+      "RULE_16_ABBREVIATED_NAME_MATCHING"
+    ],
+    "regression_results": {},
+    "created_at": "2026-11-02T15:48:45.134690",
+    "updated_at": "2026-11-12T00:39:39.841305",
+    "compatibility": {
+      "instruction_hashes": [
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
+      ],
+      "template_hashes": [],
+      "parser_versions": [
+        "2.1.0"
+      ],
+      "runtime_prompt_version": "1.0"
+    },
+    "scope": {
+      "document_roles": [
+        "census",
+        "invoice"
+      ],
+      "file_types": [
+        "xlsx",
+        "csv",
+        "pdf"
+      ],
+      "carriers": [
+        "Florida Blue",
+        "Cigna"
+      ],
+      "stage": "COMPARISON"
+    },
+    "trigger": {
+      "issue_type": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
+      "field": "",
+      "conditions": [
+        "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
+      ]
+    },
+    "business_rule_refs": [
+      "ISSUE_ABBREVIATED_NAME_UNMATCHED"
+    ],
+    "root_cause": {
+      "code": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
+      "verification_status": "verified",
+      "summary": "Automated repair pattern for RECONCILE_ABBREVIATED_NAME_SUBSCRIBER"
+    },
+    "strategy": {
+      "action": "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER",
+      "parameters": {
+        "action": "reconcile_abbreviated_name_subscriber"
+      },
+      "preconditions": [
+        "enrolled census employee marked missing but invoice has abbreviated first name / initial match"
+      ],
+      "exclusions": []
+    },
+    "verification": {
+      "case_successes": 1,
+      "case_failures": 0,
+      "regression_fixture_ids": [],
+      "negative_fixture_ids": [],
+      "checks_passed": [
+        "RULE_16_ABBREVIATED_NAME_MATCHING"
+      ],
+      "promotion_eligible": true,
+      "last_verified_at": "2026-11-12T00:39:39.808539"
+    },
+    "promotion": {
+      "mode": "auto_allowlisted",
+      "decision_ref": "verified_20261112_003939",
+      "reason": "Verified during successful run repair (RECONCILE_ABBREVIATED_NAME_SUBSCRIBER)"
+    },
+    "usage": {
+      "attempted": 0,
+      "successful": 0,
+      "rolled_back": 0
+    }
+  },
+  {
+    "schema_version": "1.1",
     "learning_id": "pattern_multi_column_gender_sex_resolution",
     "version": 1,
     "status": "active",
@@ -1447,10 +1629,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.085650",
-    "updated_at": "2026-11-11T15:20:33.113736",
+    "updated_at": "2026-11-12T05:01:01.959405",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -1541,11 +1723,11 @@
         "RULE_10_GENDER_RESOLUTION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050101",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1581,10 +1763,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.105085",
-    "updated_at": "2026-11-11T15:20:33.144106",
+    "updated_at": "2026-11-12T05:01:02.009622",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -1658,11 +1840,11 @@
         "RULE_09_DEPENDENT_DISPOSITION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1705,10 +1887,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.124349",
-    "updated_at": "2026-11-11T15:20:33.188806",
+    "updated_at": "2026-11-12T05:01:02.065717",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -1797,11 +1979,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1836,10 +2018,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.143900",
-    "updated_at": "2026-11-11T15:20:33.229339",
+    "updated_at": "2026-11-12T05:01:02.122897",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -1909,11 +2091,11 @@
         "RULE_09_SUBSCRIBER_ROW_LINKS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -1948,10 +2130,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:09:37.757118",
-    "updated_at": "2026-11-11T15:20:33.265640",
+    "updated_at": "2026-11-12T05:01:02.180341",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2022,11 +2204,11 @@
         "RULE_18_MATCH_PERCENTAGE_FORMATTING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2061,10 +2243,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:57:21.012296",
-    "updated_at": "2026-11-11T15:20:33.300919",
+    "updated_at": "2026-11-12T05:01:02.234517",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2136,11 +2318,11 @@
         "RULE_16_PREFERRED_NAME_MATCHING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2174,10 +2356,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.666013",
-    "updated_at": "2026-11-11T15:20:33.345885",
+    "updated_at": "2026-11-12T05:01:02.288170",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2248,11 +2430,11 @@
         "RULE_08_EXAMPLE_ROWS_FILTERED"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2286,10 +2468,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.687639",
-    "updated_at": "2026-11-11T15:20:33.410627",
+    "updated_at": "2026-11-12T05:01:02.346275",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2362,11 +2544,11 @@
         "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2400,10 +2582,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.525959",
-    "updated_at": "2026-11-11T15:20:33.441087",
+    "updated_at": "2026-11-12T05:01:02.404094",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2472,11 +2654,11 @@
         "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2509,10 +2691,10 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.543465",
-    "updated_at": "2026-11-11T15:20:33.479086",
+    "updated_at": "2026-11-12T05:01:02.458988",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2582,11 +2764,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2619,10 +2801,10 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T12:00:30.051455",
-    "updated_at": "2026-11-11T15:20:33.523155",
+    "updated_at": "2026-11-12T05:01:02.515721",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2690,11 +2872,11 @@
         "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935234"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2727,10 +2909,10 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T12:00:30.099949",
-    "updated_at": "2026-11-11T15:20:33.601703",
+    "updated_at": "2026-11-12T05:01:02.571958",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2796,11 +2978,11 @@
         "RULE_06_CENSUS_CONSERVATION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935883"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2834,10 +3016,10 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T13:10:56.063185",
-    "updated_at": "2026-11-11T15:20:33.651800",
+    "updated_at": "2026-11-12T05:01:02.629463",
     "compatibility": {
       "instruction_hashes": [
-        "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
+        "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
       ],
       "template_hashes": [],
       "parser_versions": [
@@ -2908,11 +3090,11 @@
         "RULE_21_ELIGIBILITY_AND_DOB_CONFLICT"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-11T15:20:33.110754"
+      "last_verified_at": "2026-11-12T05:01:01.935883"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261111_152033",
+      "decision_ref": "verified_20261112_050102",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
