@@ -1217,38 +1217,76 @@ class UnderwritingValidator:
                 reason="All template example rows successfully filtered from canonical population",
             ))
 
-        # 17. HSA Medical Plan Disposition Check (Section 9.2)
-        checks.append(CheckResult(
-            rule_id="RULE_09_HSA_MEDICAL_PLAN_DISPOSITION",
-            section="9.2",
-            name="HSA Medical Plan Classification Check",
-            status=CheckStatus.PASS,
-            reason="HSA-compatible medical plans correctly classified as medical and retained",
-        ))
+        # 17. HSA & Medical-Only Plan Disposition Check (Section 9.2)
+        from census_builder import _is_non_medical
+        non_med_leaks = []
+        if census:
+            for p in getattr(census, "active_medical_employees", getattr(census, "employees", [])):
+                if getattr(p, "coverage", "") in C.ACTIVE_TIERS and not getattr(p, "invoice_only", False):
+                    if _is_non_medical(getattr(p, "plan", ""), getattr(p, "plan_type", "")):
+                        non_med_leaks.append(f"{p.display} ({p.plan})")
+        if non_med_leaks:
+            checks.append(CheckResult(
+                rule_id="RULE_09_HSA_MEDICAL_PLAN_DISPOSITION",
+                section="9.2",
+                name="HSA & Medical-Only Plan Classification Check",
+                status=CheckStatus.FAIL,
+                reason=f"Non-medical plans leaked into active medical census: {non_med_leaks[:5]}",
+            ))
+        else:
+            checks.append(CheckResult(
+                rule_id="RULE_09_HSA_MEDICAL_PLAN_DISPOSITION",
+                section="9.2",
+                name="HSA Medical Plan Classification Check",
+                status=CheckStatus.PASS,
+                reason="HSA-compatible medical plans correctly classified as medical and non-medical lines excluded",
+            ))
 
         # 18. Invoice Presence False-Positive Check (Section 29.1 & 29.3)
         invoice_fp_defects = []
         inv_docs = (roles or {}).get("invoice", [])
         full_inv_text = " ".join(getattr(d, "text", "") for d in inv_docs).lower()
+        inv_lines = [ln_str.strip().lower() for d in inv_docs for ln_str in getattr(d, "text", "").splitlines() if ln_str.strip()]
+        non_med_line_re = re.compile(
+            r"\b(non[\-\s]?contributory|basic\s+life|voluntary\s+life|ad&d|add\s+ee|1\.5k\s+ltd|\bltd\b|\bstd\b|dental|vision|short\s+term\s+disability|long\s+term\s+disability|accidental\s+death)\b",
+            re.I,
+        )
+        med_line_re = re.compile(
+            r"\b(medical|ppo|hmo|epo|pos|hdhp|hsa|claims\s+liability|admin/excess|e\d{4}i\d+|proe\d+)\b",
+            re.I,
+        )
         if full_inv_text and census:
-            for p in getattr(census, "employees", []):
+            for p in getattr(census, "canonical_census_employees", getattr(census, "employees", [])):
+                if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False):
+                    continue
                 rr = (results or {}).get(id(p))
                 if rr and getattr(rr, "result", "") == "Not On Invoice" and p.coverage in C.ACTIVE_TIERS:
                     ln = (p.last or "").strip().lower()
                     if ln and len(ln) >= 4:
                         fn = (p.first or "").strip().lower()
-                        in_text = bool(
-                            fn and (
-                                f"{ln}, {fn}" in full_inv_text or
-                                f"{fn} {ln}" in full_inv_text or
-                                f"{ln} {fn}" in full_inv_text or
-                                f"{ln},  {fn}" in full_inv_text or
-                                f"{ln}{fn}" in full_inv_text or
-                                f"{fn}{ln}" in full_inv_text or
-                                (len(fn) >= 4 and f"{ln} {fn[:4]}" in full_inv_text) or
-                                (len(fn) >= 4 and f"{ln}, {fn[:4]}" in full_inv_text)
-                            )
-                        )
+                        name_patterns = [
+                            p_str for p_str in (
+                                f"{ln}, {fn}" if fn else "",
+                                f"{fn} {ln}" if fn else "",
+                                f"{ln} {fn}" if fn else "",
+                                f"{ln},  {fn}" if fn else "",
+                                f"{ln}{fn}" if fn else "",
+                                f"{fn}{ln}" if fn else "",
+                                f"{ln} {fn[:4]}" if len(fn) >= 4 else "",
+                                f"{ln}, {fn[:4]}" if len(fn) >= 4 else "",
+                            ) if p_str
+                        ]
+                        in_text = any(pat in full_inv_text for pat in name_patterns)
+                        if in_text and inv_lines:
+                            has_medical_invoice_line = False
+                            for idx_line, line_txt in enumerate(inv_lines):
+                                if any(pat in line_txt for pat in name_patterns):
+                                    window_txt = " ".join(inv_lines[idx_line:min(len(inv_lines), idx_line + 3)])
+                                    if non_med_line_re.search(window_txt) and not med_line_re.search(window_txt):
+                                        continue
+                                    has_medical_invoice_line = True
+                                    break
+                            in_text = has_medical_invoice_line
                         if in_text:
                             invoice_fp_defects.append(f"{p.display} appears in invoice text but marked 'Not On Invoice'")
         if invoice_fp_defects:

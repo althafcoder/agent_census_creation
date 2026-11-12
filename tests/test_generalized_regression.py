@@ -192,3 +192,138 @@ def test_comparison_premium_due_adjustment_none_premium():
     note_texts = [text for text, _ in rr.notes]
     assert any("PREMIUM DUE adjustment" in t for t in note_texts)
 
+
+def test_multi_benefit_medical_only_isolation_and_idempotent_comparison():
+    """Verify multi-benefit stacked roster filtering (both with Benefit column and via 1-Employee-1-Medical-Plan
+    Invariant when Benefit column is absent), non-medical-only employee WO resolution, idempotent run_comparison()
+    across self-healing reruns, medical-only SBC email requests, and dynamic RAPT DHR template layout normalization.
+    """
+    import openpyxl
+    import census_config as C
+    from readers import RawDoc, RawTable
+    from census_builder import build_census, refine_non_enrolled_statuses
+    from models import Prospect
+    from router import RoutingDecision, generate_missing_information_email
+    from workbook_writer import _inspect_rapt_layout
+    from learning_engine.validator import UnderwritingValidator, CheckStatus
+
+    headers = [
+        "Company Name", "Employee ID", "Relationship", "First Name", "Last Name",
+        "Sex", "DOB", "Zip Code", "Class", "Hire Date", "Benefit", "Plan",
+        "Effective Date", "Coverage Level", "Is Cobra",
+    ]
+    rows = [
+        headers,
+        # 1. Lorraine Robinson: Medical + Dental + Vision + Life + LTD
+        ["MM Robinson LLC", "25546", "Employee", "Lorraine", "Robinson", "F", "9/21/1968", "32825", "Full Time Eligible", "12/1/2002", "Medical", "Buy-Up: E2000i8022B 2026", "6/1/2026", "Employee", "No"],
+        ["MM Robinson LLC", "25546", "Employee", "Lorraine", "Robinson", "F", "9/21/1968", "32825", "Full Time Eligible", "12/1/2002", "Dental", "Buy-Up: P4883 2026", "6/1/2026", "Employee", "No"],
+        ["MM Robinson LLC", "25546", "Employee", "Lorraine", "Robinson", "F", "9/21/1968", "32825", "Full Time Eligible", "12/1/2002", "Vision", "SH107 2026", "6/1/2026", "Employee", "No"],
+        ["MM Robinson LLC", "25546", "Employee", "Lorraine", "Robinson", "F", "9/21/1968", "32825", "Full Time Eligible", "12/1/2002", "Group Life", "Basic Life ADD 25K 2026", "6/1/2026", "Employee", "No"],
+        ["MM Robinson LLC", "25546", "Employee", "Lorraine", "Robinson", "F", "9/21/1968", "32825", "Full Time Eligible", "12/1/2002", "Group Long-Term Disability", "LTD20281 2026", "6/1/2026", "Employee", "No"],
+        # 2. Cecilia Garcia: Dental + Vision + Life ONLY (waived Medical -> must resolve to WO)
+        ["MM Robinson LLC", "162110", "Employee", "CECILIA", "GARCIA", "F", "10/20/1982", "34744", "Full Time Eligible", "9/8/2025", "Dental", "Base: D1057 2026", "11/1/2026", "Employee", "No"],
+        ["MM Robinson LLC", "162110", "Employee", "CECILIA", "GARCIA", "F", "10/20/1982", "34744", "Full Time Eligible", "9/8/2025", "Vision", "SH107 2026", "11/1/2026", "Employee", "No"],
+        ["MM Robinson LLC", "162110", "Employee", "CECILIA", "GARCIA", "F", "10/20/1982", "34744", "Full Time Eligible", "9/8/2025", "Group Life", "Basic Life ADD 25K 2026", "11/1/2026", "Employee", "No"],
+        # 3. Haris Sabic: Medical EE + Dental Family with Spouse & Child (must stay EE with 0 medical dependents)
+        ["MM Robinson LLC", "25547", "Employee", "Haris", "Sabic", "M", "12/26/1979", "32707", "Full Time Eligible", "4/3/2023", "Medical", "Base: PROE250020i7024B 2026", "6/1/2026", "Employee", "No"],
+        ["MM Robinson LLC", "25547", "Employee", "Haris", "Sabic", "M", "12/26/1979", "32707", "Full Time Eligible", "4/3/2023", "Dental", "Base: D1057 2026", "6/1/2026", "Employee + Family", "No"],
+        ["MM Robinson LLC", "25547", "Spouse", "Ostina", "Sabic", "F", "10/14/1982", "32707", "Full Time Eligible", "4/3/2023", "Dental", "Base: D1057 2026", "6/1/2026", "Employee + Family", "No"],
+        ["MM Robinson LLC", "25547", "Child", "Amaris", "Sabic", "M", "8/20/2002", "32707", "Full Time Eligible", "4/3/2023", "Dental", "Base: D1057 2026", "6/1/2026", "Employee + Family", "No"],
+        # 4. Jeffrey Robinson: Medical EC with Child Sophia
+        ["MM Robinson LLC", "25545", "Employee", "Jeffrey", "Robinson", "M", "4/3/1962", "32825", "Full Time Eligible", "4/2/1999", "Medical", "Buy-Up: E2000i8022B 2026", "6/1/2026", "Employee + Child", "No"],
+        ["MM Robinson LLC", "25545", "Child", "Sophia", "Robinson", "F", "5/14/2003", "32825", "Full Time Eligible", "4/2/1999", "Medical", "Buy-Up: E2000i8022B 2026", "6/1/2026", "Employee + Child", "No"],
+        ["MM Robinson LLC", "25545", "Child", "Sophia", "Robinson", "F", "5/14/2003", "32825", "Full Time Eligible", "4/2/1999", "Dental", "Buy-Up: P4883 2026", "6/1/2026", "Employee + Child", "No"],
+    ]
+
+    # A. Test both WITH Benefit column and WITHOUT Benefit column (1-Employee-1-Medical-Plan Invariant)
+    for drop_benefit_col in (False, True):
+        test_rows = [[c for i, c in enumerate(r) if not (drop_benefit_col and i == 10)] for r in rows]
+        df = pd.DataFrame(test_rows)
+        doc = RawDoc(path=Path("MM Robinson Census 2026.csv"), ext=".csv", tables=[RawTable("Roster", df)], text="")
+        census, meta = build_census([doc], anchored_medical_plans={"E2000i8022B", "PROE250020i7024B"})
+        refine_non_enrolled_statuses(census)
+
+        assert len(census.canonical_census_employees) == 4
+        emp_map = {f"{e.first.lower()} {e.last.lower()}": e for e in census.canonical_census_employees}
+        assert emp_map["lorraine robinson"].coverage == "EE"
+        assert emp_map["lorraine robinson"].plan == "Buy-Up: E2000i8022B 2026"
+        assert emp_map["cecilia garcia"].coverage == "WO"
+        assert emp_map["cecilia garcia"].plan == "NA"
+        assert emp_map["haris sabic"].coverage == "EE"
+        assert emp_map["haris sabic"].plan == "Base: PROE250020i7024B 2026"
+        assert len(emp_map["haris sabic"].dependents) == 0
+        assert emp_map["jeffrey robinson"].coverage == "EC"
+        assert [d.display for d in emp_map["jeffrey robinson"].dependents] == ["Sophia Robinson"]
+        assert [d.display for d in census.dependents] == ["Sophia Robinson"]
+
+    # B. Test idempotent run_comparison across multiple runs (simulating Learning Engine self-healing loop)
+    inv_recs = [
+        InvoiceRecord(first="Haris", last="Sabic", raw_name="Sabic, Haris", plan="PROE250020i7024B", tier="EE", status="Active", premium=563.13),
+        InvoiceRecord(first="Jeffrey", last="Robinson", raw_name="ROBINSON, JEFFREY", plan="E2000i8022B", tier="EC", status="Active", premium=2237.11),
+        InvoiceRecord(first="Angel", last="Andrade", raw_name="Andrade, Angel", plan="PROE250020i7024B", tier="EE", status="Active", premium=563.13),
+        InvoiceRecord(first="Garrett", last="Miles", raw_name="Miles, Garrett", plan="E2000i8022B", tier="EE", status="Active (Retro ADD 08/2025)", premium=721.02),
+    ]
+    F = Findings()
+    results1 = run_comparison(census, inv_recs, None, meta, F, have_invoice=True)
+    results2 = run_comparison(census, inv_recs, None, meta, F, have_invoice=True)
+
+    inv_only = [p for p in census.people if p.invoice_only]
+    assert len(inv_only) == 2
+    assert len(census.canonical_census_employees) == 4
+    for p in inv_only:
+        rr = results2[id(p)]
+        assert rr.match_pct == 0
+        assert rr.result == "Invoice Employee Not Found In Census"
+
+    # C. Verify Missing Information Email requests only missing Medical SBC (PROE250020i7024B) and lists Lorraine once
+    sbc1 = RawDoc(path=Path("levelfunded_sbc_document_E2000i8022B.pdf"), ext=".pdf", text="E2000i8022B")
+    raw_inv = RawDoc(
+        path=Path("invoice.pdf"),
+        ext=".pdf",
+        text="1153433 ROBINSON, LORRAINE Non-Contributory MAX *****684300 E A 0.87 $0.78 $8.03\n1.5K LTD\n",
+    )
+    inv_doc = InvoiceDoc(path=Path("invoice.pdf"), records=inv_recs, period_start=date(2025, 9, 1))
+    prospect = Prospect(company="MM Robinson LLC", state="FL", effective_date=date(2026, 1, 1))
+    routing = RoutingDecision(carrier=C.CARRIER_FLORIDA_BLUE, state="FL", is_florida=True)
+    email_txt = generate_missing_information_email(
+        prospect=prospect, routing=routing, census=census, findings=F,
+        have_census=True, have_invoice=True, have_renewal=False, renewal_required=False, claims_required=False,
+        roles={"census": [doc], "invoice": [raw_inv], "plan_design": [sbc1], "ghq": [sbc1]},
+        selected_invoices=[inv_doc], invoice_records=inv_recs, results=results2, docs=[doc, raw_inv, sbc1],
+    )
+    assert "Base: PROE250020i7024B 2026" in email_txt
+    assert "P4883" not in email_txt
+    assert "D1057" not in email_txt
+    assert "SH107" not in email_txt
+    assert "LTD20281" not in email_txt
+    assert email_txt.count("Lorraine Robinson:") == 1
+
+    # D. Verify Learning Engine RULE_29 does not false-positive on non-medical invoice lines
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    val_report = validator.validate_full_pipeline(
+        prospect=prospect, routing=routing, census=census, selected_invoices=[inv_doc],
+        renewal=None, ren_required=False, claims_required=False, findings=F, results=results2,
+        roles={"census": [doc], "invoice": [raw_inv], "ghq": [sbc1]},
+    )
+    r29 = next((c for c in val_report.checks if c.rule_id == "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"), None)
+    assert r29 is not None and r29.status == CheckStatus.PASS
+
+    # E. Verify RAPT layout dynamic inspection normalizes 'REI Sales Person' -> 'DHR Sales Person'
+    # and resolves merged label ranges (e.g. F2:G2 -> H2 for SIC) without MergedCell read-only errors
+    from workbook_writer import write_census_sheet
+    wb = openpyxl.load_workbook(C.RAPT_TEMPLATE_PATH)
+    ws = wb.active
+    cells, hdr_row, first_data_row, comp_start_col, tc = _inspect_rapt_layout(ws)
+    assert ws["G10"].value == "DHR Sales Person"
+    assert cells["sic"] == "H2"
+    assert cells["sales_person"] == "H10"
+    assert comp_start_col == 13
+    prospect.sic = "7382"
+    prospect.address = "6457 Hazeltine National Dr, Suite 110"
+    prospect.city_state_zip = "Orlando, FL 32822"
+    write_census_sheet(ws, census, prospect, results2)
+    assert ws["H2"].value == "7382"
+    assert ws["C4"].value == "MM Robinson LLC"
+
+
+

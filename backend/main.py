@@ -221,7 +221,7 @@ def run_pipeline(
             _fields = [("Proposed Effective Date", prospect.effective_date), ("SIC / NAICS Code", prospect.sic),
                        ("Company Name", prospect.company), ("Address", prospect.address),
                        ("City, State, Zip", prospect.city_state_zip), ("OneDigital Referral", prospect.referral),
-                       ("REI Sales Person", prospect.sales_person)]
+                       ("DHR Sales Person", prospect.sales_person)]
             filled = [n for n, v in _fields if v]
             blank = [n for n, v in _fields if not v]
             F.notes.append("No GHQ or RFP was provided. " + ", ".join(filled) +
@@ -253,13 +253,29 @@ def run_pipeline(
         meta = {"has_coverage_column": False, "saw_dependent_source": False}
         F.notes.append("No census / enrollment file was found among the uploads. Census comparison workbook was not generated.")
     else:
-        census, meta = build_census(roles["census"], effective_date=prospect.effective_date, tracer=tracer)
+        anchored_med_plans: set[str] = set()
+        for d in docs:
+            d_low = d.name.lower()
+            if "sbc" in d_low or "summary of benefits" in d_low or d in roles.get("invoice", []):
+                for tok in re.findall(r"\b[a-z]{1,5}\d{3,6}[a-z]\d{3,5}[a-z]?\b", (d.name + " " + (d.text or "")[:4000]), re.I):
+                    anchored_med_plans.add(tok.lower())
+        census, meta = build_census(
+            roles["census"],
+            effective_date=prospect.effective_date,
+            tracer=tracer,
+            anchored_medical_plans=anchored_med_plans,
+        )
         meta["company"] = prospect.company
         if not census.employees:
             fallback_docs = [d for d in docs if d not in roles["census"] and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
             if fallback_docs:
                 log.info("      * Primary census yielded 0 employees; attempting fallback consolidation with %s", [d.name for d in fallback_docs])
-                census, meta = build_census(roles["census"] + fallback_docs, effective_date=prospect.effective_date, tracer=tracer)
+                census, meta = build_census(
+                    roles["census"] + fallback_docs,
+                    effective_date=prospect.effective_date,
+                    tracer=tracer,
+                    anchored_medical_plans=anchored_med_plans,
+                )
         if not census.employees:
             log.warning("Census files were found but no employee rows could be parsed; proceeding to generate missing info deliverable.")
             F.notes.append("Census files were provided but 0 employee rows could be read from them.")
@@ -418,9 +434,16 @@ def run_pipeline(
                 if not patches:
                     break
 
+                pre_missing_census = F.counters.get("missing_census", 0)
+                pre_canonical_matched = len([
+                    p for p in census.canonical_census_employees
+                    if results.get(id(p)) and results[id(p)].inv is not None
+                ])
+                cycle_txs = []
                 for patch in patches:
                     log.info("🔧 [SELF-HEALING] Applying repair patch: %s (%s)", patch.patch_id, patch.action.value)
                     tx = repair_engine.execute_patch(patch, working_state)
+                    cycle_txs.append(tx)
                     executed_repair_patches.append(patch)
 
                 # Re-sync modified pipeline objects from repaired working state
@@ -466,6 +489,25 @@ def run_pipeline(
                 )
                 working_state["results"] = results
                 working_state["findings"] = F
+
+                post_missing_census = F.counters.get("missing_census", 0)
+                post_canonical_matched = len([
+                    p for p in census.canonical_census_employees
+                    if results.get(id(p)) and results[id(p)].inv is not None
+                ])
+                if pre_missing_census > post_missing_census and (pre_missing_census - post_missing_census) > max(0, post_canonical_matched - pre_canonical_matched):
+                    log.warning("⚠️ [SELF-HEALING] Repair cycle %d lost %d Invoice-Only subscriber(s) without canonical match gain; rolling back.",
+                                repair_cycle, pre_missing_census - post_missing_census)
+                    for tx in reversed(cycle_txs):
+                        tx.rollback(working_state)
+                    census = working_state.get("census", census)
+                    results = run_comparison(
+                        census=census, invs=invoice_records, renewal=renewal_to_use,
+                        meta=meta, F=F, have_invoice=have_invoice, renewal_required=ren_required, tracer=tracer,
+                    )
+                    working_state["results"] = results
+                    working_state["findings"] = F
+                    break
 
                 # Refresh claims requirement check after patch
                 claims_required, claims_reason = check_claims_required(

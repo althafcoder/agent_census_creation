@@ -170,8 +170,24 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
     else:
         F.renewal_required = True
 
+    # Ensure idempotency across Learning Engine reruns: strip any prior invoice_only rows
+    census.people = [p for p in census.people if not getattr(p, "invoice_only", False)]
+    F.exceptions = [
+        exc_item for exc_item in F.exceptions
+        if exc_item[0] not in (
+            "Duplicate employees", "Invalid dependent structures", "Eligibility conflicts",
+            "Tier mismatches", "Coverage mismatches", "Employees missing from invoice",
+            "Employee missing from census",
+        )
+    ]
+    F.plan_enrollment.clear()
+    F.renewal_unmapped_plans.clear()
+    F.renewal_rates.clear()
+
     results_dup: dict[int, RowResult] = {}
-    for d in census.employees:                      # duplicates stay in the census but are not compared
+    for d in census.people:                         # duplicates stay in census.people but are not compared
+        if d.role != "EE":
+            continue
         if d.is_duplicate:
             exc_dup = RowResult()
             results_dup[id(d)] = exc_dup
@@ -179,7 +195,10 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
         elif getattr(d, "disposition", "") == "EXCLUDE_PART_TIME":
             results_dup[id(d)] = RowResult(result="Excluded - Part-Time", result_red=False)
 
-    emps = [e for e in census.employees if not e.is_duplicate and getattr(e, "disposition", "") != "EXCLUDE_PART_TIME"]
+    emps = [
+        e for e in census.canonical_census_employees
+        if not e.is_duplicate and getattr(e, "disposition", "") != "EXCLUDE_PART_TIME"
+    ]
     rates = build_rate_table(invs) if have_invoice else {}
     top_plan = most_used_plan(invs, census) if have_invoice else ""
     inv_plans = sorted({r.plan for r in invs if r.plan})

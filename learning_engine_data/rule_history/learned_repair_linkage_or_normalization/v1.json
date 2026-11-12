@@ -15,10 +15,10 @@
   ],
   "regression_results": {},
   "created_at": "2026-11-02T10:38:22.526324",
-  "updated_at": "2026-11-11T10:32:56.520830",
+  "updated_at": "2026-11-12T12:54:30.019258",
   "compatibility": {
     "instruction_hashes": [
-      "084ffdca28e8195f1e163eeb2c41e506535d68a24395fb81cfb40772c20b0b86"
+      "1d97402b89712dbb61125ba881e05a065c54f5612209b73fdfc50835be073978"
     ],
     "template_hashes": [],
     "parser_versions": [
@@ -76,11 +76,11 @@
       "REPAIR_PASSED"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-11-11T10:32:56.507250"
+    "last_verified_at": "2026-11-12T12:54:30.010517"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261111_103256",
+    "decision_ref": "verified_20261112_125430",
     "reason": "Verified during successful run repair (REPAIR_LINKAGE_OR_NORMALIZATION)"
   },
   "usage": {

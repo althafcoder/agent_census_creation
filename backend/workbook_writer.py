@@ -69,39 +69,146 @@ def _set_notes(cell, notes, base):
         cell.font = Font(name=base.name, sz=base.sz, bold=True, color=single_color)
 
 
+def _next_writable_cell_right(ws, row: int, col: int) -> str:
+    """Return the coordinate of the first non-MergedCell to the right of (row, col) on the same row."""
+    from openpyxl.cell.cell import MergedCell
+    nc = col + 1
+    while nc <= 26 and isinstance(ws.cell(row, nc), MergedCell):
+        nc += 1
+    return f"{get_column_letter(nc)}{row}"
+
+
+def _write_ws_coord_safe(ws, coord: str, val):
+    """Write value to worksheet coordinate, resolving top-left cell if coordinate is inside a merged range."""
+    from openpyxl.cell.cell import MergedCell
+    target = ws[coord]
+    if isinstance(target, MergedCell):
+        for rng in ws.merged_cells.ranges:
+            if coord in rng:
+                target = ws.cell(rng.min_row, rng.min_col)
+                break
+    target.value = val
+    return target
+
+
+def _inspect_rapt_layout(ws) -> tuple[dict[str, str], int, int, int, dict[str, int]]:
+    """Dynamically inspect the live RAPT worksheet to resolve prospect cells, header row, and columns.
+
+    Also normalizes legacy 'REI Sales Person' label text to 'DHR Sales Person' so outputs match DHR format.
+    """
+    from utils import norm_key
+    cells = dict(C.PROSPECT_CELLS)
+    hdr_row = C.HEADER_ROW
+    first_data_row = C.FIRST_DATA_ROW
+    comp_start_col = C.COMPARISON_START_COL
+    tc = dict(C.TEMPLATE_COLS)
+
+    # 1. Scan prospect metadata header block (rows 1..13)
+    for r in range(1, 14):
+        for c in range(1, 13):
+            val = ws.cell(r, c).value
+            if not val or not isinstance(val, str):
+                continue
+            if "REI Sales Person" in val:
+                ws.cell(r, c).value = val.replace("REI Sales Person", "DHR Sales Person")
+                val = ws.cell(r, c).value
+            k = norm_key(val.rstrip(":"))
+            val_coord = _next_writable_cell_right(ws, r, c)
+            if "proposedeffectivedate" in k or k == "effectivedate":
+                cells["effective_date"] = val_coord
+            elif "sic" in k or "naics" in k:
+                cells["sic"] = val_coord
+            elif k in ("companyname", "groupname", "prospectname"):
+                cells["company"] = val_coord
+            elif k in ("address", "hqaddress"):
+                cells["address"] = val_coord
+            elif "city" in k and "zip" in k:
+                cells["city_state_zip"] = val_coord
+            elif "refer" in k:
+                cells["referral"] = val_coord
+            elif "salesperson" in k:
+                cells["sales_person"] = val_coord
+
+    # 2. Scan for table header row (rows 10..18)
+    for r in range(10, 19):
+        row_texts = [norm_key(str(ws.cell(r, c).value or "")) for c in range(1, 15)]
+        if any("firstname" in t for t in row_texts) and any("lastname" in t for t in row_texts):
+            hdr_row = r
+            first_data_row = r + 1
+            last_uw_col = 0
+            for c in range(1, 15):
+                raw_h = str(ws.cell(r, c).value or "")
+                hk = norm_key(raw_h.splitlines()[0] if raw_h else "")
+                if not hk:
+                    continue
+                if "invoice" in hk or "match" in hk or "comparison" in hk:
+                    break
+                last_uw_col = c
+                if "datarow" in hk or hk in ("row", "rowno"):
+                    tc["data_row"] = c
+                elif "firstname" in hk:
+                    tc["first"] = c
+                elif "lastname" in hk:
+                    tc["last"] = c
+                elif "gender" in hk or "sex" in hk:
+                    tc["gender"] = c
+                elif "birth" in hk or "dob" in hk:
+                    tc["dob"] = c
+                elif "zip" in hk:
+                    tc["zip"] = c
+                elif "relationship" in hk or "membertype" in hk:
+                    tc["relationship"] = c
+                elif "dependentof" in hk:
+                    tc["dep_of"] = c
+                elif hk.startswith("coverage") or "medicalcoverage" in hk:
+                    tc["coverage"] = c
+                elif "cobra" in hk:
+                    tc["cobra"] = c
+                elif "planname" in hk or "medicalplan" in hk:
+                    tc["plan"] = c
+                elif "premium" in hk:
+                    tc["premium"] = c
+            if last_uw_col >= 10:
+                comp_start_col = last_uw_col + 1
+            break
+
+    return cells, hdr_row, first_data_row, comp_start_col, tc
+
+
 def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int, RowResult], tracer=None) -> None:
     # Preserve original template sheet name (e.g. 'Sheet1' for RAPT)
     if ws.title != "Sheet1":
         ws.title = "Census"
-    # ---- prospect block (values go to the top-left cell of each merged value range)
-    cells = C.PROSPECT_CELLS
+    # ---- prospect block (resolved dynamically from live worksheet labels)
+    cells, hdr_row, first_data_row, comp_start_col, tc = _inspect_rapt_layout(ws)
     if prospect.effective_date:
-        ws[cells["effective_date"]].value = prospect.effective_date
-        ws[cells["effective_date"]].number_format = "mm/dd/yyyy"
+        eff_cell = _write_ws_coord_safe(ws, cells["effective_date"], prospect.effective_date)
+        eff_cell.number_format = "mm/dd/yyyy"
     for key in ("sic", "company", "address", "city_state_zip", "referral", "sales_person"):
         v = getattr(prospect, key)
         if v:
-            ws[cells[key]].value = v
+            _write_ws_coord_safe(ws, cells[key], v)
 
-    # ---- comparison headers (after column L only); green fill on header row only
-    hdr_src = ws.cell(C.HEADER_ROW, 11)       # K14 style donor (blue header)
+    # ---- comparison headers (after last underwriting column); green fill on header row only
+    hdr_src = ws.cell(hdr_row, max(1, comp_start_col - 2))       # style donor (blue header)
     for k, title in enumerate(C.COMPARISON_HEADERS):
-        col = C.COMPARISON_START_COL + k
-        c = ws.cell(C.HEADER_ROW, col, title)
+        col = comp_start_col + k
+        c = ws.cell(hdr_row, col, title)
         _copy_style(hdr_src, c)
         c.fill = GREEN_FILL
         ws.column_dimensions[get_column_letter(col)].width = C.COMPARISON_WIDTHS[k]
-    ws.column_dimensions["L"].width = max(ws.column_dimensions["L"].width or 0, 30)
+    ws.column_dimensions[get_column_letter(comp_start_col - 1)].width = max(
+        ws.column_dimensions[get_column_letter(comp_start_col - 1)].width or 0, 30
+    )
 
-    body_src = {col: ws.cell(C.FIRST_DATA_ROW, col) for col in range(1, 13)}
+    body_src = {col: ws.cell(first_data_row, col) for col in range(1, comp_start_col)}
     base_font = copy(body_src[2].font)
-    tc = C.TEMPLATE_COLS
 
     from census_builder import recalculate_row_numbers
     recalculate_row_numbers(census)
 
     # ---- clear template body rows then write
-    row = C.FIRST_DATA_ROW
+    row = first_data_row
     had_gap = False
     for p in census.people:
         if p.is_duplicate or getattr(p, "disposition", "").startswith("EXCLUDE_"):
@@ -111,15 +218,16 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
             had_gap = True
         r = row
         row += 1
-        for col in range(1, 13):
+        for col in range(1, comp_start_col):
             cell = ws.cell(r, col)
             if not cell.has_style or cell.border.left.style is None:
                 _copy_style(body_src[col], cell)
-        for col in range(13, 22):
-            _copy_style(body_src[12], ws.cell(r, col))
+        donor_col = max(1, comp_start_col - 1)
+        for col in range(comp_start_col, comp_start_col + len(C.COMPARISON_HEADERS)):
+            _copy_style(body_src[donor_col], ws.cell(r, col))
             ws.cell(r, col).number_format = "General"
             ws.cell(r, col).alignment = Alignment(wrap_text=True, vertical="center",
-                                                  horizontal="left" if col in (13, 19, 20, 21) else "center")
+                                                  horizontal="left" if col in (comp_start_col, comp_start_col + 6, comp_start_col + 7, comp_start_col + 8) else "center")
 
         if p.invoice_only:
             ws.cell(r, tc["data_row"], None)
@@ -166,7 +274,7 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
             notes = list(p.notes)
             if rr:
                 notes = notes + rr.notes
-                base = C.COMPARISON_START_COL  # Col M (13)
+                base = comp_start_col  # Col M (13)
                 ws.cell(r, base, rr.inv_name or None)                                # Col M (13): Invoice Employee Name
                 m_val = None
                 if rr.match_pct is not None:
@@ -192,11 +300,11 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
                     res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
                 elif rr.result in ("Eligibility Conflict", "Missing From Census", "Invoice Employee Not Found In Census") or rr.result_red:
                     res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
-            _set_notes(ws.cell(r, C.COMPARISON_START_COL + 8), notes, base_font)     # Col U (21): Notes
+            _set_notes(ws.cell(r, comp_start_col + 8), notes, base_font)             # Col U (21): Notes
         else:
-            for col_idx in range(C.COMPARISON_START_COL, C.COMPARISON_START_COL + len(C.COMPARISON_HEADERS)):
+            for col_idx in range(comp_start_col, comp_start_col + len(C.COMPARISON_HEADERS)):
                 ws.cell(r, col_idx, None)
-            res = ws.cell(r, C.COMPARISON_START_COL + 7, "Dependent")            # Col T (20): Comparison Result
+            res = ws.cell(r, comp_start_col + 7, "Dependent")                        # Col T (20): Comparison Result
             res.font = Font(name=base_font.name, sz=base_font.sz)
 
         if tracer:

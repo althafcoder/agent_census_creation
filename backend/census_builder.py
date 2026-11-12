@@ -51,6 +51,8 @@ class _State:
     hire_missing: list = field(default_factory=list)
     saw_dependent_source: bool = False
     record_counter: int = 0
+    anchored_medical_plans: set = field(default_factory=set)
+    inferred_non_med_plans: set = field(default_factory=set)
 
 
 def _next_record_id(st: _State) -> str:
@@ -171,6 +173,29 @@ def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
     if not cleaned:
         return False
 
+    # Non-medical lines (excluding 'hsa' because high-deductible medical plans routinely include 'HSA' in plan titles)
+    non_med_res = (
+        r"\b(dent|dental)\b", r"\b(vis|vision)\b", r"\b(life|lif)[\d\-]*\b", r"\b(disab|disability)\b",
+        r"\b(ltd|std)[\d\-]*\b", r"\b(accid|accident)\b", r"\b(fsa|dca)\b", r"\b(legal)\b", r"\b(pet)\b",
+        r"\b(indemn|indemnity)\b", r"\b(crit|critical)\b", r"\b(identity)\b", r"\bad&d\b",
+        r"\b(basic\s+life|group\s+life|voluntary\s+life|add\s+\d+k?)\b",
+        r"\b(spending|401k|401\(k\)|401\s*k|retirement|pension|commuter|transit|parking|eap)\b"
+    )
+
+    # 1. Explicit plan_type / Benefit column takes highest precedence when present
+    pt = clean(plan_type).lower().strip()
+    if pt:
+        pt_cleaned = re.sub(r"\b(dependents?|dep|child|children|spouse)\b", " ", pt).strip()
+        if pt_cleaned:
+            if any(re.search(pat, pt_cleaned) for pat in non_med_res) or re.search(
+                r"\b(den|dmo|dmd|dnt|vsp|wis|ltl|voluntary|suppl|supplemental|hosp|hospital|canc|cancer)\b",
+                pt_cleaned,
+            ):
+                if not any(m in pt_cleaned for m in ("medical", "health", "hsa")):
+                    return True
+            if pt_cleaned == "medical" or "med" in pt_cleaned or "health" in pt_cleaned:
+                return False
+
     # Core medical plan signals (network types, plan acronyms, benefit designs)
     med_signals = (
         "ppo", "pos", "cpos", "cposii", "hmo", "epo", "oaas", "oap", "afa", "sgp", "awh",
@@ -179,11 +204,11 @@ def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
     has_medical_signal = any(s in cleaned for s in med_signals)
 
     # Strong, unambiguous non-medical line signals take priority: provider/plan codes such as
-    # AETDEN / AET-DMO DEN / VSP / METLDI LIF / METLDI LTD. These override weak tokens like 'ppo'
-    # that appear inside dental provider codes (e.g. 'AET-APPO').
+    # AETDEN / AET-DMO DEN / VSP / METLDI LIF / METLDI LTD / LTD20281. These override weak tokens
+    # like 'ppo' that appear inside dental provider codes (e.g. 'AET-APPO').
     if re.search(r"\b(den|dental|dmo|dmd|dnt|vsp|wis|ltl)\b", cleaned):
         return True
-    if re.search(r"\b(life|lif|ltd|std)\b", cleaned):
+    if re.search(r"\b(life|lif|ltd|std)[\d\-]*\b", cleaned):
         return True
 
     # Standalone HSA spending accounts (without medical plan indicators)
@@ -192,25 +217,12 @@ def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
     if cleaned in ("hsa", "hsa account", "hsa contribution", "hsa fee", "hsa bank"):
         return True
 
-    # Non-medical lines (excluding 'hsa' because high-deductible medical plans routinely include 'HSA' in plan titles)
-    non_med_res = (
-        r"\b(dent|dental)\b", r"\b(vis|vision)\b", r"\b(life|lif)\b", r"\b(disab|disability)\b",
-        r"\b(ltd|std)\b", r"\b(accid|accident)\b", r"\b(fsa)\b", r"\b(legal)\b", r"\b(pet)\b",
-        r"\b(indemn|indemnity)\b", r"\b(crit|critical)\b", r"\b(identity)\b", r"\bad&d\b",
-        r"\b(spending|401k|401\(k\)|401\s*k|retirement|pension|commuter|transit|parking|eap)\b"
-    )
-
     if any(re.search(pat, cleaned) for pat in non_med_res):
         if not has_medical_signal:
             return True
 
-    pt = clean(plan_type).lower().strip()
     if pt:
         pt_cleaned = re.sub(r"\b(dependents?|dep|child|children|spouse)\b", " ", pt).strip()
-        if pt_cleaned == "medical" or "med" in pt_cleaned or "health" in pt_cleaned:
-            return False
-        if any(re.search(pat, pt_cleaned) for pat in non_med_res):
-            return True
         if not has_medical_signal and pt_cleaned:
             return True
 
@@ -524,6 +536,114 @@ def _register_employee(
     return p
 
 
+def _plan_matches_anchor(plan_name: str, anchored_plans: set[str]) -> bool:
+    """Return True if plan_name matches any anchored medical plan (exact or core alphanumeric token)."""
+    p_low = clean(plan_name).lower().strip()
+    if not p_low:
+        return False
+    if p_low in anchored_plans:
+        return True
+    p_tokens = {
+        t for t in re.findall(r"[a-z0-9]{4,}", p_low)
+        if not t.isdigit() and t not in ("base", "buyup", "buy", "plan", "option", "choice", "plus", "core", "select")
+    }
+    for anc in anchored_plans:
+        anc_low = clean(anc).lower().strip()
+        if not anc_low:
+            continue
+        if anc_low in p_low or p_low in anc_low:
+            return True
+        anc_tokens = {
+            t for t in re.findall(r"[a-z0-9]{4,}", anc_low)
+            if not t.isdigit() and t not in ("base", "buyup", "buy", "plan", "option", "choice", "plus", "core", "select")
+        }
+        if p_tokens and anc_tokens and (p_tokens & anc_tokens):
+            return True
+    return False
+
+
+def _looks_like_medical_plan_design(plan_name: str) -> bool:
+    """Return True if plan_name carries structural medical plan design tokens or carrier medical model patterns."""
+    p_low = clean(plan_name).lower().strip()
+    if not p_low:
+        return False
+    med_signals = (
+        "ppo", "pos", "cpos", "cposii", "hmo", "epo", "oaas", "oap", "afa", "sgp", "awh",
+        "open access", "hdhp", "cdhp", "copay", "coinsurance", "deductible", "medical", "hsa",
+    )
+    if any(s in p_low for s in med_signals):
+        return True
+    # Carrier medical plan code pattern (e.g. E2000i8022B, PROE250020i7024B)
+    if re.search(r"\b[a-z]{1,5}\d{3,6}[a-z]\d{3,5}[a-z]?\b", p_low):
+        return True
+    return False
+
+
+def _infer_table_benefit_lines(body_df: pd.DataFrame, hdr: Header, st: _State) -> bool:
+    """Pre-scan table to infer plan->benefit mappings and enforce the 1-Employee-1-Medical-Plan Invariant.
+
+    Returns True if the table is a stacked multi-benefit table (same employee appears on multiple plan rows).
+    """
+    cols = hdr.columns
+    if "plan" not in cols and "plan_type" not in cols and "plan_category" not in cols:
+        return False
+
+    emp_row_counts: dict[str, int] = {}
+    emp_plans: dict[str, list[tuple[str, str]]] = {}
+
+    for _, series in body_df.iterrows():
+        r = _Row(hdr, series)
+        pt_val = r.t("plan_type") if "plan_type" in cols else (r.t("plan_category") if "plan_category" in cols else "")
+        p_val = r.t("plan") if "plan" in cols else ""
+        if p_val:
+            if _is_non_medical(p_val, pt_val):
+                st.inferred_non_med_plans.add(p_val.strip().lower())
+            elif pt_val and any(w in pt_val.lower() for w in ("medical", "health", "med")):
+                st.anchored_medical_plans.add(p_val.strip().lower())
+
+        rel_raw = r.t("relationship") if "relationship" in cols else ""
+        rel = std_relationship(rel_raw) if rel_raw else "EE"
+        if rel not in ("", "EE"):
+            continue
+        ef, el = _names(r)
+        emp_key = r.t("sub_id") or f"{ef.strip().lower()}|{el.strip().lower()}"
+        if not emp_key or emp_key == "|":
+            continue
+        emp_row_counts[emp_key] = emp_row_counts.get(emp_key, 0) + 1
+        if p_val or pt_val:
+            emp_plans.setdefault(emp_key, []).append((p_val.strip(), pt_val.strip()))
+
+    is_stacked = False
+    # Enforce 1-Employee-1-Medical-Plan Invariant across co-occurring plans for the same employee
+    for emp_key, pairs in emp_plans.items():
+        distinct_plans = {p for p, _ in pairs if p and p.upper() not in ("NA", "N/A", "NONE", "WAIVED")}
+        distinct_pts = {pt.lower() for _, pt in pairs if pt}
+        if len(distinct_plans) > 1 or len(distinct_pts) > 1:
+            is_stacked = True
+        if len(distinct_plans) <= 1:
+            continue
+        # Identify which of this employee's plans is their single Medical plan
+        med_candidates = set()
+        for p, pt in pairs:
+            p_low = p.lower()
+            if p_low in st.inferred_non_med_plans or _is_non_medical(p, pt):
+                continue
+            if (
+                (pt and any(w in pt.lower() for w in ("medical", "health", "med")))
+                or _plan_matches_anchor(p, st.anchored_medical_plans)
+                or _looks_like_medical_plan_design(p)
+            ):
+                med_candidates.add(p_low)
+
+        if len(med_candidates) == 1:
+            st.anchored_medical_plans.update(med_candidates)
+            for p in distinct_plans:
+                if p.lower() not in med_candidates:
+                    st.inferred_non_med_plans.add(p.lower())
+
+    return is_stacked
+
+
 # ------------------------------------------------------------ table parse ---
 def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
     if tname.strip().lower() in ("data", "lookup", "lookups", "dropdown", "dropdowns", "validation", "lists", "codes"):
@@ -564,8 +684,10 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
     fname = doc.name
     last_emp: Optional[Person] = None
     used = False
+    body_df = body(df, hdr)
+    is_stacked_multi_benefit = _infer_table_benefit_lines(body_df, hdr, st)
 
-    for _, series in body(df, hdr).iterrows():
+    for _, series in body_df.iterrows():
         r = _Row(hdr, series)
         non_empty = [clean(v) for v in series.tolist() if clean(v)]
         if not non_empty:
@@ -585,10 +707,16 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
             st.census.census_notes.append(" | ".join(non_empty))
             continue
 
-        pt_val = r.t("plan_type") if "plan_type" in cols else ""
+        pt_val = r.t("plan_type") if "plan_type" in cols else (r.t("plan_category") if "plan_category" in cols else "")
         p_val = r.t("plan") if "plan" in cols else ""
-        is_non_med = bool((pt_val or p_val) and _is_non_medical(p_val, pt_val))
-        has_benefit_lines = bool(dep_listing or "plan_type" in cols or "plan_category" in cols or ("plan" in cols and "premium" in cols))
+        is_non_med = bool(
+            ((pt_val or p_val) and _is_non_medical(p_val, pt_val))
+            or (p_val and p_val.strip().lower() in st.inferred_non_med_plans)
+        )
+        has_benefit_lines = bool(
+            dep_listing or is_stacked_multi_benefit or "plan_type" in cols or "plan_category" in cols
+            or ("plan" in cols and "premium" in cols)
+        )
         cov_assoc = {
             "file": fname,
             "table": tname,
@@ -712,14 +840,14 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
                         rel = "CH"
 
         if is_non_med and rel not in {"SP", "CH", "DP", "?"}:
-            # Register employee demographics without setting non-medical plan/coverage
+            # Register employee demographics without setting non-medical plan/coverage/effective_date
             values = {"gender": r.t("gender"),
                       "gender_candidates": r.gender_candidates(is_dep=False, demo_is_employee=True, source_file=fname),
                       "dob": r.g("dob"), "zip": r.g("zip"),
                       "address": r.t("address") if "address" in cols else "",
                       "preferred_first": r.t("preferred_first") if "preferred_first" in cols else "",
                       "middle_name": r.t("middle_name") if "middle_name" in cols else "",
-                      "hire": r.g("hire_date"), "status": r.g("status"), "effective_date": r.g("effective_date"),
+                      "hire": r.g("hire_date"), "status": r.g("status"), "effective_date": None,
                       "salary": r.g("salary")}
             values.update(_eligibility_vals(r))
             p_emp = Person("EE", first, last, source=fname, sub_id=r.t("sub_id"))
@@ -1434,6 +1562,17 @@ def _link_dependents(st: _State, effective_date=None) -> None:
                 emp.coverage = "WO"
             elif emp.cov_raw and emp.cov_raw.lower() in ("enrolled", "active", "yes", "y", "true"):
                 emp.coverage = tier_from_deps(emp)
+            elif not emp.plan and getattr(emp, "coverage_associations", None) and all(
+                not a.get("is_medical", True) for a in emp.coverage_associations
+            ):
+                # Employee actively enrolled in non-medical benefits (Dental/Vision/Life/LTD)
+                # in a multi-benefit roster with zero Medical rows -> Waived Medical (WO)
+                if not getattr(emp, "waive_reason", ""):
+                    emp.waive_reason = "Enrolled in non-medical benefits only (waived medical)"
+                emp.coverage = "WO"
+                emp.plan = "NA"
+                if not emp.cobra:
+                    emp.cobra = "N"
             elif has_medical_roster and not emp.plan:
                 # Non-enrolled status (NE/WP/WO) is resolved structurally later by
                 # refine_non_enrolled_statuses(), once the invoice period and declared waiting period
@@ -1798,8 +1937,15 @@ def _prepare_doc_tables(doc: RawDoc) -> list[tuple[str, pd.DataFrame]]:
 
 
 # ----------------------------------------------------------------- public ---
-def build_census(census_docs: list[RawDoc], effective_date=None, tracer=None) -> tuple[Census, dict]:
+def build_census(
+    census_docs: list[RawDoc],
+    effective_date=None,
+    tracer=None,
+    anchored_medical_plans: Optional[set[str]] = None,
+) -> tuple[Census, dict]:
     st = _State()
+    if anchored_medical_plans:
+        st.anchored_medical_plans.update(clean(p).lower().strip() for p in anchored_medical_plans if clean(p))
     # Prioritize primary dedicated census spreadsheets over auxiliary documents
     ordered_docs = sorted(
         census_docs,

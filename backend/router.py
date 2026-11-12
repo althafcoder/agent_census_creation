@@ -490,23 +490,42 @@ def generate_missing_information_email(
     ]
     has_sbc_doc = bool(sbc_docs)
 
-    active_plans = sorted({
-        emp.plan for emp in (census.employees if census else [])
-        if emp.coverage in C.ACTIVE_TIERS and emp.plan and emp.plan not in ("Medical", "Waived", "None", "NA")
-    })
+    from census_builder import _is_non_medical
+
+    plan_candidates: set[str] = set()
+    if census:
+        for emp in census.active_medical_employees:
+            if (
+                emp.plan
+                and emp.plan not in ("Medical", "Waived", "None", "NA", "N/A")
+                and not _is_non_medical(emp.plan, getattr(emp, "plan_type", ""))
+            ):
+                plan_candidates.add(emp.plan)
+
+    active_plans = sorted(plan_candidates)
 
     if sbc_missing:
-        missing_list = sbc_missing
+        missing_list = [p for p in sbc_missing if not _is_non_medical(p)]
     elif has_sbc_doc and active_plans:
         missing_list = []
         for p in active_plans:
             matched = False
-            p_low = p.lower()
-            nums = re.findall(r"\d+", p)
+            p_no_year = re.sub(r"\b202[3-9]\b", " ", p)
+            p_low = p_no_year.lower()
+            model_codes = [
+                tok for tok in re.findall(r"\b[a-z]{1,5}\d{3,6}[a-z0-9]*\b", p_low)
+                if any(ch.isdigit() for ch in tok) and any(ch.isalpha() for ch in tok)
+            ]
+            nums = re.findall(r"\d+", p_no_year)
             metals = [m for m in ["bronze", "silver", "gold", "platinum"] if m in p_low]
             carriers = [c for c in ["oxford", "anthem", "aetna", "cigna", "uhc", "united", "blue", "bcbs", "florida blue", "humana"] if c in p_low]
             for sbc in sbc_docs:
-                sbc_str = (sbc.name + " " + (sbc.text or "")[:1000]).lower()
+                sbc_str = (sbc.name + " " + (sbc.text or "")[:1500]).lower()
+                if model_codes:
+                    if all(mc in sbc_str for mc in model_codes):
+                        matched = True
+                        break
+                    continue
                 if carriers and not any(c in sbc_str for c in carriers):
                     continue
                 if metals and not any(m in sbc_str for m in metals):
@@ -544,7 +563,7 @@ def generate_missing_information_email(
 
         # Check for missing required demographics (Section 10.3 / 10.4)
         if census:
-            for emp in census.employees:
+            for emp in census.canonical_census_employees:
                 if not getattr(emp, "invoice_only", False) and getattr(emp, "disposition", "") != "EXCLUDE_PART_TIME":
                     if not emp.first or not str(emp.first).strip() or not is_valid_person_name(emp.first):
                         comparison_items.append(f"{emp.last}: First name is missing or illegible in the uploaded census. Please provide the employee's full legal name.")
@@ -568,8 +587,8 @@ def generate_missing_information_email(
             # (A) Unbilled Active Employees (enrolled on census, missing from invoice)
             unbilled_active = []
             if census:
-                for emp in census.employees:
-                    if emp.coverage in C.ACTIVE_TIERS and not emp.invoice_only:
+                for emp in census.active_medical_employees:
+                    if not _is_non_medical(emp.plan, getattr(emp, "plan_type", "")):
                         res = results.get(id(emp)) if results else None
                         if not res or not res.inv or getattr(res, "status", "") == "Unbilled Active":
                             unbilled_active.append(emp)

@@ -172,11 +172,36 @@ class Census:
 
     @property
     def employees(self) -> list[Person]:
-        return [p for p in self.people if p.role == "EE"]
+        return [
+            p for p in self.people
+            if p.role == "EE"
+            and not getattr(p, "is_duplicate", False)
+        ]
 
     @property
     def dependents(self) -> list[Person]:
-        return [p for p in self.people if p.role != "EE"]
+        return [
+            p for p in self.people
+            if p.role != "EE"
+            and not getattr(p, "is_duplicate", False)
+            and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")
+        ]
+
+    @property
+    def canonical_census_employees(self) -> list[Person]:
+        return [
+            p for p in self.employees
+            if not getattr(p, "invoice_only", False)
+            and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")
+        ]
+
+    @property
+    def active_medical_employees(self) -> list[Person]:
+        import census_config as C
+        return [
+            p for p in self.canonical_census_employees
+            if (p.coverage or "").strip().upper() in C.ACTIVE_TIERS
+        ]
 
 
 @dataclass
