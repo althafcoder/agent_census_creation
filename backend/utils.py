@@ -252,9 +252,9 @@ def std_zip(v) -> tuple[str, bool]:
     if re.fullmatch(r"\d{5}", s):
         return s, True
     if re.fullmatch(r"\d{9}", s):
-        return f"{s[:5]}-{s[5:]}", True
+        return s[:5], True
     if re.fullmatch(r"\d{5}-\d{4}", s):
-        return s, True
+        return s[:5], True
     return s, False
 
 

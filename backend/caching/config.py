@@ -18,6 +18,9 @@ PROMPT_CACHE_ENABLED = os.getenv("PROMPT_CACHE_ENABLED", "true").lower() in ("tr
 # Local cache TTL (in hours; 0 or negative means infinite retention)
 PROMPT_CACHE_TTL_HOURS = float(os.getenv("PROMPT_CACHE_TTL_HOURS", "72"))
 
+# Automatic periodic local cache clear interval (in minutes; 0 or negative disables)
+PROMPT_CACHE_CLEAR_INTERVAL_MINUTES = float(os.getenv("PROMPT_CACHE_CLEAR_INTERVAL_MINUTES", "15"))
+
 # Anthropic API Server-Side Prompt Caching (ephemeral 5-minute sliding cache)
 ANTHROPIC_PROMPT_CACHE_ENABLED = os.getenv("ANTHROPIC_PROMPT_CACHE_ENABLED", "true").lower() in ("true", "1", "yes")
 

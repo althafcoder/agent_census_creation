@@ -252,7 +252,7 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
             if p.zip:
                 z = ws.cell(r, tc["zip"], p.zip)
                 z.number_format = "@"
-            ws.cell(r, tc["relationship"], p.role)
+            ws.cell(r, tc["relationship"], "SP" if p.role == "DP" else p.role)
             if p.role != "EE" and p.employee is not None:
                 ws.cell(r, tc["dep_of"], p.employee.row_no or None)
             if p.role == "EE":
@@ -288,11 +288,16 @@ def write_census_sheet(ws, census: Census, prospect: Prospect, results: dict[int
                 elif m_val is not None:
                     m.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
 
-                ws.cell(r, base + 2, rr.plan or None)                                # Col O (15): Invoice Plan
+                plan_cell = ws.cell(r, base + 2, rr.plan or None)                   # Col O (15): Invoice Plan
+                if rr.used_most_used_plan and rr.plan:
+                    plan_cell.font = Font(name=base_font.name, sz=base_font.sz, color=C.RED)
                 ws.cell(r, base + 3, rr.tier or None)                                # Col P (16): Invoice Tier
                 ws.cell(r, base + 4, rr.status or None)                              # Col Q (17): Invoice Status
                 if rr.inv_premium is not None:
-                    ws.cell(r, base + 5, rr.inv_premium).number_format = '#,##0.00'  # Col R (18): Invoice Premium
+                    prem_cell = ws.cell(r, base + 5, rr.inv_premium)                 # Col R (18): Invoice Premium
+                    prem_cell.number_format = '#,##0.00'
+                    if rr.used_most_used_plan:
+                        prem_cell.font = Font(name=base_font.name, sz=base_font.sz, color=C.RED)
                 if rr.renewal_premium is not None:
                     ws.cell(r, base + 6, rr.renewal_premium).number_format = '#,##0.00' # Col S (19): Renewal Premium
                 res = ws.cell(r, base + 7, rr.result or None)                        # Col T (20): Comparison Result
@@ -441,7 +446,8 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     # ---- 3. Plan Level Tables
     plans = sorted({p for (p, _t) in list(F.plan_enrollment) + list(F.plan_rates) if p})
     for plan in plans:
-        s.section(f"Plan Level Table - {plan}")
+        plan_label = F.plan_display_names.get(plan, plan)
+        s.section(f"Plan Level Table - {plan_label}")
         s.header(["Tier", "Enrollment Count (Census)", "Invoice Count", "Invoice Premium", "Renewal Premium"])
         start_row = s.r
         for t in C.ACTIVE_TIERS:
@@ -459,7 +465,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
         if inv_only_on_plan:
             p_names = ", ".join(f"{p.first} {p.last}".strip() for p in inv_only_on_plan)
             census_match_prem = sum((F.plan_rates.get((plan, t)) or 0.0) * F.plan_enrollment.get((plan, t), 0) for t in C.ACTIVE_TIERS)
-            s.line(f"{plan} invoice count includes {p_names} (invoice-only; reported term). Census-matched {plan} premium = ${census_match_prem:,.2f}.")
+            s.line(f"{plan_label} invoice count includes {p_names} (invoice-only; reported term). Census-matched {plan_label} premium = ${census_match_prem:,.2f}.")
         s.gap()
 
     # ---- 4. Premium Change Analysis
@@ -469,13 +475,14 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     else:
         s.header(["Tier", "Current Premium", "Renewal Premium", "Difference", "% Change"])
         for plan in plans:
+            plan_label = F.plan_display_names.get(plan, plan)
             for t in C.ACTIVE_TIERS:
                 cur, ren = F.plan_rates.get((plan, t)), F.renewal_rates.get((plan, t))
                 diff = pct = None
                 if cur is not None and ren is not None:
                     diff = round(ren - cur, 2)
                     pct = round(diff / cur, 4) if cur else None
-                s.row([f"{plan} - {t}", cur, ren, diff, pct], fmt={2: "#,##0.00", 3: "#,##0.00", 4: "#,##0.00", 5: "0.0%"})
+                s.row([f"{plan_label} - {t}", cur, ren, diff, pct], fmt={2: "#,##0.00", 3: "#,##0.00", 4: "#,##0.00", 5: "0.0%"})
     s.gap()
 
     # ---- 5. Premium Reconciliation

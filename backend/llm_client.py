@@ -163,6 +163,26 @@ def get_official_instructions() -> str:
 get_official_rei_instructions = get_official_instructions
 
 
+_STAGE_CHECKLISTS: dict[str, str] = {
+    "prospect": (
+        "CRITICAL STAGE CHECKLIST (PROSPECT): Extract company legal name, state, SIC/NAICS, "
+        "requested effective date, current carrier, PEO status, and funding type. Do not fabricate missing fields."
+    ),
+    "census": (
+        "CRITICAL STAGE CHECKLIST (CENSUS): Include medical-eligible employees and medical dependents only; "
+        "exclude part-time/non-medical-only dependents and template example rows; preserve exact relationship (EE/SP/CH), DOB, gender, and coverage tier."
+    ),
+    "invoice": (
+        "CRITICAL STAGE CHECKLIST (INVOICE): Select latest/revised billing period; extract medical subscribers, "
+        "plans, tiers, statuses, and monthly medical premiums (>= $100 typical); discard WC codes, service fees, payroll taxes, and dental/vision ancillary lines."
+    ),
+    "renewal": (
+        "CRITICAL STAGE CHECKLIST (RENEWAL): Extract future-year medical plan names, tiers, and monthly rates accurately; "
+        "do not confuse current-year rates or non-medical ancillary rates with medical renewal rates."
+    ),
+}
+
+
 def get_scoped_instructions(scope: str = "full") -> str:
     """Return task-scoped instruction slices to prevent prompt dilution while preserving governing rules.
     
@@ -187,22 +207,23 @@ def get_scoped_instructions(scope: str = "full") -> str:
     if not target_nums:
         return full_inst
 
-    parts = re.split(r'(?m)\r?\n(?=[0-9]{1,2}\.\s+[A-Z\s,/]{3,}\r?\n)', full_inst)
+    parts = re.split(r'(?m)\r?\n(?=[0-9]{1,2}\.\s+[A-Z][A-Z0-9\s,/\-&():]{2,}\r?\n)', full_inst)
     if len(parts) <= 1:
         return full_inst
 
     selected_parts = [parts[0].strip()]
-    sec_re = re.compile(r'^([0-9]{1,2})\.\s+[A-Z\s,/]{3,}')
+    sec_re = re.compile(r'^([0-9]{1,2})\.\s+[A-Z][A-Z0-9\s,/\-&():]{2,}')
     for part in parts[1:]:
         m = sec_re.match(part.strip())
-        if m and int(m.group(1)) in target_nums:
+        if m and (int(m.group(1)) in target_nums or int(m.group(1)) >= 32):
             selected_parts.append(part.strip())
 
     if len(selected_parts) <= 1:
         return full_inst
 
+    checklist = _STAGE_CHECKLISTS.get(scope, "")
     scoped = "\n\n\n".join(selected_parts)
-    return scoped
+    return f"{checklist}\n\n{scoped}" if checklist else scoped
 
 
 def chunk_text(text: str, chunk_size: int = 50000, overlap: int = 2000) -> list[str]:
@@ -976,27 +997,30 @@ def classify_document(text: str, filename: str) -> str:
 OFFICIAL INSTRUCTIONS ({doc_name}):
 {instructions}
 
-Classify this document into exactly one of these 7 roles:
+Classify this document into exactly one of these 10 roles:
 1. "census": Employee or dependent census rosters, enrollment spreadsheets, benefits eligibility listings, demographic rosters.
 2. "invoice": Monthly health insurance billing statement, carrier billing invoice, statement of premiums with enrolled medical employees.
 3. "renewal": Renewal rate sheet, client benefit election (CBE) renewal options, future plan year medical rates, renewal proposal.
 4. "ghq": Group Health Questionnaire, company business information form, SIC code, prior carrier, employer questionnaire.
 5. "rfp": Request for Proposal, submission email from broker/sales rep, submission notes with employer details.
 6. "payroll": Payroll deduction registers, gross wage reports, W-2 registers, FUTA/SUI tax forms, Workers' Comp payroll reports. (These are administrative payroll documents, NOT medical insurance invoices or censuses).
-7. "unknown": Document not related to health insurance census or billing.
+7. "deliverable": Already-completed census comparison output workbooks (e.g., RAPT/Marsh comparison deliverables with Comparison Result, Match %, Findings Summary).
+8. "claims": Medical claims experience or large-claims reports.
+9. "plan_design": Summary of Benefits and Coverage (SBC), plan design summaries, or option/plan legends.
+10. "unknown": Document not related to health insurance census or billing.
 
 Filename: {filename}
 Document Text:
 {text[:8000]}
 
 Return JSON only:
-{{"role": "census|invoice|renewal|ghq|rfp|payroll|unknown"}}
+{{"role": "census|invoice|renewal|ghq|rfp|payroll|deliverable|claims|plan_design|unknown"}}
 """
     try:
         data = extract_json(prompt, max_tokens=500)
         if isinstance(data, dict):
             role = str(data.get("role", "")).lower().strip()
-            if role in {"census", "invoice", "renewal", "ghq", "rfp", "payroll", "unknown"}:
+            if role in {"census", "invoice", "renewal", "ghq", "rfp", "payroll", "deliverable", "claims", "plan_design", "unknown"}:
                 return role
     except Exception as exc:
         log.warning("classify_document failed: %s", exc)

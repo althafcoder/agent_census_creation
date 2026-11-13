@@ -38,10 +38,12 @@ from prospect import build_prospect
 from readers import read_all
 from renewal_parser import parse_renewal, select_renewal
 from router import (
+    build_missing_information_email_parts,
     check_claims_required,
     check_renewal_required,
     determine_routing,
-    generate_missing_information_email,
+    format_missing_information_email_text,
+    write_missing_information_docx,
 )
 from tracer import DiagnosticTracer
 from utils import sanitize_filename
@@ -181,6 +183,24 @@ def run_pipeline(
                 roles["unknown"].remove(unk)
             log.info("      * Unknown file %s contains census table -> promoted to census", unk.name)
 
+    # Pre-consolidation source & header gate: strip any completed comparison deliverable
+    # from source roles and warn if a census table lacks relationship/coverage mapping.
+    from classifier import is_comparison_output_doc
+    for src_role in ("census", "invoice", "renewal"):
+        for doc_item in list(roles.get(src_role, [])):
+            if is_comparison_output_doc(doc_item):
+                roles[src_role].remove(doc_item)
+                if doc_item not in roles["deliverable"]:
+                    roles["deliverable"].append(doc_item)
+                log.warning("      * Pre-consolidation gate: removed deliverable '%s' from %s role", doc_item.name, src_role)
+    for cen_doc in roles.get("census", []):
+        for tbl in getattr(cen_doc, "tables", []) or []:
+            hdr = detect_header(tbl.df)
+            if hdr and ({"first_name", "full_name"} & set(hdr.columns)) and "dob" in hdr.columns:
+                missing_hdrs = [k for k in ("relationship", "coverage") if k not in hdr.columns and not hdr.wide_deps]
+                if missing_hdrs:
+                    log.warning("      * Header-mapping gate: '%s' (%s) missing mapped columns %s", cen_doc.name, tbl.name, missing_hdrs)
+
     # When dedicated census spreadsheets exist (e.g. Wellfit Census 2026 or Employee Census 3),
     # reserve the multi-benefit enrollment report (BER) strictly for invoice-equivalent comparison (Section 11.1).
     # Never add BER to census builder when dedicated census spreadsheets exist to prevent non-medical inflation.
@@ -280,7 +300,8 @@ def run_pipeline(
         )
         meta["company"] = prospect.company
         if not census.employees:
-            fallback_docs = [d for d in docs if d not in roles["census"] and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
+            excluded_fallback = set(id(x) for x in (roles.get("census", []) + roles.get("deliverable", [])))
+            fallback_docs = [d for d in docs if id(d) not in excluded_fallback and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
             if fallback_docs:
                 log.info("      * Primary census yielded 0 employees; attempting fallback consolidation with %s", [d.name for d in fallback_docs])
                 census, meta = build_census(
@@ -590,7 +611,7 @@ def run_pipeline(
     if claims_required and claims_reason not in F.claims_notes:
         F.claims_notes.append(claims_reason)
 
-    email_content = generate_missing_information_email(
+    email_subject, email_sections = build_missing_information_email_parts(
         prospect=prospect,
         routing=routing,
         findings=F,
@@ -608,8 +629,9 @@ def run_pipeline(
         results=results,
         docs=docs,
     )
-    email_path = output_dir / f"Missing_Information_Email_{name}_{stamp}.txt"
-    email_path.write_text(email_content, encoding="utf-8")
+    email_content = format_missing_information_email_text(email_subject, email_sections)
+    email_path = output_dir / f"Missing_Information_Email_{name}_{stamp}.docx"
+    write_missing_information_docx(email_path, email_subject, email_sections)
     F.email_text = email_content
     log.info("      * Saved Missing Information Email: %s", email_path.name)
 

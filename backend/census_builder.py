@@ -863,7 +863,14 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
                 r.g("hire_date") or r.g("salary") or (r.g("job_title") and not rel_from_job) or
                 r.g("worker_category") or r.g("position_status") or r.t("sub_id")
             )
-            if last_emp and not has_emp_evidence and (is_emp_dep_col or last_emp.coverage in ("ES", "EC", "FAM", "EF", "COUPLE")):
+            has_dep_demo = bool(r.g("dob") or r.t("gender") or is_emp_dep_col)
+            row_plan = clean(r.g("plan")) if "plan" in cols else ""
+            plan_conflicts = bool(
+                row_plan and last_emp and last_emp.plan
+                and row_plan.strip().lower() not in (last_emp.plan.strip().lower(), "na", "n/a")
+            )
+            if (last_emp and not has_emp_evidence and has_dep_demo and not plan_conflicts
+                    and (is_emp_dep_col or last_emp.coverage in ("ES", "EC", "FAM", "EF", "COUPLE"))):
                 if not cov_val:
                     if last_emp.coverage == "ES":
                         rel = "SP"
@@ -1647,15 +1654,9 @@ def _link_dependents(st: _State, effective_date=None) -> None:
 
 
 def _order_output(st: _State) -> None:
-    enrolled_emps = [
-        e for e in st.employees
-        if e.coverage in ("EE", "ES", "EC", "FAM", "EF", "COUPLE") or (e.plan and e.plan.upper() not in ("", "NA", "N/A"))
-    ]
-    non_enrolled_emps = [e for e in st.employees if e not in enrolled_emps]
-    non_enrolled_emps.sort(key=lambda e: ((e.last or "").lower(), (e.first or "").lower()))
-
+    # Preserve original census employee order so reviewers can compare side-by-side
     out: list[Person] = []
-    for emp in enrolled_emps + non_enrolled_emps:
+    for emp in st.employees:
         if getattr(emp, "disposition", "") == "EXCLUDE_PART_TIME":
             continue
         out.append(emp)

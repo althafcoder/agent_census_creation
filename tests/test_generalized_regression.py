@@ -326,4 +326,202 @@ def test_multi_benefit_medical_only_isolation_and_idempotent_comparison():
     assert ws["C4"].value == "MM Robinson LLC"
 
 
+def test_comparison_output_exclusion_and_dependent_provenance_guard():
+    """Verify completed comparison workbooks are never ingested as census sources,
+    multi-line template headers map cleanly, positional fallback never coerces
+    unverified/conflicting-plan rows into CH dependents, and the Learning Engine
+    catches both deliverable-as-census and unverified/cross-role dependents."""
+    from classifier import classify, detect_header, is_comparison_output_doc
+    from readers import RawDoc, RawTable
+    from census_builder import build_census
+    from models import Findings, Person, Prospect, RowResult
+    from router import RoutingDecision
+    from learning_engine.validator import UnderwritingValidator, CheckStatus
+    import census_config as C
+
+    # 1. Completed comparison output workbook with multi-line template headers
+    out_headers = [
+        "Data Row *",
+        "First Name *",
+        "Last Name *",
+        "Gender *\nEnter M for Male\nor F for Female",
+        "Date of Birth *",
+        "Home Zip Code *",
+        "Relationship to Employee *\nEnter EE for the employee row\nEnter SP for spouses\nEnter CH for children",
+        "Dependent of Employee Row *",
+        "Coverage *\nEnter EE for Employee Only\nEnter EC for Employee + Child(ren)",
+        "Cobra Participant *\nEnter Y for Yes\nor N for No",
+        "Plan Name",
+        "Monthly Total Premium\n\nThe monthly premium of the employee's enrolled plan.",
+        "Invoice Employee Name",
+        "Match %",
+        "Invoice Plan",
+        "Invoice Tier",
+        "Invoice Status",
+        "Invoice Premium",
+        "Renewal Premium",
+        "Comparison Result",
+        "Notes",
+    ]
+    out_rows = [
+        out_headers,
+        [1, "Sean", "Storch", "M", "1976-02-24", "33570", "EE", None, "EC", "N", "E2000i10021B", 2067.14, "Storch, Sean", 1, "E2000i10021B", "EC", "A", 2067.14, None, "Match", ""],
+        [2, "Mackenzie", "Storch", "F", "2012-01-23", "33570", "CH", 1, "EC", "N", "E2000i10021B", None, None, None, None, None, None, None, None, "Dependent", ""],
+        [3, "Maeghan", "Solanki", "F", "2001-08-04", "33570", "CH", 1, "EC", "N", "E2000i10021B", None, None, None, None, None, None, None, None, "Dependent", ""],
+        [None, "Jeremy", "Aschman", None, None, None, None, None, None, None, "E3000i8021B", None, "Aschman, Jeremy", 0, "E3000i8021B", "E", "A", 929.85, None, "Invoice Employee Not Found In Census", "Recent term"],
+    ]
+    out_df = pd.DataFrame(out_rows)
+    out_doc = RawDoc(path=Path("reference_output.xlsx"), ext=".xlsx", tables=[RawTable("Sheet1", out_df)], text="")
+
+    # Multi-line template headers must map relationship, coverage, gender, and premium
+    hdr = detect_header(out_df)
+    assert hdr is not None
+    for expected_col in ("first_name", "last_name", "gender", "dob", "relationship", "coverage", "plan", "premium"):
+        assert expected_col in hdr.columns
+
+    # Completed comparison output workbook must be classified as deliverable, not census
+    assert is_comparison_output_doc(out_doc) is True
+    assert classify(out_doc) == "deliverable"
+
+    # 2. Positional fallback guard: even on a table without a Relationship column,
+    # a row lacking DOB/gender or carrying a conflicting plan must NOT become a CH dependent
+    no_rel_df = pd.DataFrame([
+        ["First Name", "Last Name", "Gender", "DOB", "Plan", "Coverage"],
+        ["Sean", "Storch", "M", "1976-02-24", "E2000i10021B", "EC"],
+        ["Mackenzie", "Storch", "F", "2012-01-23", "E2000i10021B", ""],
+        ["Maeghan", "Solanki", "F", "2001-08-04", "E2000i10021B", ""],
+        ["Jeremy", "Aschman", "", "", "E3000i8021B", ""],
+    ])
+    no_rel_doc = RawDoc(path=Path("real_census.xlsx"), ext=".xlsx", tables=[RawTable("Sheet1", no_rel_df)], text="")
+    census, _ = build_census([no_rel_doc])
+    assert len(census.dependents) == 2
+    assert {d.display for d in census.dependents} == {"Mackenzie Storch", "Maeghan Solanki"}
+
+    # 3. Learning Engine validator catches deliverable-as-census and phantom/cross-role dependents
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    prospect = Prospect(company="Test Co", state="FL")
+    routing = RoutingDecision(carrier=C.CARRIER_FLORIDA_BLUE, state="FL", is_florida=True)
+    F = Findings()
+
+    # Clean run passes both new rules
+    clean_report = validator.validate_full_pipeline(
+        prospect=prospect, routing=routing, census=census, selected_invoices=[],
+        renewal=None, ren_required=False, claims_required=False, findings=F, results={},
+        roles={"census": [no_rel_doc]},
+    )
+    r_deliv_clean = next(c for c in clean_report.checks if c.rule_id == "RULE_06_NO_DELIVERABLE_AS_SOURCE")
+    r_prov_clean = next(c for c in clean_report.checks if c.rule_id == "RULE_09_DEPENDENT_PROVENANCE")
+    assert r_deliv_clean.status == CheckStatus.PASS
+    assert r_prov_clean.status == CheckStatus.PASS
+
+    # Polluted run (deliverable in roles['census'] + phantom dependent) fails both rules
+    phantom_dep = Person("CH", "Jeremy", "Aschman", source="reference_output.xlsx", rel_raw="")
+    census.people.append(phantom_dep)
+    inv_only_p = Person("EE", "Jeremy", "Aschman", invoice_only=True)
+    census.people.append(inv_only_p)
+    polluted_results = {id(inv_only_p): RowResult(result="Invoice Employee Not Found In Census")}
+    bad_report = validator.validate_full_pipeline(
+        prospect=prospect, routing=routing, census=census, selected_invoices=[],
+        renewal=None, ren_required=False, claims_required=False, findings=F, results=polluted_results,
+        roles={"census": [no_rel_doc, out_doc]},
+    )
+    r_deliv_bad = next(c for c in bad_report.checks if c.rule_id == "RULE_06_NO_DELIVERABLE_AS_SOURCE")
+    r_prov_bad = next(c for c in bad_report.checks if c.rule_id == "RULE_09_DEPENDENT_PROVENANCE")
+    assert r_deliv_bad.status == CheckStatus.FAIL
+    assert r_prov_bad.status == CheckStatus.FAIL
+
+
+def test_instruction_scoping_tier_consistency_and_self_healing_repair(monkeypatch):
+    """Verify Phase 1-4 upgrades:
+    1. get_scoped_instructions includes stage checklist & sections >= 32 (even with punctuation).
+    2. RULE_09_TIER_DEPENDENT_CONSISTENCY catches EE/WO employees with active dependents.
+    3. RepairEngine RECLASSIFY_SOURCE & REPAIR_LINKAGE_OR_NORMALIZATION self-heal working_state.
+    4. OutputAuditor.diff_against_reference diffs counts without ingesting reference output."""
+    import llm_client
+    from readers import RawDoc, RawTable
+    from census_builder import build_census
+    from models import Findings, Person, Prospect
+    from router import RoutingDecision
+    from learning_engine.validator import UnderwritingValidator, CheckStatus
+    from learning_engine.repair import RepairEngine
+    from learning_engine.contracts import RepairAction, RepairPatch
+    from learning_engine.output_audit import OutputAuditor
+    import census_config as C
+
+    # 1. Instruction scoping includes checklist and Section 32+ with punctuation
+    sample_inst = (
+        "HEADER INTRO\n\n"
+        "1. GENERAL RULES\nKeep everything accurate.\n\n"
+        "11. INVOICE RULES\nSelect latest invoice.\n\n"
+        "32. DEPENDENT & TIER-COUNT RULES:\nNever coerce unlinked invoice rows into CH.\n"
+    )
+    monkeypatch.setattr(llm_client, "get_official_instructions", lambda: sample_inst)
+    scoped = llm_client.get_scoped_instructions("invoice")
+    assert "CRITICAL STAGE CHECKLIST (INVOICE)" in scoped
+    assert "32. DEPENDENT & TIER-COUNT RULES:" in scoped
+    assert "Never coerce unlinked invoice rows into CH." in scoped
+
+    # 2. Tier-to-Dependent Consistency Check
+    ee_df = pd.DataFrame([
+        ["First Name", "Last Name", "Relationship", "Gender", "DOB", "Plan", "Coverage"],
+        ["Ingrid", "Hooglander", "EE", "F", "1971-08-31", "E2000i10021B", "EE"],
+    ])
+    ee_doc = RawDoc(path=Path("ee_census.xlsx"), ext=".xlsx", tables=[RawTable("Sheet1", ee_df)], text="")
+    census, _ = build_census([ee_doc])
+    emp = census.employees[0]
+    bad_dep = Person("CH", "Ghost", "Child", source="ee_census.xlsx", rel_raw="CH")
+    bad_dep.dob = pd.Timestamp("2015-01-01").date()
+    bad_dep.employee = emp
+    emp.dependents.append(bad_dep)
+    census.people.append(bad_dep)
+
+    validator = UnderwritingValidator(instruction_hash="test_hash")
+    prospect = Prospect(company="Test Co", state="FL")
+    routing = RoutingDecision(carrier=C.CARRIER_FLORIDA_BLUE, state="FL", is_florida=True)
+    F = Findings()
+    rep = validator.validate_full_pipeline(
+        prospect=prospect, routing=routing, census=census, selected_invoices=[],
+        renewal=None, ren_required=False, claims_required=False, findings=F, results={},
+        roles={"census": [ee_doc]},
+    )
+    r_tier = next(c for c in rep.checks if c.rule_id == "RULE_09_TIER_DEPENDENT_CONSISTENCY")
+    assert r_tier.status == CheckStatus.FAIL
+
+    # 3. Self-healing RECLASSIFY_SOURCE removes deliverable and rebuilds census
+    out_df = pd.DataFrame([
+        ["Data Row *", "First Name *", "Last Name *", "Relationship", "Coverage", "Invoice Employee Name", "Match %", "Comparison Result"],
+        [1, "Ingrid", "Hooglander", "EE", "EE", "Hooglander, Ingrid", 1, "Match"],
+        [2, "Ghost", "Child", "CH", "EC", "", None, "Dependent"],
+    ])
+    out_doc = RawDoc(path=Path("reference_output.xlsx"), ext=".xlsx", tables=[RawTable("Sheet1", out_df)], text="")
+    working_state = {
+        "roles": {"census": [ee_doc, out_doc], "deliverable": []},
+        "census": census,
+        "prospect": prospect,
+        "findings": F,
+        "meta": {},
+    }
+    engine = RepairEngine()
+    reclass_patch = RepairPatch(
+        patch_id="p_reclass", issue_ids=["ISSUE_DELIVERABLE_CLASSIFIED_AS_CENSUS"],
+        action=RepairAction.RECLASSIFY_SOURCE,
+    )
+    tx = engine.execute_patch(reclass_patch, working_state)
+    assert tx is not None
+    assert out_doc not in working_state["roles"]["census"]
+    assert out_doc in working_state["roles"]["deliverable"]
+    assert len(working_state["census"].dependents) == 0
+
+    # 4. OutputAuditor.diff_against_reference detects extra/missing dependents
+    diff = OutputAuditor("test_run").diff_against_reference(working_state["census"], out_doc)
+    assert diff["expected_employees"] == 1
+    assert diff["actual_employees"] == 1
+    assert diff["expected_dependents"] == 1
+    assert diff["actual_dependents"] == 0
+    assert diff["missing_dependents"] == [("ghost", "child")]
+    assert diff["match"] is False
+
+
+
+
 

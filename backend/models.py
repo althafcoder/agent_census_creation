@@ -219,6 +219,7 @@ class RowResult:
     match_text: str = ""
     result: str = ""
     result_red: bool = False
+    used_most_used_plan: bool = False
     notes: list[Note] = field(default_factory=list)
 
 
@@ -234,6 +235,7 @@ class Findings:
     plan_rates: dict = field(default_factory=dict)       # (plan, tier) -> invoice rate
     renewal_rates: dict = field(default_factory=dict)    # (plan, tier) -> renewal rate
     plan_enrollment: dict = field(default_factory=dict)  # (plan, tier) -> count
+    plan_display_names: dict = field(default_factory=dict)  # internal/invoice plan -> census plan name
     wp_stats: dict = field(default_factory=dict)
     invoice_employee_count: int = 0
     invoice_medical_count: int = 0

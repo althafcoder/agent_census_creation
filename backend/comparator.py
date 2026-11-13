@@ -313,12 +313,15 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     rr.renewal_premium = None
                     rr.result, rr.result_red = "Not Enrolled - Expected", False
             else:
+                census_plan_raw = clean(e.plan)
                 if not e.plan and inv.plan:
                     e.plan = inv.plan
                 if e.premium is None and inv.premium is not None:
                     e.premium = inv.premium
 
                 rr.plan, rr.tier, rr.inv_premium = inv.plan or e.plan, inv.tier, inv.premium
+                if rr.plan and census_plan_raw:
+                    F.plan_display_names.setdefault(rr.plan, census_plan_raw)
                 if "premium due" in (inv.status or "").lower():
                     rr.status = "Active - Premium Due (Adjustment)"
                     prem_str = f" (${inv.premium:,.2f})" if inv.premium is not None else ""
@@ -419,14 +422,28 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                 rr.result, rr.result_red = "Not On Invoice", True
                 cnt["missing_invoice"] += 1
                 exc("Employees missing from invoice", who, f"Coverage {cov}")
-                plan = clean(e.plan) or top_plan
+                census_plan = clean(e.plan)
+                if e.premium is not None:
+                    plan = census_plan or top_plan
+                    prem = e.premium
+                    used_most_used = False
+                elif census_plan and (census_plan, cov) in rates:
+                    plan = census_plan
+                    prem = rates[(census_plan, cov)]
+                    used_most_used = False
+                else:
+                    plan = top_plan
+                    prem = rates.get((top_plan, cov)) if top_plan else None
+                    used_most_used = bool(top_plan)
                 rr.plan, rr.tier = plan, cov
-                prem = e.premium if e.premium is not None else rates.get((plan, cov))
                 if prem is not None:
                     rr.inv_premium = prem
-                    rr.notes.append(("Expected Census Premium" if e.premium is not None else "Most Used Plan Rate Applied", True))
-                    if e.premium is None:
-                        cnt["most_used"] += 1
+                if used_most_used:
+                    rr.used_most_used_plan = True
+                    cnt["most_used"] += 1
+                    rr.notes.append(("Most used plan used", True))
+                elif prem is not None:
+                    rr.notes.append(("Expected Census Premium", True))
                 amt, status = renewal_for(plan, cov) if plan else (None, "none")
                 if status == "ok":
                     rr.renewal_premium = amt

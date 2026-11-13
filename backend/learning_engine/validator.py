@@ -299,6 +299,40 @@ class UnderwritingValidator:
                 reason=f"Census populated with {len(census.employees)} employees and {len(census.dependents)} dependents",
             ))
 
+            # 2B. Completed Comparison Output Workbook Exclusion Check
+            from classifier import is_comparison_output_doc
+            misclassified_outputs = [
+                d.name for d in (roles or {}).get("census", [])
+                if is_comparison_output_doc(d)
+            ]
+            if misclassified_outputs:
+                checks.append(CheckResult(
+                    rule_id="RULE_06_NO_DELIVERABLE_AS_SOURCE",
+                    section="6.0",
+                    name="Comparison Output Workbook Exclusion Check",
+                    status=CheckStatus.FAIL,
+                    reason=f"Completed comparison output workbook(s) ingested as census source: {misclassified_outputs}",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_DELIVERABLE_CLASSIFIED_AS_CENSUS",
+                    rule_id="RULE_06_NO_DELIVERABLE_AS_SOURCE",
+                    target_ref="roles.census",
+                    issue_type=IssueType.ROLE_MISCLASSIFIED,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.SOURCE_SELECTION,
+                    expected_state="Completed comparison workbooks excluded from census ingestion",
+                    observed_state=f"Classified as census: {misclassified_outputs}",
+                    allowed_actions=[RepairAction.RECLASSIFY_SOURCE],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_06_NO_DELIVERABLE_AS_SOURCE",
+                    section="6.0",
+                    name="Comparison Output Workbook Exclusion Check",
+                    status=CheckStatus.PASS,
+                    reason="No completed comparison output workbooks ingested as census sources",
+                ))
+
             # 3. Status Handling: Waived must be WO not WP; Most Used Plan restrictions
             invalid_wp_wo = []
             invalid_waived_active = []
@@ -659,6 +693,91 @@ class UnderwritingValidator:
                     name="Post-Sort Subscriber Row Link Check",
                     status=CheckStatus.PASS,
                     reason="All dependent subscriber row links match final ordered employee row numbers",
+                ))
+
+            # Gate C2: Dependent Provenance & Cross-Role Conflict Check
+            invoice_only_names = {
+                ((getattr(p, "first", "") or "").strip().lower(), (getattr(p, "last", "") or "").strip().lower())
+                for p in getattr(census, "people", [])
+                if getattr(p, "invoice_only", False)
+            }
+            unverified_deps = []
+            for dep in census.dependents:
+                has_rel = bool((getattr(dep, "rel_raw", "") or "").strip())
+                has_demo = bool(getattr(dep, "dob", None) or (getattr(dep, "gender", "") or "").strip())
+                dep_key = ((dep.first or "").strip().lower(), (dep.last or "").strip().lower())
+                if not has_rel and not has_demo:
+                    unverified_deps.append(f"{dep.display} (no relationship, DOB, or gender)")
+                elif dep_key in invoice_only_names:
+                    unverified_deps.append(f"{dep.display} (appears in both census.dependents and invoice_only)")
+            if unverified_deps:
+                checks.append(CheckResult(
+                    rule_id="RULE_09_DEPENDENT_PROVENANCE",
+                    section="9.5",
+                    name="Dependent Provenance & Cross-Role Check",
+                    status=CheckStatus.FAIL,
+                    reason=f"Unverified or cross-role dependent(s) detected: {unverified_deps[:3]}",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_PHANTOM_OR_CROSS_ROLE_DEPENDENT",
+                    rule_id="RULE_09_DEPENDENT_PROVENANCE",
+                    target_ref="census.dependents",
+                    issue_type=IssueType.LINKAGE_FAILED,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.LINKAGE,
+                    expected_state="Every dependent has valid relationship/demographic evidence and is not an invoice-only subscriber",
+                    observed_state=f"Defective dependents: {unverified_deps[:3]}",
+                    allowed_actions=[RepairAction.REPAIR_LINKAGE_OR_NORMALIZATION],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_09_DEPENDENT_PROVENANCE",
+                    section="9.5",
+                    name="Dependent Provenance & Cross-Role Check",
+                    status=CheckStatus.PASS,
+                    reason=f"All {len(census.dependents)} active dependent(s) have valid provenance with zero cross-role conflicts",
+                ))
+
+            # Gate C3: Tier-to-Dependent Consistency Check
+            tier_dep_defects = []
+            for emp in census.employees:
+                if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False):
+                    continue
+                active_deps = [d for d in census.dependents if getattr(d, "employee", None) is emp]
+                cov_u = (emp.coverage or "").strip().upper()
+                if cov_u in ("EE", "WO", "WP", "NE") and active_deps:
+                    tier_dep_defects.append(f"{emp.display} (tier={cov_u} has {len(active_deps)} active dependent(s))")
+                elif cov_u == "ES" and active_deps:
+                    sp_cnt = sum(1 for d in active_deps if d.role == "SP")
+                    has_ch = any(d.role == "CH" for d in active_deps)
+                    if sp_cnt > 1 or has_ch:
+                        tier_dep_defects.append(f"{emp.display} (tier=ES has dependent roles {[d.role for d in active_deps]})")
+            if tier_dep_defects:
+                checks.append(CheckResult(
+                    rule_id="RULE_09_TIER_DEPENDENT_CONSISTENCY",
+                    section="9.4",
+                    name="Tier-to-Dependent Consistency Check",
+                    status=CheckStatus.FAIL,
+                    reason=f"Coverage tier vs. dependent count/role mismatch: {tier_dep_defects[:3]}",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_TIER_DEPENDENT_MISMATCH",
+                    rule_id="RULE_09_TIER_DEPENDENT_CONSISTENCY",
+                    target_ref="census.dependents",
+                    issue_type=IssueType.LINKAGE_FAILED,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.LINKAGE,
+                    expected_state="EE/WO/WP/NE have 0 active dependents; ES has at most 1 SP and no CH",
+                    observed_state=f"Mismatches: {tier_dep_defects[:3]}",
+                    allowed_actions=[RepairAction.REPAIR_LINKAGE_OR_NORMALIZATION],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_09_TIER_DEPENDENT_CONSISTENCY",
+                    section="9.4",
+                    name="Tier-to-Dependent Consistency Check",
+                    status=CheckStatus.PASS,
+                    reason="All subscriber coverage tiers are consistent with their active medical dependents",
                 ))
 
             all_status_defects = invalid_wp_wo + invalid_waived_active + invalid_waived_deps + invalid_wp_misclassified + invalid_wp_false_discrepancy
@@ -1570,7 +1689,10 @@ class UnderwritingValidator:
                 "unresolved_missing_count": len(active_people) - resolved_genders - conflict_genders,
             },
             "C_dependent_disposition": {
-                "status": check_map.get("RULE_09_DEPENDENT_DISPOSITION", "PASS"),
+                "status": "PASS" if all(
+                    check_map.get(rid, "PASS") == "PASS"
+                    for rid in ("RULE_09_DEPENDENT_DISPOSITION", "RULE_09_DEPENDENT_PROVENANCE", "RULE_09_TIER_DEPENDENT_CONSISTENCY")
+                ) else "FAIL",
                 "included_active_medical_dependents": len(census.dependents) if census else 0,
                 "excluded_non_medical_or_pt_dependents": len(getattr(census, "excluded_dependents", [])) if census else 0,
                 "masked_placeholder_slots_ignored": len(getattr(census, "masked_dependent_slots", [])) if census else 0,

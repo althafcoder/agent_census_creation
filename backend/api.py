@@ -7,6 +7,7 @@ Or from backend/:
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 import importlib.util
 import logging
 import os
@@ -14,6 +15,7 @@ import re
 import shutil
 import sys
 import tempfile
+import threading
 import zipfile
 from pathlib import Path
 from typing import Optional
@@ -130,7 +132,45 @@ tags_metadata = [
     },
 ]
 
+def _periodic_prompt_cache_clear(interval_seconds: float, stop_event: threading.Event) -> None:
+    """Periodically clear the local prompt cache to avoid manual clearing."""
+    from caching import get_local_cache
+
+    while not stop_event.wait(interval_seconds):
+        try:
+            get_local_cache().clear()
+            logging.getLogger("census.api").info(
+                "Periodic prompt cache auto-clear completed (interval=%.1f min).",
+                interval_seconds / 60.0,
+            )
+        except Exception as exc:
+            logging.getLogger("census.api").warning("Periodic prompt cache auto-clear failed: %s", exc)
+
+
+@asynccontextmanager
+async def _app_lifespan(_app: FastAPI):
+    from caching import PROMPT_CACHE_CLEAR_INTERVAL_MINUTES
+
+    stop_event = threading.Event()
+    thread = None
+    if PROMPT_CACHE_CLEAR_INTERVAL_MINUTES > 0:
+        thread = threading.Thread(
+            target=_periodic_prompt_cache_clear,
+            args=(PROMPT_CACHE_CLEAR_INTERVAL_MINUTES * 60.0, stop_event),
+            daemon=True,
+            name="prompt-cache-auto-clear",
+        )
+        thread.start()
+    try:
+        yield
+    finally:
+        stop_event.set()
+        if thread is not None:
+            thread.join(timeout=2.0)
+
+
 app = FastAPI(
+    lifespan=_app_lifespan,
     title="Census Comparison & Invoice Reconciliation Agent API",
     description="""
 ### Automated Census Creation and Multi-Document Reconciliation Engine

@@ -415,7 +415,7 @@ def _extract_payroll_info(roles: dict | None, docs: list[RawDoc] | None) -> tupl
     return pay_date, med_deductions, payroll_docs_desc, payroll_names
 
 
-def generate_missing_information_email(
+def build_missing_information_email_parts(
     prospect: Prospect,
     routing: RoutingDecision,
     findings: Findings,
@@ -434,8 +434,8 @@ def generate_missing_information_email(
     invoice_records: list[InvoiceRecord] | None = None,
     results: dict | None = None,
     docs: list[RawDoc] | None = None,
-) -> str:
-    """Generate the standardized ready-to-send Missing Information Email per the Master Unified Medical Submission Agent Instruction."""
+) -> tuple[str, list[tuple[str, list[str]]]]:
+    """Build structured (subject, sections) for the Missing Information Email."""
     prospect_name = prospect.company.strip() if prospect.company else "Prospect Name Required"
     subject = f"Medical Submission Missing Information - {prospect_name}"
 
@@ -740,7 +740,43 @@ def generate_missing_information_email(
             "Monthly claims reports and high-claimant information are required for self/level-funded group with over 50 enrolled employees."
         ]))
 
-    # Build final message
+    return subject, sections
+
+
+def generate_missing_information_email(
+    prospect: Prospect,
+    routing: RoutingDecision,
+    findings: Findings,
+    census: Census | None,
+    have_census: bool,
+    have_invoice: bool,
+    have_renewal: bool,
+    renewal_required: bool,
+    claims_required: bool,
+    sbc_missing: list[str] | None = None,
+    ghq_present: bool = True,
+    ghq_partial: bool = False,
+    ghq_details: list[str] | None = None,
+    roles: dict | None = None,
+    selected_invoices: list[InvoiceDoc] | None = None,
+    invoice_records: list[InvoiceRecord] | None = None,
+    results: dict | None = None,
+    docs: list[RawDoc] | None = None,
+) -> str:
+    """Generate the standardized ready-to-send Missing Information Email per the Master Unified Medical Submission Agent Instruction."""
+    subject, sections = build_missing_information_email_parts(
+        prospect=prospect, routing=routing, findings=findings, census=census,
+        have_census=have_census, have_invoice=have_invoice, have_renewal=have_renewal,
+        renewal_required=renewal_required, claims_required=claims_required,
+        sbc_missing=sbc_missing, ghq_present=ghq_present, ghq_partial=ghq_partial,
+        ghq_details=ghq_details, roles=roles, selected_invoices=selected_invoices,
+        invoice_records=invoice_records, results=results, docs=docs,
+    )
+    return format_missing_information_email_text(subject, sections)
+
+
+def format_missing_information_email_text(subject: str, sections: list[tuple[str, list[str]]]) -> str:
+    """Render structured (subject, sections) as plain text."""
     lines = [
         f"Subject: {subject}",
         "Hello,",
@@ -756,3 +792,54 @@ def generate_missing_information_email(
 
     lines.append("Thank you.")
     return "\n".join(lines)
+
+
+def write_missing_information_docx(path: Path, subject: str, sections: list[tuple[str, list[str]]]) -> None:
+    """Write the Missing Information Email as a formatted Word (.docx) document for clean email copy-paste."""
+    from docx import Document
+    from docx.shared import Pt
+
+    doc = Document()
+    normal = doc.styles["Normal"]
+    normal.font.name = "Calibri"
+    normal.font.size = Pt(11)
+
+    subj_p = doc.add_paragraph()
+    subj_p.paragraph_format.space_after = Pt(8)
+    lbl = subj_p.add_run("Subject: ")
+    lbl.bold = True
+    subj_p.add_run(subject)
+
+    hello_p = doc.add_paragraph("Hello,")
+    hello_p.paragraph_format.space_after = Pt(6)
+
+    intro_p = doc.add_paragraph(
+        "Please provide or clarify the following information required to complete the medical submission:"
+    )
+    intro_p.paragraph_format.space_after = Pt(8)
+
+    if not sections:
+        p = doc.add_paragraph(
+            "No missing information or material discrepancies were identified in the submitted medical documentation."
+        )
+        p.paragraph_format.space_after = Pt(8)
+    else:
+        for sec_title, items in sections:
+            h = doc.add_paragraph()
+            h.paragraph_format.space_before = Pt(8)
+            h.paragraph_format.space_after = Pt(4)
+            run = h.add_run(sec_title)
+            run.bold = True
+            run.font.name = "Calibri"
+            run.font.size = Pt(12)
+
+            for it in items:
+                bp = doc.add_paragraph(style="List Bullet")
+                bp.paragraph_format.space_after = Pt(3)
+                r = bp.add_run(it)
+                r.font.name = "Calibri"
+                r.font.size = Pt(11)
+
+    thanks_p = doc.add_paragraph("Thank you.")
+    thanks_p.paragraph_format.space_before = Pt(8)
+    doc.save(str(path))

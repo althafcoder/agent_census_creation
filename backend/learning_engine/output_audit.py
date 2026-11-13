@@ -154,3 +154,53 @@ class OutputAuditor:
 
         return (len(errors) == 0), errors
 
+    def diff_against_reference(self, census: Any, reference_doc: Any) -> dict[str, Any]:
+        """Compare canonical census counts/names against a reference comparison workbook
+        without ingesting the reference workbook into the pipeline."""
+        from classifier import detect_header
+        from utils import clean
+
+        ref_emps: set[tuple[str, str]] = set()
+        ref_deps: set[tuple[str, str]] = set()
+        for tbl in getattr(reference_doc, "tables", []) or []:
+            df = getattr(tbl, "df", None)
+            if df is None or df.empty:
+                continue
+            hdr = detect_header(df)
+            if not hdr or "relationship" not in hdr.columns:
+                continue
+            fn_idx = hdr.columns.get("first_name")
+            ln_idx = hdr.columns.get("last_name")
+            rel_idx = hdr.columns.get("relationship")
+            if fn_idx is None or ln_idx is None or rel_idx is None:
+                continue
+            for r_i in range(hdr.row_idx + 1, len(df)):
+                row = df.iloc[r_i]
+                fn = clean(row.iloc[fn_idx]).lower()
+                ln = clean(row.iloc[ln_idx]).lower()
+                rel = clean(row.iloc[rel_idx]).upper()
+                if not (fn or ln) or rel not in {"EE", "SP", "CH", "DP"}:
+                    continue
+                if rel == "EE":
+                    ref_emps.add((fn, ln))
+                else:
+                    ref_deps.add((fn, ln))
+
+        got_emps = {
+            ((getattr(e, "first", "") or "").strip().lower(), (getattr(e, "last", "") or "").strip().lower())
+            for e in getattr(census, "canonical_census_employees", [])
+        }
+        got_deps = {
+            ((getattr(d, "first", "") or "").strip().lower(), (getattr(d, "last", "") or "").strip().lower())
+            for d in getattr(census, "dependents", [])
+        }
+        return {
+            "expected_employees": len(ref_emps),
+            "actual_employees": len(got_emps),
+            "expected_dependents": len(ref_deps),
+            "actual_dependents": len(got_deps),
+            "missing_dependents": sorted(ref_deps - got_deps),
+            "extra_dependents": sorted(got_deps - ref_deps),
+            "match": (ref_emps == got_emps and ref_deps == got_deps),
+        }
+

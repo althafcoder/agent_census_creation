@@ -169,17 +169,36 @@ class Header:
     wide_candidate_columns: dict[tuple[str, str], dict[str, list[tuple[int, str]]]] = field(default_factory=dict)
 
 
+def _header_variants(val: str) -> tuple[str, ...]:
+    """Return normalized key variants for a header label, stripping parentheticals,
+    possessives, and multi-line template instructions (e.g. 'Coverage *\\nEnter EE...')."""
+    s = str(val or "")
+    lines = [ln.strip() for ln in s.splitlines() if ln.strip()]
+    bases = [s]
+    if lines and lines[0] != s.strip():
+        bases.append(lines[0])
+    variants: list[str] = []
+    seen: set[str] = set()
+    for base in bases:
+        for cand in (
+            norm_key(base),
+            norm_key(re.sub(r"\(.*?\)", "", base)),
+            norm_key(re.sub(r"[\(\[\{].*", "", base)),
+            norm_key(re.sub(r"^[\)\]\}]+", "", base)),
+            norm_key(re.sub(r"['\u2019]s\b", "", base)),
+            norm_key(re.sub(r"['\u2019]s\b", "", re.sub(r"\(.*?\)", "", base))),
+        ):
+            if cand and cand not in seen:
+                seen.add(cand)
+                variants.append(cand)
+    return tuple(variants)
+
+
 def _score_row(vals: list[str]) -> int:
     flat = {a for al in FIELD_ALIASES.values() for a in al}
     count = 0
     for v in vals:
-        k = norm_key(v)
-        knp = norm_key(re.sub(r"\(.*?\)", "", str(v)))
-        knb = norm_key(re.sub(r"[\(\[\{].*", "", str(v)))
-        kn_lead = norm_key(re.sub(r"^[\)\]\}]+", "", str(v)))
-        k_no_poss = norm_key(re.sub(r"['\u2019]s\b", "", str(v)))
-        knp_poss = norm_key(re.sub(r"['\u2019]s\b", "", re.sub(r"\(.*?\)", "", str(v))))
-        if any(x and x in flat for x in (k, knp, knb, kn_lead, k_no_poss, knp_poss)):
+        if any(x in flat for x in _header_variants(v)):
             count += 1
     return count
 
@@ -187,25 +206,23 @@ def _score_row(vals: list[str]) -> int:
 def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
     best_i, best_s = None, 0
     for i in range(min(max_scan, len(df))):
-        s = _score_row([clean(v) for v in df.iloc[i].tolist()])
+        s = _score_row(["" if pd.isna(v) else str(v) for v in df.iloc[i].tolist()])
         if s > best_s:
             best_i, best_s = i, s
     if best_i is None or best_s < 2:
         return None
+    raw_labels = ["" if pd.isna(v) else str(v) for v in df.iloc[best_i].tolist()]
     labels = [clean(v) for v in df.iloc[best_i].tolist()]
     cols: dict[str, int] = {}
     wide: dict[tuple[str, str], dict[str, int]] = {}
     cand_cols: dict[str, list[tuple[int, str]]] = {}
     wide_cands: dict[tuple[str, str], dict[str, list[tuple[int, str]]]] = {}
-    for idx, lab in enumerate(labels):
-        k = norm_key(lab)
-        k_no_paren = norm_key(re.sub(r"\(.*?\)", "", str(lab)))
-        knb = norm_key(re.sub(r"[\(\[\{].*", "", str(lab)))
-        kn_lead = norm_key(re.sub(r"^[\)\]\}]+", "", str(lab)))
-        k_no_poss = norm_key(re.sub(r"['\u2019]s\b", "", str(lab)))
-        k_no_paren_poss = norm_key(re.sub(r"['\u2019]s\b", "", re.sub(r"\(.*?\)", "", str(lab))))
-        if not k and not k_no_paren and not knb and not kn_lead:
+    for idx, (lab, raw_lab) in enumerate(zip(labels, raw_labels)):
+        variants = _header_variants(raw_lab or lab)
+        if not variants:
             continue
+        k = variants[0]
+        k_no_paren = variants[1] if len(variants) > 1 else ""
         m = _WIDE_DEP.match(k) or (_WIDE_DEP.match(k_no_paren) if k_no_paren else None)
         if m and m.group(1) in {"dependent", "dep"} and not m.group(2):
             m = None                      # 'Dependent First Name' is a dependent-listing column, not wide
@@ -232,7 +249,7 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
                       "eligibility_class", "worker_category", "position_status",
                       "waive_reason", "job_title", "salary",
                       "emp_first", "emp_last", "emp_full", "address", "city", "state"):
-            if any(x and x in FIELD_ALIASES[canon] for x in (k, k_no_paren, knb, kn_lead, k_no_poss, k_no_paren_poss)):
+            if any(x in FIELD_ALIASES[canon] for x in variants):
                 cand_cols.setdefault(canon, []).append((idx, str(lab)))
                 if canon not in cols:
                     cols[canon] = idx
@@ -379,9 +396,44 @@ def _looks_like_roster(doc: RawDoc) -> bool:
     return False
 
 
+_COMPARISON_OUTPUT_HEADERS = {
+    "comparisonresult", "invoiceemployeename", "match", "matchpct",
+    "invoiceplan", "invoicetier", "invoicestatus", "invoicepremium", "renewalpremium",
+}
+
+
+def is_comparison_output_doc(doc: RawDoc) -> bool:
+    """Dynamically detect completed census-comparison output workbooks (e.g. RAPT / Marsh PEO
+    deliverables or reference outputs) so they are never ingested as raw census/invoice inputs."""
+    for tbl in getattr(doc, "tables", []) or []:
+        df = getattr(tbl, "df", None)
+        if df is None or df.empty:
+            continue
+        for i in range(min(40, len(df))):
+            row_keys = {
+                v
+                for cell in df.iloc[i].tolist()
+                for v in _header_variants(clean(cell))
+            }
+            if len(row_keys & _COMPARISON_OUTPUT_HEADERS) >= 3 and (
+                "comparisonresult" in row_keys or "invoiceemployeename" in row_keys
+            ):
+                return True
+    text_low = (getattr(doc, "text", "") or "").lower()
+    if "comparison result" in text_low and (
+        "invoice employee name" in text_low or "findings summary" in text_low
+    ) and ("match %" in text_low or "census vs. invoice summary" in text_low):
+        return True
+    return False
+
+
 def classify(doc: RawDoc) -> str:
-    """Return one of: invoice, renewal, ghq, rfp, census, payroll, unknown."""
+    """Return one of: invoice, renewal, ghq, rfp, census, payroll, deliverable, unknown."""
     from census_config import LLM_FIRST, USE_LLM_FALLBACK
+
+    if is_comparison_output_doc(doc):
+        log.info("Document '%s' has completed comparison-output structure -> classified as deliverable (excluded from source ingestion)", doc.name)
+        return "deliverable"
 
     # 1. LLM-First semantic classification (Copilot Studio approach)
     if LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip():

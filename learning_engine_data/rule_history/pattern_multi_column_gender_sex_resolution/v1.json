@@ -28,7 +28,7 @@
     "status": "PASS"
   },
   "created_at": "2026-10-28T15:50:29.085650",
-  "updated_at": "2026-11-13T09:02:17.280661",
+  "updated_at": "2026-11-13T14:41:28.492896",
   "compatibility": {
     "instruction_hashes": [
       "5192719264644e5433ce61baa2c15d45860f33e844feae7f8392d6648f37b398"
@@ -122,11 +122,11 @@
       "RULE_10_GENDER_RESOLUTION"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-11-13T09:02:17.262288"
+    "last_verified_at": "2026-11-13T14:41:28.467796"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261113_090217",
+    "decision_ref": "verified_20261113_144128",
     "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
   },
   "usage": {

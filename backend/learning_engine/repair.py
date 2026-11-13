@@ -508,6 +508,24 @@ class RepairEngine:
             if census:
                 from census_builder import recalculate_row_numbers, update_candidate_dispositions
                 repaired = 0
+                invoice_only_keys = {
+                    ((getattr(p, "first", "") or "").strip().lower(), (getattr(p, "last", "") or "").strip().lower())
+                    for p in getattr(census, "people", [])
+                    if getattr(p, "invoice_only", False)
+                }
+                phantom_ids = set()
+                for dep in getattr(census, "dependents", []):
+                    has_rel = bool((getattr(dep, "rel_raw", "") or "").strip())
+                    has_demo = bool(getattr(dep, "dob", None) or (getattr(dep, "gender", "") or "").strip())
+                    dep_key = ((dep.first or "").strip().lower(), (dep.last or "").strip().lower())
+                    if (not has_rel and not has_demo) or dep_key in invoice_only_keys:
+                        phantom_ids.add(id(dep))
+                if phantom_ids:
+                    census.people = [p for p in census.people if id(p) not in phantom_ids]
+                    for emp in census.employees:
+                        emp.dependents = [d for d in emp.dependents if id(d) not in phantom_ids]
+                    repaired += len(phantom_ids)
+
                 for dep in getattr(census, "dependents", []):
                     if not dep.subscriber_id:
                         target_sub_name = (
@@ -540,7 +558,47 @@ class RepairEngine:
                 if repaired:
                     recalculate_row_numbers(census)
                     update_candidate_dispositions(census)
-                    log.info("Repaired %d unlinked dependent(s)", repaired)
+                    log.info("Repaired %d unlinked/phantom dependent(s)", repaired)
+
+        elif patch.action == RepairAction.RECLASSIFY_SOURCE:
+            roles = working_state.get("roles") or {}
+            from classifier import is_comparison_output_doc
+            removed_any = False
+            for src_role in ("census", "invoice", "renewal"):
+                kept = []
+                for d in roles.get(src_role, []):
+                    if is_comparison_output_doc(d):
+                        roles.setdefault("deliverable", [])
+                        if d not in roles["deliverable"]:
+                            roles["deliverable"].append(d)
+                        removed_any = True
+                        log.info("RECLASSIFY_SOURCE: moved deliverable '%s' out of %s", getattr(d, "name", d), src_role)
+                    else:
+                        kept.append(d)
+                if src_role in roles:
+                    roles[src_role] = kept
+            if removed_any and roles.get("census"):
+                from census_builder import build_census, refine_non_enrolled_statuses
+                prospect = working_state.get("prospect")
+                eff_date = getattr(prospect, "effective_date", None) if prospect else None
+                new_census, new_meta = build_census(roles["census"], effective_date=eff_date)
+                refine_non_enrolled_statuses(new_census)
+                working_state["census"] = new_census
+                if isinstance(working_state.get("meta"), dict):
+                    working_state["meta"].update(new_meta)
+                invs = working_state.get("invoices", []) or working_state.get("invs", [])
+                findings = working_state.get("findings")
+                if findings is not None:
+                    from comparator import run_comparison
+                    working_state["results"] = run_comparison(
+                        census=new_census,
+                        invs=invs,
+                        renewal=working_state.get("renewal"),
+                        meta=working_state.get("meta", {}),
+                        F=findings,
+                        have_invoice=bool(invs),
+                        renewal_required=getattr(findings, "renewal_required", True),
+                    )
 
         elif patch.action == RepairAction.RESOLVE_MULTI_COLUMN_GENDER:
             census = working_state.get("census")

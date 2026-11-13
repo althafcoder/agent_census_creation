@@ -12,6 +12,7 @@ from .anthropic_cache import prepare_cached_messages, record_anthropic_usage
 from .config import (
     ANTHROPIC_MIN_CACHE_TOKENS,
     ANTHROPIC_PROMPT_CACHE_ENABLED,
+    PROMPT_CACHE_CLEAR_INTERVAL_MINUTES,
     PROMPT_CACHE_DIR,
     PROMPT_CACHE_ENABLED,
     PROMPT_CACHE_TTL_HOURS,
@@ -32,6 +33,7 @@ __all__ = [
     "PROMPT_CACHE_ENABLED",
     "PROMPT_CACHE_DIR",
     "PROMPT_CACHE_TTL_HOURS",
+    "PROMPT_CACHE_CLEAR_INTERVAL_MINUTES",
     "ANTHROPIC_PROMPT_CACHE_ENABLED",
     "ANTHROPIC_MIN_CACHE_TOKENS",
     "get_cache_settings",
