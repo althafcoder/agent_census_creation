@@ -1,0 +1,118 @@
+EXCEPTION SUMMARY
+- Census: 104 employees / 123 dependents
+- Missing from invoice: 0 | Missing from census: 1
+- Name mismatches: 8 | Tier mismatches: 0
+- Coverage/structure mismatches: 1
+- Premium discrepancies: 0 | Eligibility conflicts: 5
+- Unassigned dependents: 0 | Duplicate employees: 0
+- Most-used-plan rate applied: 0 | Missing renewal rates: 0
+- Some prospect information fields were not available in the GHQ or RFP and were left blank.
+- Invoice billing period could not be determined.
+- Name Mismatch for Review: Census employee 'NATALIE CORDOVA' matched to invoice subscriber 'CORDOVA, NATALIE JUANITA' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'AUSTIN DIAL' matched to invoice subscriber 'DIAL, AUSTIN MICHAEL' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'CARLOS PARRA' matched to invoice subscriber 'PARRA, CARLOS ENRIQUE' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'ROBERT REW' matched to invoice subscriber 'REW, ROBERT KEVIN' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'BRETT ROY' matched to invoice subscriber 'ROY, BRETT MICHAEL' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'BRADLEY SMITH' matched to invoice subscriber 'SMITH, BRADLEY STEVEN' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'WALLACE THARP' matched to invoice subscriber 'THARP, WALLACE BRADLEY' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'CARMEN WEST' matched to invoice subscriber 'WEST, CARMEN CHERI' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'NATALIE CORDOVA' matched to invoice subscriber 'CORDOVA, NATALIE JUANITA' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'AUSTIN DIAL' matched to invoice subscriber 'DIAL, AUSTIN MICHAEL' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'CARLOS PARRA' matched to invoice subscriber 'PARRA, CARLOS ENRIQUE' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'ROBERT REW' matched to invoice subscriber 'REW, ROBERT KEVIN' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'BRETT ROY' matched to invoice subscriber 'ROY, BRETT MICHAEL' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'BRADLEY SMITH' matched to invoice subscriber 'SMITH, BRADLEY STEVEN' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'WALLACE THARP' matched to invoice subscriber 'THARP, WALLACE BRADLEY' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'CARMEN WEST' matched to invoice subscriber 'WEST, CARMEN CHERI' based on plan and tier - verify identity.
+- Eligibility Conflict: THARIKA BAIRI marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Adoption Assistance, Tier: EE, Premium: $0.00)
+- Eligibility Conflict: KRIS DEARMON marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Adoption Assistance, Tier: EE, Premium: $0.00)
+- Eligibility Conflict: EMILY DUFRESNE marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Adoption Assistance, Tier: EE, Premium: $0.00)
+- Eligibility Conflict: JORGE FUENTES SICAIROS marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Kaiser HMO CA South, Tier: FAM, Premium: $99.94)
+- Eligibility Conflict: DAVID HORTON marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: UHC Signature Value HMO CA South, Tier: ES, Premium: $245.42)
+- Eligibility Conflict: CAMILLE KNIGHT marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Adoption Assistance, Tier: EE, Premium: $0.00)
+- Eligibility Conflict: JUIYING LIN marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Adoption Assistance, Tier: EE, Premium: $0.00)
+- Eligibility Conflict: EDMUND PARK marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Kaiser HMO CA South, Tier: FAM, Premium: $99.94)
+- Eligibility Conflict: KIMBERLY SCHENTUR marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Kaiser HMO CA South, Tier: EC, Premium: $102.46)
+- Eligibility Conflict: MARY SNIDER marked Waiver / Not Enrolled (WO) on census but active invoice medical coverage found on invoice (Plan: Kaiser HMO CO, Tier: FAM, Premium: $281.30)
+- Name Mismatch for Review: Census employee 'NATALIE CORDOVA' matched to invoice subscriber 'CORDOVA, NATALIE JUANITA' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'AUSTIN DIAL' matched to invoice subscriber 'DIAL, AUSTIN MICHAEL' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'CARLOS PARRA' matched to invoice subscriber 'PARRA, CARLOS ENRIQUE' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'ROBERT REW' matched to invoice subscriber 'REW, ROBERT KEVIN' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'BRETT ROY' matched to invoice subscriber 'ROY, BRETT MICHAEL' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'BRADLEY SMITH' matched to invoice subscriber 'SMITH, BRADLEY STEVEN' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'WALLACE THARP' matched to invoice subscriber 'THARP, WALLACE BRADLEY' based on plan and tier - verify identity.
+- Name Mismatch for Review: Census employee 'CARMEN WEST' matched to invoice subscriber 'WEST, CARMEN CHERI' based on plan and tier - verify identity.
+
+========================================================================================
+[LEARNING ENGINE] VERIFICATION SUMMARY | Status=REPAIRED_AND_PASSED | Checks=26/28 Passed
+  * [INSTRUCTION SNAPSHOT] Hash=519271926464 | Case=case_20261112_192729 | Run=run_20261112_192729
+  * [INSTRUCTION & REPAIR RULES APPLIED]:
+      - [PASS] RULE_04_NON_FLORIDA_ROUTING (Section 4.4 - Non-Florida Cigna Routing): Confirmed non-FL prospect routed to Cigna (Marsh + SBU)
+      - [PASS] RULE_25_MISSING_DOCS (Section 25.1 - Census Existence Check): Census populated with 105 employees and 123 dependents
+      - [PASS] RULE_10_GENDER_RESOLUTION (Section 10.2 - Multi-Column Gender & Sex Resolution Check): All same-person gender/sex candidates resolved consistently to M/F
+      - [PASS] RULE_09_STACKED_DEPENDENTS (Section 9.5 - Stacked Dependent Row Reconstruction): All stacked dependent rows properly linked to subscribers
+      - [PASS] RULE_10_INSPERITY_CODE_DECODING (Section 10.3 - Insperity Code Decoding): Insperity coverage codes and options properly decoded
+      - [PASS] RULE_11_BER_MULTI_BENEFIT_FILTER (Section 11.1B - BER Multi-Benefit Filter): Multi-benefit lines properly filtered to medical only
+      - [PASS] RULE_10_REQUIRED_FIELDS (Section 10.1 - Census Required Demographic Fields Check): All 105 census employees have required demographics (first name, last name, coverage)
+      - [PASS] RULE_09_DEPENDENT_DISPOSITION (Section 9.2 - Dependent Medical-Only Disposition Check): All 123 active medical dependents verified; 0 non-medical/PT dependents excluded
+      - [PASS] RULE_09_SUBSCRIBER_ROW_LINKS (Section 9.4 - Post-Sort Subscriber Row Link Check): All dependent subscriber row links match final ordered employee row numbers
+      - [PASS] RULE_21_STATUS_HANDLING (Section 21.1 - Waived (WO) and Waiting Period (WP) Status Coding Check): All waived (WO) and waiting period (WP) employees correctly mapped with zero false invoice discrepancies
+      - [PASS] RULE_22_PREMIUM_RECONCILIATION (Section 22.1 - Census Total Rate Premium Reconciliation Check): All census premiums reconciled with invoice premiums without false discrepancies
+      - [FAIL] RULE_21_ELIGIBILITY_AND_DOB_CONFLICT (Section 21.2 - Eligibility Conflict & DOB Discrepancy Check): Unresolved eligibility conflicts (['THARIKA BAIRI', 'KRIS DEARMON', 'EMILY DUFRESNE', 'CAMILLE KNIGHT', 'JUIYING LIN']) or unannotated DOB conflicts ([])
+      - [PASS] RULE_20_MOST_USED_PLAN (Section 20.1 - Most Used Plan Status Guard): Most Used Plan logic applied strictly to eligible active census-only employees
+      - [PASS] RULE_09_PART_TIME_EXCLUSION (Section 9.1 - Part-Time Employee Exclusion): Part-time records properly excluded and documented
+      - [PASS] RULE_09_DEPENDENT_LINKAGE (Section 9.4 - Dependent Linkage Check): All dependent records successfully linked to subscribers
+      - [PASS] RULE_13_RENEWAL_PEO_90_DAY (Section 13.1 - Renewal PEO 90-Day Check): Renewal requirement correctly evaluated
+      - [PASS] RULE_15_CLAIMS_REQUIREMENT (Section 15.1 - Claims Requirement Check): Claims not required under group size / funding criteria
+      - [PASS] RULE_25_AGENT_CLARIFICATIONS (Section 25.2 - Agent Clarification Completeness Check): No census clarifications required
+      - [PASS] RULE_18_MATCH_PERCENTAGE_FORMATTING (Section 18.1 - Match Percentage & Critical Formatting Check): Match percentage values and critical formatting conform to Section 18 requirements
+      - [PASS] RULE_16_PREFERRED_NAME_MATCHING (Section 16.3 - Preferred Name & Middle Name Alias Matching Check): Employees with preferred first name or middle name aliases correctly reconciled to invoice subscribers
+      - [PASS] RULE_16_ABBREVIATED_NAME_MATCHING (Section 16.3 - Abbreviated Name & Initial Invoice Matching Check): All enrolled employees with abbreviated invoice subscriber names correctly reconciled
+      - [PASS] RULE_16_NAME_MISMATCH_ACCOUNTING (Section 16.6 - Name Mismatch Accounting & Summary Reflection Check): Name mismatches accurately reflected in summary counters and findings notes
+      - [PASS] RULE_08_EXAMPLE_ROWS_FILTERED (Section 8.1 - Template Example Rows Filtration Check): All template example rows successfully filtered from canonical population
+      - [PASS] RULE_09_HSA_MEDICAL_PLAN_DISPOSITION (Section 9.2 - HSA Medical Plan Classification Check): HSA-compatible medical plans correctly classified as medical and non-medical lines excluded
+      - [PASS] RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE (Section 29.1 - Invoice Presence False-Positive Prevention Check): No active employees falsely reported missing when present in invoice text
+      - [FAIL] RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS (Section 23.3 - Summary Plan Table Completeness Check): Summary plan tables incomplete: ["Invoice plans missing from summary plan tables: {'Adoption Assistance'}"]
+      - [PASS] RULE_26_INVOICE_EXTRACTION_FIDELITY (Section 5.1 - Invoice Extraction Fidelity & Collapse Guard): Invoice extraction yielded plausible subscriber count relative to document volume
+      - [PASS] RULE_06_CENSUS_CONSERVATION (Section 6.0 - Census Headcount Conservation Check): Census headcount fully reconciled (104 source = 104 output + 0 PT excluded + 0 duplicates)
+  * [VALIDATED LEARNING PATTERNS APPLIED]:
+      - [VALIDATED] pattern_carrier_census_legal_name_and_dependent_subscriber_linkage (v1, patch=2.2.0, fp=fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1)
+      - [VALIDATED] pattern_name_mismatch_accounting (v1, patch=2.2.0, fp=fp_name_mismatch_accounting_v1)
+      - [VALIDATED] learned_reconcile_invoice_presence (v1, patch=2.2.0, fp=learned_reconcile_invoice_presence)
+      - [VALIDATED] pattern_abbreviated_first_name_invoice_matching (v1, patch=2.2.0, fp=fp_abbreviated_first_name_invoice_matching_v1)
+      - [VALIDATED] pattern_waived_employee_and_dependent_coverage_reconciliation (v1, patch=2.2.0, fp=fp_waived_employee_and_dependent_coverage_reconciliation_v1)
+      - [VALIDATED] pattern_census_total_rate_premium_reconciliation (v1, patch=2.2.0, fp=fp_census_total_rate_premium_reconciliation_v1)
+      - [VALIDATED] learned_deduplicate_census_employees (v1, patch=2.2.0, fp=learned_deduplicate_census_employees)
+      - [VALIDATED] pattern_agent_clarification_completeness (v1, patch=2.2.0, fp=fp_agent_clarification_completeness_v1)
+      - [VALIDATED] learned_reconcile_abbreviated_name_subscriber (v1, patch=2.2.0, fp=learned_reconcile_abbreviated_name_subscriber)
+      - [VALIDATED] learned_resolve_multi_column_gender (v1, patch=2.2.0, fp=learned_resolve_multi_column_gender)
+      - [VALIDATED] pattern_worksheet_boundary_enforcement (v1, patch=2.2.0, fp=fp_worksheet_boundary_enforcement_v1)
+      - [VALIDATED] pattern_stacked_census_dependent_reconstruction (v1, patch=2.2.0, fp=fp_stacked_census_dependent_reconstruction_v1)
+      - [VALIDATED] pattern_insperity_coverage_code_and_tier_decoding (v1, patch=2.2.0, fp=fp_insperity_coverage_code_and_tier_decoding_v1)
+      - [VALIDATED] pattern_benefits_enrollment_report_invoice_equivalence (v1, patch=2.2.0, fp=fp_benefits_enrollment_report_invoice_equivalence_v1)
+      - [VALIDATED] pattern_renewal_rate_application_and_population_invariance (v1, patch=2.2.0, fp=fp_renewal_rate_application_and_population_invariance_v1)
+      - [VALIDATED] learned_repair_linkage_or_normalization (v1, patch=2.2.0, fp=learned_repair_linkage_or_normalization)
+      - [VALIDATED] learned_filter_template_example_rows (v1, patch=2.2.0, fp=learned_filter_template_example_rows)
+      - [VALIDATED] learned_reconcile_waived_coverage_and_dependents (v1, patch=2.2.0, fp=learned_reconcile_waived_coverage_and_dependents)
+      - [VALIDATED] learned_disambiguate_same_name_persons (v1, patch=2.2.0, fp=learned_disambiguate_same_name_persons)
+      - [VALIDATED] learned_reconcile_eligibility_and_dob_conflict (v1, patch=2.2.0, fp=learned_reconcile_eligibility_and_dob_conflict)
+      - [VALIDATED] learned_regenerate_workbook (v1, patch=2.2.0, fp=learned_regenerate_workbook)
+      - [VALIDATED] pattern_multi_column_gender_sex_resolution (v1, patch=2.2.0, fp=fp_gender_multi_col_sex_self_id_v1)
+      - [VALIDATED] pattern_cross_source_dependent_collection_and_masked_override (v1, patch=2.2.0, fp=fp_dependent_cross_source_masked_override_v1)
+      - [VALIDATED] pattern_medical_only_disposition_and_status_precedence (v1, patch=2.2.0, fp=fp_medical_only_disposition_status_precedence_v1)
+      - [VALIDATED] pattern_post_sort_subscriber_row_recalculation (v1, patch=2.2.0, fp=fp_post_sort_subscriber_row_recalc_v1)
+      - [VALIDATED] pattern_match_percentage_and_workbook_formatting (v1, patch=2.2.0, fp=fp_match_percentage_workbook_format_v1)
+      - [VALIDATED] pattern_preferred_name_and_middle_name_matching (v1, patch=2.2.0, fp=fp_preferred_name_middle_name_matching_v1)
+      - [VALIDATED] pattern_template_example_row_filtration (v1, patch=2.2.0, fp=fp_template_example_row_filtration_v1)
+      - [VALIDATED] pattern_hsa_medical_plan_classification (v1, patch=2.2.0, fp=fp_hsa_medical_plan_classification_v1)
+      - [VALIDATED] pattern_meritain_statement_parsing (v1, patch=2.2.0, fp=fp_meritain_statement_parsing_v1)
+      - [VALIDATED] pattern_part_time_strict_exclusion (v1, patch=2.2.0, fp=fp_part_time_strict_exclusion_v1)
+      - [VALIDATED] pattern_same_name_dob_disambiguation (v1, patch=2.2.0, fp=fp_same_name_dob_disambiguation_v1)
+      - [VALIDATED] pattern_census_cross_source_deduplication (v1, patch=2.2.0, fp=fp_census_cross_source_dedup_v1)
+      - [VALIDATED] pattern_eligibility_and_dob_conflict_reconciliation (v1, patch=2.2.0, fp=fp_eligibility_and_dob_conflict_reconciliation_v1)
+  * [POPULATION & DISPOSITIONS] CanonicalRows=227 (Employees=104, ActiveMedDeps=123) | ExcludedNonMedDeps=0 | MaskedSlotsIgnored=0 | Dispositions={'INCLUDE_ACTIVE_MEDICAL': 212, 'RETAIN_MEDICAL_STATUS': 15}
+  * [GENDER RESOLUTION] Resolved(M/F)=227/227 | UnresolvedBlank=0 | Conflicts=0
+  * [EXECUTION GATES A-F] A_source_coverage=PASS | B_gender_resolution=PASS | C_dependent_disposition=PASS | D_enrollment_and_links=PASS | E_reconciliation=PASS | F_output_consistency=PASS
+  * [AUDIT ARTIFACTS SAVED] C:\Users\c1755\census_project_claude\learning_engine_data\runs\case_20261112_192729\run_20261112_192729
+[LEARNING ENGINE] ALL RULES APPLIED BASED ON ACTIVE INSTRUCTIONS -- LEARNING VERIFICATION COMPLETED (Status: REPAIRED_AND_PASSED)
+========================================================================================

@@ -1,0 +1,127 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_insperity_coverage_code_and_tier_decoding",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_insperity_coverage_code_and_tier_decoding_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "PEO and Insperity enrollment rosters encode medical benefit options as comma-delimited strings (e.g. 3,57,58,12) alongside single-character coverage tier codes (E, S, C, K, F, W, I). Treating these as literal or invalid single codes causes false plan rejections and erroneous 'Waived without plan' anomalies.",
+  "applicable_conditions": [
+    "Census or enrollment document originates from Insperity or PEO platform",
+    "Coverage level uses single-letter codes (E, S, C, K, F, W, I)",
+    "Option code contains comma-separated numeric/alphanumeric benefit identifiers"
+  ],
+  "required_validators": [
+    "RULE_10_INSPERITY_CODE_DECODING",
+    "RULE_10_REQUIRED_FIELDS"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_wellfit_technologies_insperity_options"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-11-12T18:28:59.623811",
+  "updated_at": "2026-11-12T18:28:59.623811",
+  "compatibility": {
+    "instruction_hashes": [
+      "5192719264644e5433ce61baa2c15d45860f33e844feae7f8392d6648f37b398"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "option code",
+      "coverage level",
+      "benefit plan"
+    ],
+    "stage": "normalization"
+  },
+  "trigger": {
+    "issue_type": "INSPERITY_CODE_UNDECODED",
+    "field": "coverage_level_and_options",
+    "conditions": [
+      "coverage level is single-letter or option contains comma-delimited string"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 10.3",
+    "RULE_10_INSPERITY_CODE_DECODING"
+  ],
+  "root_cause": {
+    "code": "INSPERITY_CODE_UNDECODED",
+    "verification_status": "verified",
+    "summary": "Split comma-delimited option codes, map medical plan codes using Group Identification Key legend (e.g. Code 3 -> Choice Plus 500), map non-medical only codes (57,58) to WO, and normalize single-letter coverage tiers (E->EE, S->ES, C/K->EC, F->EF, W->WO, I->NE)."
+  },
+  "strategy": {
+    "action": "DECODE_INSPERITY_OPTIONS_AND_TIERS",
+    "parameters": {
+      "tier_map": {
+        "E": "EE",
+        "S": "ES",
+        "C": "EC",
+        "K": "EC",
+        "F": "EF",
+        "W": "WO",
+        "I": "NE"
+      },
+      "medical_option_codes": {
+        "1": "Choice Plus PPO 250",
+        "2": "Choice Plus PPO 350",
+        "3": "Choice Plus PPO 500",
+        "7": "Choice Plus PPO 750",
+        "8": "Choice Plus PPO 1000",
+        "9": "Choice Plus PPO 1500",
+        "10": "Choice Plus PPO 2000",
+        "11": "Choice Plus PPO 2500"
+      }
+    },
+    "preconditions": [
+      "valid option string or single letter coverage code"
+    ],
+    "exclusions": [
+      "do not override explicit standard two-letter tiers (EE, ES, EC, FAM, WAIVE)"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_wellfit_insperity_decoding"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_10_INSPERITY_CODE_DECODING",
+      "RULE_10_REQUIRED_FIELDS"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-11-12T18:28:59.623811"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261112_feedback",
+    "reason": "Validated against Feedback.docx Insperity Group Identification Key decoding rules"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

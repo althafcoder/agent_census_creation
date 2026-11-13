@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_worksheet_boundary_enforcement",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_worksheet_boundary_enforcement_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Excel census workbooks may contain formatting artifacts, cell styles, or formulas extending across thousands of empty columns (up to column 16,384/XFD), causing severe performance degradation, runaway delimiter expansion, and memory saturation if boundaries are not strictly truncated at structured table extent.",
+  "applicable_conditions": [
+    "Worksheet max_column exceeds structured tabular header columns",
+    "Consecutive empty column gap of >= 5 columns across all rows",
+    "Presence of phantom or styled blank cells beyond valid data range (e.g. columns A:M vs A:XFD)"
+  ],
+  "required_validators": [
+    "GATE_A_TABLE_BOUNDARY",
+    "RULE_08_WORKSHEET_BOUNDARY"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_wellfit_technologies_census_2026_worksheet_boundary"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-11-12T18:28:59.623811",
+  "updated_at": "2026-11-12T18:28:59.623811",
+  "compatibility": {
+    "instruction_hashes": [
+      "5192719264644e5433ce61baa2c15d45860f33e844feae7f8392d6648f37b398"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census",
+      "invoice",
+      "payroll"
+    ],
+    "file_types": [
+      "xlsx",
+      "xlsm",
+      "xls"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "employee name",
+      "job title",
+      "hire date",
+      "coverage level",
+      "option code"
+    ],
+    "stage": "extraction"
+  },
+  "trigger": {
+    "issue_type": "WORKSHEET_BOUNDARY_OVERFLOW",
+    "field": "columns",
+    "conditions": [
+      "max_column exceeds tabular range by >= 5 empty columns"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 8.1B",
+    "RULE_08_WORKSHEET_BOUNDARY"
+  ],
+  "root_cause": {
+    "code": "WORKSHEET_BOUNDARY_OVERFLOW",
+    "verification_status": "verified",
+    "summary": "Truncate worksheet ingestion at the first column where >= 5 consecutive columns are completely empty across all data rows."
+  },
+  "strategy": {
+    "action": "TRUNCATE_WORKSHEET_BOUNDARY",
+    "parameters": {
+      "empty_column_gap_threshold": 5
+    },
+    "preconditions": [
+      "contiguous structured table headers identified in columns A:N"
+    ],
+    "exclusions": [
+      "do not truncate valid multi-tier tables with single empty spacer columns"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_wellfit_boundary"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_08_WORKSHEET_BOUNDARY"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-11-12T18:28:59.623811"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261112_feedback",
+    "reason": "Validated against Feedback.docx Wellfit Technologies worksheet extent audit (Columns A:M bounded)"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

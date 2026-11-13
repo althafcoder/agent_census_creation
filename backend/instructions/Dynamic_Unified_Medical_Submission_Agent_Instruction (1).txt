@@ -377,6 +377,37 @@ Review every uploaded census and enrollment source. Employee and dependent data 
 
 Never ignore one census source simply because another census file exists. Consolidate all applicable sources into the most complete supported census.
 
+8.1A Authoritative Source-Priority Hierarchy
+Apply the following authoritative source-priority hierarchy across multi-document submissions:
+1. Employee existence and employment status:
+   - Primary: Current Employee Census (e.g., active PEO employee census reported most recently) and Client/Broker Census (validated against WC tab / payroll totals).
+   - Secondary enrichment only: PEO Schedule A and Group Identification Key.
+   - High-level control total only: GHQ summary headcount.
+2. Medical enrollment (plans and tiers):
+   - Primary record-level evidence: Current Benefits Enrollment Report / Benefit Election Register (filtered strictly to medical coverage rows) and Client/Broker Census.
+   - Secondary enrichment / code validation: PEO Schedule A, Schedule B, and Group Identification Key.
+   - High-level control total only: GHQ enrolled medical count.
+3. Dependents:
+   - Primary: Explicit dependent fields in the Benefits Enrollment Report and inline/dependent rows in the Client/Broker Census.
+   - Other documents serve as validation only. Never convert dependent records into standalone employees.
+4. Current and Renewal rates:
+   - Primary: Medical Allocation Report (MAR), Financial Stewardship Report, and Schedule B / carrier rate tables.
+5. Prospect information:
+   - Primary: GHQ (for Proposed Effective Date and group metadata), Original Submission Email / RFP, Current Employee Census, and Schedule A/B.
+
+8.1B Worksheet-Boundary Rule
+Never interpret Excel UsedRange, worksheet dimension, far-right populated cells, hidden support areas, formulas, repeated dependent blocks outside the header table, or formatting extent as the census data range. Identify the actual census table from its contiguous headers and populated structured rows. Only records inside that defined source table may establish the employee population. Also detect swapped or misaligned name headers (such as "Employee Name" holding Last Name paired with "Last" holding First Name) and inline dependent rows where a non-relationship column (such as Job Title) contains "Spouse", "Child", or "Domestic Partner" with blank employment fields.
+
+8.1C Multi-Source Census and PEO Processing Sequence
+Follow this exact processing sequence when handling multi-source PEO / broker submissions:
+- STEP 1 (Establish employee universe): Establish the canonical active employee universe from the Current Employee Census and validate against the Client/Broker Census (and WC tab / GHQ control totals). Do not allow older PEO financial or Schedule A snapshots, PDF footnote legends, or benefit rows to inflate the canonical employee count.
+- STEP 2 (Build the master census): Start from the Client/Broker Census and Current Employee Census, validating every employee across both sources and respecting strict worksheet table boundaries. Reconstruct inline dependent rows directly under their subscriber.
+- STEP 3 (Build medical subscriber records): Use the Benefits Enrollment Report filtered strictly to medical coverage rows (e.g., Choice Plus / PPO / HDHP / Health Maintenance Organization / HMO). One subscriber equals one employee regardless of how many benefit rows exist. Do not create additional employees from Dental, Vision, Life, AD&D, FSA, HSA, Commuter Benefit, Adoption Assistance, or voluntary benefit rows.
+- STEP 4 (Build dependents): Reconstruct dependents (SP, CH, DP) from the explicit dependent fields in the Benefits Enrollment Report and Client/Broker Census, linking each medical dependent to the associated subscriber. Never classify dependents as standalone employees.
+- STEP 5 (Decode PEO / Insperity coverage): Decode single-letter Coverage Level codes (E/S/C/K/F/W/I) and split comma-delimited Coverage Group / Option codes (e.g., 3,57,58,12) using the supplied Group Identification Key / Schedule A legend.
+- STEP 6 (Perform comparison): Compare the Master Broker Census vs. Current Employee Census vs. Benefits Enrollment Report (used as invoice-equivalent enrollment comparison evidence when a traditional carrier billing invoice is not supplied) and categorize only genuine discrepancies (employee missing, enrollment missing, active enrollment present on Benefits Enrollment / Schedule A where broker census is blank/waived, tier mismatch, dependent missing from broker census, dependent relationship mismatch, demographic discrepancy, child dependent age 26+, COBRA discrepancies).
+- STEP 7 (Apply renewal): Use the Medical Allocation Report (MAR) and Financial Stewardship Report for current and renewal plan/tier monthly allocations without overwriting the current employee population with an older snapshot headcount from the financial report.
+
 8.2 Approved output templates
 Florida Blue:
 - Use RAPT Census - Template.
@@ -438,6 +469,13 @@ Active population:
 - Include only dependents covered under medical coverage.
 - Exclude dental-only, vision-only, life-only, disability-only, voluntary-only, supplemental-only, and other non-medical-only dependents.
 
+9.2A Multi-benefit enrollment roster filtering
+When a Benefits Enrollment Report contains multiple rows per employee across different benefit categories (such as Dental, Vision, Choice Plus, Health Maintenance Organization, Commuter Benefit, STD/LTD Voluntary, Adoption Assistance, Health Care Flex Spending Account, Health Savings Account, Life Basic, ADD Basic, or Life/ADD Voluntary):
+- Filter strictly to medical coverage rows before comparing medical enrollment or extracting medical dependents.
+- Never treat non-medical Coverage Type values (e.g., Dental, Vision, Commuter Benefit, Life, AD&D, FSA, HSA, Adoption Assistance) as invalid medical coverage codes or generate missing-information questions for them.
+- One subscriber equals one employee regardless of how many benefit rows exist.
+- Extract repeated wide dependent column blocks (e.g., Dependent 1..5 Last Name, First Name, Gender, Birth Date, Relationship Desc) as linked dependents on the subscriber's medical row, and never allow Dependent Birth Date or Dependent Gender columns to overwrite the employee's own DOB or Gender.
+
 9.3 Status-row precedence
 The generic medical-only rule must not erase medical-eligibility status records that the workflow explicitly requires for comparison and visibility.
 
@@ -479,6 +517,18 @@ Coverage / status codes supported by the instruction include:
 - WO = Waived / Waived Other Coverage
 
 Do not retain incompatible source wording when the template requires the standardized code.
+
+10.1A PEO single-letter coverage level and comma-delimited option code decoding
+When PEO reports (such as Insperity Schedule A or Group Identification Key) use single-letter Coverage Level codes and comma-delimited Coverage Group / Option codes:
+- Map single-letter Coverage Level codes directly without flagging them as unknown or inferred:
+  - E -> EE (Employee Only)
+  - S -> ES (Employee + Spouse)
+  - C / K -> EC (Employee + Child / Children)
+  - F -> FAM / EF (Employee + Family)
+  - W -> WO (Waived)
+  - I -> NE (Ineligible)
+- Never treat a comma-delimited Coverage Group / Option value (such as "3,57,58,12", "57,58,12,32", "57,58", or "57,58,12,46") as a single malformed coverage code.
+- Split comma-separated option codes, map each code through the Group Identification Key / Schedule A legend (e.g., 3 = 500 Deductible, 32 = 1700 Deductible - HDHP (1750 in 2027), 33 = 250 Deductible, 46 = Kaiser HMO CA South, 51 = UHC of CA HMO South, 58 = 5000 Deductible - HDHP when paired with Basic AD&D 58, 96 = Kaiser HMO CO), identify the medical plan code, and ignore non-medical codes (12 = Dental/Vision, 57 = Basic Life, 58 = Basic AD&D) for medical-plan purposes. When an employee only has non-medical codes (such as "57,58" or "57,58,12" with no medical plan code and no medical enrollment row), classify medical status as WO (Waived).
 
 10.2 Waived versus Waiting Period
 Never convert a waived employee to WP.
@@ -549,6 +599,13 @@ Accept:
 - Benefit Election Register / Benefit Enrollment Register.
 
 A substitute report may be used only when it contains the comparison information required for the workflow, including monthly premium when premium comparison is required.
+
+11.1A Benefits Enrollment Report as invoice-equivalent enrollment evidence
+When a traditional carrier billing invoice is not supplied but a current Benefits Enrollment Report is provided:
+- Use the Benefits Enrollment Report (filtered strictly to medical rows) as invoice-equivalent enrollment comparison evidence to reconcile employee medical elections, coverage tiers, and enrolled dependents.
+- Do not conclude that comparison could not be completed due to a missing invoice when a valid Benefits Enrollment Report is present.
+- In audit trails, Summary notes, and email explanations, refer to it accurately as "Enrollment / benefits roster used as invoice-equivalent enrollment evidence when a traditional medical invoice is not supplied" rather than calling the Benefits Enrollment Report a carrier billing invoice.
+- When accompanied by a PEO Medical Allocation Report (MAR) or Financial Stewardship Report containing Current Monthly Allocations by plan and tier, use the Current Monthly Allocation rate for each plan/tier alongside the Benefits Enrollment medical elections.
 
 11.2 Recency
 - Determine the billing period.
@@ -650,6 +707,13 @@ When renewal is required:
 - Prefer the latest version for the same renewal period.
 - Use only the document representing the applicable future coverage period.
 - Do not populate Renewal Premium from a document that applies to the same period as the selected current invoice.
+
+13.2A PEO Medical Allocation Report (MAR) and Financial Stewardship Report handling
+When PEO renewal documentation includes a Medical Allocation Report (MAR) and/or Financial Stewardship Report (with Base Check, Renewal, and Comparison sections):
+- Classify the MAR Report and Financial Stewardship Report as valid renewal and rate sources.
+- Extract both Current Monthly Allocations and New (Renewal) Monthly Allocations by medical plan and tier (EE, ES, EC, FAM), excluding Dental/Vision allocations.
+- Match full carrier plan names on the census/enrollment roster (e.g., "UHC Choice Plus PPO 500 (90%)", "UHC Choice Plus PPO 250", "UHC Choice Plus PPO HDHP 1750", "UHC Choice Plus PPO HDHP 5000", "UHC Signature Value HMO CA South") to their corresponding PEO plan names on the MAR/Stewardship report ("500 Deductible", "250 Deductible", "1700 Deductible - HDHP (1750 in 2027)", "5000 Deductible - HDHP", "UHC of CA HMO South").
+- Use the newer/current Employee Census and Broker Census for employee eligibility and population headcount, and use the renewal/MAR documents strictly for rate and renewal context. Never overwrite the current census population headcount just because an older renewal financial snapshot references a prior employee count (e.g., 106 employees vs. 104 current active employees).
 
 13.3 Missing required renewal
 If renewal is required but no renewal document is available:
@@ -985,6 +1049,12 @@ Common required prospect fields include:
 - OneDigital Referral.
 - REI Sales Person.
 - Source Priority.
+
+22.1A Proposed Effective Date versus Expected Close Date
+Distinguish between Proposed Effective Date (e.g., explicitly stated on the GHQ or renewal as 11/01/2026) and Expected Close Date (e.g., stated in a submission email as 01/01/2027). These are distinct business concepts: use the explicit Proposed Effective Date from the GHQ/renewal as the medical effective date, preserve Expected Close Date separately when applicable, and do not automatically treat a difference between Expected Close Date and Proposed Effective Date as a contradiction unless operational rules require them to match.
+
+22.1B GHQ Enrolled Count as High-Level Control Total
+Use the Current Employee Census for the authoritative employee population, the Current Benefits Enrollment Report for actual record-level medical elections, and the GHQ enrolled employee count as a high-level validation/control total. Never blindly rebuild or truncate record-level enrollment to match the GHQ summary count; if the GHQ summary count differs from the detailed current enrollment roster (for example, when HMO enrollees are present on Benefits Enrollment but omitted from the broker census), note the count difference for validation while using the detailed enrollment file for record-level reconciliation.
 
 When the approved template also contains prospect fields such as Prospect Name or Nature of Business, populate them when supported.
 

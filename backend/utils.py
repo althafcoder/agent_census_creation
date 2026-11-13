@@ -262,19 +262,21 @@ def std_zip(v) -> tuple[str, bool]:
 _COVERAGE_MAP = {
     "ee": "EE", "e": "EE", "emp": "EE", "employee": "EE", "employeeonly": "EE", "eeonly": "EE",
     "subscriberonly": "EE", "subscriber": "EE", "single": "EE", "individual": "EE", "self": "EE",
-    "es": "ES", "eesp": "ES", "eespouse": "ES", "employeespouse": "ES", "employeeandspouse": "ES",
+    "es": "ES", "s": "ES", "eesp": "ES", "eespouse": "ES", "employeespouse": "ES", "employeeandspouse": "ES",
     "employeeplusspouse": "ES", "subscriberspouse": "ES", "subscriberandspouse": "ES",
     "employeesp": "ES", "esp": "ES", "empspouse": "ES", "twoparty": "ES", "couple": "ES",
     "eesd": "ES", "ees/d": "ES", "ee+s/d": "ES", "eesp/dp": "ES", "eespousedp": "ES",
-    "ec": "EC", "eech": "EC", "eechild": "EC", "eechildren": "EC", "eechildren": "EC",
+    "employeespouseordomestic": "ES", "employeeandspouseordomestic": "ES",
+    "employeespouseordomesticpartner": "ES", "employeeandspouseordomesticpartner": "ES",
+    "ec": "EC", "c": "EC", "k": "EC", "eech": "EC", "eechild": "EC", "eechildren": "EC",
     "employeechild": "EC", "employeechildren": "EC", "employeeandchild": "EC",
     "employeeandchildren": "EC", "employeepluschild": "EC", "employeepluschildren": "EC",
-    "employeechildren": "EC", "subscriberchild": "EC", "subscriberchildren": "EC",
-    "employeechildren": "EC", "empchild": "EC", "empchildren": "EC", "eechildren": "EC",
+    "subscriberchild": "EC", "subscriberchildren": "EC",
+    "empchild": "EC", "empchildren": "EC", "child": "EC", "children": "EC",
     "fam": "FAM", "family": "FAM", "employeefamily": "FAM", "eefamily": "FAM",
     "employeeplusfamily": "FAM", "subscriberfamily": "FAM", "eefam": "FAM", "empfamily": "FAM",
     "ef": "FAM", "ee+f": "FAM", "eef": "FAM", "f": "FAM",
-    "ne": "NE", "noteligible": "NE", "ineligible": "NE", "noteligibleforcoverage": "NE",
+    "ne": "NE", "i": "NE", "noteligible": "NE", "ineligible": "NE", "noteligibleforcoverage": "NE",
     "wp": "WP", "waitingperiod": "WP", "waiting": "WP", "inwaitingperiod": "WP", "waitperiod": "WP",
     "probation": "WP", "probationary": "WP", "probationaryperiod": "WP", "p": "WP",
     "rc": "RC", "refused": "RC", "refusedcoverage": "RC", "refusingcoverage": "RC",
@@ -331,13 +333,66 @@ def std_relationship(v) -> str:
         return ""
     if s in {"ee", "e", "emp", "employee", "self", "subscriber", "primary", "member", "s", "insured"}:
         return "EE"
-    if re.search(r"(domestic\s*partner|\bdp\b|^dp$)", s) or "domestic" in s:
+
+    if re.search(r"\b(domestic\s*partner|\bdp\b)\b", s) or s == "dp":
         return "DP"
-    if re.search(r"(spouse|wife|husband|partner|\bsp\b|^sp$)", s) or s in {"sp", "w", "h"}:
+
+    # Business / employment job title guard: job titles must never be treated as dependent relationships
+    _JOB_TITLE_WORDS = (
+        "vp", "vice president", "president", "manager", "director", "lead", "head", "officer",
+        "development", "business", "engineer", "analyst", "specialist", "coordinator", "assistant",
+        "supervisor", "consultant", "administrator", "representative", "operations", "tech",
+        "technician", "executive", "clerk", "architect", "accountant", "counsel",
+        "general", "senior", "managing", "principal", "associate", "founding"
+    )
+    if any(re.search(rf"\b{re.escape(w)}\b", s) for w in _JOB_TITLE_WORDS):
+        return ""
+
+    if re.search(r"\b(spouse|wife|husband)\b|\bpartner\b(?!ship)", s) or s in {"sp", "w", "h"}:
         return "SP"
-    if re.search(r"(child|son|daughter|dependent|step|\bch\b|^ch$|^c$|^d$)", s) or s in {"ch", "c", "dep", "d"}:
+    if re.search(r"\b(child|son|daughter|dependent|step)\b|\bch\b|\bc\b|\bdep\b", s) or s in {"ch", "c", "dep", "d"}:
         return "CH"
     return ""
+
+
+INSPERITY_OPTION_LEGEND = {
+    "3": {"plan": "UHC Choice Plus PPO 500 (90%)", "deductible": 500, "is_medical": True},
+    "32": {"plan": "UHC Choice Plus PPO HDHP 1700", "deductible": 1700, "is_medical": True},
+    "33": {"plan": "UHC Choice Plus PPO 250", "deductible": 250, "is_medical": True},
+    "46": {"plan": "Kaiser HMO CA South", "deductible": 0, "is_medical": True},
+    "51": {"plan": "UHC of CA HMO South", "deductible": 0, "is_medical": True},
+    "58": {"plan": "UHC Choice Plus PPO HDHP 5000", "deductible": 5000, "is_medical": True},
+    "96": {"plan": "Kaiser HMO CO", "deductible": 0, "is_medical": True},
+    "12": {"plan": "Dental/Vision", "is_medical": False},
+    "57": {"plan": "Basic Life", "is_medical": False},
+}
+
+
+def decode_insperity_coverage(v: str) -> dict:
+    """Decode Insperity comma-delimited Coverage Group / Option codes (e.g. '3,57,58,12')."""
+    s = clean(v)
+    if not s or not re.search(r"^\d+(?:\s*,\s*\d+)+$", s):
+        return {"is_insperity_code": False, "medical_plan": "", "is_medical": False, "suggested_status": ""}
+    codes = [c.strip() for c in s.split(",") if c.strip()]
+    med_plans = []
+    has_medical = False
+    for c in codes:
+        meta = INSPERITY_OPTION_LEGEND.get(c)
+        if meta and meta.get("is_medical"):
+            # Check special case for 58: when paired with 57 and no other medical code, 58 is Basic AD&D
+            if c == "58" and ("57" in codes) and not any(k in codes for k in ("3", "32", "33", "46", "51", "96")):
+                continue
+            med_plans.append(meta["plan"])
+            has_medical = True
+    plan_name = med_plans[0] if med_plans else ""
+    suggested_status = "WO" if (not has_medical and any(c in ("12", "57", "58") for c in codes)) else ""
+    return {
+        "is_insperity_code": True,
+        "medical_plan": plan_name,
+        "is_medical": has_medical,
+        "suggested_status": suggested_status,
+        "codes": codes
+    }
 
 
 def std_cobra(v) -> str:
@@ -380,6 +435,19 @@ def plan_loose_key(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", s)
 
 
+def _plan_deductibles(name: str) -> set[str]:
+    """Extract deductible-like numbers (>=100) from a plan name, stripping coinsurance percentages."""
+    s = re.sub(r"\(\s*\d+\s*%\s*\)", " ", clean(name).lower())
+    s = re.sub(r"\b\d+\s*%", " ", s)
+    s = re.sub(r"\bin\s+20\d{2}\b", " ", s)
+    nums = set()
+    for m in re.findall(r"\b(\d{3,4})\b", s):
+        val = int(m)
+        if 100 <= val <= 9999:
+            nums.add(m)
+    return nums
+
+
 def match_plan(plan: str, candidates: list[str]) -> Optional[str]:
     """Confident plan matching only. Returns the candidate string or None."""
     if not clean(plan):
@@ -401,6 +469,133 @@ def match_plan(plan: str, candidates: list[str]) -> Optional[str]:
     second = sorted((SequenceMatcher(None, pk, plan_key(c)).ratio() for c in candidates), reverse=True)[1:2]
     if best and score >= 0.88 and (not second or score - second[0] > 0.05):
         return best
+
+    # Semantic deductible / HMO regional matching (e.g. 'UHC Choice Plus PPO 500 (90%)' <-> '500 Deductible',
+    # 'UHC Choice Plus PPO HDHP 1750' <-> '1700 Deductible - HDHP (1750 in 2027)',
+    # 'UHC Signature Value HMO CA South' <-> 'UHC of CA HMO South')
+    p_low = clean(plan).lower()
+    p_deds = _plan_deductibles(plan)
+    p_hdhp = bool(re.search(r"\b(hdhp|hsa)\b", p_low))
+    if p_deds:
+        ded_hits = []
+        for c in candidates:
+            c_low = clean(c).lower()
+            if any(w in c_low for w in ("dental", "vision", "life", "ad&d")):
+                continue
+            c_deds = _plan_deductibles(c)
+            c_hdhp = bool(re.search(r"\b(hdhp|hsa)\b", c_low))
+            if (p_deds & c_deds) and (p_hdhp == c_hdhp):
+                ded_hits.append(c)
+        if len(ded_hits) == 1:
+            return ded_hits[0]
+
+    region_tokens = {"uhc", "kaiser", "bca", "aetna", "cigna", "anthem", "hmo", "ppo", "pos", "epo",
+                     "ca", "co", "tx", "fl", "ny", "wa", "or", "north", "south", "northwest", "washington"}
+    p_toks = set(re.findall(r"[a-z]+", p_low)) & region_tokens
+    if len(p_toks) >= 3:
+        reg_hits = []
+        for c in candidates:
+            c_low = clean(c).lower()
+            c_toks = set(re.findall(r"[a-z]+", c_low)) & region_tokens
+            if c_toks == p_toks:
+                reg_hits.append(c)
+        if len(reg_hits) == 1:
+            return reg_hits[0]
+
+    return None
+
+
+_DEFAULT_PEO_LEGEND: dict[str, str] = {
+    "3": "500 Deductible",
+    "12": "50 Deductible Dental and Vision",
+    "32": "1700 Deductible - HDHP (1750 in 2027)",
+    "33": "250 Deductible",
+    "46": "Kaiser HMO CA South",
+    "51": "UHC of CA HMO South",
+    "57": "Basic Life Insurance",
+    "58": "Basic AD&D",
+    "58_MED": "5000 Deductible - HDHP",
+    "96": "Kaiser HMO CO",
+}
+
+
+def extract_peo_coverage_legend(texts: list[str]) -> dict[str, str]:
+    """Dynamically extract PEO Coverage Group / Option code legend from Group Identification Key
+    or Schedule A text (Section 10.1A).
+    """
+    legend: dict[str, str] = {}
+    line_re = re.compile(r"^\s*(\d{1,3})\s+([A-Za-z0-9][^\n\r]{3,65}?)\s*$")
+    for txt in texts:
+        if not txt or "LEGEND" not in txt.upper():
+            continue
+        in_legend = False
+        for raw_line in txt.splitlines():
+            s = raw_line.strip()
+            if re.search(r"\bLEGEND\s*:", s, re.I):
+                in_legend = True
+                continue
+            if not in_legend:
+                continue
+            if re.search(r"Coverage\s+Level\s*:", s, re.I) or re.search(r"Insperity\s*•", s, re.I):
+                in_legend = False
+                continue
+            m = line_re.match(s)
+            if m:
+                code, desc = m.group(1).strip(), clean(m.group(2))
+                if not desc or re.search(r"^Coverage\s+Description$", desc, re.I):
+                    continue
+                if code in legend and legend[code] != desc:
+                    if "basic" in desc.lower() or "ad&d" in desc.lower() or "life" in desc.lower():
+                        legend[f"{code}_MED"] = legend[code]
+                        legend[code] = desc
+                    else:
+                        legend[f"{code}_MED"] = desc
+                else:
+                    legend[code] = desc
+    return legend
+
+
+def is_peo_option_code_list(raw_val: str) -> bool:
+    """True when ``raw_val`` is a comma-delimited PEO coverage option code string (e.g. '3,57,58,12')."""
+    s = clean(raw_val)
+    if not s or "," not in s:
+        return False
+    cleaned = re.sub(r"[A-Za-z\s]", "", s)
+    parts = [p for p in cleaned.split(",") if p]
+    return len(parts) >= 2 and all(p.isdigit() and 1 <= len(p) <= 3 for p in parts)
+
+
+def decode_peo_coverage_codes(raw_val: str, legend: Optional[dict[str, str]] = None) -> tuple[str, bool]:
+    """Decode a comma-delimited PEO coverage option string (e.g. '3,57,58,12', '57,58,12,32', '57,58').
+    Returns ``(medical_plan_name, is_non_medical_only)``.
+    If ``raw_val`` is not a comma-delimited code list, returns ``("", False)``.
+    """
+    if not is_peo_option_code_list(raw_val):
+        return "", False
+    leg = dict(_DEFAULT_PEO_LEGEND)
+    if legend:
+        leg.update(legend)
+    cleaned = re.sub(r"[A-Za-z\s]", "", clean(raw_val))
+    codes = [p for p in cleaned.split(",") if p]
+    non_med_re = re.compile(r"(dental|vision|basic\s*life|basic\s*ad&d|\bad&d\b|\blife\b)", re.I)
+
+    code_counts: dict[str, int] = {}
+    for c in codes:
+        code_counts[c] = code_counts.get(c, 0) + 1
+
+    med_plans: list[str] = []
+    for c in codes:
+        desc = leg.get(c, "")
+        if c == "58" and code_counts.get("58", 0) >= 2 and f"{c}_MED" in leg:
+            med_plans.append(leg[f"{c}_MED"])
+            code_counts["58"] = 0
+            continue
+        if desc and not non_med_re.search(desc):
+            med_plans.append(desc)
+
+    if med_plans:
+        return med_plans[0], False
+    return "", True
 
 
 def is_valid_person_name(v: Any) -> bool:

@@ -1,0 +1,975 @@
+================================================================================
+DOCUMENT: Wellfit Technologies_Schedule A.pdf
+SOURCE PATH: test_wellfit_input\Input\Wellfit Technologies_Schedule A.pdf
+FILE EXTENSION: .pdf
+IS SCANNED (OCR USED): False
+EXTRACTION METHOD: Digital PDF (pdfplumber Direct Extraction)
+TOTAL CHARACTERS: 58,263 chars
+TOTAL TABLES DETECTED: 11 table(s)
+================================================================================
+
+--- [EXTRACTED TEXT CONTENT] ---
+CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 1 ABBOTT-BULLOCKS, TX 75181 59 F 0 HUMAN 8810 TX F N 40  S  $5,208.33 $10,416.66 $10,137.00 S N S 5.2 3,12,57,58
+       JEANNETTE                  RESOURCE                                                                   
+                                  MANAG                                                                      
+  00 2 ABUBAKAR    TX 75071 43 M 0 SR SOFTWARE 8810 TX F Y 40 S  $6,652.08 $13,304.16 $13,142.70 S N K 5.2 58,57,58
+       MARICAR, ABDUL             ENGINEER                                                                   
+       RASHEE                                                                                                
+  00 3 ANDERSON, ROBERT TX 75067 56 M 0 Sr AI Engineer 8810 TX F Y 40 S $7,150.00 $14,300.00 $14,070.83 S N C 5.2 3,12,57,58
+  00 4 ANTWINE, LEXUS TX 75201 30 F 0 Onboarding 8810 TX F Y 40 S $2,360.42 $4,720.84 $4,663.55 S N E 5.2 3,12,57,58
+                      5743        Specialis                                                                  
+  00 5 ASPLEN, JOHN DE 19971 55 M 0 VICE PRESIDENT, 953 DE F Y 40 S $7,810.83 $15,621.66 $15,432.08 S N E 5.2 32,12,57,58
+                      8464        COMP                                                                       
+  00 6 ATAL, SHIKHA TX 75035 45 F 0 SCRUM MASTER 8810 TX F N 40 S $5,000.00 $10,000.00 $9,021.89 S N W 5.2 57,58
+  00 7 BAILEY, ANDERSON TX 75202 33 M 0 HELP DESK 8810 TX F N 40 S $2,500.00 $5,000.00 $4,811.91 S N W 5.2 57,58
+                                  TECHNICIAN                                                                 
+  00 8 BAIRI, THARIKA TX 75078 40 F 0 SQL DATABASE 8810 TX F Y 40 S $5,793.75 $11,587.50 $11,446.87 S N W 5.2 57,58
+                                  ENGINEE                                                                    
+  00 9 BANKAR, SUSHMA TX 75056 46 F 0 BUSINESS 8810 TX F Y 40 S  $5,150.00 $10,300.00 $10,175.00 S N F 5.2 33,12,57,58
+                                  ANALYST                                                                    
+  00 10 BARI, ABUL TX 76002 56 M 0 QA ANALYST III 8810 TX F Y 40 S $4,420.42 $8,840.84 $8,733.55 S N F 5.2 3,12,57,58
+                      4757                                                                                   
+                                                                                                             
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 1 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 11 BAYYA, SWETHA TX 75063 30 F 0 BUSINESS 8810 TX F Y 40 S  $4,935.42 $9,870.84 $9,751.05 S N E 5.2 3,12,57,58
+                      8570        ANALYST                                                                    
+  00 12 BELCONIS, EMMA TX 76021 38 F 0 DIRECTOR OF 8810 TX F Y 40 S $7,166.67 $14,333.34 $11,989.16 S N E 5.2 33,12,57,58
+                      2537        PEOPLE &                                                                   
+  00 13 BHARDWAJ, SHIVA TX 75063 52 F 0 SR BUSINESS 8810 TX F Y 40 S $6,299.08 $12,598.16 $12,445.28 S N F 5.2 3,12,57,58
+                                  ANALYST                                                                    
+  00 14 BRIONES, CLARO TX 75019 42 M 0 SR ARCHITECT 8810 TX F Y 40 S $8,845.21 $17,690.42 $16,881.91 S N F 5.2 3,12,57,58
+  00 15 BYRAPAKA,  TX 75009 34 F 0 PRODUCT  8810 TX F  N  40  S  $5,500.00 $11,000.00 $9,559.52 S N E 5.2 32,12,57,58
+       NITHUSHA                   OWNER                                                                      
+  00 16 CHAWANDE,  TX 75025 47 F 0 SR. QA   8810 TX F  Y  40  S  $4,648.08 $9,296.16 $8,871.29 S N C 5.2 58,12,57,58
+       VIVIENNE       2062        ENGINEER                                                                   
+  00 17 CHIPPS, JOHN TX 75019 58 M 0 CHIEF  8810 TX F  Y  40  S  $12,887.88 $25,775.76 $23,538.67 S N F 5.2 3,12,57,58
+                                  TECHNOLOGY                                                                 
+                                  OFF                                                                        
+  00 18 COLLINS, GEORGE TX 75205 59 M 0 CEO 8810 TX F  Y  40  S  $16,666.67 $33,333.34 $29,150.81 S N F 5.1 33,12,57,58
+                      1715                    C                                                              
+  00 19 CORDOVA, NATALIE TX 76071 43 F 0 MANAGER SMALL 8810 TX F Y 40 S $3,776.67 $7,553.34 $7,461.67 S N F 5.2 3,12,57,58
+                      4345        GROUP                                                                      
+  00 20 CRUMP, KAREY TX 75007 45 F 0 VICE PRESIDENT, 8810 TX F Y 40 S $10,025.83 $20,051.66 $18,168.33 S N F 5.2 58,12,57,58
+                                  PROD                                                                       
+                                                                                                             
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 2 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 21 DAVIS,     TX 75010 46 M 0 OPERATIONS 8810 TX F N 40  S  $3,333.33 $6,666.66 $6,276.45 S N E 5.2 33,12,57,58
+       CHRISTOPHER                SPECIALIS                                                                  
+  00 22 DEARMON, KRIS TX 75056 53 F 0 PROGRAM 8810 TX F Y 40  S  $4,720.83 $9,441.66 $9,327.08 S N W 5.2 57,58
+                      7124        MANAGER                                                                    
+  00 23 DIAL, AUSTIN TX 75033 38 M 0 ACCOUNT 8810 TX F Y  40  S  $5,445.04 $10,890.08 $10,757.93 S N F 5.2 3,12,57,58
+                      3358        MANAGER, PDS                                                               
+  00 24 DU PLESSIS, TX 75009 56 M 0 PRODUCT 8810 TX F  N  40  S  $6,250.00 $12,500.00 $11,723.09 S N E 5.2 33,12,57,58
+       LODEWIKUS      3092        OWNER, MANAG                                                               
+  00 25 DUFRESNE, EMILY TX 75025 24 F 0 Underwriter & 8810 TX F Y 40 S $2,833.33 $5,666.66 $5,444.44 S N W 5.2 57,58
+                                  Compli                                                                     
+  00 26 ESHETIE, GIZACHEW TX 75042 35 M 0 SR SOFTWARE 8810 TX F Y 40 S $6,188.58 $12,377.16 $12,226.95 S N E 5.2 32,12,57,58
+                      4075        ENGINEER                                                                   
+  00 27 FARHEEN FATIMA, TX 75048 41 F 0 SR AI ENGINEER 8810 TX F N 40 S $7,500.00 $15,000.00 $14,561.17 S N E 5.2 58,12,57,58
+       NO NAME GIVE   4580                                                                                   
+  00 28 FUENTES SICAIROS, CA 92805 40 M 0 SR ARCHITECT 8810 CA F Y 40 S $9,090.92 $18,181.84 $17,286.63 S N F 5.2 46,12,57,58
+       JORGE          5632                                                                                   
+  00 29 GJINI, IRA TX 76021 30 F 0 PROJECT  8810 TX F  Y  40  S  $3,140.96 $6,281.92 $6,205.65 S N E 5.2 58,12,57,58
+                      4514        MANAGER, HR                                                                
+  00 30 GUILLORY,  TX 75225 29 F 0 DIRECTOR OF 8810 TX F N 40 S  $6,041.67 $12,083.34 $0.00 S N E 5.2 3,12,57,58
+       GABRIELLE                  COMMECIA                                                                   
+  00 31 HALL, CLIFF IL 60155 48 M 0 Manager, 8810 IL F Y  40  S  $5,652.54 $11,305.08 $11,167.89 S N E 5.2 3,12,57,58
+                      4701        Compliance                                                                 
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 3 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 32 HILL, BRIANNA TX 75454 35 F 0 Account Manager, 8810 TX F Y 40 S $5,208.33 $10,416.66 $9,895.83 S N F 5.2 12,57,58
+                                  Ent                                                                        
+  00 33 HOLTSCLAW, TX 76177 51 M 0 PRODUCT  8810 TX F  N  40  S  $5,833.33 $11,666.66 $11,265.43 S N E 5.2 3,12,57,58
+       ANDREW                     OWNER, PAYME                                                               
+  00 34 HORTON, DAVID CA 90720 41 M 0 ARCHITECT, 8810 CA F Y 40 S $7,956.75 $15,913.50 $15,720.37 S N S 5.2 51,12,57,58
+                      3797        SYSTEMS                                                                    
+  00 35 HUDSON, TAYLOR TX 75204 29 F 0 PRODUCT 8810 TX F N 40 S  $4,583.33 $9,166.66 $7,724.86 S N E 5.2 32,12,57,58
+                                  OWNER                                                                      
+  00 36 JOE, MICHAEL TX 75052 48 M 0 CONTACT 8810 TX F Y  40  H   $28.14 $4,886.63 $4,886.63 S N E 5.2 3,12,57,58
+                      7383        CENTER REPRE                                                               
+  00 37 JOHNSON, JAZMINE TX 75067 28 F 0 CONTACT 8810 TX F Y 40 H $22.66 $3,927.73 $3,890.24 S N C 5.2 58,12,57,58
+                      4064        CENTER REPRE                                                               
+  00 38 JOHNSON, NICOLE FL 34240 51 F 0 FIELD SALES 8742 TX F N 40 S $5,000.00 $10,000.00 $8,946.08 S N E 5.2 33,12,57,58
+                      7738        REPRESEN                                                                   
+  00 39 JONES, DAVID TX 75060 51 M 0 SR SOFTWARE 8810 TX F N 40 S $6,250.00 $12,500.00 $12,193.27 S N F 5.2 3,12,57,58
+                                  ENGINEER                                                                   
+  00 40 KAMPERMAN, TX 76179 28 M 0 SOFTWARE 8810 TX F  Y  40  S  $3,750.00 $7,500.00 $7,018.23 S N C 5.2 3,12,57,58
+       CONOR          1547        ENGINEER II                                                                
+  00 41 KANDOORI, RADHIKA CA 92620 44 F 0 SR. QA 8810 CA F Y 40 S $5,758.25 $11,516.50 $11,376.74 S N F 5.2 3,12,57,58
+                      3315        ENGINEER I                                                                 
+  00 42 KHANDAKER, TX 75409 44 M 0 Lead Program 8810 TX F Y 40 S $6,666.67 $14,135.56 $14,135.56 S N F 5.2 3,12,57,58
+       OBAIDUL        6181        Manager                                                                    
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 4 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 43 KING, VERA TX 75061 46 F 0 LEAD CONTACT 8810 TX F Y 40 H  $31.62 $5,480.80 $5,150.02 S N C 5.2 3,12,57,58
+                      8263        CENTER                                                                     
+  00 44 KNIGHT, CAMILLE AL 35803 50 F 0 SR PRODUCT 8810 AL F Y 40 S $6,605.13 $13,210.26 $13,049.96 S N E 5.2 12,57,58
+                      1705        MANAGER,                                                                   
+  00 45 KROEHLE, TRACEY TX 75093 64 F 0 FIELD SALES 8810 TX F Y 40 S $5,150.00 $10,300.00 $10,175.00 S N S 5.2 3,12,57,58
+                      6304        REPRESEN                                                                   
+  00 46 KULKARNI, SHRUTI TX 75071 30 F 0 CRM DATA 8810 TX F N 40 S $4,166.67 $8,333.34 $7,759.36 S N W 5.2 57,58
+                                  ANALYST                                                                    
+  00 47 LANASKI, CHRISTINA TX 76109 28 F 0 LEAD 8810 TX F Y 40 S $6,783.00 $13,566.00 $12,481.49 S N E 5.2 32,12,57,58
+                                  INFRASTRUCTUR                                                              
+                                  E                                                                          
+  00 48 LIN, JUIYING TX 75287 46 F 0 SR UX DESIGNER 8810 TX F Y 40 S $4,935.42 $9,870.84 $9,751.05 S N S 5.2 12,57,58
+  00 49 LITTLE, PAUL TX 75234 29 M 0 PRODUCT 8810 TX F Y  40  S  $6,597.50 $13,195.00 $12,693.96 S N E 5.2 32,12,57,58
+                      5023        MANAGER                                                                    
+  00 50 LOWRY, LISA VA 22932 53 F 0 TERRITORY 8810 VA F N 40  S  $5,000.00 $10,000.00 $5,849.36 S N W 5.2 57,58
+                                  MANAGER                                                                    
+  00 51 LOYA HULSEY, TX 75104 35 F 0 ENTERPRISE 8810 TX F N 40 S $4,895.83 $9,791.66 $9,142.35 S N F 5.2 32,12,57,58
+       LARYSSA                    ACCOUNT M                                                                  
+  00 52 MARINENI, VIJAY TX 76227 32 M 0 PRODUCT 8810 TX F Y 40 S $5,467.58 $10,935.16 $10,457.08 S N F 5.2 3,12,57,58
+       DANIEL         2420        OWNER                                                                      
+  00 53 MAYS, KIM  TX 76065 45 F 0 ACCOUNTING 8810 TX F Y 40  S  $5,557.71 $11,115.42 $10,980.52 S N K 5.2 32,12,57,58
+                                  MANAGER                                                                    
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 5 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 53 MAYS, KIM  TX 76065 45 F 0 ACCOUNTING 8810 TX F Y 40  S  $5,557.71 $11,115.42 $10,980.52 S N K 5.2 32,12,57,58
+                                  MANAGER                                                                    
+  00 54 MBAHYAM, LUCY TX 75068 38 F 0 SCRUM MASTER 8810 TX F Y 40 S $4,720.83 $9,441.66 $9,327.08 S N E 5.2 32,57,58
+  00 55 MCARDLE,   TX 76034 34 M 0 SOFTWARE 8810 TX F  Y  40  S  $6,008.33 $12,016.66 $11,870.83 S N F 5.2 3,12,57,58
+       ALEXANDER      5024        ENGINEER II                                                                
+  00 56 MCGEE, MATTHEW TX 75075 43 M 0 VENDOR 8810 TX F N 40  S  $5,208.33 $10,416.66 $9,529.02 S N S 5.2 12,57,58
+                                  MANAGER, STRA                                                              
+  00 57 MCGLUMPHY, TX 75024 56 M 0 SOFTWARE 8810 TX F  Y  40  S  $6,008.33 $12,016.66 $11,870.83 S N F 5.2 58,12,57,58
+       MICHAEL                    ENGINEER II                                                                
+  00 58 MCKEE, MATTHEW TX 78256 43 M 0 SR RECRUITER 8810 TX F Y 40 S $5,304.50 $10,609.00 $10,480.25 S N E 5.2 33,12,57,58
+                      1776                                                                                   
+  00 59 MEYER, CHRISTIAN NE 68507 44 M 0 FIELD SALES 8742 NE F Y 40 S $5,050.00 $10,100.00 $10,058.33 S N E 5.2 3,12,57,58
+                                  REPRESEN                                                                   
+  00 60 MITCHELL,  TX 75072 54 F 0 OPERATIONS 8810 TX F N 40  S  $3,333.33 $6,666.66 $5,925.32 S N C 5.2 3,12,57,58
+       STEPHANIE                  SPECIALIS                                                                  
+  00 61 MONROE, DESTINY TX 75071 38 F 0 IMPLEMENTATION 8810 TX F Y 40 S $2,916.67 $5,833.34 $5,833.34 S N E 5.2 3,12,57,58
+                                  SPECI                                                                      
+  00 62 MOORE, RASHAD TX 76244 46 M 0 OPERATIONS 8810 TX F Y 40 S $4,791.67 $9,583.34 $8,020.84 S N E 5.2 3,12,57,58
+                                  MANAGER                                                                    
+  00 63 MORRIS, GENE TX 75234 53 M 0 LEAD TECHNICAL 8810 TX F N 40 S $5,833.33 $11,666.66 $11,291.03 S N E 5.2 3,12,57,58
+                                  BUSIN                                                                      
+  00 64 MYRICK, DARYL TX 75075 66 M 0 Dev Team Lead 8810 TX F Y 40 S $7,333.33 $14,666.66 $14,666.66 S N S 5.2 3,12,57,58
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 6 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 65 NARAYANAN, TX 75019 47 M 0 DIRECTOR, QA 8810 TX F Y 40 S $8,760.96 $17,521.92 $16,721.12 S N F 5.2 3,12,57,58
+       HARIHARA SUB   2981                                                                                   
+  00 66 PAAPE, SCOTT TX 75034 48 M 0 SENIOR VICE 8742 TX F N 40 S $11,250.00 $22,500.00 $19,997.97 S N K 5.2 3,12,57,58
+                                  PRESIDEN                                                                   
+  00 67 PANCHAL, NIMESH TX 75071 43 M 0 SR SOFTWARE 8810 TX F Y 40 S $6,829.54 $13,659.08 $13,493.32 S N F 5.2 3,12,57,58
+                      7160        ENGINEER                                                                   
+  00 68 PARIKH, AMIT TX 75034 55 M 0 DIRECTOR OF 8810 TX F Y 40 S $9,727.08 $19,454.16 $19,334.37 S N F 5.2 3,12,57,58
+                                  ARCHITEC                                                                   
+  00 69 PARK, EDMUND CA 92656 40 M 0 SR SOFTWARE 8810 CA F Y 40 S $6,377.58 $12,755.16 $12,550.75 S N F 5.2 46,12,57,58
+                                  ENGINEER                                                                   
+  00 70 PARRA, CARLOS CO 80109 53 M 0 DATABASE 8810 CO F Y 40 S  $6,935.33 $13,870.66 $13,813.44 S N S 5.2 3,12,57,58
+                                  MANAGER                                                                    
+  00 71 PATEL, JAY TX 75067 33 M 0 SENIOR   8810 TX F  N  40  S  $6,250.00 $12,500.00 $11,434.84 S N F 5.2 3,57,58
+                                  SOFTWARE ENGI                                                              
+  00 72 PELC, ORRIE TX 76210 52 M 0 SR. SOFTWARE 8810 TX F N 40 S $6,041.67 $12,083.34 $11,641.05 S N S 5.2 3,12,57,58
+                                  ENGINEE                                                                    
+  00 73 PEMBERTON, TX 75248 45 M 0 DIRECTOR OF 8810 TX F N 40 S  $7,916.67 $15,833.34 $13,855.48 S N F 5.2 3,12,57,58
+       THOMAS                     PMO                                                                        
+  00 74 PERRY, JOHN TX 76001 37 M 0 SOFTWARE 8810 TX F Y  40  S  $4,854.17 $9,708.34 $9,309.03 S N E 5.2 3,12,57,58
+                                  ENGINEER II                                                                
+  00 75 PETRE, DANIELLE TX 75204 35 F 0 ACCOUNT 8810 TX F Y 40 S $3,004.17 $6,008.34 $5,935.42 S N E 5.2 32,12,57,58
+                      5269        SPECIALIST                                                                 
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 7 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 76 POSINA, ROHIT TX 75036 44 M 0 SOFTWARE 8810 TX F N 40 S  $7,500.00 $15,000.00 $14,342.04 S N C 5.2 32,12,57,58
+                                  ARCHITECT                                                                  
+  00 77 REW, ROBERT CA 92649 65 M 0 GENERAL 8810 CA F  N  40  S  $8,958.33 $17,916.66 $17,375.70 S N E 5.2 3,12,57,58
+                      2061        COUNSEL                                                                    
+  00 78 RICHARDSON, TX 76071 42 M 0 ACCOUNT 8810 TX F  N  40  S  $2,916.67 $5,833.34 $5,040.65 S N S 5.2 3,12,57,58
+       JOSHUA                     SPECIALIST                                                                 
+  00 79 ROSENBAUM, TX 75072 55 M 0 TECHNICAL 8810 TX F N  40  S  $3,541.67 $7,083.34 $6,839.73 S N E 5.2 3,12,57,58
+       CHARLES                    OPERATIONS                                                                 
+  00 80 ROY, BRETT TX 75028 62 M 0 SR SOFTWARE 8810 TX F Y 40 S  $6,471.83 $12,943.66 $12,736.23 S N E 5.2 58,12,57,58
+                                  ENGINEER                                                                   
+  00 81 RUBIO,     CA 92604 53 M 0 SR. ARCHITECT 8810 CA F Y 40 S $9,345.29 $18,690.58 $18,613.47 S N F 5.2 58,12,57,58
+       CHRISTOPHER    4618                                                                                   
+  00 82 SANTAMARIA, JESSE TX 76226 34 M 0 SUPPORT 8810 TX F N 40 S $5,208.33 $10,416.66 $10,137.00 S N E 5.2 32,12,57,58
+                                  ENGINEER                                                                   
+  00 83 SARWAR, QUAZI TX 75033 46 F 0 BUSINESS 8810 TX F Y 40 S  $5,286.46 $10,572.92 $10,507.81 S N K 5.2 32,12,57,58
+                                  ANALYST                                                                    
+  00 84 SCHENTUR,  CA 92867 66 F 0 FIELD SALES 8742 CA F Y 40 S  $5,201.50 $10,403.00 $10,360.08 S N C 5.2 46,12,57,58
+       KIMBERLY                   REPRESEN                                                                   
+  00 85 SCHNIEDERJAN, TX 75019 35 M 0 DATA ANALYST 8810 TX F Y 40 S $5,125.00 $10,250.00 $9,734.37 S N F 5.2 58,12,57,58
+       JEFFREY                                                                                               
+  00 86 SERRANO, LISA CA 92865 50 F 0 DIRECTOR OF 8810 CA F Y 40 S $7,865.17 $15,730.34 $15,539.45 S N K 5.2 3,12,57,58
+                      3691        ENGINEER                                                                   
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 8 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 87 SIDAVANH, VANNARY CA 92109 43 F 0 SR. FINANCIAL 8810 CA F Y 40 S $5,161.04 $10,322.08 $10,196.81 S N E 5.2 3,12,57,58
+                      4340        ANALYS                                                                     
+  00 88 SIMPSON, JEFFREY TX 76054 50 M 0 IT SECURITY 8810 TX F N 40 S $4,375.00 $8,750.00 $8,041.82 S N E 5.2 33,57,58
+                      2317        SYSTEM A                                                                   
+  00 89 SKEETE, EZRA TX 75052 30 M 0 ACCOUNT 8810 TX F Y  40  S  $3,004.17 $6,008.34 $5,484.03 S N E 5.2 32,12,57,58
+                                  SPECIALIST                                                                 
+  00 90 SMITH, BRADLEY WA 98075 58 M 0 FIELD SALES 5302 WA F Y 40 S $5,150.00 $10,300.00 $10,175.00 S N E 5.2 32,12,57,58
+                      9177        REPRESEN                                                                   
+  00 91 SNIDER, MARY CO 80210 42 F 0 VP, BUSINESS 8810 CO F N 40 S $10,416.67 $20,833.34 $16,973.59 S N C 5.2 96,12,57,58
+                                  DEVELOP                                                                    
+  00 92 SONG, JIYOON CA 92694 56 F 0 VP, Accounting & 8810 CA F Y 40 S $9,724.92 $19,449.84 $19,213.80 S N E 5.2 3,12,57,58
+                      1526        Adm                                                                        
+  00 93 STANLY     TX 75071 44 M 0 PRINCIPAL 8810 TX F Y  40  S  $7,081.25 $14,162.50 $13,990.62 S N K 5.2 3,12,57,58
+       SUNDARSINGH,               SOFTWARE E                                                                 
+       WESLEY SAMUE                                                                                          
+  00 94 TANG, CHUAN TX 76227 50 M 0 SOFTWARE 8810 TX F N  40  S  $7,500.00 $15,000.00 $13,331.98 S N K 5.2 32,12,57,58
+                                  ARCHITECT                                                                  
+  00 95 TEBEAU,    TX 75002 39 M 0 PRODUCT  8810 TX F  Y  40  S  $6,008.33 $12,016.66 $11,870.83 S N E 5.2 3,12,57,58
+       JOHNATHAN      1817        MANAGER, FIN                                                               
+  00 96 THAPA, ROJESH TX 75063 28 M 0 SR POWER 8810 TX F Y 40 S  $5,497.92 $10,995.84 $10,928.13 S V E 5.2 58,57,58
+                      5227        PLATFORM DE                                                                
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 9 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+  00 97 THARP, WALLACE TX 76039 54 M 0 CHIEF 8810 TX F Y  40  S  $13,345.38 $26,690.76 $23,507.91 S N F 5.2 3,12,57,58
+                      1440        OPERATING OFFI                                                             
+  00 98 THOMAS, JASON TX 76244 41 M 0 ARCHITECT 8810 TX F Y 40 S $6,943.75 $13,887.50 $13,830.21 S N F 5.2 32,12,57,58
+  00 99 TOKERUD, TIMOTHY TX 76051 59 M 0 DIRECTOR OF 8810 TX F Y 40 S $7,851.79 $15,703.58 $15,512.98 S N C 5.2 32,12,57,58
+                                  DATA & A                                                                   
+  00 100 VICK, TODD TX 75036 58 M 0 CHIEF FINANCIAL 8810 TX F Y 40 S $13,958.33 $27,916.66 $27,551.38 S N F 5.1 3,12,57,58
+                      7294        OFFI                                                                       
+  00 101 VILLIAPAKAM TX 75050 35 F 0 .NET & BI 8810 TX F Y 40 S  $5,364.58 $10,729.16 $9,299.07 S N C 5.2 33,12,57,58
+       PREMSAGA, DIPIKA           INTEGRATIO                                                                 
+  00 102 WATKINS, JAMIE TX 76082 41 F 0 DIRECTOR, 8810 TX F Y 40 S $7,612.50 $15,225.00 $15,131.25 S N S 5.2 3,12,57,58
+                                  REVENUE OP                                                                 
+  00 103 WERNER, MARK AZ 86336 61 M 0 PRINCIPAL 8810 AZ F Y 40 S $9,759.42 $19,518.84 $19,206.02 S N F 5.2 3,12,57,58
+                      7139        SOFTWARE E                                                                 
+  00 104 WEST, CARMEN TX 75061 49 F 0 CONTACT 8810 TX F N 38  H   $23.75 $3,954.06 $3,646.99 S N E 5.2 3,12,57,58
+                                  CENTER REPRE                                                               
+  00 105 WILSON,   TX 75071 44 M 0 VICE PRESIDENT, 8810 TX F Y 40 S $9,282.90 $18,565.80 $15,799.44 S N F 5.2 3,12,57,58
+       CHRISTOPHER    3376        INFO                                                                       
+  00 106 YOUNGBLOOD, LISA TX 75035 54 F 0 DIRECTOR, 8810 TX F Y 40 S $7,612.50 $15,225.00 $15,131.25 S N K 5.2 33,12,57,58
+                                  OPERATIONS                                                                 
+                                                                       $1,312,424.56                         
+   LEGEND:                                                                                                   
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 10 of 11
+                                                                                                             
+                                                                                                             
+                                             CONFIDENTIAL                                     Schedule A     
+                                                                                                             
+   Client Information:                                                       Client/Version No.: 5169600-15-2-R
+   WELLFIT TECHNOLOGIES, INC.                                                Date:        08/17/2026         
+   125 E JOHN CARPENTER FWY STE 1200                                         Print Date:  10/30/2026         
+   IRVING, TX 750622288                                                      Business:    Computer systems design
+   Phone: (855)493-5534                                                                                      
+   Fax:                                                                                                      
+                                                                             Sales Rep:   SARAH HOGAN        
+   Contact:                                                                  Payroll Specialist: ROXANNA E ALLEN
+                                                                             Office:      DENVER 1           
+   Client Associated Subclients: 5169600                                                                     
+                                                                                                             
+   Benefit Package: Independence Premier - U                                                                 
+                                                          AVG                                                
+                                                   FULL   HRS SALARY                               COV.      
+  CL.              HOME HOME  GROUP         W/C WORK PART ACA PER HOURLY PROJ. $AVG / HIST. $AVG/ PAY COV CLASS GROUP(S) /
+  NO. NO. EMPLOYEE NAME STATE ZIP AGE SEX NO. JOB TITLE CODE STATE SEASELIGIBLE WK COMM PAY AMOUNT MONTH MONTH FREQ. FE LEVEL CODE OPTION(S)
+   LEGEND:                                                                                                   
+  Coverage  Coverage Description                                                                             
+    3  500 Deductible                                                                                        
+    32 1700 Deductible - HDHP (1750 in 2027)                                                                 
+    33 250 Deductible                                                                                        
+    46 Kaiser HMO CA South                                                                                   
+    51 UHC of CA HMO South                                                                                   
+    58 5000 Deductible - HDHP                                                                                
+                                                                                                             
+    96 Kaiser HMO CO                                                                                         
+    12 50 Deductible Dental and Vision                                                                       
+    57 Basic Life Insurance                                                                                  
+    58 Basic AD&D                                                                                            
+                                                                                                             
+   Coverage Level: E - Employee S - Spouse C - Child K - Children F - Family I - Ineligible W - Waived       
+                                                                                                             
+   FICA Exempt (FE): T - Teacher M - Minister V - VISA N - No Exemptions O - Self-Employed Owner             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+   * - Signifies Duplicate Employee                                                                          
+   ** - Signifies Indemnity                                                                                  
+   C - Signifies W/C Cap                                                                                     
+   ACA - Signifies Affordable Care Act                                                                       
+                                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 11 of 11
+
+--- [EXTRACTED TABLES SUMMARY] ---
+
+[Table 1: p1_x1 (Rows: 40, Columns: 23)]
+   Client Information:           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+         WELLFIT TECHN   OLOGIES, INC     .   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+         125 E JOHN CA    RPENTER FWY   STE   1200  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+       IRVING, TX 7506          22288  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+         Phone: (855)4        93-5534  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  Fax:           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+              Contact:           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+     Client Associated  Subclients: 5 16960      0  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      Benefit Package:             In  depe ndence Premi er - U <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA>  AVG <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    FULL   <NA>  HRS   SA   LARY           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+                    L.              H   OME   HOME  <NA>     GR  OUP                  <NA>     W/C    WORK  PART A     CA  PER   HO   URLY              P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+        O. NO. EMPLOYE       E NAME S  TATE    ZIP AGE S   EX N   O.           JOB TITLE C     ODE   STATE SEASELI  GIBLE   WK   CO   MM P      AY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+            0 1 ABBOTT     -BULLOCKS,    TX  75181    59      F    0                 HUMAN    8810      TX       F      N   40 <NA>      S      $5,208.33 $10,416.     66     $10,137.00    S    N        S 5.2  3,12,57,58
+                JEANNE            TTE  <NA>   <NA>  <NA>   <NA> <NA>              RESOURCE    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                 MANAG    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+            0 2 ABUBAK             AR    TX  75071    43      M    0           SR SOFTWARE    8810      TX       F      Y   40 <NA>      S      $6,652.08 $13,304.     16     $13,142.70    S    N        K 5.2    58,57,58
+                MARICA       R, ABDUL  <NA>   <NA>  <NA>   <NA> <NA>              ENGINEER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                RASHEE           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+            0 3 ANDERS     ON, ROBERT    TX  75067    56      M    0        Sr AI Engineer    8810      TX       F      Y   40 <NA>      S      $7,150.00 $14,300.     00     $14,070.83    S    N        C 5.2  3,12,57,58
+            0 4 ANTWIN       E, LEXUS    TX  75201    30      F    0            Onboarding    8810      TX       F      Y   40 <NA>      S      $2,360.42 $4,720.8      4      $4,663.55    S    N        E 5.2  3,12,57,58
+                  <NA>           <NA>  <NA>   5743  <NA>   <NA> <NA>             Specialis    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+            0 5 ASPLEN         , JOHN    DE  19971    55      M    0       VICE PRESIDENT,     953      DE       F      Y   40 <NA>      S      $7,810.83 $15,621.     66     $15,432.08    S    N        E 5.2 32,12,57,58
+                  <NA>           <NA>  <NA>   8464  <NA>   <NA> <NA>                  COMP    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 6 ATAL, S          HIKHA    TX  75035    45      F    0          SCRUM MASTER    8810      TX       F      N   40 <NA>      S      $5,000.00 $10,000.     00      $9,021.89    S    N        W 5.2       57,58
+           0 7 BAILEY,       ANDERSON    TX  75202    33      M    0             HELP DESK    8810      TX       F      N   40 <NA>      S      $2,500.00 $5,000.0      0      $4,811.91    S    N        W 5.2       57,58
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>            TECHNICIAN    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 8 BAIRI, T         HARIKA    TX  75078    40      F    0          SQL DATABASE    8810      TX       F      Y   40 <NA>      S      $5,793.75 $11,587.     50     $11,446.87    S    N        W 5.2       57,58
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>               ENGINEE    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+            0 9 BANKAR       , SUSHMA    TX  75056    46      F    0              BUSINESS    8810      TX       F      Y   40 <NA>      S      $5,150.00 $10,300.     00     $10,175.00    S    N        F 5.2 33,12,57,58
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>               ANALYST    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+         0 10 BARI, AB             UL    TX  76002    56      M    0        QA ANALYST III    8810      TX       F      Y   40 <NA>      S      $4,420.42 $8,840.8      4      $8,733.55    S    N        F 5.2  3,12,57,58
+                  <NA>           <NA>  <NA>   4757  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+* - Signifies Duplicat     e Employee  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+ ** - Signifies Indemn            ity  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  C - Signifies W/C Ca              p  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+ ACA - Signifies Affor dable Care Act  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>           <NA>  <NA>   <NA>  <NA>   <NA>  Ins perity • 19001 Cresce nt Spri ngs Dr. • Kingw ood, T X 77   33 9-3802 • 1-800-237-31 70 • www .inspe       rity.com <NA> <NA>          Pag    e 1 of 1
+------------------------------------------------------------
+
+[Table 2: p2_x1 (Rows: 39, Columns: 23)]
+  Client Informati                 on:  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+        WELLFIT TE     CHNOLOGIES, INC     .   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+        125 E JOHN       CARPENTER FWY   STE   1200  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+      IRVING, TX 7            50622288  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+        Phone: (85          5)493-5534  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+              Fax:                <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+              <NA>                <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+          Contact:                <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+              <NA>                <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+     Client Associ  ated Subclients: 5 16960      0  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      Benefit Pack             age: In  depe ndence Premi er - U <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+              <NA>                <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA>  AVG <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+              <NA>                <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    FULL  <NA>  HRS   SA LARY       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+                L.                   H   OME   HOME  <NA>     GR  OUP            <NA>  W/C  WORK  PART A    CA  PER   HO URLY          P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+        O. NO. EMP        LOYEE NAME S  TATE    ZIP AGE S   EX N   O.     JOB TITLE C  ODE STATE SEASELI GIBLE   WK   CO   MM PAY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+          0 11 BAY          YA, SWETHA    TX  75063    30      F    0        BUSINESS 8810    TX       F     Y   40 <NA>    S  $4,935.42 $9,870.8      4      $9,751.05    S    N        E 5.2  3,12,57,58
+              <NA>                <NA>  <NA>   8570  <NA>   <NA> <NA>         ANALYST <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+         0 12 BELC          ONIS, EMMA    TX  76021    38      F    0     DIRECTOR OF 8810    TX       F     Y   40 <NA>    S  $7,166.67 $14,333.     34     $11,989.16    S    N        E 5.2 33,12,57,58
+              <NA>                <NA>  <NA>   2537  <NA>   <NA> <NA>        PEOPLE & <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 13 BHA        RDWAJ, SHIVA    TX  75063    52      F    0     SR BUSINESS 8810    TX       F     Y   40 <NA>    S  $6,299.08 $12,598.     16     $12,445.28    S    N        F 5.2  3,12,57,58
+              <NA>                <NA>  <NA>   <NA>  <NA>   <NA> <NA>         ANALYST <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+         0 14 BRIO          NES, CLARO    TX  75019    42      M    0    SR ARCHITECT 8810    TX       F     Y   40 <NA>    S  $8,845.21 $17,690.     42     $16,881.91    S    N        F 5.2  3,12,57,58
+          0 15 BYR              APAKA,    TX  75009    34      F    0         PRODUCT 8810    TX       F     N   40 <NA>    S  $5,500.00 $11,000.     00      $9,559.52    S    N        E 5.2 32,12,57,58
+              NITH                USHA  <NA>   <NA>  <NA>   <NA> <NA>           OWNER <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 16 CHA              WANDE,    TX  75025    47      F    0          SR. QA 8810    TX       F     Y   40 <NA>    S  $4,648.08 $9,296.1      6      $8,871.29    S    N        C 5.2 58,12,57,58
+             VIVIE                 NNE  <NA>   2062  <NA>   <NA> <NA>        ENGINEER <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+         0 17 CHIP            PS, JOHN    TX  75019    58      M    0           CHIEF 8810    TX       F     Y   40 <NA>    S $12,887.88 $25,775.     76     $23,538.67    S    N        F 5.2  3,12,57,58
+              <NA>                <NA>  <NA>   <NA>  <NA>   <NA> <NA>      TECHNOLOGY <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+              <NA>                <NA>  <NA>   <NA>  <NA>   <NA> <NA>             OFF <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 18 COL        LINS, GEORGE    TX  75205    59      M    0             CEO 8810    TX       F     Y   40 <NA>    S $16,666.67 $33,333.     34     $29,150.81    S    N        F 5.1 33,12,57,58
+              <NA>                <NA>  <NA>   1715  <NA>   <NA> <NA>            <NA>    C  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 19 COR       DOVA, NATALIE    TX  76071    43      F    0   MANAGER SMALL 8810    TX       F     Y   40 <NA>    S  $3,776.67 $7,553.3      4      $7,461.67    S    N        F 5.2  3,12,57,58
+              <NA>                <NA>  <NA>   4345  <NA>   <NA> <NA>           GROUP <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 20 CRU           MP, KAREY    TX  75007    45      F    0 VICE PRESIDENT, 8810    TX       F     Y   40 <NA>    S $10,025.83 $20,051.     66     $18,168.33    S    N        F 5.2 58,12,57,58
+              <NA>                <NA>  <NA>   <NA>  <NA>   <NA> <NA>            PROD <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+ * - Signifies Dup     licate Employee  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+** - Signifies Ind              emnity  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  C - Signifies W/               C Cap  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+   ACA - Signifies Affordable Care Act  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+------------------------------------------------------------
+
+[Table 3: p3_x1 (Rows: 42, Columns: 23)]
+ Client Inf                  ormation:  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+     WELLFI        T TECHNOLOGIES, INC     .   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+    125 E J          OHN CARPENTER FWY   STE   1200  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+     IRVING             , TX 750622288  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+     Phone:              (855)493-5534  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       Fax:                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+    Contact                          :  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+   Client A    ssociated Subclients: 5 16960      0  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+    Benefit                Package: In  depe ndence Premi er - U <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA>  AVG <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    FULL   <NA>  HRS   SA   LARY           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+        CL.                          H   OME   HOME  <NA>     GR  OUP                  <NA>     W/C    WORK  PART A     CA  PER   HO   URLY              P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+    NO. NO.            EMPLOYEE NAME S  TATE    ZIP AGE S   EX N   O.           JOB TITLE C     ODE   STATE SEASELI  GIBLE   WK   CO   MM P      AY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+      00 21                     DAVIS,    TX  75010    46      M    0            OPERATIONS    8810      TX       F      N   40 <NA>      S      $3,333.33 $6,666.6      6      $6,276.45    S    N        E 5.2 33,12,57,58
+       <NA>                CHRISTOPHER  <NA>   <NA>  <NA>   <NA> <NA>             SPECIALIS    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 22              DEARMON, KRIS    TX  75056    53      F    0               PROGRAM    8810      TX       F      Y   40 <NA>      S      $4,720.83 $9,441.6      6      $9,327.08    S    N        W 5.2       57,58
+       <NA>                       <NA>  <NA>   7124  <NA>   <NA> <NA>               MANAGER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 23               DIAL, AUSTIN    TX  75033    38      M    0               ACCOUNT    8810      TX       F      Y   40 <NA>      S      $5,445.04 $10,890.     08     $10,757.93    S    N        F 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   3358  <NA>   <NA> <NA>          MANAGER, PDS    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 24                DU PLESSIS,    TX  75009    56      M    0               PRODUCT    8810      TX       F      N   40 <NA>      S      $6,250.00 $12,500.     00     $11,723.09    S    N        E 5.2 33,12,57,58
+       <NA>                  LODEWIKUS  <NA>   3092  <NA>   <NA> <NA>          OWNER, MANAG    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 25            DUFRESNE, EMILY    TX  75025    24      F    0         Underwriter &    8810      TX       F      Y   40 <NA>      S      $2,833.33 $5,666.6      6      $5,444.44    S    N        W 5.2       57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                Compli    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 26          ESHETIE, GIZACHEW    TX  75042    35      M    0           SR SOFTWARE    8810      TX       F      Y   40 <NA>      S      $6,188.58 $12,377.     16     $12,226.95    S    N        E 5.2 32,12,57,58
+       <NA>                       <NA>  <NA>   4075  <NA>   <NA> <NA>              ENGINEER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 27            FARHEEN FATIMA,    TX  75048    41      F    0        SR AI ENGINEER    8810      TX       F      N   40 <NA>      S      $7,500.00 $15,000.     00     $14,561.17    S    N        E 5.2 58,12,57,58
+       <NA>               NO NAME GIVE  <NA>   4580  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 28          FUENTES SICAIROS,    CA  92805    40      M    0          SR ARCHITECT    8810      CA       F      Y   40 <NA>      S      $9,090.92 $18,181.     84     $17,286.63    S    N        F 5.2 46,12,57,58
+       <NA>                      JORGE  <NA>   5632  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 29                 GJINI, IRA    TX  76021    30      F    0               PROJECT    8810      TX       F      Y   40 <NA>      S      $3,140.96 $6,281.9      2      $6,205.65    S    N        E 5.2 58,12,57,58
+       <NA>                       <NA>  <NA>   4514  <NA>   <NA> <NA>           MANAGER, HR    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 30                  GUILLORY,    TX  75225    29      F    0           DIRECTOR OF    8810      TX       F      N   40 <NA>      S      $6,041.67 $12,083.     34          $0.00    S    N        E 5.2  3,12,57,58
+       <NA>                  GABRIELLE  <NA>   <NA>  <NA>   <NA> <NA>              COMMECIA    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 31                HALL, CLIFF    IL  60155    48      M    0              Manager,    8810      IL       F      Y   40 <NA>      S      $5,652.54 $11,305.     08     $11,167.89    S    N        E 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   4701  <NA>   <NA> <NA>            Compliance    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+* - Signifi      es Duplicate Employee  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+** - Signif              ies Indemnity  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+C - Signifi                 es W/C Cap  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  ACA - Sig nifies Affordable Care Act  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA>  Ins perity • 19001 Cresce nt Spri ngs Dr. • Kingw ood, T X 77   33 9-3802 • 1-800-237-31 70 • www .inspe       rity.com <NA> <NA>          Pag    e 3 of 1
+------------------------------------------------------------
+
+[Table 4: p4_x1 (Rows: 40, Columns: 23)]
+ Client Inf               ormation:  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+     WELLFI     T TECHNOLOGIES, INC     .   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+    125 E J       OHN CARPENTER FWY   STE   1200  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+     IRVING          , TX 750622288  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+     Phone:           (855)493-5534  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       Fax:                    <NA>  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                    <NA>  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+    Contact                       :  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+       <NA>                    <NA>  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+   Client A ssociated Subclients: 5 16960      0  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+    Benefit             Package: In  depe ndence Premi er - U <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                    <NA>  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA>  AVG <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                    <NA>  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    FULL  <NA>  HRS   SA LARY      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+        CL.                       H   OME   HOME  <NA>     GR  OUP             <NA>  W/C  WORK  PART A    CA  PER   HO URLY         P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+    NO. NO.         EMPLOYEE NAME S  TATE    ZIP AGE S   EX N   O.      JOB TITLE C  ODE STATE SEASELI GIBLE   WK   CO MM P AY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+      00 32           HILL, BRIANNA    TX  75454    35      F    0 Account Manager, 8810    TX       F     Y   40 <NA>    S $5,208.33 $10,416.     66      $9,895.83    S    N        F 5.2    12,57,58
+       <NA>                    <NA>  <NA>   <NA>  <NA>   <NA> <NA>              Ent <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 33              HOLTSCLAW,    TX  76177    51      M    0          PRODUCT 8810    TX       F     N   40 <NA>    S $5,833.33 $11,666.     66     $11,265.43    S    N        E 5.2  3,12,57,58
+       <NA>                  ANDREW  <NA>   <NA>  <NA>   <NA> <NA>     OWNER, PAYME <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 34           HORTON, DAVID    CA  90720    41      M    0       ARCHITECT, 8810    CA       F     Y   40 <NA>    S $7,956.75 $15,913.     50     $15,720.37    S    N        S 5.2 51,12,57,58
+       <NA>                    <NA>  <NA>   3797  <NA>   <NA> <NA>          SYSTEMS <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 35          HUDSON, TAYLOR    TX  75204    29      F    0          PRODUCT 8810    TX       F     N   40 <NA>    S $4,583.33 $9,166.6      6      $7,724.86    S    N        E 5.2 32,12,57,58
+       <NA>                    <NA>  <NA>   <NA>  <NA>   <NA> <NA>            OWNER <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 36            JOE, MICHAEL    TX  75052    48      M    0          CONTACT 8810    TX       F     Y   40 <NA>    H    $28.14 $4,886.6      3      $4,886.63    S    N        E 5.2  3,12,57,58
+       <NA>                    <NA>  <NA>   7383  <NA>   <NA> <NA>     CENTER REPRE <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 37        JOHNSON, JAZMINE    TX  75067    28      F    0          CONTACT 8810    TX       F     Y   40 <NA>    H    $22.66 $3,927.7      3      $3,890.24    S    N        C 5.2 58,12,57,58
+       <NA>                    <NA>  <NA>   4064  <NA>   <NA> <NA>     CENTER REPRE <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 38         JOHNSON, NICOLE    FL  34240    51      F    0      FIELD SALES 8742    TX       F     N   40 <NA>    S $5,000.00 $10,000.     00      $8,946.08    S    N        E 5.2 33,12,57,58
+       <NA>                    <NA>  <NA>   7738  <NA>   <NA> <NA>         REPRESEN <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 39            JONES, DAVID    TX  75060    51      M    0      SR SOFTWARE 8810    TX       F     N   40 <NA>    S $6,250.00 $12,500.     00     $12,193.27    S    N        F 5.2  3,12,57,58
+       <NA>                    <NA>  <NA>   <NA>  <NA>   <NA> <NA>         ENGINEER <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 40              KAMPERMAN,    TX  76179    28      M    0         SOFTWARE 8810    TX       F     Y   40 <NA>    S $3,750.00 $7,500.0      0      $7,018.23    S    N        C 5.2  3,12,57,58
+       <NA>                   CONOR  <NA>   1547  <NA>   <NA> <NA>      ENGINEER II <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 41       KANDOORI, RADHIKA    CA  92620    44      F    0           SR. QA 8810    CA       F     Y   40 <NA>    S $5,758.25 $11,516.     50     $11,376.74    S    N        F 5.2  3,12,57,58
+       <NA>                    <NA>  <NA>   3315  <NA>   <NA> <NA>       ENGINEER I <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 42              KHANDAKER,    TX  75409    44      M    0     Lead Program 8810    TX       F     Y   40 <NA>    S $6,666.67 $14,135.     56     $14,135.56    S    N        F 5.2  3,12,57,58
+       <NA>                 OBAIDUL  <NA>   6181  <NA>   <NA> <NA>          Manager <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+* - Signifi   es Duplicate Employee  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+** - Signif           ies Indemnity  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+C - Signifi              es W/C Cap  <NA>   <NA>  <NA>   <NA> <NA>             <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>      <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+------------------------------------------------------------
+
+[Table 5: p5_x1 (Rows: 42, Columns: 24)]
+ Client Inf       ormation:         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+     WELLFI        T TECHNO  LOGIES, INC     .   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+    125 E J        OHN CARP    ENTER FWY   STE   1200  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+     IRVING     , TX 750622          288  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+     Phone:       (855)493-         5534  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       Fax:            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+    Contact               :         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+   Client A     ssociated S ubclients: 5 16960      0  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+    Benefit        Package:           In  depe ndence Premi er - U <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA>  AVG <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    FULL   <NA>  HRS   SA   LARY           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+        CL.            <NA>            H   OME   HOME  <NA>     GR  OUP                  <NA>     W/C    WORK  PART A     CA  PER   HO   URLY              P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+    NO. NO.        EMPLOYEE       NAME S  TATE    ZIP AGE S   EX N   O.           JOB TITLE C     ODE   STATE SEASELI  GIBLE   WK   CO   MM P      AY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+      00 43       KING, VER            A    TX  75061    46      F    0          LEAD CONTACT    8810      TX       F      Y   40 <NA>      H         $31.62 $5,480.8      0      $5,150.02    S    N        C 5.2  3,12,57,58
+       <NA>            <NA>         <NA>  <NA>   8263  <NA>   <NA> <NA>                CENTER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 44       KNIGHT, C       AMILLE    AL  35803    50      F    0            SR PRODUCT    8810      AL       F      Y   40 <NA>      S      $6,605.13 $13,210.     26     $13,049.96    S    N        E 5.2    12,57,58
+       <NA>            <NA>         <NA>  <NA>   1705  <NA>   <NA> <NA>              MANAGER,    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 45        KROEHLE,       TRACEY    TX  75093    64      F    0           FIELD SALES    8810      TX       F      Y   40 <NA>      S      $5,150.00 $10,300.     00     $10,175.00    S    N        S 5.2  3,12,57,58
+       <NA>            <NA>         <NA>  <NA>   6304  <NA>   <NA> <NA>              REPRESEN    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 46       KULKARNI,       SHRUTI    TX  75071    30      F    0              CRM DATA    8810      TX       F      N   40 <NA>      S      $4,166.67 $8,333.3      4      $7,759.36    S    N        W 5.2       57,58
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>               ANALYST    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 47      LANASKI, C     HRISTINA    TX  76109    28      F    0                  LEAD    8810      TX       F      Y   40 <NA>      S      $6,783.00 $13,566.     00     $12,481.49    S    N        E 5.2 32,12,57,58
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>         INFRASTRUCTUR    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                     E    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 48     LIN, JUIYIN            G    TX  75287    46      F    0        SR UX DESIGNER    8810      TX       F      Y   40 <NA>      S      $4,935.42 $9,870.8      4      $9,751.05    S    N        S 5.2    12,57,58
+      00 49      LITTLE, PA           UL    TX  75234    29      M    0               PRODUCT    8810      TX       F      Y   40 <NA>      S      $6,597.50 $13,195.     00     $12,693.96    S    N        E 5.2 32,12,57,58
+       <NA>            <NA>         <NA>  <NA>   5023  <NA>   <NA> <NA>               MANAGER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 50       LOWRY, LI           SA    VA  22932    53      F    0             TERRITORY    8810      VA       F      N   40 <NA>      S      $5,000.00 $10,000.     00      $5,849.36    S    N        W 5.2       57,58
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>               MANAGER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 51       LOYA HULS          EY,    TX  75104    35      F    0            ENTERPRISE    8810      TX       F      N   40 <NA>      S      $4,895.83 $9,791.6      6      $9,142.35    S    N        F 5.2 32,12,57,58
+       <NA>         LARYSSA         <NA>  <NA>   <NA>  <NA>   <NA> <NA>             ACCOUNT M    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 52       MARINENI,        VIJAY    TX  76227    32      M    0               PRODUCT    8810      TX       F      Y   40 <NA>      S      $5,467.58 $10,935.     16     $10,457.08    S    N        F 5.2  3,12,57,58
+       <NA>          DANIEL         <NA>  <NA>   2420  <NA>   <NA> <NA>                 OWNER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 53       MAYS, KIM         <NA>    TX  76065    45      F    0            ACCOUNTING    8810      TX       F      Y   40 <NA>      S      $5,557.71 $11,115.     42     $10,980.52    S    N        K 5.2 32,12,57,58
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA> <NA>               MANAGER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+* - Signifi  es Duplicate E      mployee  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+** - Signif   ies Indemnity         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+C - Signifi      es W/C Cap         <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  ACA - Sig nifies Affordab  le Care Act  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>            <NA>         <NA>  <NA>   <NA>  <NA>   <NA>  Ins perity • 19001 Cresce nt Spri ngs Dr. • Kingw ood, T X 77   33 9-3802 • 1-800-237-31 70 • www .inspe       rity.com <NA> <NA>          Pag    e 5 of 1
+------------------------------------------------------------
+
+[Table 6: p6_x1 (Rows: 41, Columns: 22)]
+    Client Inf                  ormation:     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA> Client        /Version No.:   <NA>  <NA>      5169600-15-2                     -R
+        WELLFI        T TECHNOLOGIES, INC        .       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>  Date:                 <NA>   <NA>  <NA>        08/17/2026                   <NA>
+       125 E J          OHN CARPENTER FWY      STE       1200      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>  Print                Date:   <NA>  <NA>        10/30/2026                   <NA>
+        IRVING             , TX 750622288     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>  Busin                 ess:   <NA>  <NA>      Computer sys            tems design
+        Phone:              (855)493-5534     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+          Fax:                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>  Sales                 Rep:   <NA>  <NA>         SARAH HOG                     AN
+       Contact                          :     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>  Payro       ll Specialist:   <NA>  <NA>         ROXANNA E                  ALLEN
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA> Office                    :   <NA>  <NA>          DENVER 1                   <NA>
+      Client A    ssociated Subclients: 5    16960          0      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+       Benefit                Package: In     depe     ndence     Premi  er - U  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>       AVG    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       FULL     <NA>    HRS SA    LARY                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   COV.
+           CL.                          H      OME       HOME      <NA>      GR   OUP                    <NA>       W/C      WORK     PART A       CA    PER HO    URLY                    P        ROJ. $AV  G / H         IST. $AVG/ P     AY  <NA>         COV CLASS             GROUP(S) /
+NO. NO.\n00 53 EMPLOYEE NAME S\nMAYS, KIM TATE\nTX ZIP\n76065 AGE S\n45 EX N\nF O.\n0 JOB TITLE C\nACCOUNTING ODE\n8810 STATE\nTX SEASELI\nF GIBLE\nY WK CO\n40 MM P\nS AY AMOUNT\n$5,557.71 MONTH\n$11,115.     42 MONTH FR\n$10,980.52 EQ.\nS FE\nN LEVEL CODE\nK 5.2 OPTION(S)\n32,12,57,58
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                 MANAGER      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 54              MBAHYAM, LUCY       TX      75068        38       F     0            SCRUM MASTER      8810        TX          F        Y        40       S            $4,720.83        $9,441.6      6            $9,327.08      S     N             E 5.2               32,57,58
+         00 55                   MCARDLE,       TX      76034        34       M     0                SOFTWARE      8810        TX          F        Y        40       S            $6,008.33        $12,016.     66           $11,870.83      S     N             F 5.2             3,12,57,58
+          <NA>                  ALEXANDER     <NA>       5024      <NA>    <NA>  <NA>             ENGINEER II      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 56             MCGEE, MATTHEW       TX      75075        43       M     0                  VENDOR      8810        TX          F        N        40       S            $5,208.33        $10,416.     66            $9,529.02      S     N             S 5.2               12,57,58
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>           MANAGER, STRA      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 57                 MCGLUMPHY,       TX      75024        56       M     0                SOFTWARE      8810        TX          F        Y        40       S            $6,008.33        $12,016.     66           $11,870.83      S     N             F 5.2            58,12,57,58
+          <NA>                    MICHAEL     <NA>       <NA>      <NA>    <NA>  <NA>             ENGINEER II      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 58             MCKEE, MATTHEW       TX      78256        43       M     0            SR RECRUITER      8810        TX          F        Y        40       S            $5,304.50        $10,609.     00           $10,480.25      S     N             E 5.2            33,12,57,58
+          <NA>                       <NA>     <NA>       1776      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 59           MEYER, CHRISTIAN       NE      68507        44       M     0             FIELD SALES      8742        NE          F        Y        40       S            $5,050.00        $10,100.     00           $10,058.33      S     N             E 5.2             3,12,57,58
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                REPRESEN      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 60                  MITCHELL,       TX      75072        54       F     0              OPERATIONS      8810        TX          F        N        40       S            $3,333.33        $6,666.6      6            $5,925.32      S     N             C 5.2             3,12,57,58
+          <NA>                  STEPHANIE     <NA>       <NA>      <NA>    <NA>  <NA>               SPECIALIS      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 61            MONROE, DESTINY       TX      75071        38       F     0          IMPLEMENTATION      8810        TX          F        Y        40       S            $2,916.67        $5,833.3      4            $5,833.34      S     N             E 5.2             3,12,57,58
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                   SPECI      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 62              MOORE, RASHAD       TX      76244        46       M     0              OPERATIONS      8810        TX          F        Y        40       S            $4,791.67        $9,583.3      4            $8,020.84      S     N             E 5.2             3,12,57,58
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                 MANAGER      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 63               MORRIS, GENE       TX      75234        53       M     0          LEAD TECHNICAL      8810        TX          F        N        40       S            $5,833.33        $11,666.     66           $11,291.03      S     N             E 5.2             3,12,57,58
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>  <NA>                   BUSIN      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+         00 64              MYRICK, DARYL       TX      75075        66       M     0           Dev Team Lead      8810        TX          F        Y        40       S            $7,333.33        $14,666.     66           $14,666.66      S     N             S 5.2             3,12,57,58
+   * - Signifi      es Duplicate Employee     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+   ** - Signif              ies Indemnity     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+   C - Signifi                 es W/C Cap     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+     ACA - Sig nifies Affordable Care Act     <NA>       <NA>      <NA>    <NA>  <NA>                    <NA>      <NA>      <NA>       <NA>     <NA>      <NA>    <NA>                 <NA>            <NA>   <NA>                 <NA>   <NA>  <NA>              <NA>                   <NA>
+          <NA>                       <NA>     <NA>       <NA>      <NA>    <NA>   Ins   perity • 19001 Cresce   nt Spri   ngs Dr.    • Kingw   ood, T    X 7733  9-3802       • 1-800-237-31        70 • www .inspe             rity.com   <NA>  <NA>               Pag               e 6 of 1
+------------------------------------------------------------
+
+[Table 7: p7_x1 (Rows: 42, Columns: 23)]
+ Client Inf                  ormation:  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+     WELLFI        T TECHNOLOGIES, INC     .   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+    125 E J          OHN CARPENTER FWY   STE   1200  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+     IRVING             , TX 750622288  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+     Phone:              (855)493-5534  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       Fax:                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+    Contact                          :  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+   Client A    ssociated Subclients: 5 16960      0  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+    Benefit                Package: In  depe ndence Premi er - U <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA>  AVG <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    FULL   <NA>  HRS   SA   LARY           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+        CL.                          H   OME   HOME  <NA>     GR  OUP                  <NA>     W/C    WORK  PART A     CA  PER   HO   URLY              P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+    NO. NO.            EMPLOYEE NAME S  TATE    ZIP AGE S   EX N   O.           JOB TITLE C     ODE   STATE SEASELI  GIBLE   WK   CO   MM P      AY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+      00 65                 NARAYANAN,    TX  75019    47      M    0          DIRECTOR, QA    8810      TX       F      Y   40 <NA>      S      $8,760.96 $17,521.     92     $16,721.12    S    N        F 5.2  3,12,57,58
+       <NA>               HARIHARA SUB  <NA>   2981  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 66               PAAPE, SCOTT    TX  75034    48      M    0           SENIOR VICE    8742      TX       F      N   40 <NA>    S $      11,250.00 $22,500.     00     $19,997.97    S    N        K 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>              PRESIDEN    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 67            PANCHAL, NIMESH    TX  75071    43      M    0           SR SOFTWARE    8810      TX       F      Y   40 <NA>      S      $6,829.54 $13,659.     08     $13,493.32    S    N        F 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   7160  <NA>   <NA> <NA>              ENGINEER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 68               PARIKH, AMIT    TX  75034    55      M    0           DIRECTOR OF    8810      TX       F      Y   40 <NA>      S      $9,727.08 $19,454.     16     $19,334.37    S    N        F 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>              ARCHITEC    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 69               PARK, EDMUND    CA  92656    40      M    0           SR SOFTWARE    8810      CA       F      Y   40 <NA>      S      $6,377.58 $12,755.     16     $12,550.75    S    N        F 5.2 46,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>              ENGINEER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 70              PARRA, CARLOS    CO  80109    53      M    0              DATABASE    8810      CO       F      Y   40 <NA>      S      $6,935.33 $13,870.     66     $13,813.44    S    N        S 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>               MANAGER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 71                 PATEL, JAY    TX  75067    33      M    0                SENIOR    8810      TX       F      N   40 <NA>      S      $6,250.00 $12,500.     00     $11,434.84    S    N        F 5.2     3,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>         SOFTWARE ENGI    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 72                PELC, ORRIE    TX  76210    52      M    0          SR. SOFTWARE    8810      TX       F      N   40 <NA>      S      $6,041.67 $12,083.     34     $11,641.05    S    N        S 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>               ENGINEE    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 73                 PEMBERTON,    TX  75248    45      M    0           DIRECTOR OF    8810      TX       F      N   40 <NA>      S      $7,916.67 $15,833.     34     $13,855.48    S    N        F 5.2  3,12,57,58
+       <NA>                     THOMAS  <NA>   <NA>  <NA>   <NA> <NA>                   PMO    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 74                PERRY, JOHN    TX  76001    37      M    0              SOFTWARE    8810      TX       F      Y   40 <NA>      S      $4,854.17 $9,708.3      4      $9,309.03    S    N        E 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>           ENGINEER II    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 75            PETRE, DANIELLE    TX  75204    35      F    0               ACCOUNT    8810      TX       F      Y   40 <NA>      S      $3,004.17 $6,008.3      4      $5,935.42    S    N        E 5.2 32,12,57,58
+       <NA>                       <NA>  <NA>   5269  <NA>   <NA> <NA>            SPECIALIST    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+* - Signifi      es Duplicate Employee  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+** - Signif              ies Indemnity  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+C - Signifi                 es W/C Cap  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  ACA - Sig nifies Affordable Care Act  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA>  Ins perity • 19001 Cresce nt Spri ngs Dr. • Kingw ood, T X 77   33 9-3802 • 1-800-237-31 70 • www .inspe       rity.com <NA> <NA>          Pag    e 7 of 1
+------------------------------------------------------------
+
+[Table 8: p8_x1 (Rows: 42, Columns: 23)]
+ Client Inf                  ormation:  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+     WELLFI        T TECHNOLOGIES, INC     .   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+    125 E J          OHN CARPENTER FWY   STE   1200  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+     IRVING             , TX 750622288  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+     Phone:              (855)493-5534  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       Fax:                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+    Contact                          :  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+   Client A    ssociated Subclients: 5 16960      0  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+    Benefit                Package: In  depe ndence Premi er - U <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA>  AVG <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    FULL   <NA>  HRS   SA   LARY           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+        CL.                          H   OME   HOME  <NA>     GR  OUP                  <NA>     W/C    WORK  PART A     CA  PER   HO   URLY              P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+    NO. NO.            EMPLOYEE NAME S  TATE    ZIP AGE S   EX N   O.           JOB TITLE C     ODE   STATE SEASELI  GIBLE   WK   CO   MM P      AY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+      00 76              POSINA, ROHIT    TX  75036    44      M    0              SOFTWARE    8810      TX       F      N   40 <NA>      S      $7,500.00 $15,000.     00     $14,342.04    S    N        C 5.2 32,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>             ARCHITECT    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 77                REW, ROBERT    CA  92649    65      M    0               GENERAL    8810      CA       F      N   40 <NA>      S      $8,958.33 $17,916.     66     $17,375.70    S    N        E 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   2061  <NA>   <NA> <NA>               COUNSEL    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 78                RICHARDSON,    TX  76071    42      M    0               ACCOUNT    8810      TX       F      N   40 <NA>      S      $2,916.67 $5,833.3      4      $5,040.65    S    N        S 5.2  3,12,57,58
+       <NA>                     JOSHUA  <NA>   <NA>  <NA>   <NA> <NA>            SPECIALIST    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 79                 ROSENBAUM,    TX  75072    55      M    0             TECHNICAL    8810      TX       F      N   40 <NA>      S      $3,541.67 $7,083.3      4      $6,839.73    S    N        E 5.2  3,12,57,58
+       <NA>                    CHARLES  <NA>   <NA>  <NA>   <NA> <NA>            OPERATIONS    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 80                 ROY, BRETT    TX  75028    62      M    0           SR SOFTWARE    8810      TX       F      Y   40 <NA>      S      $6,471.83 $12,943.     66     $12,736.23    S    N        E 5.2 58,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>              ENGINEER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 81                     RUBIO,    CA  92604    53      M    0         SR. ARCHITECT    8810      CA       F      Y   40 <NA>      S      $9,345.29 $18,690.     58     $18,613.47    S    N        F 5.2 58,12,57,58
+       <NA>                CHRISTOPHER  <NA>   4618  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 82          SANTAMARIA, JESSE    TX  76226    34      M    0               SUPPORT    8810      TX       F      N   40 <NA>      S      $5,208.33 $10,416.     66     $10,137.00    S    N        E 5.2 32,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>              ENGINEER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 83              SARWAR, QUAZI    TX  75033    46      F    0              BUSINESS    8810      TX       F      Y   40 <NA>      S      $5,286.46 $10,572.     92     $10,507.81    S    N        K 5.2 32,12,57,58
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA> <NA>               ANALYST    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 84                  SCHENTUR,    CA  92867    66      F    0           FIELD SALES    8742      CA       F      Y   40 <NA>      S      $5,201.50 $10,403.     00     $10,360.08    S    N        C 5.2 46,12,57,58
+       <NA>                   KIMBERLY  <NA>   <NA>  <NA>   <NA> <NA>              REPRESEN    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 85              SCHNIEDERJAN,    TX  75019    35      M    0          DATA ANALYST    8810      TX       F      Y   40 <NA>      S      $5,125.00 $10,250.     00      $9,734.37    S    N        F 5.2 58,12,57,58
+       <NA>                    JEFFREY  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      00 86              SERRANO, LISA    CA  92865    50      F    0           DIRECTOR OF    8810      CA       F      Y   40 <NA>      S      $7,865.17 $15,730.     34     $15,539.45    S    N        K 5.2  3,12,57,58
+       <NA>                       <NA>  <NA>   3691  <NA>   <NA> <NA>              ENGINEER    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+* - Signifi      es Duplicate Employee  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+** - Signif              ies Indemnity  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+C - Signifi                 es W/C Cap  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  ACA - Sig nifies Affordable Care Act  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       <NA>                       <NA>  <NA>   <NA>  <NA>   <NA>  Ins perity • 19001 Cresce nt Spri ngs Dr. • Kingw ood, T X 77   33 9-3802 • 1-800-237-31 70 • www .inspe       rity.com <NA> <NA>          Pag    e 8 of 1
+------------------------------------------------------------
+
+[Table 9: p9_x1 (Rows: 41, Columns: 23)]
+    Client Information:           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+          WELLFIT TECHN   OLOGIES, INC     .   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+         125 E JOHN CAR     PENTER FWY   STE   1200  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+        IRVING, TX 7506          22288  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+         Phone: (855)49         3-5534  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                   Fax:           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                   <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+               Contact:           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+                   <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+      Client Associated  Subclients: 5 16960      0  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+       Benefit Package:             In  depe ndence Premi er - U <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                   <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA>  AVG <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                   <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    FULL   <NA>  HRS   SA   LARY           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+                     L.              H   OME   HOME  <NA>     GR  OUP                  <NA>     W/C    WORK  PART A     CA  PER   HO   URLY              P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+         O. NO. EMPLOYE       E NAME S  TATE    ZIP AGE S   EX N   O.           JOB TITLE C     ODE   STATE SEASELI  GIBLE   WK   CO   MM P      AY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+           0 87 SIDAVAN     H, VANNARY    CA  92109    43      F    0         SR. FINANCIAL    8810      CA       F      Y   40 <NA>      S      $5,161.04 $10,322.     08     $10,196.81    S    N        E 5.2  3,12,57,58
+                   <NA>           <NA>  <NA>   4340  <NA>   <NA> <NA>                ANALYS    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 88 SIMPSON      , JEFFREY    TX  76054    50      M    0           IT SECURITY    8810      TX       F      N   40 <NA>      S      $4,375.00 $8,750.0      0      $8,041.82    S    N        E 5.2    33,57,58
+                   <NA>           <NA>  <NA>   2317  <NA>   <NA> <NA>              SYSTEM A    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 89 SKEETE,           EZRA    TX  75052    30      M    0               ACCOUNT    8810      TX       F      Y   40 <NA>      S      $3,004.17 $6,008.3      4      $5,484.03    S    N        E 5.2 32,12,57,58
+                   <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>            SPECIALIST    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 90 SMITH, B         RADLEY    WA  98075    58      M    0           FIELD SALES    5302      WA       F      Y   40 <NA>      S      $5,150.00 $10,300.     00     $10,175.00    S    N        E 5.2 32,12,57,58
+                   <NA>           <NA>  <NA>   9177  <NA>   <NA> <NA>              REPRESEN    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 91 SNIDER,           MARY    CO  80210    42      F    0          VP, BUSINESS    8810      CO       F      N   40 <NA>    S $      10,416.67 $20,833.     34     $16,973.59    S    N        C 5.2 96,12,57,58
+                   <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>               DEVELOP    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 92 SONG, JI           YOON    CA  92694    56      F    0      VP, Accounting &    8810      CA       F      Y   40 <NA>      S      $9,724.92 $19,449.     84     $19,213.80    S    N        E 5.2  3,12,57,58
+                   <NA>           <NA>  <NA>   1526  <NA>   <NA> <NA>                   Adm    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+            0 93 STANLY           <NA>    TX  75071    44      M    0             PRINCIPAL    8810      TX       F      Y   40 <NA>      S      $7,081.25 $14,162.     50     $13,990.62    S    N        K 5.2  3,12,57,58
+                 SUNDAR         SINGH,  <NA>   <NA>  <NA>   <NA> <NA>            SOFTWARE E    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                 WESLEY          SAMUE  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 94 TANG, C           HUAN    TX  76227    50      M    0              SOFTWARE    8810      TX       F      N   40 <NA>      S      $7,500.00 $15,000.     00     $13,331.98    S    N        K 5.2 32,12,57,58
+                   <NA>           <NA>  <NA>   <NA>  <NA>   <NA> <NA>             ARCHITECT    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 95 TEBEAU,           <NA>    TX  75002    39      M    0               PRODUCT    8810      TX       F      Y   40 <NA>      S      $6,008.33 $12,016.     66     $11,870.83    S    N        E 5.2  3,12,57,58
+                 JOHNAT            HAN  <NA>   1817  <NA>   <NA> <NA>          MANAGER, FIN    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 96 THAPA, R          OJESH    TX  75063    28      M    0              SR POWER    8810      TX       F      Y   40 <NA>      S      $5,497.92 $10,995.     84     $10,928.13    S    V        E 5.2    58,57,58
+                   <NA>           <NA>  <NA>   5227  <NA>   <NA> <NA>           PLATFORM DE    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+* - Signifies Duplicate       Employee  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+ ** - Signifies Indemni             ty  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+   C - Signifies W/C Ca              p  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  ACA - Signifies Affor dable Care Act  <NA>   <NA>  <NA>   <NA> <NA>                  <NA>    <NA>    <NA>    <NA>   <NA> <NA> <NA>   <NA>           <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                   <NA>           <NA>  <NA>   <NA>  <NA>   <NA>  Ins perity • 19001 Cresce nt Spri ngs Dr. • Kingw ood, T X 77   33 9-3802 • 1-800-237-31 70 • www .inspe       rity.com <NA> <NA>          Pag    e 9 of 1
+------------------------------------------------------------
+
+[Table 10: p10_x1 (Rows: 40, Columns: 23)]
+   Client Information:            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA> Client  /Version No.: <NA> <NA> 5169600-15-2          -R
+          WELLFIT TECH   NOLOGIES, INC     .   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Date:           <NA> <NA> <NA>   08/17/2026        <NA>
+         125 E JOHN CA     RPENTER FWY   STE   1200  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Print          Date: <NA> <NA>   10/30/2026        <NA>
+       IRVING, TX 7506           22288  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Busin           ess: <NA> <NA> Computer sys tems design
+         Phone: (855)4         93-5534  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  Fax:            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Sales           Rep: <NA> <NA>    SARAH HOG          AN
+              Contact:            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>  Payro ll Specialist: <NA> <NA>    ROXANNA E       ALLEN
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA> Office              : <NA> <NA>     DENVER 1        <NA>
+     Client Associated   Subclients: 5 16960      0  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+      Benefit Package:              In  depe ndence Premi er - U <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA>  AVG <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    FULL  <NA>  HRS   SA LARY       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        COV.
+                    L.               H   OME   HOME  <NA>     GR  OUP            <NA>  W/C  WORK  PART A    CA  PER   HO URLY          P ROJ. $AV  G / H   IST. $AVG/ P   AY <NA>    COV CLASS  GROUP(S) /
+         O. NO. EMPLOY       EE NAME S  TATE    ZIP AGE S   EX N   O.     JOB TITLE C  ODE STATE SEASELI GIBLE   WK   CO   MM PAY AMOUNT    MONTH   <NA>       MONTH FR  EQ.   FE   LEVEL CODE   OPTION(S)
+           0 97 THARP,         WALLACE    TX  76039    54      M    0           CHIEF 8810    TX       F     Y   40 <NA>    S $13,345.38 $26,690.     76     $23,507.91    S    N        F 5.2  3,12,57,58
+                  <NA>            <NA>  <NA>   1440  <NA>   <NA> <NA>  OPERATING OFFI <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 98 THOMAS         , JASON    TX  76244    41      M    0       ARCHITECT 8810    TX       F     Y   40 <NA>    S  $6,943.75 $13,887.     50     $13,830.21    S    N        F 5.2 32,12,57,58
+           0 99 TOKERU      D, TIMOTHY    TX  76051    59      M    0     DIRECTOR OF 8810    TX       F     Y   40 <NA>    S  $7,851.79 $15,703.     58     $15,512.98    S    N        C 5.2 32,12,57,58
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>        DATA & A <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+        0 100 VICK, TO              DD    TX  75036    58      M    0 CHIEF FINANCIAL 8810    TX       F     Y   40 <NA>    S $13,958.33 $27,916.     66     $27,551.38    S    N        F 5.1  3,12,57,58
+                  <NA>            <NA>  <NA>   7294  <NA>   <NA> <NA>            OFFI <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+         0 101 VILLIAP            AKAM    TX  75050    35      F    0       .NET & BI 8810    TX       F     Y   40 <NA>    S  $5,364.58 $10,729.     16      $9,299.07    S    N        C 5.2 33,12,57,58
+                PREMSA      GA, DIPIKA  <NA>   <NA>  <NA>   <NA> <NA>      INTEGRATIO <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 102 WATKIN        S, JAMIE    TX  76082    41      F    0       DIRECTOR, 8810    TX       F     Y   40 <NA>    S  $7,612.50 $15,225.     00     $15,131.25    S    N        S 5.2  3,12,57,58
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>      REVENUE OP <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 103 WERNE         R, MARK    AZ  86336    61      M    0       PRINCIPAL 8810    AZ       F     Y   40 <NA>    S  $9,759.42 $19,518.     84     $19,206.02    S    N        F 5.2  3,12,57,58
+                  <NA>            <NA>  <NA>   7139  <NA>   <NA> <NA>      SOFTWARE E <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+         0 104 WEST, C           ARMEN    TX  75061    49      F    0         CONTACT 8810    TX       F     N   38 <NA>    H     $23.75 $3,954.0      6      $3,646.99    S    N        E 5.2  3,12,57,58
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>    CENTER REPRE <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+          0 105 WILSON               ,    TX  75071    44      M    0 VICE PRESIDENT, 8810    TX       F     Y   40 <NA>    S  $9,282.90 $18,565.     80     $15,799.44    S    N        F 5.2  3,12,57,58
+                CHRIST           OPHER  <NA>   3376  <NA>   <NA> <NA>            INFO <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+           0 106 YOUNG     BLOOD, LISA    TX  75035    54      F    0       DIRECTOR, 8810    TX       F     Y   40 <NA>    S  $7,612.50 $15,225.     00     $15,131.25    S    N        K 5.2 33,12,57,58
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>      OPERATIONS <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+                  <NA>            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>        $1, 312,424.     56           <NA> <NA> <NA>         <NA>        <NA>
+               LEGEND:            <NA>  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+* - Signifies Duplicat      e Employee  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+ ** - Signifies Indemn             ity  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  C - Signifies W/C Ca               p  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+  ACA - Signifies Affo rdable Care Act  <NA>   <NA>  <NA>   <NA> <NA>            <NA> <NA>  <NA>    <NA>  <NA> <NA> <NA> <NA>       <NA>     <NA>   <NA>           <NA> <NA> <NA>         <NA>        <NA>
+------------------------------------------------------------
+
+[Table 11: p11_t1 (Rows: 10, Columns: 1)]
+                        3 500 Deductible
+32 1700 Deductible - HDHP (1750 in 2027)
+                       33 250 Deductible
+                  46 Kaiser HMO CA South
+                  51 UHC of CA HMO South
+               58 5000 Deductible - HDHP
+                        96 Kaiser HMO CO
+      12 50 Deductible Dental and Vision
+                 57 Basic Life Insurance
+                           58 Basic AD&D
+------------------------------------------------------------

@@ -1,0 +1,21 @@
+Subject: Medical Submission Missing Information - Wellfit Technologies, Inc
+Hello,
+Please provide or clarify the following information required to complete the medical submission:
+SBC
+Please provide complete SBCs for each currently enrolled medical plan:
+UHC Choice Plus PPO 250
+UHC Choice Plus PPO 500 (90%)
+UHC Choice Plus PPO HDHP 1750
+UHC Choice Plus PPO HDHP 5000
+Census vs. Invoice Comparison
+Eligibility conflict for JORGE FUENTES SICAIROS: Marked WO, active on invoice.
+Eligibility conflict for DAVID HORTON: Marked WO, active on invoice.
+Eligibility conflict for EDMUND PARK: Marked WO, active on invoice.
+Eligibility conflict for KIMBERLY SCHENTUR: Marked WO, active on invoice.
+Eligibility conflict for MARY SNIDER: Marked WO, active on invoice.
+Employee HILL, BRIANNA ALISHA appears on the invoice but is not included on the employee census.
+Census Clarification
+Mark R, Abdul R, Scott Paape, Manag Owner, Jazmine Johnson, Dipika Ga, Payme Owner, Inc Ologies, Swetha Ya, Pa Little, Fin Manager, Business Vp, Jamie S, Inc T Technologies, Vannary H, Qa Director, Robert On, T Ood, John Ps, Karey Mp, Inc Logies, Timothy D, C Knight, Inc Nologies, Pds Manager, Daryl Myrick, C Lanaski, Li Lowry, Claro Nes, Stra Manager, Lexus E, Hr Manager and Inc Chnologies are on the payroll register but not on the census. Please confirm full-time/part-time status and, if full-time, provide census data (DOB, gender, ZIP, medical election).
+Claims Documents
+Monthly claims reports and high-claimant information are required for self/level-funded group with over 50 enrolled employees.
+Thank you.

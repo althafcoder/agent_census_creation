@@ -127,6 +127,38 @@ def _xls_to_xlsx(path: Path) -> Path:
     return out / (path.stem + ".xlsx")
 
 
+def _trim_worksheet_boundary(df: pd.DataFrame) -> pd.DataFrame:
+    """Enforce Section 8.1B Worksheet-Boundary Rule:
+    Never interpret Excel UsedRange, far-right populated cells, or formatting extent
+    separated by wide empty column gaps as part of the structured source table.
+    """
+    if df.empty or df.shape[1] == 0:
+        return df
+    # Identify which columns have any non-blank value across rows
+    non_empty_mask = df.notna() & (df.astype(str).apply(lambda s: s.str.strip() != ""))
+    col_has_data = non_empty_mask.any(axis=0).tolist()
+    if not any(col_has_data):
+        return df.iloc[:, :0]
+
+    # Find the contiguous or near-contiguous structured table boundary.
+    # Walk columns left-to-right from the first populated column.
+    first_col = next(i for i, v in enumerate(col_has_data) if v)
+    empty_streak = 0
+    last_valid_col = first_col
+    for idx in range(first_col, len(col_has_data)):
+        if col_has_data[idx]:
+            if empty_streak >= 5:
+                # Wide gap (5+ consecutive empty columns) encountered;
+                # any column past this gap is outside the structured table boundary.
+                break
+            empty_streak = 0
+            last_valid_col = idx
+        else:
+            empty_streak += 1
+
+    return df.iloc[:, :last_valid_col + 1]
+
+
 def _read_excel(path: Path) -> RawDoc:
     doc = RawDoc(path, path.suffix.lower())
     doc.extraction_method = "Excel Spreadsheet (Direct Table Parsing)"
@@ -188,9 +220,10 @@ def _read_excel(path: Path) -> RawDoc:
                 raise exc
 
     for name, df in sheets.items():
-        # Preserve spreadsheet column positions and blank cells:
-        # Only drop entirely empty rows; do not drop blank columns that would shift column alignment.
+        # Preserve spreadsheet column positions and blank cells within the structured table,
+        # while enforcing the Section 8.1B Worksheet-Boundary Rule against far-right stray cells.
         df = df.dropna(how="all").reset_index(drop=True)
+        df = _trim_worksheet_boundary(df)
         if not df.empty:
             doc.tables.append(RawTable(str(name), df))
             doc.text += f"=== Sheet: {name} ===\n" + "\n".join(" | ".join("" if pd.isna(c) else str(c) for c in row)

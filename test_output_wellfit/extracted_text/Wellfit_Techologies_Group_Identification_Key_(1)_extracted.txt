@@ -1,0 +1,652 @@
+================================================================================
+DOCUMENT: Wellfit Techologies_Group Identification Key (1).pdf
+SOURCE PATH: test_wellfit_input\Input\Wellfit Techologies_Group Identification Key (1).pdf
+FILE EXTENSION: .pdf
+IS SCANNED (OCR USED): False
+EXTRACTION METHOD: Digital PDF (pdfplumber Direct Extraction)
+TOTAL CHARACTERS: 32,469 chars
+TOTAL TABLES DETECTED: 6 table(s)
+================================================================================
+
+--- [EXTRACTED TEXT CONTENT] ---
+Group Identification Key
+                                                                                    
+   Client Information:                          Client/Version No.: 5169600-15-2-R  
+   WELLFIT TECHNOLOGIES, INC.                                                       
+                                                Date:        08/17/2026             
+   125 E JOHN CARPENTER FWY STE 1200                                                
+                                                Print Date:  10/30/2026             
+   IRVING, TX 750622288                                                             
+   Phone: (855)493-5534                                                             
+                                                Business:    Computer systems design
+   Fax:                                                                             
+   Contact:                                     Sales Rep:   SARAH HOGAN            
+                                                Payroll Specialist: ROXANNA E ALLEN 
+                                                Office:      DENVER 1               
+   Client Associated Subclients: 5169600                                            
+   Benefit Package: Independence Premier - U                                        
+   Life and AD&D: Auto Enroll                                                       
+                                                                                    
+                                                                                    
+                                                      COVERAGE                      
+                                          W/C COVERAGE        CLASS SERVICE FEE ANNUAL
+    EMPLOYEE NAME    JOB TITLE  W/C CODE               GROUP /                      
+                                         STATE  LEVEL         CODE PERCENTAGE PAY $ 
+                                                       OPTION                       
+   GROUP NO. 0 - UNASSIGNED                                                         
+   ABBOTT-BULLOCKS, JEANNEHTTUEMAN RESOURCE 8810 TX S 3,57,58,12 5.2 25.96% $124,999.92
+                   MANAG                                                            
+   ABUBAKAR MARICAR, ABDULS RRA SSOHFETEWARE 8810 TX K 57,58,58 5.2 17.82% $159,649.92
+                   ENGINEER                                                         
+   ANDERSON, ROBERT Sr AI Engineer 8810   TX     C   3,57,58,12 5.2 20.03% $171,600.00
+   ANTWINE, LEXUS  Onboarding Specialis 8810 TX  E   3,57,58,12 5.2 31.29%  $56,650.08
+   ASPLEN, JOHN    VICE PRESIDENT, 953   DE      E   57,58,12,32 5.2 14.81% $187,459.92
+                   COMP                                                             
+   ATAL, SHIKHA    SCRUM MASTER   8810    TX     W    57,58  5.2    10.61% $120,000.00
+   BAILEY, ANDERSON HELP DESK     8810    TX     W    57,58  5.2    13.52%  $60,000.00
+                   TECHNICIAN                                                       
+   BAIRI, THARIKA  SQL DATABASE   8810    TX     W    57,58  5.2    10.21% $139,050.00
+                   ENGINEE                                                          
+   BANKAR, SUSHMA  BUSINESS ANALYST 8810  TX     F   57,58,12,33 5.2 30.33% $123,600.00
+   BARI, ABUL      QA ANALYST III 8810    TX     F   3,57,58,12 5.2 37.40% $106,090.08
+   BAYYA, SWETHA   BUSINESS ANALYST 8810  TX     E   3,57,58,12 5.2 18.99% $118,450.08
+   BELCONIS, EMMA  DIRECTOR OF PEOPLE 8810 TX    E   57,58,12,33 5.2 15.57% $172,000.08
+                   &                                                                
+   BHARDWAJ, SHIVA SR BUSINESS ANALYST 8810 TX   F   3,57,58,12 5.2 28.54% $151,177.92
+   BRIONES, CLARO  SR ARCHITECT   8810    TX     F   3,57,58,12 5.2 21.73% $212,285.04
+   BYRAPAKA, NITHUSHA PRODUCT OWNER 8810  TX     E   57,58,12,32 5.2 17.69% $132,000.00
+   CHAWANDE, VIVIENNE SR. QA ENGINEER 8810 TX    C   57,58,12,58 5.2 22.95% $111,553.92
+   CHIPPS, JOHN    CHIEF TECHNOLOGY 8810  TX     F   3,57,58,12 5.2 15.39% $309,309.12
+                   OFF                                                              
+   COLLINS, GEORGE CEO            8810    TX     F   57,58,12,33 5.1 15.56% $400,000.08
+   CORDOVA, NATALIE MANAGER SMALL 8810    TX     F   3,57,58,12 5.2 42.47%  $90,640.08
+                   GROUP                                                            
+   CRUMP, KAREY    VICE PRESIDENT, 8810   TX     F   57,58,12,58 5.2 16.41% $240,619.92
+                   PROD                                                             
+   DAVIS, CHRISTOPHER OPERATIONS  8810    TX     E   57,58,12,33 5.2 24.62% $79,999.92
+                   SPECIALIS                                                        
+   DEARMON, KRIS   PROGRAM MANAGER 8810   TX     W    57,58  5.2    10.79% $113,299.92
+   DIAL, AUSTIN    ACCOUNT MANAGER, 8810  TX     F   3,57,58,12 5.2 31.81% $130,680.96
+                   PDS                                                              
+                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 1of 6
+                                                                                    
+                                                                                    
+                                                             Group Identification Key
+                                                                                    
+   Client Information:                          Client/Version No.: 5169600-15-2-R  
+   WELLFIT TECHNOLOGIES, INC.                                                       
+                                                Date:        08/17/2026             
+   125 E JOHN CARPENTER FWY STE 1200                                                
+                                                Print Date:  10/30/2026             
+   IRVING, TX 750622288                                                             
+   Phone: (855)493-5534                                                             
+                                                Business:    Computer systems design
+   Fax:                                                                             
+   Contact:                                     Sales Rep:   SARAH HOGAN            
+                                                Payroll Specialist: ROXANNA E ALLEN 
+                                                Office:      DENVER 1               
+   Client Associated Subclients: 5169600                                            
+   Benefit Package: Independence Premier - U                                        
+   Life and AD&D: Auto Enroll                                                       
+                                                                                    
+                                                                                    
+                                                      COVERAGE                      
+                                          W/C COVERAGE        CLASS SERVICE FEE ANNUAL
+    EMPLOYEE NAME    JOB TITLE  W/C CODE               GROUP /                      
+                                         STATE  LEVEL         CODE PERCENTAGE PAY $ 
+                                                       OPTION                       
+   DU PLESSIS, LODEWIKUS PRODUCT OWNER, 8810 TX  E   57,58,12,33 5.2 16.72% $150,000.00
+                   MANAG                                                            
+   DUFRESNE, EMILY Underwriter & Compli 8810 TX  W    57,58  5.2    12.84%  $67,999.92
+   ESHETIE, GIZACHEW SR SOFTWARE  8810    TX     E   57,58,12,32 5.2 16.58% $148,525.92
+                   ENGINEER                                                         
+   FARHEEN FATIMA, NO NAME SGRIV AEI ENGINEER 8810 TX E 57,58,12,58 5.2 14.06% $180,000.00
+   FUENTES SICAIROS, JORGESR ARCHITECT 8810 CA   F   57,58,12,46 5.2 17.61% $218,182.08
+   GJINI, IRA      PROJECT MANAGER, 8810  TX     E   57,58,12,58 5.2 22.88% $75,383.04
+                   HR                                                               
+   GUILLORY, GABRIELLE DIRECTOR OF 8810   TX     E   3,57,58,12 5.2 16.92% $145,000.08
+                   COMMECIA                                                         
+   HALL, CLIFF     Manager, Compliance 8810 IL   E   3,57,58,12 5.2 17.96% $135,660.96
+   HILL, BRIANNA   Account Manager, Ent 8810 TX  F    57,58,12 5.2  11.45% $124,999.92
+   HOLTSCLAW, ANDREW PRODUCT OWNER, 8810  TX     E   3,57,58,12 5.2 17.25% $139,999.92
+                   PAYME                                                            
+   HORTON, DAVID   ARCHITECT, SYSTEMS 8810 CA    S   57,58,12,51 5.2 19.64% $190,962.00
+   HUDSON, TAYLOR  PRODUCT OWNER  8810    TX     E   57,58,12,32 5.2 19.68% $109,999.92
+   JOE, MICHAEL    CONTACT CENTER 8810    TX     E   3,57,58,12 5.2 30.49%  $58,639.56
+                   REPRE                                                            
+   JOHNSON, JAZMINE CONTACT CENTER 8810   TX     C   57,58,12,58 5.2 43.78% $47,132.76
+                   REPRE                                                            
+   JOHNSON, NICOLE FIELD SALES    8742    TX     E   57,58,12,33 5.2 19.08% $120,000.00
+                   REPRESEN                                                         
+   JONES, DAVID    SR SOFTWARE    8810    TX     F   3,57,58,12 5.2 28.71% $150,000.00
+                   ENGINEER                                                         
+   KAMPERMAN, CONOR SOFTWARE ENGINEER 8810 TX    C   3,57,58,12 5.2 31.20%  $90,000.00
+                   II                                                               
+   KANDOORI, RADHIKA SR. QA ENGINEER I 8810 CA   F   3,57,58,12 5.2 30.91% $138,198.00
+   KHANDAKER, OBAIDUL Lead Program Manager 8810 TX F 3,57,58,12 5.2 26.28% $169,626.72
+   KING, VERA      LEAD CONTACT   8810    TX     C   3,57,58,12 5.2 39.86%  $65,769.60
+                   CENTER                                                           
+   KNIGHT, CAMILLE SR PRODUCT     8810    AL     E    57,58,12 5.2  10.23% $158,523.12
+                   MANAGER,                                                         
+   KROEHLE, TRACEY FIELD SALES    8810    TX     S   3,57,58,12 5.2 26.16% $123,600.00
+                   REPRESEN                                                         
+   KULKARNI, SHRUTI CRM DATA ANALYST 8810 TX     W    57,58  5.2    11.20% $100,000.08
+   LANASKI, CHRISTINA LEAD        8810    TX     E   57,58,12,32 5.2 15.80% $162,792.00
+                   INFRASTRUCTURE                                                   
+                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 2of 6
+                                                                                    
+                                                                                    
+                                                             Group Identification Key
+                                                                                    
+   Client Information:                          Client/Version No.: 5169600-15-2-R  
+   WELLFIT TECHNOLOGIES, INC.                                                       
+                                                Date:        08/17/2026             
+   125 E JOHN CARPENTER FWY STE 1200                                                
+                                                Print Date:  10/30/2026             
+   IRVING, TX 750622288                                                             
+   Phone: (855)493-5534                                                             
+                                                Business:    Computer systems design
+   Fax:                                                                             
+   Contact:                                     Sales Rep:   SARAH HOGAN            
+                                                Payroll Specialist: ROXANNA E ALLEN 
+                                                Office:      DENVER 1               
+   Client Associated Subclients: 5169600                                            
+   Benefit Package: Independence Premier - U                                        
+   Life and AD&D: Auto Enroll                                                       
+                                                                                    
+                                                                                    
+                                                      COVERAGE                      
+                                          W/C COVERAGE        CLASS SERVICE FEE ANNUAL
+    EMPLOYEE NAME    JOB TITLE  W/C CODE               GROUP /                      
+                                         STATE  LEVEL         CODE PERCENTAGE PAY $ 
+   LANASKI, CHRISTINA LEAD        8810    TX     E   57,5O8,P1T2,I3O2N 5.2 15.80% $162,792.00
+                   INFRASTRUCTURE                                                   
+   LIN, JUIYING    SR UX DESIGNER 8810    TX     S    57,58,12 5.2  11.36% $118,450.08
+   LITTLE, PAUL    PRODUCT MANAGER 8810   TX     E   57,58,12,32 5.2 16.03% $158,340.00
+   LOWRY, LISA     TERRITORY MANAGER 8810 VA     W    57,58  5.2    10.54% $120,000.00
+   LOYA HULSEY, LARYSSA ENTERPRISE ACCOUNT 8810 TX F 57,58,12,32 5.2 30.53% $117,499.92
+                   M                                                                
+   MARINENI, VIJAY DANIEL PRODUCT OWNER 8810 TX  F   3,57,58,12 5.2 31.71% $131,221.92
+   MAYS, KIM       ACCOUNTING     8810    TX     K   57,58,12,32 5.2 21.98% $133,385.04
+                   MANAGER                                                          
+   MBAHYAM, LUCY   SCRUM MASTER   8810    TX     E    57,58,32 5.2  18.87% $113,299.92
+   MCARDLE, ALEXANDER SOFTWARE ENGINEER 8810 TX  F   3,57,58,12 5.2 29.55% $144,199.92
+                   II                                                               
+   MCGEE, MATTHEW  VENDOR MANAGER, 8810   TX     S    57,58,12 5.2  11.17% $124,999.92
+                   STRA                                                             
+   MCGLUMPHY, MICHAEL SOFTWARE ENGINEER 8810 TX  F   57,58,12,58 5.2 24.64% $144,199.92
+                   II                                                               
+   MCKEE, MATTHEW  SR RECRUITER   8810    TX     E   57,58,12,33 5.2 18.33% $127,308.00
+   MEYER, CHRISTIAN FIELD SALES   8742   NE      E   3,57,58,12 5.2 19.03% $121,200.00
+                   REPRESEN                                                         
+   MITCHELL, STEPHANIE OPERATIONS 8810    TX     C   3,57,58,12 5.2 34.14%  $79,999.92
+                   SPECIALIS                                                        
+   MONROE, DESTINY IMPLEMENTATION 8810    TX     E   3,57,58,12 5.2 26.80%  $70,000.08
+                   SPECI                                                            
+   MOORE, RASHAD   OPERATIONS     8810    TX     E   3,57,58,12 5.2 19.32% $115,000.08
+                   MANAGER                                                          
+   MORRIS, GENE    LEAD TECHNICAL 8810    TX     E   3,57,58,12 5.2 17.25% $139,999.92
+                   BUSIN                                                            
+   MYRICK, DARYL   Dev Team Lead  8810    TX     S   3,57,58,12 5.2 20.67% $175,999.92
+   NARAYANAN, HARIHARA SUBDIRECTOR, QA 8810 TX   F   3,57,58,12 5.2 21.93% $210,263.04
+   PAAPE, SCOTT    SENIOR VICE    8742    TX     K   3,57,58,12 5.2 13.67% $270,000.00
+                   PRESIDEN                                                         
+   PANCHAL, NIMESH SR SOFTWARE    8810    TX     F   3,57,58,12 5.2 26.93% $163,908.96
+                   ENGINEER                                                         
+   PARIKH, AMIT    DIRECTOR OF    8810    TX     F   3,57,58,12 5.2 19.90% $233,449.92
+                   ARCHITEC                                                         
+   PARK, EDMUND    SR SOFTWARE    8810   CA      F   57,58,12,46 5.2 23.01% $153,061.92
+                   ENGINEER                                                         
+                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 3of 6
+                                                                                    
+                                                                                    
+                                                             Group Identification Key
+                                                                                    
+   Client Information:                          Client/Version No.: 5169600-15-2-R  
+   WELLFIT TECHNOLOGIES, INC.                                                       
+                                                Date:        08/17/2026             
+   125 E JOHN CARPENTER FWY STE 1200                                                
+                                                Print Date:  10/30/2026             
+   IRVING, TX 750622288                                                             
+   Phone: (855)493-5534                                                             
+                                                Business:    Computer systems design
+   Fax:                                                                             
+   Contact:                                     Sales Rep:   SARAH HOGAN            
+                                                Payroll Specialist: ROXANNA E ALLEN 
+                                                Office:      DENVER 1               
+   Client Associated Subclients: 5169600                                            
+   Benefit Package: Independence Premier - U                                        
+   Life and AD&D: Auto Enroll                                                       
+                                                                                    
+                                                                                    
+                                                      COVERAGE                      
+                                          W/C COVERAGE        CLASS SERVICE FEE ANNUAL
+    EMPLOYEE NAME    JOB TITLE  W/C CODE               GROUP /                      
+                                         STATE  LEVEL         CODE PERCENTAGE PAY $ 
+                                                       OPTION                       
+   PARRA, CARLOS   DATABASE MANAGER 8810 CO      S   3,57,58,12 5.2 21.83% $166,447.92
+   PATEL, JAY      SENIOR SOFTWARE 8810   TX     F    3,57,58 5.2   27.91% $150,000.00
+                   ENGI                                                             
+   PELC, ORRIE     SR. SOFTWARE   8810    TX     S   3,57,58,12 5.2 23.44% $145,000.08
+                   ENGINEE                                                          
+   PEMBERTON, THOMAS DIRECTOR OF PMO 8810 TX     F   3,57,58,12 5.2 24.11% $190,000.08
+   PERRY, JOHN     SOFTWARE ENGINEER 8810 TX     E   3,57,58,12 5.2 19.17% $116,500.08
+                   II                                                               
+   PETRE, DANIELLE ACCOUNT SPECIALIST 8810 TX    E   57,58,12,32 5.2 25.98% $72,100.08
+   POSINA, ROHIT   SOFTWARE       8810    TX     C   57,58,12,32 5.2 18.28% $180,000.00
+                   ARCHITECT                                                        
+   REW, ROBERT     GENERAL COUNSEL 8810  CA      E   3,57,58,12 5.2 13.45% $214,999.92
+   RICHARDSON, JOSHUA ACCOUNT SPECIALIST 8810 TX S   3,57,58,12 5.2 40.30%  $70,000.08
+   ROSENBAUM, CHARLES TECHNICAL   8810    TX     E   3,57,58,12 5.2 23.43%  $85,000.08
+                   OPERATIONS                                                       
+   ROY, BRETT      SR SOFTWARE    8810    TX     E   57,58,12,58 5.2 15.07% $155,323.92
+                   ENGINEER                                                         
+   RUBIO, CHRISTOPHER SR. ARCHITECT 8810 CA      F   57,58,12,58 5.2 17.90% $224,286.96
+   SANTAMARIA, JESSE SUPPORT ENGINEER 8810 TX    E   57,58,12,32 5.2 18.25% $124,999.92
+   SARWAR, QUAZI   BUSINESS ANALYST 8810  TX     K   57,58,12,32 5.2 22.71% $126,875.04
+   SCHENTUR, KIMBERLY FIELD SALES 8742   CA      C   57,58,12,46 5.2 21.07% $124,836.00
+                   REPRESEN                                                         
+   SCHNIEDERJAN, JEFFREY DATA ANALYST 8810 TX    F   57,58,12,58 5.2 27.56% $123,000.00
+   SERRANO, LISA   DIRECTOR OF    8810   CA      K   3,57,58,12 5.2 19.18% $188,764.08
+                   ENGINEER                                                         
+   SIDAVANH, VANNARY SR. FINANCIAL ANALYS 8810 CA E  3,57,58,12 5.2 18.90% $123,864.96
+   SIMPSON, JEFFREY IT SECURITY SYSTEM A 8810 TX E    57,58,33 5.2  20.09% $105,000.00
+   SKEETE, EZRA    ACCOUNT SPECIALIST 8810 TX    E   57,58,12,32 5.2 25.98% $72,100.08
+   SMITH, BRADLEY  FIELD SALES    5302   WA      E   57,58,12,32 5.2 19.90% $123,600.00
+                   REPRESEN                                                         
+   SNIDER, MARY    VP, BUSINESS   8810   CO      C   57,58,12,96 5.2 12.98% $250,000.08
+                   DEVELOP                                                          
+   SONG, JIYOON    VP, Accounting & Adm 8810 CA  E   3,57,58,12 5.2 12.54% $233,398.08
+   STANLY SUNDARSINGH, WESPLREIYN CSIAPMAUL ESOFTWARE 8810 TX K 3,57,58,12 5.2 20.15% $169,950.00
+                   E                                                                
+   TANG, CHUAN     SOFTWARE       8810    TX     K   57,58,12,32 5.2 18.28% $180,000.00
+                   ARCHITECT                                                        
+                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 4of 6
+                                                                                    
+                                                                                    
+                                                             Group Identification Key
+                                                                                    
+   Client Information:                          Client/Version No.: 5169600-15-2-R  
+   WELLFIT TECHNOLOGIES, INC.                                                       
+                                                Date:        08/17/2026             
+   125 E JOHN CARPENTER FWY STE 1200                                                
+                                                Print Date:  10/30/2026             
+   IRVING, TX 750622288                                                             
+   Phone: (855)493-5534                                                             
+                                                Business:    Computer systems design
+   Fax:                                                                             
+   Contact:                                     Sales Rep:   SARAH HOGAN            
+                                                Payroll Specialist: ROXANNA E ALLEN 
+                                                Office:      DENVER 1               
+   Client Associated Subclients: 5169600                                            
+   Benefit Package: Independence Premier - U                                        
+   Life and AD&D: Auto Enroll                                                       
+                                                                                    
+                                                                                    
+                                                      COVERAGE                      
+                                          W/C COVERAGE        CLASS SERVICE FEE ANNUAL
+    EMPLOYEE NAME    JOB TITLE  W/C CODE               GROUP /                      
+                                         STATE  LEVEL         CODE PERCENTAGE PAY $ 
+   TANG, CHUAN     SOFTWARE       8810    TX     K   57,5O8,P1T2,I3O2N 5.2 18.28% $180,000.00
+                   ARCHITECT                                                        
+   TEBEAU, JOHNATHAN PRODUCT MANAGER, 8810 TX    E   3,57,58,12 5.2 16.97% $144,199.92
+                   FIN                                                              
+   THAPA, ROJESH   SR POWER PLATFORM 8810 TX     E    57,58,58 5.2  8.32%  $131,950.08
+                   DE                                                               
+   THARP, WALLACE  CHIEF OPERATING 8810   TX     F   3,57,58,12 5.2 14.91% $320,289.12
+                   OFFI                                                             
+   THOMAS, JASON   ARCHITECT      8810    TX     F   57,58,12,32 5.2 23.80% $166,650.00
+   TOKERUD, TIMOTHY DIRECTOR OF DATA & A 8810 TX C   57,58,12,32 5.2 17.68% $188,442.96
+   VICK, TODD      CHIEF FINANCIAL OFFI 8810 TX  F   3,57,58,12 5.1 16.99% $334,999.92
+   VILLIAPAKAM PREMSAGA, DIP.NIKEAT & BI INTEGRATIO 8810 TX C 57,58,12,33 5.2 23.04% $128,749.92
+   WATKINS, JAMIE  DIRECTOR, REVENUE 8810 TX     S   3,57,58,12 5.2 20.19% $182,700.00
+                   OP                                                               
+   WERNER, MARK    PRINCIPAL SOFTWARE 8810 AZ    F   3,57,58,12 5.2 19.82% $234,226.08
+                   E                                                                
+   WEST, CARMEN    CONTACT CENTER 8810    TX     E   3,57,58,12 5.2 35.87%  $47,448.72
+                   REPRE                                                            
+   WILSON, CHRISTOPHER VICE PRESIDENT, INFO 8810 TX F 3,57,58,12 5.2 20.78% $222,789.60
+   YOUNGBLOOD, LISA DIRECTOR,     8810    TX     K   57,58,12,33 5.2 18.51% $182,700.00
+                   OPERATIONS                                                       
+                                                  Weighted Average For Group No. 0 19.91%
+   LEGEND:                                                                          
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 5of 6
+                                                                                    
+                                                                                    
+                                                             Group Identification Key
+                                                                                    
+   Client Information:                          Client/Version No.: 5169600-15-2-R  
+   WELLFIT TECHNOLOGIES, INC.                                                       
+                                                Date:        08/17/2026             
+   125 E JOHN CARPENTER FWY STE 1200                                                
+                                                Print Date:  10/30/2026             
+   IRVING, TX 750622288                                                             
+   Phone: (855)493-5534                                                             
+                                                Business:    Computer systems design
+   Fax:                                                                             
+   Contact:                                     Sales Rep:   SARAH HOGAN            
+                                                Payroll Specialist: ROXANNA E ALLEN 
+                                                Office:      DENVER 1               
+   Client Associated Subclients: 5169600                                            
+   Benefit Package: Independence Premier - U                                        
+   Life and AD&D: Auto Enroll                                                       
+                                                                                    
+                                                                                    
+                                                      COVERAGE                      
+                                          W/C COVERAGE        CLASS SERVICE FEE ANNUAL
+    EMPLOYEE NAME    JOB TITLE  W/C CODE               GROUP /                      
+                                         STATE  LEVEL         CODE PERCENTAGE PAY $ 
+                                                       OPTION                       
+   LEGEND:                                                                          
+   Coverage  Coverage Description                                                   
+     3  500 Deductible                                                              
+    32  1700 Deductible - HDHP (1750 in 2027)                                       
+    33  250 Deductible                                                              
+    46  Kaiser HMO CA South                                                         
+    51  UHC of CA HMO South                                                         
+    58  5000 Deductible - HDHP                                                      
+    96  Kaiser HMO CO                                                               
+    12  50 Deductible Dental and Vision                                             
+    57  Basic Life Insurance                                                        
+    58  Basic AD&D                                                                  
+                                                                                    
+   Coverage Level: E - Employee S - Spouse C - Child K - Children F - Family I - Ineligible W - Waived
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 6of 6
+
+--- [EXTRACTED TABLES SUMMARY] ---
+
+[Table 1: p1_x1 (Rows: 49, Columns: 11)]
+                                         <NA> <NA>                    <NA>   <NA>   <NA>        <NA>            <NA>    Group  Ide ntification K          ey
+                          Client Information: <NA>                    <NA>   <NA>   <NA> Client/Vers      ion No.: 5  169600- 15-2            -R        <NA>
+                      WELLFIT TECHNOLOGIES, I    N                      C.   <NA>   <NA>       Date:               0 8/17/202    6          <NA>        <NA>
+125 E JOHN CARPENTER FW\nIRVING, TX 750622288 <NA>              Y STE 1200   <NA>   <NA> Print Date:               1 0/30/202    6          <NA>        <NA>
+                         Phone: (855)493-5534 <NA>                    <NA>   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                         Fax: <NA>                    <NA>   <NA>   <NA>   Business:            <NA> Computer syst    ems design        <NA>
+                                     Contact: <NA>                    <NA>   <NA>   <NA>  Sales Rep:            <NA>  SARAH H  OGA             N        <NA>
+                                         <NA> <NA>                    <NA>   <NA>   <NA> Payroll Spe        cialist:   ROXANN  A E         ALLEN        <NA>
+                                         <NA> <NA>                    <NA>   <NA>   <NA>     Office:            <NA>   DENVER    1          <NA>        <NA>
+                Client Associated Subclients:    5                  169600   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                             Benefit Package:    I ndependence Premier - U   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                               Life and AD&D:    A              uto Enroll   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                EMPLOYEE NAME <NA>            JOB TITLE W/ C CODE W/C CO      VERAGE        COVERAGE    CLASS    S    ERVICE FEE      ANNUAL
+                                         <NA> <NA>                    <NA>      S   TATE       LEVEL GROUP /\nOPTION     CODE   PE      RCENTAGE       PAY $
+                        GROUP NO. 0 - UNASSIG    N                      ED   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                       ABBOTT-BULLOCKS, JEANN    E       HTTUEMAN RESOURCE   8810     TX           S      3,57,58,12      5.2 <NA>        25.96% $124,999.92
+                                         <NA> <NA>                   MANAG   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                       ABUBAKAR MARICAR, ABDU    L      S RRA SSOHFETEWARE   8810     TX           K        57,58,58      5.2 <NA>        17.82% $159,649.92
+                                         <NA> <NA>                ENGINEER   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                             ANDERSON, ROBERT <NA>          Sr AI Engineer   8810     TX           C      3,57,58,12      5.2 <NA>        20.03% $171,600.00
+                               ANTWINE, LEXUS <NA>    Onboarding Specialis   8810     TX           E      3,57,58,12      5.2 <NA>        31.29%  $56,650.08
+                                 ASPLEN, JOHN <NA>         VICE PRESIDENT,    953     DE           E     57,58,12,32      5.2 <NA>        14.81% $187,459.92
+                                         <NA> <NA>                    COMP   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                 ATAL, SHIKHA <NA>            SCRUM MASTER   8810     TX           W           57,58      5.2 <NA>        10.61% $120,000.00
+                             BAILEY, ANDERSON <NA>               HELP DESK   8810     TX           W           57,58      5.2 <NA>        13.52%  $60,000.00
+                                         <NA> <NA>              TECHNICIAN   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                               BAIRI, THARIKA <NA>            SQL DATABASE   8810     TX           W           57,58      5.2 <NA>        10.21% $139,050.00
+                                         <NA> <NA>                 ENGINEE   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                               BANKAR, SUSHMA <NA>        BUSINESS ANALYST   8810     TX           F     57,58,12,33      5.2 <NA>        30.33% $123,600.00
+                                   BARI, ABUL <NA>          QA ANALYST III   8810     TX           F      3,57,58,12      5.2 <NA>        37.40% $106,090.08
+                                BAYYA, SWETHA <NA>        BUSINESS ANALYST   8810     TX           E      3,57,58,12      5.2 <NA>        18.99% $118,450.08
+                               BELCONIS, EMMA <NA>      DIRECTOR OF PEOPLE   8810     TX           E     57,58,12,33      5.2 <NA>        15.57% $172,000.08
+                                         <NA> <NA>                       &   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                              BHARDWAJ, SHIVA <NA>     SR BUSINESS ANALYST   8810     TX           F      3,57,58,12      5.2 <NA>        28.54% $151,177.92
+                               BRIONES, CLARO <NA>            SR ARCHITECT   8810     TX           F      3,57,58,12      5.2 <NA>        21.73% $212,285.04
+                           BYRAPAKA, NITHUSHA <NA>           PRODUCT OWNER   8810     TX           E     57,58,12,32      5.2 <NA>        17.69% $132,000.00
+                           CHAWANDE, VIVIENNE <NA>         SR. QA ENGINEER   8810     TX           C     57,58,12,58      5.2 <NA>        22.95% $111,553.92
+                                 CHIPPS, JOHN <NA>        CHIEF TECHNOLOGY   8810     TX           F      3,57,58,12      5.2 <NA>        15.39% $309,309.12
+                                         <NA> <NA>                     OFF   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                              COLLINS, GEORGE <NA>                     CEO   8810     TX           F     57,58,12,33      5.1 <NA>        15.56% $400,000.08
+                             CORDOVA, NATALIE <NA>           MANAGER SMALL   8810     TX           F      3,57,58,12      5.2 <NA>        42.47%  $90,640.08
+                                         <NA> <NA>                   GROUP   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                 CRUMP, KAREY <NA>         VICE PRESIDENT,   8810     TX           F     57,58,12,58      5.2 <NA>        16.41% $240,619.92
+                                         <NA> <NA>                    PROD   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                           DAVIS, CHRISTOPHER <NA>              OPERATIONS   8810     TX           E     57,58,12,33      5.2 <NA>        24.62%  $79,999.92
+                                         <NA> <NA>               SPECIALIS   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                DEARMON, KRIS <NA>         PROGRAM MANAGER   8810     TX           W           57,58      5.2 <NA>        10.79% $113,299.92
+                                 DIAL, AUSTIN <NA>        ACCOUNT MANAGER,   8810     TX           F      3,57,58,12      5.2 <NA>        31.81% $130,680.96
+                                         <NA> <NA>                     PDS   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+------------------------------------------------------------
+
+[Table 2: p2_x1 (Rows: 52, Columns: 11)]
+                                         <NA> <NA>                    <NA>   <NA>   <NA>        <NA>            <NA>    Group  Ide ntification K          ey
+                          Client Information: <NA>                    <NA>   <NA>   <NA> Client/Vers      ion No.: 5  169600- 15-2            -R        <NA>
+                      WELLFIT TECHNOLOGIES, I    N                      C.   <NA>   <NA>       Date:               0 8/17/202    6          <NA>        <NA>
+125 E JOHN CARPENTER FW\nIRVING, TX 750622288 <NA>              Y STE 1200   <NA>   <NA> Print Date:               1 0/30/202    6          <NA>        <NA>
+                         Phone: (855)493-5534 <NA>                    <NA>   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                         Fax: <NA>                    <NA>   <NA>   <NA>   Business:            <NA> Computer syst    ems design        <NA>
+                                     Contact: <NA>                    <NA>   <NA>   <NA>  Sales Rep:            <NA>  SARAH H  OGA             N        <NA>
+                                         <NA> <NA>                    <NA>   <NA>   <NA> Payroll Spe        cialist:   ROXANN  A E         ALLEN        <NA>
+                                         <NA> <NA>                    <NA>   <NA>   <NA>     Office:            <NA>   DENVER    1          <NA>        <NA>
+                Client Associated Subclients:    5                  169600   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                             Benefit Package:    I ndependence Premier - U   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                               Life and AD&D:    A              uto Enroll   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                EMPLOYEE NAME <NA>            JOB TITLE W/ C CODE W/C CO      VERAGE        COVERAGE    CLASS    S    ERVICE FEE      ANNUAL
+                                         <NA> <NA>                    <NA>      S   TATE       LEVEL GROUP /\nOPTION     CODE   PE      RCENTAGE       PAY $
+                        DU PLESSIS, LODEWIKUS <NA>          PRODUCT OWNER,   8810     TX           E     57,58,12,33      5.2 <NA>        16.72% $150,000.00
+                                         <NA> <NA>                   MANAG   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                              DUFRESNE, EMILY <NA>    Underwriter & Compli   8810     TX           W           57,58      5.2 <NA>        12.84%  $67,999.92
+                            ESHETIE, GIZACHEW <NA>             SR SOFTWARE   8810     TX           E     57,58,12,32      5.2 <NA>        16.58% $148,525.92
+                                         <NA> <NA>                ENGINEER   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                       FARHEEN FATIMA, NO NAM    E      SGRIV AEI ENGINEER   8810     TX           E     57,58,12,58      5.2 <NA>        14.06% $180,000.00
+                      FUENTES SICAIROS, JORGE <NA>            SR ARCHITECT   8810     CA           F     57,58,12,46      5.2 <NA>        17.61% $218,182.08
+                                   GJINI, IRA <NA>        PROJECT MANAGER,   8810     TX           E     57,58,12,58      5.2 <NA>        22.88%  $75,383.04
+                                         <NA> <NA>                      HR   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                          GUILLORY, GABRIELLE <NA>             DIRECTOR OF   8810     TX           E      3,57,58,12      5.2 <NA>        16.92% $145,000.08
+                                         <NA> <NA>                COMMECIA   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                  HALL, CLIFF <NA>     Manager, Compliance   8810     IL           E      3,57,58,12      5.2 <NA>        17.96% $135,660.96
+                                HILL, BRIANNA <NA>    Account Manager, Ent   8810     TX           F        57,58,12      5.2 <NA>        11.45% $124,999.92
+                            HOLTSCLAW, ANDREW <NA>          PRODUCT OWNER,   8810     TX           E      3,57,58,12      5.2 <NA>        17.25% $139,999.92
+                                         <NA> <NA>                   PAYME   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                HORTON, DAVID <NA>      ARCHITECT, SYSTEMS   8810     CA           S     57,58,12,51      5.2 <NA>        19.64% $190,962.00
+                               HUDSON, TAYLOR <NA>           PRODUCT OWNER   8810     TX           E     57,58,12,32      5.2 <NA>        19.68% $109,999.92
+                                 JOE, MICHAEL <NA>          CONTACT CENTER   8810     TX           E      3,57,58,12      5.2 <NA>        30.49%  $58,639.56
+                                         <NA> <NA>                   REPRE   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                             JOHNSON, JAZMINE <NA>          CONTACT CENTER   8810     TX           C     57,58,12,58      5.2 <NA>        43.78%  $47,132.76
+                                         <NA> <NA>                   REPRE   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                              JOHNSON, NICOLE <NA>             FIELD SALES   8742     TX           E     57,58,12,33      5.2 <NA>        19.08% $120,000.00
+                                         <NA> <NA>                REPRESEN   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                                 JONES, DAVID <NA>             SR SOFTWARE   8810     TX           F      3,57,58,12      5.2 <NA>        28.71% $150,000.00
+                                         <NA> <NA>                ENGINEER   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                             KAMPERMAN, CONOR <NA>       SOFTWARE ENGINEER   8810     TX           C      3,57,58,12      5.2 <NA>        31.20%  $90,000.00
+                                         <NA> <NA>                      II   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                            KANDOORI, RADHIKA <NA>       SR. QA ENGINEER I   8810     CA           F      3,57,58,12      5.2 <NA>        30.91% $138,198.00
+                           KHANDAKER, OBAIDUL <NA>    Lead Program Manager   8810     TX           F      3,57,58,12      5.2 <NA>        26.28% $169,626.72
+                                   KING, VERA <NA>            LEAD CONTACT   8810     TX           C      3,57,58,12      5.2 <NA>        39.86%  $65,769.60
+                                         <NA> <NA>                  CENTER   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                              KNIGHT, CAMILLE <NA>              SR PRODUCT   8810     AL           E        57,58,12      5.2 <NA>        10.23% $158,523.12
+                                         <NA> <NA>                MANAGER,   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                              KROEHLE, TRACEY <NA>             FIELD SALES   8810     TX           S      3,57,58,12      5.2 <NA>        26.16% $123,600.00
+                                         <NA> <NA>                REPRESEN   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+                             KULKARNI, SHRUTI <NA>        CRM DATA ANALYST   8810     TX           W           57,58      5.2 <NA>        11.20% $100,000.08
+                           LANASKI, CHRISTINA <NA>                    LEAD   8810     TX           E     57,58,12,32      5.2 <NA>        15.80% $162,792.00
+                                         <NA> <NA>          INFRASTRUCTURE   <NA>   <NA>        <NA>            <NA>     <NA> <NA>          <NA>        <NA>
+------------------------------------------------------------
+
+[Table 3: p3_x1 (Rows: 51, Columns: 11)]
+                                         <NA> <NA>                    <NA>    <NA>     <NA>        <NA>              <NA>     Group  Ide    ntification K                 ey
+                          Client Information: <NA>                    <NA>    <NA>     <NA> Client/Vers        ion No.: 5   169600- 15-2               -R               <NA>
+                      WELLFIT TECHNOLOGIES, I    N                      C.    <NA>     <NA>       Date:                 0  8/17/202    6             <NA>               <NA>
+125 E JOHN CARPENTER FW\nIRVING, TX 750622288 <NA>              Y STE 1200    <NA>     <NA> Print Date:                 1  0/30/202    6             <NA>               <NA>
+                         Phone: (855)493-5534 <NA>                    <NA>    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                         Fax: <NA>                    <NA>    <NA>     <NA>   Business:              <NA>  Computer syst       ems design               <NA>
+                                     Contact: <NA>                    <NA>    <NA>     <NA>  Sales Rep:              <NA>   SARAH H  OGA                N               <NA>
+                                         <NA> <NA>                    <NA>    <NA>     <NA> Payroll Spe          cialist:    ROXANN  A E            ALLEN               <NA>
+                                         <NA> <NA>                    <NA>    <NA>     <NA>     Office:              <NA>    DENVER    1             <NA>               <NA>
+                Client Associated Subclients:    5                  169600    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                             Benefit Package:    I ndependence Premier - U    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                               Life and AD&D:    A              uto Enroll    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                EMPLOYEE NAME <NA>            JOB TITLE W/  C CODE   W/C CO      VERAGE COVERAGE\nGROUP /     CLASS    S       ERVICE FEE             ANNUAL
+                           LANASKI, CHRISTINA <NA>                    LEAD S\n8810 TATE\nTX    LEVEL\nE 57,5O8,P1T2,I3O2N CODE\n5.2   PE RCENTAGE\n15.80% PAY $\n$162,792.00
+                                         <NA> <NA>          INFRASTRUCTURE    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                 LIN, JUIYING <NA>          SR UX DESIGNER    8810       TX           S          57,58,12       5.2 <NA>           11.36%        $118,450.08
+                                 LITTLE, PAUL <NA>         PRODUCT MANAGER    8810       TX           E       57,58,12,32       5.2 <NA>           16.03%        $158,340.00
+                                  LOWRY, LISA <NA>       TERRITORY MANAGER    8810       VA           W             57,58       5.2 <NA>           10.54%        $120,000.00
+                         LOYA HULSEY, LARYSSA <NA>      ENTERPRISE ACCOUNT    8810       TX           F       57,58,12,32       5.2 <NA>           30.53%        $117,499.92
+                                         <NA> <NA>                       M    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                       MARINENI, VIJAY DANIEL <NA>           PRODUCT OWNER    8810       TX           F        3,57,58,12       5.2 <NA>           31.71%        $131,221.92
+                                    MAYS, KIM <NA>              ACCOUNTING    8810       TX           K       57,58,12,32       5.2 <NA>           21.98%        $133,385.04
+                                         <NA> <NA>                 MANAGER    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                MBAHYAM, LUCY <NA>            SCRUM MASTER    8810       TX           E          57,58,32       5.2 <NA>           18.87%        $113,299.92
+                           MCARDLE, ALEXANDER <NA>       SOFTWARE ENGINEER    8810       TX           F        3,57,58,12       5.2 <NA>           29.55%        $144,199.92
+                                         <NA> <NA>                      II    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                               MCGEE, MATTHEW <NA>         VENDOR MANAGER,    8810       TX           S          57,58,12       5.2 <NA>           11.17%        $124,999.92
+                                         <NA> <NA>                    STRA    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                           MCGLUMPHY, MICHAEL <NA>       SOFTWARE ENGINEER    8810       TX           F       57,58,12,58       5.2 <NA>           24.64%        $144,199.92
+                                         <NA> <NA>                      II    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                               MCKEE, MATTHEW <NA>            SR RECRUITER    8810       TX           E       57,58,12,33       5.2 <NA>           18.33%        $127,308.00
+                             MEYER, CHRISTIAN <NA>             FIELD SALES    8742       NE           E        3,57,58,12       5.2 <NA>           19.03%        $121,200.00
+                                         <NA> <NA>                REPRESEN    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                          MITCHELL, STEPHANIE <NA>              OPERATIONS    8810       TX           C        3,57,58,12       5.2 <NA>           34.14%         $79,999.92
+                                         <NA> <NA>               SPECIALIS    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                              MONROE, DESTINY <NA>          IMPLEMENTATION    8810       TX           E        3,57,58,12       5.2 <NA>           26.80%         $70,000.08
+                                         <NA> <NA>                   SPECI    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                MOORE, RASHAD <NA>              OPERATIONS    8810       TX           E        3,57,58,12       5.2 <NA>           19.32%        $115,000.08
+                                         <NA> <NA>                 MANAGER    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                 MORRIS, GENE <NA>          LEAD TECHNICAL    8810       TX           E        3,57,58,12       5.2 <NA>           17.25%        $139,999.92
+                                         <NA> <NA>                   BUSIN    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                MYRICK, DARYL <NA>           Dev Team Lead    8810       TX           S        3,57,58,12       5.2 <NA>           20.67%        $175,999.92
+                       NARAYANAN, HARIHARA SU    B            DIRECTOR, QA    8810       TX           F        3,57,58,12       5.2 <NA>           21.93%        $210,263.04
+                                 PAAPE, SCOTT <NA>             SENIOR VICE    8742       TX           K        3,57,58,12       5.2 <NA>           13.67%        $270,000.00
+                                         <NA> <NA>                PRESIDEN    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                              PANCHAL, NIMESH <NA>             SR SOFTWARE    8810       TX           F        3,57,58,12       5.2 <NA>           26.93%        $163,908.96
+                                         <NA> <NA>                ENGINEER    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                 PARIKH, AMIT <NA>             DIRECTOR OF    8810       TX           F        3,57,58,12       5.2 <NA>           19.90%        $233,449.92
+                                         <NA> <NA>                ARCHITEC    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                 PARK, EDMUND <NA>             SR SOFTWARE    8810       CA           F       57,58,12,46       5.2 <NA>           23.01%        $153,061.92
+                                         <NA> <NA>                ENGINEER    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+------------------------------------------------------------
+
+[Table 4: p4_x1 (Rows: 52, Columns: 12)]
+                                         <NA> <NA>                     <NA>      <NA>           <NA>        <NA>        <NA>            <NA>      Group  Ide ntification K          ey
+                          Client Information: <NA>                     <NA>      <NA>           <NA>        <NA> Client/Vers      ion No.: 5    169600- 15-2            -R        <NA>
+                      WELLFIT TECHNOLOGIES, I    N                       C.      <NA>           <NA>        <NA>       Date:               0   8/17/202    6          <NA>        <NA>
+125 E JOHN CARPENTER FW\nIRVING, TX 750622288 <NA>               Y STE 1200      <NA>           <NA>        <NA> Print Date:               1   0/30/202    6          <NA>        <NA>
+                         Phone: (855)493-5534 <NA>                     <NA>      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                         Fax: <NA>                     <NA>      <NA>           <NA>        <NA>   Business:            <NA>   Computer syst    ems design        <NA>
+                                     Contact: <NA>                     <NA>      <NA>           <NA>        <NA>  Sales Rep:            <NA>    SARAH H  OGA             N        <NA>
+                                         <NA> <NA>                     <NA>      <NA>           <NA>        <NA> Payroll Spe        cialist:     ROXANN  A E         ALLEN        <NA>
+                                         <NA> <NA>                     <NA>      <NA>           <NA>        <NA>     Office:            <NA>     DENVER    1          <NA>        <NA>
+                Client Associated Subclients:    5                   169600      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                             Benefit Package:    I       ndependence Premie     r - U           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                               Life and AD&D:    A               uto Enroll      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                EMPLOYEE NAME <NA>                JOB TITLE        W/         C CODE      W/C CO      VERAGE        COVERAGE      CLASS    S    ERVICE FEE      ANNUAL
+                                         <NA> <NA>                     <NA>      <NA>           <NA>       STATE       LEVEL GROUP /\nOPTION       CODE   PE      RCENTAGE       PAY $
+                                PARRA, CARLOS <NA>           DATABASE MANAG        ER           8810          CO           S      3,57,58,12        5.2 <NA>        21.83% $166,447.92
+                                   PATEL, JAY <NA>          SENIOR SOFTWARE      <NA>           8810          TX           F         3,57,58        5.2 <NA>        27.91% $150,000.00
+                                         <NA> <NA>                     ENGI      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                  PELC, ORRIE <NA>             SR. SOFTWARE      <NA>           8810          TX           S      3,57,58,12        5.2 <NA>        23.44% $145,000.08
+                                         <NA> <NA>                  ENGINEE      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                            PEMBERTON, THOMAS <NA>          DIRECTOR OF PMO      <NA>           8810          TX           F      3,57,58,12        5.2 <NA>        24.11% $190,000.08
+                                  PERRY, JOHN <NA>          SOFTWARE ENGINE        ER           8810          TX           E      3,57,58,12        5.2 <NA>        19.17% $116,500.08
+                                         <NA> <NA>                       II      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                              PETRE, DANIELLE <NA>          ACCOUNT SPECIAL       IST           8810          TX           E     57,58,12,32        5.2 <NA>        25.98%  $72,100.08
+                                POSINA, ROHIT <NA>                 SOFTWARE      <NA>           8810          TX           C     57,58,12,32        5.2 <NA>        18.28% $180,000.00
+                                         <NA> <NA>                ARCHITECT      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                  REW, ROBERT <NA>           GENERAL COUNSE         L           8810          CA           E      3,57,58,12        5.2 <NA>        13.45% $214,999.92
+                           RICHARDSON, JOSHUA <NA>          ACCOUNT SPECIAL       IST           8810          TX           S      3,57,58,12        5.2 <NA>        40.30%  $70,000.08
+                           ROSENBAUM, CHARLES <NA>                TECHNICAL      <NA>           8810          TX           E      3,57,58,12        5.2 <NA>        23.43%  $85,000.08
+                                         <NA> <NA>               OPERATIONS      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                   ROY, BRETT <NA>              SR SOFTWARE      <NA>           8810          TX           E     57,58,12,58        5.2 <NA>        15.07% $155,323.92
+                                         <NA> <NA>                 ENGINEER      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                           RUBIO, CHRISTOPHER <NA>            SR. ARCHITECT      <NA>           8810          CA           F     57,58,12,58        5.2 <NA>        17.90% $224,286.96
+                            SANTAMARIA, JESSE <NA>          SUPPORT ENGINEE         R           8810          TX           E     57,58,12,32        5.2 <NA>        18.25% $124,999.92
+                                SARWAR, QUAZI <NA>          BUSINESS ANALYS         T           8810          TX           K     57,58,12,32        5.2 <NA>        22.71% $126,875.04
+                           SCHENTUR, KIMBERLY <NA>              FIELD SALES      <NA>           8742          CA           C     57,58,12,46        5.2 <NA>        21.07% $124,836.00
+                                         <NA> <NA>                 REPRESEN      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                        SCHNIEDERJAN, JEFFREY <NA>             DATA ANALYST      <NA>           8810          TX           F     57,58,12,58        5.2 <NA>        27.56% $123,000.00
+                                SERRANO, LISA <NA>              DIRECTOR OF      <NA>           8810          CA           K      3,57,58,12        5.2 <NA>        19.18% $188,764.08
+                                         <NA> <NA>                 ENGINEER      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                            SIDAVANH, VANNARY <NA>        SR. FINANCIAL ANA       LYS           8810          CA           E      3,57,58,12        5.2 <NA>        18.90% $123,864.96
+                             SIMPSON, JEFFREY <NA>        IT SECURITY SYSTE       M A           8810          TX           E        57,58,33        5.2 <NA>        20.09% $105,000.00
+                                 SKEETE, EZRA <NA>          ACCOUNT SPECIAL       IST           8810          TX           E     57,58,12,32        5.2 <NA>        25.98%  $72,100.08
+                               SMITH, BRADLEY <NA>              FIELD SALES      <NA>           5302          WA           E     57,58,12,32        5.2 <NA>        19.90% $123,600.00
+                                         <NA> <NA>                 REPRESEN      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                 SNIDER, MARY <NA>             VP, BUSINESS      <NA>           8810          CO           C     57,58,12,96        5.2 <NA>        12.98% $250,000.08
+                                         <NA> <NA>                  DEVELOP      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                 SONG, JIYOON <NA>      VP, Accounting & Ad         m           8810          CA           E      3,57,58,12        5.2 <NA>        12.54% $233,398.08
+                       STANLY SUNDARSINGH, WE    S PLREIYN CSIAPMAUL ESOFTW       ARE           8810          TX           K      3,57,58,12        5.2 <NA>        20.15% $169,950.00
+                                         <NA> <NA>                        E      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                  TANG, CHUAN <NA>                 SOFTWARE      <NA>           8810          TX           K     57,58,12,32        5.2 <NA>        18.28% $180,000.00
+                                         <NA> <NA>                ARCHITECT      <NA>           <NA>        <NA>        <NA>            <NA>       <NA> <NA>          <NA>        <NA>
+                                         Insp    e    rity • 19001 Crescent Springs D r. • Kingwood, TX 77339-38 02 • 1-800- 237-3170 • www. insperity.  com          Page       4of 6
+------------------------------------------------------------
+
+[Table 5: p5_x1 (Rows: 34, Columns: 11)]
+                                         <NA> <NA>                     <NA>    <NA>     <NA>        <NA>              <NA>     Group  Ide    ntification K                 ey
+                          Client Information: <NA>                     <NA>    <NA>     <NA> Client/Vers        ion No.: 5   169600- 15-2               -R               <NA>
+                      WELLFIT TECHNOLOGIES, I    N                       C.    <NA>     <NA>       Date:                 0  8/17/202    6             <NA>               <NA>
+125 E JOHN CARPENTER FW\nIRVING, TX 750622288 <NA>               Y STE 1200    <NA>     <NA> Print Date:                 1  0/30/202    6             <NA>               <NA>
+                         Phone: (855)493-5534 <NA>                     <NA>    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                         Fax: <NA>                     <NA>    <NA>     <NA>   Business:              <NA>  Computer syst       ems design               <NA>
+                                     Contact: <NA>                     <NA>    <NA>     <NA>  Sales Rep:              <NA>   SARAH H  OGA                N               <NA>
+                                         <NA> <NA>                     <NA>    <NA>     <NA> Payroll Spe          cialist:    ROXANN  A E            ALLEN               <NA>
+                                         <NA> <NA>                     <NA>    <NA>     <NA>     Office:              <NA>    DENVER    1             <NA>               <NA>
+                Client Associated Subclients:    5                   169600    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                             Benefit Package:    I  ndependence Premier - U    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                               Life and AD&D:    A               uto Enroll    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                EMPLOYEE NAME <NA>             JOB TITLE W/  C CODE   W/C CO      VERAGE COVERAGE\nGROUP /     CLASS    S       ERVICE FEE             ANNUAL
+                                  TANG, CHUAN <NA>                 SOFTWARE S\n8810 TATE\nTX    LEVEL\nK 57,5O8,P1T2,I3O2N CODE\n5.2   PE RCENTAGE\n18.28% PAY $\n$180,000.00
+                                         <NA> <NA>                ARCHITECT    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                            TEBEAU, JOHNATHAN <NA>         PRODUCT MANAGER,    8810       TX           E        3,57,58,12       5.2 <NA>           16.97%        $144,199.92
+                                         <NA> <NA>                      FIN    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                THAPA, ROJESH <NA>        SR POWER PLATFORM    8810       TX           E          57,58,58       5.2 <NA>            8.32%        $131,950.08
+                                         <NA> <NA>                       DE    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                               THARP, WALLACE <NA>          CHIEF OPERATING    8810       TX           F        3,57,58,12       5.2 <NA>           14.91%        $320,289.12
+                                         <NA> <NA>                     OFFI    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                THOMAS, JASON <NA>                ARCHITECT    8810       TX           F       57,58,12,32       5.2 <NA>           23.80%        $166,650.00
+                             TOKERUD, TIMOTHY <NA>     DIRECTOR OF DATA & A    8810       TX           C       57,58,12,32       5.2 <NA>           17.68%        $188,442.96
+                                   VICK, TODD <NA>     CHIEF FINANCIAL OFFI    8810       TX           F        3,57,58,12       5.1 <NA>           16.99%        $334,999.92
+                      VILLIAPAKAM PREMSAGA, D    I P.NIKEAT & BI INTEGRATIO    8810       TX           C       57,58,12,33       5.2 <NA>           23.04%        $128,749.92
+                               WATKINS, JAMIE <NA>        DIRECTOR, REVENUE    8810       TX           S        3,57,58,12       5.2 <NA>           20.19%        $182,700.00
+                                         <NA> <NA>                       OP    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                 WERNER, MARK <NA>       PRINCIPAL SOFTWARE    8810       AZ           F        3,57,58,12       5.2 <NA>           19.82%        $234,226.08
+                                         <NA> <NA>                        E    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                                 WEST, CARMEN <NA>           CONTACT CENTER    8810       TX           E        3,57,58,12       5.2 <NA>           35.87%         $47,448.72
+                                         <NA> <NA>                    REPRE    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+                          WILSON, CHRISTOPHER <NA>     VICE PRESIDENT, INFO    8810       TX           F        3,57,58,12       5.2 <NA>           20.78%        $222,789.60
+                             YOUNGBLOOD, LISA <NA>                DIRECTOR,    8810       TX           K       57,58,12,33       5.2 <NA>           18.51%        $182,700.00
+                                         <NA> <NA>               OPERATIONS    <NA>     <NA>        <NA>              <NA>      <NA> <NA>             <NA>               <NA>
+------------------------------------------------------------
+
+[Table 6: p6_t1 (Rows: 10, Columns: 1)]
+                        3 500 Deductible
+32 1700 Deductible - HDHP (1750 in 2027)
+                       33 250 Deductible
+                  46 Kaiser HMO CA South
+                  51 UHC of CA HMO South
+               58 5000 Deductible - HDHP
+                        96 Kaiser HMO CO
+      12 50 Deductible Dental and Vision
+                 57 Basic Life Insurance
+                           58 Basic AD&D
+------------------------------------------------------------

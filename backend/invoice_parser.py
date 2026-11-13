@@ -303,9 +303,13 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
         if not hdr:
             continue
         c = hdr.columns
-        if not (("premium" in c) and any(k in c for k in ("full_name", "first_name", "last_name"))):
+        has_name = any(k in c for k in ("full_name", "first_name", "last_name"))
+        has_prem = "premium" in c
+        has_cov = "coverage" in c
+        if not (has_name and (has_prem or has_cov)):
             continue
         current: Optional[InvoiceRecord] = None
+        seen_subs: set[tuple] = set()
         for _, s in body(t.df, hdr).iterrows():
             g = lambda f: s.iloc[c[f]] if f in c else None
             vals = [clean(v) for v in s.tolist()]
@@ -322,8 +326,8 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
             if (plan or carrier or plan_type) and _is_non_medical(f"{carrier} {plan}", plan_type):
                 continue
 
-            prem = to_money(g("premium"))
-            if not prem or prem <= 0:
+            prem = to_money(g("premium")) if "premium" in c else (to_money(g("ee_cost")) or 0.0)
+            if has_prem and (not prem or prem <= 0):
                 continue
 
             first, last = clean(g("first_name")), clean(g("last_name"))
@@ -346,6 +350,24 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
                     current.dep_rels.add(rel)
                     current.has_dep_detail = True
                 continue
+
+            # Check wide-format dependents for BER / enrollment reports
+            dep_cnt = 0
+            dep_rels_set: set[str] = set()
+            if getattr(hdr, "wide_deps", None):
+                for (kind, _), flds in hdr.wide_deps.items():
+                    d_first = clean(s.iloc[flds["first"]]) if "first" in flds and flds["first"] < len(s) else ""
+                    d_last = clean(s.iloc[flds["last"]]) if "last" in flds and flds["last"] < len(s) else ""
+                    d_dob = s.iloc[flds["dob"]] if "dob" in flds and flds["dob"] < len(s) else None
+                    if d_first or d_last or not is_blank(d_dob):
+                        dep_cnt += 1
+                        dep_rels_set.add(kind)
+
+            sub_key = (name_key(first, last), clean(g("sub_id")))
+            if sub_key in seen_subs and not ("premium" in c):
+                continue
+            seen_subs.add(sub_key)
+
             z, _ = std_zip(g("zip"))
             rec = InvoiceRecord(
                 first=first, last=last, raw_name=raw,
@@ -353,7 +375,9 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
                 dob=parse_date(g("dob")), gender=std_gender(g("gender")), zip=z,
                 plan=plan, premium=prem,
                 status=clean(g("status")), sub_id=clean(g("sub_id")), source=doc.name,
-                has_dep_detail="relationship" in c)
+                has_dep_detail="relationship" in c or bool(dep_cnt),
+                dep_count=dep_cnt,
+                dep_rels=dep_rels_set)
             recs.append(rec)
             current = rec
 

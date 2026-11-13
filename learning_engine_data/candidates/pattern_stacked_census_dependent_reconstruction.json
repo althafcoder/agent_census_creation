@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_stacked_census_dependent_reconstruction",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_stacked_census_dependent_reconstruction_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "Tabular census rosters frequently present family members as stacked rows directly beneath the primary employee where Job Title indicates relationship ('Spouse', 'Child', 'Domestic Partner') rather than employment, with blank employment fields (hire date, salary, employment status). Failing to recognize these rows as dependents causes severe employee headcount inflation.",
+  "applicable_conditions": [
+    "Row contains a relationship indicator ('Spouse', 'Child', 'Domestic Partner', 'Dependent') in Job Title or Notes",
+    "Employment fields such as hire date, annual pay, or employee status are blank or identical to dependent profile",
+    "Preceding row represents an active employee subscriber"
+  ],
+  "required_validators": [
+    "GATE_C_DEPENDENT_DISPOSITION",
+    "RULE_09_STACKED_DEPENDENTS",
+    "RULE_09_DEPENDENT_LINKAGE"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_wellfit_technologies_stacked_dependents"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-11-12T18:28:59.623811",
+  "updated_at": "2026-11-12T18:28:59.623811",
+  "compatibility": {
+    "instruction_hashes": [
+      "5192719264644e5433ce61baa2c15d45860f33e844feae7f8392d6648f37b398"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "census"
+    ],
+    "file_types": [
+      "xlsx",
+      "csv"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "employee name",
+      "job title",
+      "hire date",
+      "annual pay",
+      "relationship"
+    ],
+    "stage": "linkage"
+  },
+  "trigger": {
+    "issue_type": "STACKED_DEPENDENT_AS_EMPLOYEE",
+    "field": "job_title",
+    "conditions": [
+      "job title matches relationship keyword and preceding employee exists"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 8.1A Step 3",
+    "Section 9.5",
+    "RULE_09_STACKED_DEPENDENTS"
+  ],
+  "root_cause": {
+    "code": "STACKED_DEPENDENT_AS_EMPLOYEE",
+    "verification_status": "verified",
+    "summary": "Reconstruct stacked census rows as dependents (SP, CH, DP) attached to preceding subscriber employee; prevent registering them as standalone employees."
+  },
+  "strategy": {
+    "action": "ATTACH_STACKED_DEPENDENT_TO_SUBSCRIBER",
+    "parameters": {
+      "relationship_job_titles": [
+        "spouse",
+        "child",
+        "domestic partner",
+        "dependent"
+      ]
+    },
+    "preconditions": [
+      "preceding subscriber employee established in current file parsing context"
+    ],
+    "exclusions": [
+      "do not reclassify legitimate employees whose job title contains 'partner' in a professional capacity (e.g., 'VP, Strategic Partnerships')"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_wellfit_stacked_deps"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_09_STACKED_DEPENDENTS",
+      "RULE_09_DEPENDENT_LINKAGE"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-11-12T18:28:59.623811"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261112_feedback",
+    "reason": "Validated against Feedback.docx Wellfit Technologies 104-employee active census invariant (122 stacked dependents attached)"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

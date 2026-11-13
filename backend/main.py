@@ -181,24 +181,37 @@ def run_pipeline(
                 roles["unknown"].remove(unk)
             log.info("      * Unknown file %s contains census table -> promoted to census", unk.name)
 
-    # Combine Benefits Enrollment Report (BER) / Election Report into census when census lacks medical plan columns
-    census_has_plan = any(
-        "plan" in (detect_header(t.df).columns if detect_header(t.df) else {})
-        for cd in roles["census"] for t in cd.tables
-    )
-    if not census_has_plan:
-        for inv_doc in roles.get("invoice", []):
-            if inv_doc not in roles["census"] and re.search(r"(enroll|benefit.*report|\bber\b|election)", inv_doc.name, re.I):
-                roles["census"].append(inv_doc)
-                log.info("      * Enrollment report %s also added to census for plan/tier consolidation", inv_doc.name)
-
-    # Conversely, if a Benefits Enrollment Report (BER) was classified as census and no medical carrier invoice exists,
-    # include the BER in invoice comparison as an invoice equivalent (Section 11.1)
-    if not roles.get("invoice"):
-        for cen_doc in roles.get("census", []):
-            if re.search(r"(benefit.*enroll.*report|enrollment\s*report|\bber\b)", cen_doc.name, re.I):
-                roles["invoice"].append(cen_doc)
+    # When dedicated census spreadsheets exist (e.g. Wellfit Census 2026 or Employee Census 3),
+    # reserve the multi-benefit enrollment report (BER) strictly for invoice-equivalent comparison (Section 11.1).
+    # Never add BER to census builder when dedicated census spreadsheets exist to prevent non-medical inflation.
+    dedicated_censuses = [d for d in roles.get("census", []) if re.search(r"(census|roster)", d.name, re.I)]
+    if dedicated_censuses:
+        for cen_doc in list(roles.get("census", [])):
+            if re.search(r"(benefit.*enroll|enrollment(\s*report)?|\bber\b|benefit\s*election)", cen_doc.name, re.I):
+                if cen_doc not in roles.setdefault("invoice", []):
+                    roles["invoice"].append(cen_doc)
+                roles["census"].remove(cen_doc)
+                log.info("      * Dedicated census files exist (%s); BER %s reserved for invoice-equivalent comparison",
+                         [d.name for d in dedicated_censuses], cen_doc.name)
+    elif not roles.get("invoice"):
+        for cen_doc in list(roles.get("census", [])):
+            if re.search(r"(benefit.*enroll|enrollment(\s*report)?|\bber\b|benefit\s*election)", cen_doc.name, re.I):
+                roles.setdefault("invoice", []).append(cen_doc)
                 log.info("      * Enrollment report %s also added to invoice as BER equivalent", cen_doc.name)
+
+    # Combine Benefits Enrollment Report (BER) / Election Report into census ONLY when NO dedicated census files exist
+    # and census lacks medical plan columns
+    if not dedicated_censuses:
+        census_has_plan = any(
+            ("plan" in (detect_header(t.df).columns if detect_header(t.df) else {})) or
+            ("option_code" in (detect_header(t.df).columns if detect_header(t.df) else {}))
+            for cd in roles["census"] for t in cd.tables
+        )
+        if not census_has_plan:
+            for inv_doc in roles.get("invoice", []):
+                if inv_doc not in roles["census"] and re.search(r"(enroll|benefit.*report|\bber\b|election)", inv_doc.name, re.I):
+                    roles["census"].append(inv_doc)
+                    log.info("      * Enrollment report %s also added to census for plan/tier consolidation", inv_doc.name)
 
     # 2. prospect block & routing decision --------------------------------------------------------
     log.info("[2/7] Extracting Prospect Information & Determining Carrier Routing...")
@@ -353,7 +366,7 @@ def run_pipeline(
         if renewal:
             log.info("      * Renewal document provided voluntarily: effective=%s, %d rate rows", renewal.effective, len(renewal.rates))
 
-    renewal_to_use = renewal if ren_required else None
+    renewal_to_use = renewal if (ren_required or (renewal and getattr(renewal, "rates", None))) else None
 
     # 6. compare + populate premiums -------------------------------------------------------------
     log.info("[6/7] Running comparison and audit reconciliation...")
@@ -455,7 +468,7 @@ def run_pipeline(
                 else:
                     invoice_records = combine_records(selected)
                 have_invoice = bool(invoice_records)
-                renewal_to_use = renewal if ren_required else None
+                renewal_to_use = renewal if (ren_required or (renewal and getattr(renewal, "rates", None))) else None
 
                 # Recalculate QC audit numbers directly from repaired census
                 src_emp = census.raw_employee_rows - census.cross_file_merges

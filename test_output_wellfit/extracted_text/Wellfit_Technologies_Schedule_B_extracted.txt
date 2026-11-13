@@ -1,0 +1,329 @@
+================================================================================
+DOCUMENT: Wellfit Technologies_Schedule B.pdf
+SOURCE PATH: test_wellfit_input\Input\Wellfit Technologies_Schedule B.pdf
+FILE EXTENSION: .pdf
+IS SCANNED (OCR USED): False
+EXTRACTION METHOD: Digital PDF (pdfplumber Direct Extraction)
+TOTAL CHARACTERS: 16,532 chars
+TOTAL TABLES DETECTED: 3 table(s)
+================================================================================
+
+--- [EXTRACTED TEXT CONTENT] ---
+Schedule B   
+                                                                                    
+   Client Information:                                                              
+   WELLFIT TECHNOLOGIES, INC.                          Client/Version No.: 5169600-15-2-R
+   125 E JOHN CARPENTER FWY STE 1200                   Date:      08/17/2026        
+   IRVING, TX 750622288                                Print Date: 10/30/2026       
+   Phone: (855)493-5534                                                             
+                                                       Business:  Computer systems design
+   Fax:                                                                             
+   Contact:                                                                         
+   Client Associated Subclients: 5169600                                            
+   HR360                                                                            
+   Benefit Package:  Independence Premier - U                                       
+   Life and AD&D:    Auto Enroll                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+   Class: 5.1 - OWNERS                      Employee Monthly Contribution           
+                              Employee Employee +  Employee + Employee + Employee + 
+   Coverage Group/Coverage Option Only Spouse      Child     Children   Family      
+   250 Deductible              0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          1       
+   500 Deductible              0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          1       
+                                                                                    
+   1700 Deductible - HDHP (1750 in 0.00   0.00       0.00      0.00       0.00      
+   2027)                                                                            
+   # of Enrollment               0         0          0          0          0       
+   5000 Deductible - HDHP      0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+   BCA HMO North               0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+   BCA HMO South               0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+   Kaiser HMO CA North         0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+                                                                                    
+   Kaiser HMO CA South         0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+   Kaiser HMO Northwest        0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+   Kaiser HMO Washington       0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+                                                                                    
+   Kaiser HMO CO               0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+   UHC of CA HMO North         0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+   UHC of CA HMO South         0.00       0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          0       
+                                                                                    
+   50 Deductible Dental and Vision 0.00   0.00       0.00      0.00       0.00      
+   # of Enrollment               0         0          0          0          2       
+                                                                                    
+                                                                                    
+               Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 1 of 3
+                                                                                    
+                                                                                    
+                                                                       Schedule B   
+                                                                                    
+   Client Information:                                                              
+   WELLFIT TECHNOLOGIES, INC.                          Client/Version No.: 5169600-15-2-R
+   125 E JOHN CARPENTER FWY STE 1200                   Date:      08/17/2026        
+   IRVING, TX 750622288                                Print Date: 10/30/2026       
+   Phone: (855)493-5534                                                             
+                                                       Business:  Computer systems design
+   Fax:                                                                             
+   Contact:                                                                         
+   Client Associated Subclients: 5169600                                            
+   HR360                                                                            
+   Benefit Package:  Independence Premier - U                                       
+   Life and AD&D:    Auto Enroll                                                    
+                                                                                    
+                                                                                    
+   Class: 5.2 - ALL OTHER EMPLOYEES         Employee Monthly Contribution           
+                              Employee Employee +  Employee + Employee + Employee + 
+   Coverage Group/Coverage Option Only Spouse      Child     Children   Family      
+                                                                                    
+   250 Deductible             266.90     831.43    731.70     731.70    1348.71     
+   # of Enrollment               6         0          1          1          1       
+   500 Deductible             164.02     433.51    383.71     383.71     678.70     
+   # of Enrollment              17         7          4          3         19       
+   1700 Deductible - HDHP (1750 in 61.71 403.78    339.62     339.62     707.41     
+   2027)                                                                            
+   # of Enrollment              11         0          2          3          2       
+   5000 Deductible - HDHP      0.00      141.25    114.53     114.53     271.04     
+   # of Enrollment               4         0          2          1          4       
+   BCA HMO North              298.25     837.21    745.96     745.96    1417.57     
+   # of Enrollment               0         0          0          0          0       
+                                                                                    
+   BCA HMO South               70.43     360.67    314.43     314.43     705.04     
+   # of Enrollment               0         0          0          0          0       
+   Kaiser HMO CA North         0.00      212.56    205.55     205.55     352.77     
+   # of Enrollment               0         0          0          0          0       
+   Kaiser HMO CA South         0.00      133.04    118.35     118.35     115.50     
+   # of Enrollment               0         0          1          0          2       
+                                                                                    
+   Kaiser HMO Northwest        0.00      235.31    218.96     218.96     356.41     
+   # of Enrollment               0         0          0          0          0       
+   Kaiser HMO Washington       0.00      236.78    220.84     220.84     358.90     
+   # of Enrollment               0         0          0          0          0       
+   Kaiser HMO CO               0.00      214.67    199.44     199.44     325.02     
+   # of Enrollment               0         0          1          0          0       
+                                                                                    
+   UHC of CA HMO North        301.32     888.30    836.91     836.91    1331.70     
+   # of Enrollment               0         0          0          0          0       
+   UHC of CA HMO South         12.41     295.23    284.05     284.05     489.24     
+   # of Enrollment               0         1          0          0          0       
+   50 Deductible Dental and Vision 11.00 37.00      38.00      38.00     66.50      
+   # of Enrollment              36         10        11          7         28       
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+               Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 2 of 3
+                                                                                    
+                                                                                    
+                                                                       Schedule B   
+                                                                                    
+   Client Information:                                                              
+   WELLFIT TECHNOLOGIES, INC.                          Client/Version No.: 5169600-15-2-R
+   125 E JOHN CARPENTER FWY STE 1200                   Date:      08/17/2026        
+   IRVING, TX 750622288                                Print Date: 10/30/2026       
+   Phone: (855)493-5534                                                             
+                                                       Business:  Computer systems design
+   Fax:                                                                             
+   Contact:                                                                         
+   Client Associated Subclients: 5169600                                            
+   HR360                                                                            
+   Benefit Package:  Independence Premier - U                                       
+   Life and AD&D:    Auto Enroll                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                        No. of        Service Fee        Annual     
+      Group No.  Group Name             Employees     Percentage*       Payroll $   
+        0        UNASSIGNED                106          19.91%        $15,749,094.72
+                             Total:        106          19.91%        $15,749,094.72
+                             Full Time:    106                                      
+                             Part Time:    0                                        
+                             Seasonal:     0                                        
+                                                                                    
+   *Composite Service Fee Percentage. The Insperity service fee percentages ("Service Fee Percentages") are established for each employee (Staff) based upon a
+   number of factors and estimates regarding, but not limited to, the following: a) information provided by the Client on Schedule A, b) federal and state statutory
+   requirements including taxes and fees, c) insurance costs, and d) professional services and administrative fees (together "Insperity Allocations"). Any changes in
+   the Schedule A information provided by the Client (including payroll amounts, additions or reductions in Staff, individual employee benefit elections, or workers’
+   compensation codes or location), any changes in Insperity's employer tax requirements, and any statutory changes required by law shall be reflected in the
+   individual Service Fee Percentages for each Staff as they occur and may result in a change to the composite Service Fee Percentage. Each pay period Client
+   shall pay Insperity the total service fee ("Total Service Fee"). The Total Service Fee is comprised of the actual gross payroll of Staff during such pay period plus
+   the applicable Service Fee Percentage for each Staff multiplied by the gross payroll for each Staff, plus any other charges related to services provided to Client
+   including, but not limited to, allocations for medical costs and professional services and administrative fees relating to Staff who do not receive an Insperity
+   payroll check for that payroll period. All charges shall be reflected on the Insperity invoice.
+   Please note that to the extent that the language set forth above conflicts with the language contained in the Insperity Client Service Agreement ("Agreement")
+   including any related addenda that are executed by you, the actual language contained in such Agreement and any related addenda shall control. Client
+   acknowledges and agrees that the respective obligations of the parties are subject to the specific terms and conditions addressing applicable laws and other
+   terms and conditions applicable to the Agreement set forth at https://portal.insperity.com/pcms/client_service_agreement_terms__conditions (login required) or
+   available upon request, as revised from time to time. Client’s continued use of Insperity’s services indicate acceptance of these terms.
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+   Special Provisions:                                                              
+                                                                                    
+                                                                                    
+   Rate Schedule Effective From: __________________ through __________________ .    
+   FOR INSPERITY:                         FOR CLIENT:                               
+                                                                                    
+   Name:                                  Name:                                     
+   Title: Authorized Pricing Officer      Title:                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+               Insperity • 19001 Crescent Springs Dr. • Kingwood, TX 77339-3802 • 1-800-237-3170 • www.insperity.com Page 3 of 3
+
+--- [EXTRACTED TABLES SUMMARY] ---
+
+[Table 1: p1_x1 (Rows: 45, Columns: 11)]
+<NA>         <NA>                             <NA>                  <NA>                <NA> <NA>              <NA>    <NA>           Sche  dule    B
+<NA> Client Infor                          mation:                  <NA>                <NA> <NA>              <NA>    <NA>           <NA>  <NA> <NA>
+<NA>      WELLFIT               TECHNOLOGIES, INC.                  <NA>                <NA> <NA> Client/Version No      .: 5169600-15-2-R  <NA> <NA>
+<NA>    125 E JOH         N CARPENTER FWY STE 1200                  <NA>                <NA> <NA>             Date:    <NA>     08/17/2026  <NA> <NA>
+<NA>    IRVING, T                      X 750622288                  <NA>                <NA> <NA>       Print Date:    <NA>     10/30/2026  <NA> <NA>
+<NA>     Phone: (                     855)493-5534                  <NA>                <NA> <NA>         Business:    <NA> Computer syste ms de  sig
+<NA>         Fax:                             <NA>                  <NA>                <NA> <NA>              <NA>    <NA>           <NA>  <NA> <NA>
+<NA>     Contact:                             <NA>                  <NA>                <NA> <NA>              <NA>    <NA>           <NA>  <NA> <NA>
+<NA>   Client Ass      ociated Subclients: 5169600                  <NA>                <NA> <NA>              <NA>    <NA>           <NA>  <NA> <NA>
+<NA>        HR360                             <NA>                  <NA>                <NA> <NA>              <NA>    <NA>           <NA>  <NA> <NA>
+<NA>   Benefit Pa          ckage: Independence Pre              mier - U                <NA> <NA>              <NA>    <NA>           <NA>  <NA> <NA>
+<NA>   Life and A                 D&D: Auto Enroll                  <NA>                <NA> <NA>              <NA>    <NA>           <NA>  <NA> <NA>
+   C    lass: 5.1                         - OWNERS                  <NA>       Employee Mont  hly      Contribution    <NA>           <NA>  <NA> <NA>
+<NA>         <NA>                                E           mployee Emp          loyee + Em ploy          ee + Emp   loyee          + Emp loyee    +
+   C      overage          Group/Coverage Option O               nly Spo             use Chi   ld              Chil    dren            Fam   ily <NA>
+   2    50 Deduct                             ible                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     1 <NA>
+   5    00 Deduct                             ible                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     1 <NA>
+   1     700 Dedu           ctible - HDHP (1750 in                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   2         027)                             <NA>                  <NA>                <NA> <NA>              <NA>    <NA>           <NA>  <NA> <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   5     000 Dedu                    ctible - HDHP                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   B       CA HMO                            North                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   B       CA HMO                            South                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   K     aiser HM                       O CA North                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   K     aiser HM                       O CA South                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   K     aiser HM                      O Northwest                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   K     aiser HM                     O Washington                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   K     aiser HM                             O CO                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   U     HC of CA                        HMO North                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   U     HC of CA                        HMO South                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     0 <NA>
+   5    0 Deducti            ble Dental and Vision                  0.00                0.00 0.00              <NA>    0.00           <NA>  0.00 <NA>
+   #   of Enrollm                              ent                     0                   0    0              <NA>       0           <NA>     2 <NA>
+<NA>         <NA> Insperity • 19001 Crescent Sprin gs Dr. • Kingwood, TX 77339-3802 • 1-800- 237-  3170 • www.inspe rity.co           m Pa  ge 1   of
+------------------------------------------------------------
+
+[Table 2: p2_x1 (Rows: 45, Columns: 11)]
+<NA>         <NA>                          <NA>                  <NA>                 <NA>   <NA>           <NA>      <NA>          S   chedule    B
+<NA> Client Infor                       mation:                  <NA>                 <NA>   <NA>           <NA>      <NA>       <NA>      <NA> <NA>
+<NA>      WELLFIT            TECHNOLOGIES, INC.                  <NA>                 <NA>   <NA> Client/Version      No.: 5169600-15      -2-R <NA>
+<NA>     125 E JO     HN CARPENTER FWY STE 1200                  <NA>                 <NA>   <NA>          Date:      <NA> 08/17/2026      <NA> <NA>
+<NA>    IRVING, T                   X 750622288                  <NA>                 <NA>   <NA>    Print Date:      <NA> 10/30/2026      <NA> <NA>
+<NA>       Phone:                 (855)493-5534                  <NA>                 <NA>   <NA>      Business:      <NA> Computer s ystems de  sig
+<NA>         Fax:                          <NA>                  <NA>                 <NA>   <NA>           <NA>      <NA>       <NA>      <NA> <NA>
+<NA>     Contact:                          <NA>                  <NA>                 <NA>   <NA>           <NA>      <NA>       <NA>      <NA> <NA>
+<NA>   Client Ass   ociated Subclients: 5169600                  <NA>                 <NA>   <NA>           <NA>      <NA>       <NA>      <NA> <NA>
+<NA>        HR360                          <NA>                  <NA>                 <NA>   <NA>           <NA>      <NA>       <NA>      <NA> <NA>
+<NA>   Benefit Pa         ckage: Independence P            remier - U                 <NA>   <NA>           <NA>      <NA>       <NA>      <NA> <NA>
+<NA>   Life and A              D&D: Auto Enroll                  <NA>                 <NA>   <NA>           <NA>      <NA>       <NA>      <NA> <NA>
+   C    lass: 5.2         - ALL OTHER EMPLOYEES                  <NA>          Employee Mo  nthly   Contribution      <NA>       <NA>      <NA> <NA>
+<NA>         <NA>                          <NA>            Employee E          mployee + E  mploy         ee + E   mployee          +  Employee    +
+   C      overage         Group/Coverage Option                Only S              pouse C   hild              C   hildren       <NA>    Family <NA>
+   2     50 Deduc                         tible                266.90               831.43 731.70           <NA>    731.70       <NA>   1348.71 <NA>
+   #    of Enroll                          ment                     6                    0      1           <NA>         1       <NA>         1 <NA>
+   5     00 Deduc                         tible                164.02               433.51 383.71           <NA>    383.71       <NA>    678.70 <NA>
+   #    of Enroll                          ment                    17                    7      4           <NA>         3       <NA>        19 <NA>
+   1     700 Dedu        ctible - HDHP (1750 in                 61.71               403.78 339.62           <NA>    339.62       <NA>    707.41 <NA>
+   2         027)                          <NA>                  <NA>                 <NA>   <NA>           <NA>      <NA>       <NA>      <NA> <NA>
+   #    of Enroll                          ment                    11                    0      2           <NA>         3       <NA>         2 <NA>
+   5     000 Dedu                 ctible - HDHP                  0.00               141.25 114.53           <NA>    114.53       <NA>    271.04 <NA>
+   #    of Enroll                          ment                     4                    0      2           <NA>         1       <NA>         4 <NA>
+   B       CA HMO                         North                298.25               837.21 745.96           <NA>    745.96       <NA>   1417.57 <NA>
+   #    of Enroll                          ment                     0                    0      0           <NA>         0       <NA>         0 <NA>
+   B       CA HMO                         South                 70.43               360.67 314.43           <NA>    314.43       <NA>    705.04 <NA>
+   #    of Enroll                          ment                     0                    0      0           <NA>         0       <NA>         0 <NA>
+   K     aiser HM                    O CA North                  0.00               212.56 205.55           <NA>    205.55       <NA>    352.77 <NA>
+   #    of Enroll                          ment                     0                    0      0           <NA>         0       <NA>         0 <NA>
+   K     aiser HM                    O CA South                  0.00               133.04 118.35           <NA>    118.35       <NA>    115.50 <NA>
+   #    of Enroll                          ment                     0                    0      1           <NA>         0       <NA>         2 <NA>
+   K     aiser HM                   O Northwest                  0.00               235.31 218.96           <NA>    218.96       <NA>    356.41 <NA>
+   #    of Enroll                          ment                     0                    0      0           <NA>         0       <NA>         0 <NA>
+   K     aiser HM                  O Washington                  0.00               236.78 220.84           <NA>    220.84       <NA>    358.90 <NA>
+   #    of Enroll                          ment                     0                    0      0           <NA>         0       <NA>         0 <NA>
+   K     aiser HM                          O CO                  0.00               214.67 199.44           <NA>    199.44       <NA>    325.02 <NA>
+   #    of Enroll                          ment                     0                    0      1           <NA>         0       <NA>         0 <NA>
+   U     HC of CA                     HMO North                301.32               888.30 836.91           <NA>    836.91       <NA>   1331.70 <NA>
+   #    of Enroll                          ment                     0                    0      0           <NA>         0       <NA>         0 <NA>
+   U     HC of CA                     HMO South                 12.41               295.23 284.05           <NA>    284.05       <NA>    489.24 <NA>
+   #    of Enroll                          ment                     0                    1      0           <NA>         0       <NA>         0 <NA>
+   5    0 Deducti         ble Dental and Vision                 11.00                37.00  38.00           <NA>     38.00       <NA>     66.50 <NA>
+   #    of Enroll                          ment                    36                   10     11           <NA>         7       <NA>        28 <NA>
+<NA>         <NA> Insperity • 19001 Crescent Sp rings Dr. • Kingwood, TX 77339-3802 • 1-80 0-237- 3170 • www.ins perity.co          m    Page 2   of
+------------------------------------------------------------
+
+[Table 3: p3_x1 (Rows: 39, Columns: 13)]
+ Client Informati             on:       <NA>               <NA>            <NA>            <NA>                    <NA>     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+      WELLFIT TEC        HNOLOGIE    S, INC.               <NA>            <NA>            <NA>                    <NA>     <NA> <NA>   Client/        Version No.:    5169600-15-2              -R
+     125 E JOHN C        ARPENTER      FWY S            TE 1200            <NA>            <NA>                    <NA>     <NA> <NA>     Date:                <NA>      08/17/2026            <NA>
+    IRVING, TX 75         0622288       <NA>               <NA>            <NA>            <NA>                    <NA>     <NA> <NA>   Print D                ate:      10/30/2026            <NA>
+      Phone: (855       )493-5534       <NA>               <NA>            <NA>            <NA>                    <NA>     <NA> <NA>    Busine                 ss:    Computer sys     tems design
+             Fax:            <NA>       <NA>               <NA>            <NA>            <NA>                    <NA>     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+         Contact:            <NA>       <NA>               <NA>            <NA>            <NA>                    <NA>     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+   Client Associa    ted Subclien        ts:              51696              00            <NA>                    <NA>     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+            HR360            <NA>       <NA>               <NA>            <NA>            <NA>                    <NA>     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+    Benefit Packa             ge:       <NA>        Independenc     e Premier -               U                    <NA>     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+    Life and AD&D               :       <NA>        Auto Enroll            <NA>            <NA>                    <NA>     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+             <NA>            <NA>       <NA>               <NA>            <NA>            <NA>                  No. of     <NA>    S    ervice                 Fee            <NA>          Annual
+            Group             No.      Group               Name            <NA>            <NA>               Employees     <NA>    P    ercent                age*               P        ayroll $
+                0            <NA>       UNAS             SIGNED            <NA>            <NA>                     106     <NA> <NA>      19.9                  1%          $15,74        9,094.72
+             <NA>            <NA>       <NA>               <NA>          Total:            <NA>                     106     <NA> <NA>      19.9                  1%          $15,74        9,094.72
+             <NA>            <NA>       <NA>               <NA>      Full Time:            <NA>                     106     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+             <NA>            <NA>       <NA>               <NA>      Part Time:            <NA>                       0     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+             <NA>            <NA>       <NA>               <NA>       Seasonal:            <NA>                       0     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+    *Composite Se     rvice Fee P   ercentag   e. The Insperity   service fee p      ercentages    ("Service Fee Percen    tages   ")   are est   ablished for each     employee (S  taff) based up
+   number of fact    ors and esti   mates re   garding, but not  limited to, th  e following: a   ) information provide  d by th    e    Client    on Schedule A, b   ) federal and state statutory
+   requirements i   ncluding taxe    s and f  ees, c) insurance      costs, and   d) profession    al services and admi nistrati    v  e fees (   together "Insperi ty Allocations"   ). Any change
+     the Schedule   A information    provide  d by the Client (   including pay    roll amounts  , additions or reducti   ons in    S taff, ind    ividual employee  benefit electi  ons, or worker
+     compensation    codes or loc  ation), a   ny changes in In    sperity's em   ployer tax re     quirements, and any  statuto   ry     chang   es required by la w shall be refl    ected in the
+  individual Serv    ice Fee Perc     entage s for each Staff a    s they occur     and may res  ult in a change to the     comp    o   site Se    rvice Fee Percen   tage. Each pa  y period Clien
+  shall pay Inspe  rity the total    service   fee ("Total Serv   ice Fee"). Th   e Total Servi     ce Fee is comprised   of the    a  ctual gr  oss payroll of Sta  ff during such   pay period pl
+   the applicable     Service Fee    Percent    age for each St  aff multiplied    by the gross  payroll for each Staff   , plus    a   ny othe   r charges related  to services pr  ovided to Clie
+   including, but  not limited to , allocati    ons for medical    costs and pr   ofessional se   rvices and administra  tive fe    e  s relati   ng to Staff who d   o not receive    an Insperity
+  payroll check f   or that payro  ll period   . All charges sh all be reflecte    d on the Ins         perity invoice.     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+   Please note th  at to the exte  nt that t    he language set     forth above  conflicts with     the language contai   ned in   th    e Insp erity Client Servic     e Agreement   ("Agreement")
+  including any r     elated adde   nda that    are executed by    you, the act    ual language     contained in such A    greem   en   t and a    ny related adden  da shall contr      ol. Client
+     acknowledges      and agrees   that the   respective oblig   ations of the   parties are s  ubject to the specific    terms    a   nd cond    itions addressin g applicable la    ws and other
+    terms and con  ditions applic    able to    the Agreement s  et forth at ht tps://portal.in    sperity.com/pcms/cli   ent_se   rv    ice_ag      reement_terms_ _conditions (lo   gin required)
+   available upon     request, as    revised   from time to tim  e. Client’s co     ntinued use of Insperity’s services   indica   te     accep   tance of these te            rms.            <NA>
+  Special Provisi            ons:       <NA>               <NA>            <NA>            <NA>                    <NA>     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+    Rate Schedule    Effective Fr    om: ___      _____________      __ through       _________             _________ .     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+     FOR INSPERIT              Y:       <NA>               <NA>            <NA>            <NA>             FOR CLIENT:     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+            Name:            <NA>       <NA>               <NA>            <NA>            <NA>                   Name:     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+Title: Authorized Pricing Officer       <NA>               <NA>            <NA>            <NA>                  Title:     <NA> <NA>      <NA>                <NA>            <NA>            <NA>
+             <NA>              In  sperity •     19001 Crescent     Springs Dr.     • Kingwood,     TX 77339-3802 • 1-8    00-23   7-    3170 •    www.insperity.co               m     Page 3 of 3
+------------------------------------------------------------

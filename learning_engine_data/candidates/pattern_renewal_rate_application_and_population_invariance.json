@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.1",
+  "learning_id": "pattern_renewal_rate_application_and_population_invariance",
+  "version": 1,
+  "status": "active",
+  "pattern_state": "VALIDATED",
+  "fingerprint": "fp_renewal_rate_application_and_population_invariance_v1",
+  "patch_version": "2.2.0",
+  "generic_root_cause": "When renewal rate tables are extracted from PEO reports (e.g. MAR Report, Financial Stewardship Report), rate structures and plan tiers must be applied to comparison rate fields without overwriting or displacing the canonical active census population (104 employees). Erroneously deriving or modifying the active employee roster from renewal exhibits creates headcount discrepancies.",
+  "applicable_conditions": [
+    "PEO renewal rate tables extracted from MAR, Stewardship, or renewal exhibits",
+    "Canonical active employee census established from primary census documents",
+    "Renewal comparison requires future rate population"
+  ],
+  "required_validators": [
+    "RULE_13_RENEWAL_PEO_90_DAY",
+    "RULE_13_RENEWAL_POPULATION_INVARIANCE"
+  ],
+  "regression_results": {
+    "cases_verified": [
+      "case_wellfit_technologies_renewal_invariance"
+    ],
+    "status": "PASS"
+  },
+  "created_at": "2026-11-12T18:28:59.623811",
+  "updated_at": "2026-11-12T18:28:59.623811",
+  "compatibility": {
+    "instruction_hashes": [
+      "5192719264644e5433ce61baa2c15d45860f33e844feae7f8392d6648f37b398"
+    ],
+    "template_hashes": [],
+    "parser_versions": [
+      "2.1.0"
+    ],
+    "runtime_prompt_version": "1.0"
+  },
+  "scope": {
+    "document_roles": [
+      "renewal"
+    ],
+    "file_types": [
+      "xlsx",
+      "pdf",
+      "docx"
+    ],
+    "carriers": [
+      "Florida Blue",
+      "Cigna"
+    ],
+    "header_signature": [
+      "plan name",
+      "tier",
+      "renewal rate",
+      "current rate",
+      "proposed rate"
+    ],
+    "stage": "comparison"
+  },
+  "trigger": {
+    "issue_type": "RENEWAL_POPULATION_DISPLACEMENT",
+    "field": "census_population",
+    "conditions": [
+      "renewal rate application alters canonical census employee records or count"
+    ]
+  },
+  "business_rule_refs": [
+    "Section 13.5",
+    "Section 22.1A",
+    "RULE_13_RENEWAL_POPULATION_INVARIANCE"
+  ],
+  "root_cause": {
+    "code": "RENEWAL_POPULATION_DISPLACEMENT",
+    "verification_status": "verified",
+    "summary": "Populate renewal rate tables strictly into renewal rate fields; enforce invariant canonical employee count across all downstream workbook writer stages."
+  },
+  "strategy": {
+    "action": "APPLY_RENEWAL_RATES_WITH_POPULATION_INVARIANCE",
+    "parameters": {
+      "enforce_count_invariance": true
+    },
+    "preconditions": [
+      "canonical census population finalized"
+    ],
+    "exclusions": [
+      "never add, remove, or replace active census employees based on renewal exhibits"
+    ]
+  },
+  "verification": {
+    "case_successes": 1,
+    "case_failures": 0,
+    "regression_fixture_ids": [
+      "reg_case_wellfit_renewal_invariance"
+    ],
+    "negative_fixture_ids": [],
+    "checks_passed": [
+      "RULE_13_RENEWAL_PEO_90_DAY",
+      "RULE_13_RENEWAL_POPULATION_INVARIANCE"
+    ],
+    "promotion_eligible": true,
+    "last_verified_at": "2026-11-12T18:28:59.623811"
+  },
+  "promotion": {
+    "mode": "auto_allowlisted",
+    "decision_ref": "verified_20261112_feedback",
+    "reason": "Validated against Feedback.docx MAR and Stewardship report rate population without employee displacement"
+  },
+  "usage": {
+    "attempted": 0,
+    "successful": 0,
+    "rolled_back": 0
+  }
+}

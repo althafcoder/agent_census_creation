@@ -199,7 +199,10 @@ def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
     # Core medical plan signals (network types, plan acronyms, benefit designs)
     med_signals = (
         "ppo", "pos", "cpos", "cposii", "hmo", "epo", "oaas", "oap", "afa", "sgp", "awh",
-        "open access", "hdhp", "cdhp", "copay", "coinsurance", "deductible", "medical"
+        "open access", "hdhp", "cdhp", "copay", "coinsurance", "deductible", "medical",
+        "choice plus", "choice", "uhc", "united", "unitedhealthcare", "kaiser", "anthem",
+        "cigna", "aetna", "humana", "bcbs", "blue cross", "blue shield", "florida blue",
+        "optum", "ppo hdhp", "hdhp ppo"
     )
     has_medical_signal = any(s in cleaned for s in med_signals)
 
@@ -223,8 +226,13 @@ def _is_non_medical(plan_name: str, plan_type: str = "") -> bool:
 
     if pt:
         pt_cleaned = re.sub(r"\b(dependents?|dep|child|children|spouse)\b", " ", pt).strip()
-        if not has_medical_signal and pt_cleaned:
-            return True
+        if pt_cleaned:
+            if any(re.search(pat, pt_cleaned) for pat in non_med_res) or re.search(
+                r"\b(den|dmo|dmd|dnt|vsp|wis|ltl|voluntary|suppl|supplemental|hosp|hospital|canc|cancer|commuter|transit|parking|fsa|dca|life|disab)\b",
+                pt_cleaned,
+            ):
+                if not any(m in pt_cleaned for m in ("medical", "health", "choice", "uhc")):
+                    return True
 
     pn = clean(plan_name).lower()
     if pn:
@@ -299,6 +307,23 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
     # "Medical/Plan/Election/Tier/Coverage" column containing EE/ES/EC/EF/WO/WP/NE
     # but the header says "PLAN" or "MEDICAL PLAN" - scan the row values for coverage codes.
     cov = row_vals.get("coverage") if row_vals.get("coverage") is not None else ""
+    cov_str = clean(cov)
+    from utils import decode_insperity_coverage
+    insperity_res = decode_insperity_coverage(cov_str)
+    if insperity_res.get("is_insperity_code"):
+        if insperity_res.get("medical_plan") and not getattr(p, "plan", ""):
+            p.plan = insperity_res["medical_plan"]
+        if insperity_res.get("suggested_status") == "WO":
+            cov = "WO"
+            cov_str = "WO"
+        else:
+            if getattr(p, "coverage", ""):
+                cov = p.coverage
+                cov_str = p.coverage
+            else:
+                cov = ""
+                cov_str = ""
+
     if (not clean(cov)) and is_employee:
         for k in ("plan", "status"):
             v = row_vals.get(k)
@@ -392,13 +417,15 @@ _DISCLAIMER_WORDS = re.compile(
     r"\b(see\s+(attached|dep\w*|doc\w*|file|schedule|list|roster|page|tab|sheet|above|below|separate\w*)|"
     r"separately\s+attached|attached\s+separately|refer\s+to|reference\s+to|"
     r"no\s+dependents?|none\s+enrolled|not\s+applicable|as\s+per|enclosed|"
-    r"placeholder|instructions?|footnote|disclaimer)\b",
+    r"placeholder|instructions?|footnote|disclaimer|row\s+labels|number\s+of\s+employees|"
+    r"sum\s+of\s+annual\s+pay|grand\s+total|pivot\s+table|subtotal)\b",
     re.I
 )
 
 _JUNK_NAME_WORDS = {"required", "optional", "first", "firstname", "first name", "ee", "sp", "ch",
                     "see", "separately", "attached", "document", "none", "notes", "note", "n/a", "na",
-                    "last", "lastname", "last name", "name"}
+                    "last", "lastname", "last name", "name", "row labels", "number of employees",
+                    "grand total", "sum of annual pay", "sum of pay", "row label"}
 
 
 def _names(r: _Row, first_f="first_name", last_f="last_name", full_f="full_name") -> tuple[str, str]:
@@ -413,7 +440,9 @@ def _names(r: _Row, first_f="first_name", last_f="last_name", full_f="full_name"
         return "", ""
     if _DISCLAIMER_WORDS.search(full):
         return "", ""
-    if first.lower() in _JUNK_NAME_WORDS and last.lower() in _JUNK_NAME_WORDS:
+    if first.lower() in _JUNK_NAME_WORDS or last.lower() in _JUNK_NAME_WORDS:
+        return "", ""
+    if re.fullmatch(r"\d+", first) or re.fullmatch(r"\d+", last):
         return "", ""
     return first, last
 
@@ -820,11 +849,18 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
             rel = "?"            # present but unrecognised -> treated as a dependent w/o relationship
         if "relationship" in cols and not rel_raw:
             rel = "EE"
-        if "relationship" not in cols:
+
+        # Check job title / position for stacked dependent relationships (Section 8.1B / 9.5)
+        job_val = r.t("job_title") if "job_title" in cols else ""
+        rel_from_job = std_relationship(job_val) if job_val else ""
+        if rel_from_job in ("SP", "CH", "DP"):
+            rel = rel_from_job
+
+        if "relationship" not in cols and rel not in ("SP", "CH", "DP"):
             cov_val = clean(r.g("coverage")) if "coverage" in cols else ""
             is_emp_dep_col = any("dependent" in lab.lower() for lab in hdr.labels[:3])
             has_emp_evidence = bool(
-                r.g("hire_date") or r.g("salary") or r.g("job_title") or
+                r.g("hire_date") or r.g("salary") or (r.g("job_title") and not rel_from_job) or
                 r.g("worker_category") or r.g("position_status") or r.t("sub_id")
             )
             if last_emp and not has_emp_evidence and (is_emp_dep_col or last_emp.coverage in ("ES", "EC", "FAM", "EF", "COUPLE")):
@@ -840,7 +876,8 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
                         rel = "CH"
 
         if is_non_med and rel not in {"SP", "CH", "DP", "?"}:
-            # Register employee demographics without setting non-medical plan/coverage/effective_date
+            # Section 8.1C / 9.2: Register employee demographics without setting non-medical plan/coverage
+            # so non-medical-only employees are retained in census and resolve to WO.
             values = {"gender": r.t("gender"),
                       "gender_candidates": r.gender_candidates(is_dep=False, demo_is_employee=True, source_file=fname),
                       "dob": r.g("dob"), "zip": r.g("zip"),

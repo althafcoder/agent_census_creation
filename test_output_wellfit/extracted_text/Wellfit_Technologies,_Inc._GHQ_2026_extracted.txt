@@ -1,0 +1,440 @@
+================================================================================
+DOCUMENT: Wellfit Technologies, Inc. GHQ 2026.pdf
+SOURCE PATH: test_wellfit_input\Input\Wellfit Technologies, Inc. GHQ 2026.pdf
+FILE EXTENSION: .pdf
+IS SCANNED (OCR USED): False
+EXTRACTION METHOD: Digital PDF (pdfplumber Direct Extraction) + AcroForm Fields (pypdf: 129 fields)
+TOTAL CHARACTERS: 32,400 chars
+TOTAL TABLES DETECTED: 7 table(s)
+================================================================================
+
+--- [EXTRACTED TEXT CONTENT] ---
+Group Health Questionnaire                            
+                                                                                    
+                                                                                    
+     This questionnaire must be filled out completely. Please be sure to indicate "None" if applicable. PEO Spectrum will not accept the
+     questionnaire if incomplete. Use additional paper if necessary.                
+     Date:                         Proposed Effective Date:                         
+                                                                                    
+                                                                                    
+     I.COMPANY AND CURRENT ENROLLMENT INFORMATION                                   
+      Company Name:                                                                 
+                                                                                    
+      Street Address:                                                               
+      City:                        State:            Zip:                           
+                                                                                    
+      County:                      Benefits Contact & Phone #:                      
+                                   Total Full Time:                                 
+                                                     Total Number of Employees      
+      Total number of employees payroll:                                            
+                                                     currently enrolled in health care plan:
+                                   Total Part Time:                                 
+      Are any health plan enrollees NOT paid employees (other than spouses or children)?  Yes ✔ No
+      ***If yes, please provide names and details:                                  
+      Current Health Carrier:            Health Carrier Renewal Date:               
+      Is your current Plan Self-Funded?  Yes ✔ No  Don’t Know                    
+      ***If yes, please provide claims:                                             
+      Are you currently with a PEO?  Yes  No Any ineligible class of employees  Yes ✔ No
+      If yes, name of PEO:               If yes, which class:                       
+      Please provide a complete description of your business operation: SIC Code:   
+                                                                                    
+      Number of Locations:         Please identify all states of operation:         
+                                                                                    
+                                                                                    
+     A.List any current Participants in COBRA / State Continuation (use additional paper if necessary): ✔NONE
+           Name/DOB/Phone #        COBRA / Continuation     Activating Event & Date 
+                                      Effective Date     (i.e. employee termination, etc.)
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+     B. List any participants currently Eligible for COBRA who have not yet elected coverage and/or any participants who will become
+     eligible for COBRA prior to the Health Plan effective date (use additional paper if necessary): ✔NONE
+           Name/DOB/Phone #           Date Eligible         Activating Event & Date 
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+     C. List any employees and/or dependents who are on the health plan that are disabled: ✔ NONE
+                                                                                    
+           Name/DOB/Phone #            Disability             Qualifying Event      
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                        Page 1                                      
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                              Group Health Questionnaire                            
+                                                                                    
+                                                                                    
+                                                                                    
+     II. CURRENT PLAN CONTRIBUTION INFORMATION                                      
+                                Employee Only Employee + Spouse Employee + Child Family
+                                                                                    
+      Company Contribution Levels (by $ or %)                                       
+                                                                                    
+         • Attach a copy of your benefit summary for each plan and year listed above.
+         • Include carrier claims report if available.                              
+                                                                                    
+                                                                                    
+     III. RATE HISTORY (if more than 3 plans, include the 3 most popularly-elected plans)
+      Plan 1 Name:  # Enrolled Renewal Rates Most recent 12 13-24 months HMO  PPO  HDHP
+                                         months    prior                            
+                           (eff. / / )                                              
+                                                          POS                     
+      Premium Rates                                       Plan Design Details       
+      Employee Only #      $           $         $        Annual Deductible: $      
+                                                          Co-Insurance: %           
+      Employee + Spouse #  $           $         $                                  
+                                                          Out-of-Pocket Max: $      
+                                                          (excluding deductible)    
+      Employee + Child(ren) # $        $         $                                  
+                                                          Office Visit Copay: $     
+      Employee + Family #  $           $         $        Prescription Drugs: / /   
+      Plan 2 Name:  # Enrolled Renewal Rates Most recent 12 13-24 months HMO  PPO  HDHP
+                           (eff. / / )   months    prior                            
+                                                          POS                     
+      Premium Rates                                       Plan Design Details       
+                                                                                    
+      Employee Only #      $           $         $        Annual Deductible: $      
+                                                          Co-Insurance: %           
+      Employee + Spouse #  $           $         $                                  
+                                                          Out-of-Pocket Max: $      
+                                                          (excluding deductible)    
+      Employee + Child(ren) # $        $         $                                  
+                                                          Office Visit Copay: $     
+      Employee + Family #  $           $         $        Prescription Drugs: / /   
+      Plan 3 Name:  # Enrolled Renewal Rates Most recent 12 13-24 months HMO  PPO  HDHP
+                           (eff. / / )   months    prior                            
+                                                          POS                     
+      Premium Rates                                       Plan Design Details       
+                                                                                    
+      Employee Only #      $           $         $        Annual Deductible: $      
+                                                          Co-Insurance: %           
+      Employee + Spouse #  $           $         $                                  
+                                                          Out-of-Pocket Max: $      
+                                                          (excluding deductible)    
+      Employee + Child(ren) # $        $         $                                  
+                                                          Office Visit Copay: $     
+      Employee + Family #  $           $         $        Prescription Drugs: / /   
+         • Attach a copy of your benefit summary for each plan and year listed above.
+         • Include carrier claims report if available.                              
+                                        Page 2                                      
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                              Group Health Questionnaire                            
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+     Next, please answer the following questions on behalf of your company to the best of your knowledge. It is not necessary to
+     transfer information from Personal Health Questionnaires. You may include additional sheets for detailed explanations.
+                                                                                    
+     GENERAL ILLNESS QUESTIONS                                                      
+      a)Has anyone been treated for a serious illness, been hospitalized or had surgery in the past 5 To the Best of My Knowledge
+      years?                                                YES ✔ NO              
+      b)Is anyone currently hospitalized, confined at home, incapacitated, confined in a treatment To the Best of My Knowledge
+      facility, incapable of self-support because of physical or mental disability? YES ✔ NO
+      c)Has anyone been advised that medical treatment, diagnostic testing, surgery or hospitalization To the Best of My Knowledge
+      is necessary?                                         YES ✔ NO              
+      d)Did any employee, dependent or COBRA participants incur over $5,000 in claims in the last To the Best of My Knowledge
+      12 months?                                            YES ✔ NO              
+                                                                                    
+      e)Has the company received a Decline to quote from any carrier or PEO in the past 3 years? To the Best of My Knowledge
+      (If yes to any or all, please provide details in the table below) YES ✔ NO  
+                                                                                    
+     Please check all that apply:                                                   
+      AIDS or testing HIV positive kidney disorder   stomach disorder            
+                                                                                    
+      arthritis              liver disease           stroke                      
+      back disorder          mental illness          substance dependency        
+      blood disorder         MS                      transplants                 
+      cancer                 muscular disorder       tumor                       
+      diabetes               nervous system disorders other serious conditions   
+      heart disease          respiratory disease                                  
+                                                                                    
+                                                                                    
+                      (If any boxes are checked, please provide details in the table below.)
+                                                                                    
+                        Date of            Date of Last Date            Degree of   
+         Name      Sex           Condition                  Treatment/Drug          
+                         Birth             Onset    Onset                Recovery   
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+     List any employees and/or dependents who are on the health plan that are disabled:
+         ✔ NONE                                                                    
+                Name                   Disability             Qualifying Event      
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                        Page 3                                      
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                              Group Health Questionnaire                            
+                                                                                    
+                                                                                    
+     Known Medical Conditions to the best of your knowledge (continued):            
+                                                                                    
+                                                                                    
+      IS ANYONE CURRENTLY PREGNANT? If yes, please provide due date and not below if
+                                                            To the Best of My Knowledge
+      normal, high risk, multiple birth, or preterm labor with this pregnancy.      
+                                                            YES ✔ NO              
+      This includes employees, dependents or COBRA participants.                    
+                                              Type of Pregnancy or Condition        
+      Name                       Due Date                                           
+                                              (normal, high risk, preterm labor, etc.)
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+     I certify that the statements are true and correct to the best of my knowledge. I understand that this form is used for information only
+     and does not bind coverage. I will notify PEO Spectrum of any changes that occur after signing this Group Health Questionnaire and
+     prior to starting health coverage with a PEO.                                  
+     In the event that material information has been omitted or is inaccurate, the insurance carrier may deny, limit or retroactively terminate
+     coverage back to the coverage inception date. Furthermore, PEO service agreements may also terminate for breach of contract resulting
+     from the material misrepresentation. In such cases, I understand that PEO may also adjust my insurance premiums to properly reflect
+     the underwriting risk present at the time of the original misrepresentation.   
+                                                                                    
+     PEO Spectrum gathers this information for statistical and actuarial use only. This information is not to be used in connection with
+     any decisions or actions regarding any individual’s employment. Prospective employees in Michigan should not provide information
+     regarding height and weight.                                                   
+                                                                                    
+     A PEO’s Program Notice of Privacy Practices provides a more detailed information about how a PEO’s Program and the health plan I
+     have chosen may use and disclose my protected health information. I have a legal right to review this Notice of Privacy practices before
+      I sign this consent and I am encouraged to read it in full. I have a right to request restrictions on how my protected health information is
+      used and disclosed. A PEO’s Program and my health plan are not required by law to grant my request. However, if my request is granted,
+      a PEO’s Program and my health plan are bound by their agreement. I have a right to revoke this consent in writing, except for the extent
+      a PEO’s Program or my health plan have already used or disclosed my protected health information in reliance upon my consent.
+     Information disclosed on this form is considered valid for effective dates within 60-90 days of date signed, depending on specific PE0.I
+     will notify PE0 Spectrum of any changes that occur after signing this Group Health Questionnaire and prior to starting health coverage. I
+      understand that PEO Spectrum recommended PEO’s reserve the right to re-underwrite based on a change in the Census or Demographics.
+                                                                                    
+                                                                                    
+                                                                                    
+     Authorized Signature          Title                         Date               
+                                                                                    
+                                                                                    
+     Print Name                                                                     
+                                   Print Name of Company                            
+                                                                                    
+                                                                                    
+     Broker / Sales Signature      Broker / Sales Print Name     Date               
+                                                                                    
+                                        Page 4                                      
+
+--- [INTERACTIVE FORM FIELDS] ---
+Proposed Effective Date: 11/1/2026
+Company Name: Wellfit Technologies, Inc.
+Street Address: 2411 Gateway Drive, Suite 120
+City: Irving
+State: TX
+Zip: 75063
+County: Dallas
+Yes: Off / Unchecked
+Current Health Carrier: UHC
+Health Carrier Renewal Date: 11/1/2026
+undefined: Off / Unchecked
+undefined_2: Off / Unchecked
+undefined_3: Checked (/Yes_2)
+Yes_3: Off / Unchecked
+Please provide a complete description of your business operation: Computer systems design
+Number of Locations: 1
+Please identify all states of operation: various
+HMO: Checked (/On)
+PPO: Off / Unchecked
+HDHP: Off / Unchecked
+POS: Off / Unchecked
+undefined_4: Off / Unchecked
+HMO_2: Off / Unchecked
+PPO_2: Off / Unchecked
+HDHP_2: Off / Unchecked
+POS_2: Off / Unchecked
+undefined_5: Off / Unchecked
+HMO_3: Off / Unchecked
+PPO_3: Off / Unchecked
+HDHP_3: Off / Unchecked
+POS_3: Off / Unchecked
+undefined_6: Off / Unchecked
+YES: Off / Unchecked
+YES_2: Off / Unchecked
+YES_3: Off / Unchecked
+YES_4: Off / Unchecked
+YES_5: Off / Unchecked
+AIDS or testing HIVpositive: Off / Unchecked
+arthritis: Off / Unchecked
+back disorder: Off / Unchecked
+blood disorder: Off / Unchecked
+cancer: Off / Unchecked
+diabetes: Off / Unchecked
+heart disease: Off / Unchecked
+kidney disorder: Off / Unchecked
+liver disease: Off / Unchecked
+mental illness: Off / Unchecked
+MS: Off / Unchecked
+muscular disorder: Off / Unchecked
+nervous system disorders: Off / Unchecked
+respiratory disease: Off / Unchecked
+stomach disorder: Off / Unchecked
+stroke: Off / Unchecked
+substance dependency: Off / Unchecked
+transplants: Off / Unchecked
+tumor: Off / Unchecked
+other serious conditions: Off / Unchecked
+YES_6: Off / Unchecked
+Text1: 11/9/2026
+Text2: 250/750
+Text3: 100
+Text4: 3500/7000
+Text5: 30/50
+Text6: 1750/3500
+Text7: 90
+Text8: 4500/9000
+Text9: 10%
+Text10: 500/1500
+Text11: 90
+Text12: 4000/8000
+Text13: 30/50
+Text21: Insperity
+Text38: 10
+Text40: 60
+Text41: 10
+Text42: 35
+Text43: 60
+Text44: 35
+Text45: 10
+Text46: 35
+Text47: 60
+Check Box2: Checked (/Yes)
+Check Box15: Off / Unchecked
+Check Box17: Off / Unchecked
+Check Box19: Off / Unchecked
+Check Box20: Off / Unchecked
+Check Box21: Off / Unchecked
+Check Box22: Off / Unchecked
+Check Box23: Checked (/Yes)
+Check Box24: Checked (/Yes)
+Check Box25: Off / Unchecked
+Check Box26: Off / Unchecked
+Check Box27: Off / Unchecked
+Check Box28: Checked (/Yes)
+Check Box29: Off / Unchecked
+Check Box30: Off / Unchecked
+Check Box31: Off / Unchecked
+Check Box32: Off / Unchecked
+Text16: 2
+Text17: 11
+Text19: 5
+Text20: 2
+Text29: 17
+Text31: 6
+Text32: 6
+Text33: 20
+Text14: 104
+Text22: 89
+Text23: UHC Choice Plus PPO 250
+Text24: UHC Choice Plus PPO HDHP 1750
+Text25: UHC Choice Plus PPO 500 (90%)
+Text26: 11
+Text27: 18
+Text28: 49
+Text30: 6
+Text35: 3
+Text37: 1
+Text39: 26
+Text52: 11
+Text53: 1
+Text66: 26
+Text67: 11
+Text68: 1
+Text69: 26
+Text71: 11
+Check Box72: Checked (/Yes)
+Text74: 10/9/2026
+Text15: 104
+Signature73: {'/ByteRange': [0, 419136, 423846, 32428], '/Contents': b'0\x82\x05\xad\x06\t*\x86H\x86\xf7\r\x01\x07\x02\xa0\x82\x05\x9e0\x82\x05\x9a\x02\x01\x011\x0f0\r\x06\t`\x86H\x01e\x03\x04\x02\x01\x05\x000\x0b\x06\t*\x86H\x86\xf7\r\x01\x07\x01\xa0\x82\x03t0\x82\x03p0\x82\x02X\xa0\x03\x02\x01\x02\x02\nf\n\xba\x15\x03l$\xf8\x97\x180\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x000f1\x180\x16\x06\x03U\x04\x03\x13\x0fMary Ann Milano1\x150\x13\x06\x03U\x04\n\x13\x0cPEO Spectrum1&0$\x06\t*\x86H\x86\xf7\r\x01\t\x01\x16\x17mmilano@peospectrum.com1\x0b0\t\x06\x03U\x04\x06\x13\x02US0\x1e\x17\r210203154855Z\x17\r260203154855Z0f1\x180\x16\x06\x03U\x04\x03\x13\x0fMary Ann Milano1\x150\x13\x06\x03U\x04\n\x13\x0cPEO Spectrum1&0$\x06\t*\x86H\x86\xf7\r\x01\t\x01\x16\x17mmilano@peospectrum.com1\x0b0\t\x06\x03U\x04\x06\x13\x02US0\x82\x01"0\r\x06\t*\x86H\x86\xf7\r\x01\x01\x01\x05\x00\x03\x82\x01\x0f\x000\x82\x01\n\x02\x82\x01\x01\x00\xcbQW\xf3\xe0/>\x00\xc1\xdcG\xabwxp\xe4F\xf9\x94\x88a\xd2\xa7\xb8r\x18\n\xdd\x89c\xab\x8e\xa81f\xdc\x8f\xb12\xd2\xf5\xba\x94\xbe+}\rL\x81\xd0X8*\x07\x14\xecu\x9b\xa6\t\tu\xf7\xc6p\xb4\xb1X\xfei\x89>\xcb-xsR\x0b\xe2\xbb\x1cX\xf1\x04\xcf\x06"v\x0fI\xf3\x9f\xbe\xb0\x1b{\xcc&U\xddm\xb8I[\xdd5\xbb\xb4\xb7\x13\x0e\x07\x14\xcd\x8a\xd4\x8e\xd7\xc1\x85\x81\x15b\xacI\xc9\xd0\x9cM\xbd\x15\x95\xfd\xfe\xfd\xd4\xc0\x19\x12\'\xc3\xfc\x02\x89\xf1\xc35\r\x91\xd4]\x9d\x12\xd9\xcb\xdcg\xb5\xe5\x10%Up\xe4\xb8x\\\xedb\xb2\x8e/\x0f\xd7K5\xa91@\xcf\x03\xda\x1d\x8dM\xd4\xec\x93\xbd5\xcek\xab)\xca\xe8V\xff\xedaz\x04!$)\xe2\t\xf4%\xb8;\xb1\x8cn\xeeC\xcd\x82\x0cIeIA\xa3x\xb3\x08\xa0\x9bhk~\xcd\xfaG2\x00\xcfvA\xacx\xed\xfc\x97>[\xb1\xe8\x80\x18\\U\xce\xc1}\x02\x03\x01\x00\x01\xa3 0\x1e0\x0f\x06\t*\x86H\x86\xf7/\x01\x01\n\x04\x02\x05\x000\x0b\x06\x03U\x1d\x0f\x04\x04\x03\x02\x07\x800\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x00\x03\x82\x01\x01\x00\xa6\xf8\xe9-N\xc4>)J:\xa7P\x13\xf5\xf6{\xd3\x05>\x0csu\xbd0\x9b\xea\xab\xf3\x98\xdcgn.I\xd0\x850\xc1\xb6\xed\xedL\x82|u\xb7$\x7f\xcd\xe9\xa5\x86h8\xcc\xeek\xcf\\\xa7\x0c\x10\xf3\xb9"\xa6\x83w+6\x95\xf6=a\x03\xc7>\xd3E\xd1\x07\xdf\xd5\xe6\xc8\xef@\x93\xe5\x1d& \x80fX\x93\x07\xcc\xdf\xcb\xe5H\x08\xb9\xef)\\K\x9d\xfb)\xd0\xa2#\xcfY\xac\x87\x1a\xc6\xafZ\xe2\x98\xbc\x87\xe5\x85\xd3\xbf\xce\x02\x12(\xa1\x8e\x92\xc8T\xedF\x81ECE;C\x12\xcf\xde\xa2f#,\xc9\xfc`\xac\xbaiphF\x1e\xa1\xaaFp\xbeON\x16 \xaa\xa1J\x1e\xa55\r\xb0\\@\x85`1\xc5\xfc\xc1\xff\x08\xf1\xe6+:b\xa95}\x1c\x84\x91YAb\xd2\x1e\x1b\x02RQ\xc7\x80\xcd\x94x\xfc\xf8eR\xb4x\x8a\x88\x98\xe8M5.-=9wZHL\x85\xee\x83M\xac\xbd\x0f\x04\x9d\xb0\x93Uz\x05\xd8x\x8cU2\xef1\x82\x01\xfd0\x82\x01\xf9\x02\x01\x010t0f1\x180\x16\x06\x03U\x04\x03\x13\x0fMary Ann Milano1\x150\x13\x06\x03U\x04\n\x13\x0cPEO Spectrum1&0$\x06\t*\x86H\x86\xf7\r\x01\t\x01\x16\x17mmilano@peospectrum.com1\x0b0\t\x06\x03U\x04\x06\x13\x02US\x02\nf\n\xba\x15\x03l$\xf8\x97\x180\r\x06\t`\x86H\x01e\x03\x04\x02\x01\x05\x00\xa0\\0\x0f\x06\t*\x86H\x86\xf7/\x01\x01\x081\x020\x000\x18\x06\t*\x86H\x86\xf7\r\x01\t\x031\x0b\x06\t*\x86H\x86\xf7\r\x01\x07\x010/\x06\t*\x86H\x86\xf7\r\x01\t\x041"\x04 \xa5\x02\x8d\xfa\x965\xed\xed\x8f\xbd\xb6t\xd7v)\x90\x80\x1fCL\xa3)~\xc3_am\x0fQ-\xd5\x0f0\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x00\x04\x82\x01\x00\x90\xb1\xea\xd3\x84\x8c\xc9\xb9\xef\xc5\xef}\xe7\x93\xe3\x9e\xe3\xd3\xd1%\xa78\x06F\xe5\x15;\xd7\x0e\x17\xee\n\xb2\\\xcc\x95\x12$\x8d\xca\x13\x04\xb9G\x87\xff\xe6\x12A,y\x85\x16*u\xce\xb24S\xd2\xa8\xa6\xd2\xfd\x90\xd2\xb1\xfc\xc7\xebRd\xf3\xce\x02\xf1\xe5<\xf2i\xaa\x97\x95\xaas\xb4\xfd\x1e\xba\xfa\x16\xe7{^\xc5\xffh\xde\xc1D\xc0,\x8bGI\xfa-\xc2\x91\x80\x81\xf3\xee\x96ZV dW\x9a]\x9e\xfdB\x8f\x12\xbc\x94\xc3\xdarJ$\xcb\xff\x87\x00\xbc\tI!_\xa8\xb8<\xe5T2\xf5jL\x9d\n\x0c.\x813\x90\xd6jVd\xde>\x9f\xd7\x13\xe2\xd7\xfff\x150\xb8\xc0\xab\xcd;\x99N\xa1\x91H\x01\x190D\x92\xdeD\xb6\xe1"\xd2\xca%\xfc\xe0+\xc25\xcb\xd0G5\x85\xed7\x9a\x84\xdfk[\xdb\x14\x90\xe7\x00\xa1p\x05\x10#\xf9N)\x99F8\xd9\x05\x90\xcb\x11l$l\xe3m\xd1\xf7\xfa{\x11\xfb)\xf3\xc5+`\x12*I\xa7\xa7~\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', '/Filter': '/Adobe.PPKLite', '/M': "D:20210721152054-04'00'", '/Name': 'Mary Ann Milano', '/Prop_Build': {'/App': {'/Name': '/Adobe Acrobat Pro DC (32-bit)', '/OS': ['/Win'], '/R': 1377536, '/REx': '2021.005.20058', '/TrustedMode': True}, '/Filter': {'/Date': 'Jun 27 2021 06:22:42', '/Name': '/Adobe.PPKLite', '/R': 131104, '/V': 2}, '/PubSec': {'/Date': 'Jun 27 2021 06:22:42', '/NonEFontNoWarn': True, '/R': 131105}}, '/SubFilter': '/adbe.pkcs7.detached', '/Type': '/Sig'}
+
+--- [EXTRACTED TABLES SUMMARY] ---
+
+[Table 1: p1_t1 (Rows: 12, Columns: 4)]
+                                                                                                                               Company Name:                                     None                                                                None                                                               None
+                                                                                                                             Street Address:                                     None                                                                None                                                               None
+                                                                                                                                       City:                                   State:                                                                <NA>                                                               Zip:
+                                                                                                                                     County:              Benefits Contact & Phone #:                                                                None                                                               None
+                                                                                                          Total number of employees payroll:                         Total Full Time:                                                                None Total Number of Employees\ncurrently enrolled in health care plan:
+                                                                                                                                        None                         Total Part Time:                                                                None                                                               None
+Are any health plan enrollees NOT paid employees (other than spouses or children)?  Yes ✔ No\n***If yes, please provide names and details:                                     None                                                                None                                                               None
+                                                                                                                     Current Health Carrier:                                     None                                        Health Carrier Renewal Date:                                                               None
+                                               Is your current Plan Self-Funded?  Yes ✔ No  Don’t Know\n***If yes, please provide claims:                                     None                                                                None                                                               None
+                                                                              Are you currently with a PEO?  Yes  No\nIf yes, name of PEO:                                     None Any ineligible class of employees  Yes ✔ No\nIf yes, which class:                                                               None
+                                                                           Please provide a complete description of your business operation:                                     None                                                                None                                                          SIC Code:
+                                                                                                                        Number of Locations: Please identify all states of operation:                                                                None                                                               None
+------------------------------------------------------------
+
+[Table 2: p2_t1 (Rows: 2, Columns: 5)]
+                                   <NA> Employee Only Employee + Spouse Employee + Child Family
+Company Contribution Levels (by $ or %)          <NA>              <NA>             <NA>   <NA>
+------------------------------------------------------------
+
+[Table 3: p2_t2 (Rows: 6, Columns: 7)]
+         Plan 1 Name: # Enrolled Renewal Rates\n(eff. / / ) Most recent 12\nmonths 13-24 months\nprior                                                                                               HMO  PPO  HDHP\nPOS             None
+        Premium Rates       None                       None                   None                None                                                                                                     Plan Design Details            None
+        Employee Only          #                          $                      $                   $ Annual Deductible:\nCo-Insurance:\nOut-of-Pocket Max:\n(excluding deductible)\nOffice Visit Copay:\nPrescription Drugs: $\n%\n$\n$\n/ /
+    Employee + Spouse          #                          $                      $                   $                                                                                                                    None            None
+Employee + Child(ren)          #                          $                      $                   $                                                                                                                    None            None
+    Employee + Family          #                          $                      $                   $                                                                                                                    None            None
+------------------------------------------------------------
+
+[Table 4: p2_t3 (Rows: 6, Columns: 7)]
+         Plan 2 Name: # Enrolled Renewal Rates\n(eff. / / ) Most recent 12\nmonths 13-24 months\nprior                                                                                               HMO  PPO  HDHP\nPOS             None
+        Premium Rates       None                       None                   None                None                                                                                                     Plan Design Details            None
+        Employee Only          #                          $                      $                   $ Annual Deductible:\nCo-Insurance:\nOut-of-Pocket Max:\n(excluding deductible)\nOffice Visit Copay:\nPrescription Drugs: $\n%\n$\n$\n/ /
+    Employee + Spouse          #                          $                      $                   $                                                                                                                    None            None
+Employee + Child(ren)          #                          $                      $                   $                                                                                                                    None            None
+    Employee + Family          #                          $                      $                   $                                                                                                                    None            None
+------------------------------------------------------------
+
+[Table 5: p2_t4 (Rows: 6, Columns: 7)]
+         Plan 3 Name: # Enrolled Renewal Rates\n(eff. / / ) Most recent 12\nmonths 13-24 months\nprior                                                                                               HMO  PPO  HDHP\nPOS             None
+        Premium Rates       None                       None                   None                None                                                                                                     Plan Design Details            None
+        Employee Only          #                          $                      $                   $ Annual Deductible:\nCo-Insurance:\nOut-of-Pocket Max:\n(excluding deductible)\nOffice Visit Copay:\nPrescription Drugs: $\n%\n$\n$\n/ /
+    Employee + Spouse          #                          $                      $                   $                                                                                                                    None            None
+Employee + Child(ren)          #                          $                      $                   $                                                                                                                    None            None
+    Employee + Family          #                          $                      $                   $                                                                                                                    None            None
+------------------------------------------------------------
+
+[Table 6: p3_t1 (Rows: 5, Columns: 2)]
+                                                                    a)Has anyone been treated for a serious illness, been hospitalized or had surgery in the past 5\nyears? To the Best of My Knowledge\nYES ✔ NO
+b)Is anyone currently hospitalized, confined at home, incapacitated, confined in a treatment\nfacility, incapable of self-support because of physical or mental disability? To the Best of My Knowledge\nYES ✔ NO
+                                                            c)Has anyone been advised that medical treatment, diagnostic testing, surgery or hospitalization\nis necessary? To the Best of My Knowledge\nYES ✔ NO
+                                                                    d)Did any employee, dependent or COBRA participants incur over $5,000 in claims in the last\n12 months? To the Best of My Knowledge\nYES ✔ NO
+              e)Has the company received a Decline to quote from any carrier or PEO in the past 3 years?\n(If yes to any or all, please provide details in the table below) To the Best of My Knowledge\nYES ✔ NO
+------------------------------------------------------------
+
+[Table 7: p4_t1 (Rows: 2, Columns: 4)]
+IS ANYONE CURRENTLY PREGNANT? If yes, please provide due date and not below if\nnormal, high risk, multiple birth, or preterm labor with this pregnancy.\nThis includes employees, dependents or COBRA participants.     None                                                                     None To the Best of My Knowledge\nYES ✔ NO
+                                                                                                                                                                                                                Name Due Date Type of Pregnancy or Condition\n(normal, high risk, preterm labor, etc.)                                    None
+------------------------------------------------------------

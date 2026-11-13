@@ -55,13 +55,14 @@ FIELD_ALIASES: dict[str, list[str]] = {
                      "statusrelationship", "statusrelation", "typeemployeespousechild", "typeeespch",
                      "type", "eetype", "memberrole", "role", "dependenttype", "relationshiptype",
                      "typeemployeespousechildren", "relationshipemployeespouseorchild", "relationshiptoinsured",
-                     "employeedependent", "employeeordependent", "employeedep", "employeeanddependent", "eeordep", "eeanddep"],
+                     "employeedependent", "employeeordependent", "employeedep", "employeeanddependent", "eeordep", "eeanddep",
+                     "relationshipdesc", "relationshipdescription", "dependentrelationshipdesc", "dependentrelationshipdescription"],
     "coverage": ["coverage", "coveragetier", "tier", "coveragelevel", "enrollmenttier", "plantier",
-                 "coveragetype", "election", "coveragecode", "enrollmentlevel", "benefittier", "ratetier",
+                 "election", "coveragecode", "enrollmentlevel", "benefittier", "ratetier",
                  "householdtier", "medicaltier", "coveragestatus", "coveragelevelvalue", "coveragelevelamount",
                  "medicalcoverage", "healthcoveragelevel", "healthcoverage", "healthcoveragetier",
                  "medicalelection", "medicalelectioneees", "medicalelectioneeesec",
-                 "coveragedetails", "coverageelection", "electedcoverage", "coveragedescription", "coverageoption",
+                 "coveragedetails", "coverageelection", "electedcoverage", "coveragedescription",
                  "tierdescription", "medicalcoveragedetails", "benefitcoverage", "benefitcoveragetier", "coveragename",
                  "medical1coveragelevel", "medicalcoveragetier", "medical1coveragetier", "medical1tier", "medical1election",
                  "medicalcoveragelevel", "currentanticipatedhealthcoveragelevel", "anticipatedhealthcoveragelevel",
@@ -72,22 +73,24 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "cobra": ["cobra", "cobraparticipant", "cobrastatus", "cobraindicator", "cobrayn", "oncobra", "oncobra1yes0no"],
     "plan": ["plan", "planname", "medicalplan", "plancode", "planelected", "medicalplanname", "product",
              "productname", "planenrolled", "currentplan", "planoption", "medicalplancode", "plandescription",
-             "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan",
+             "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan", "healthcare", "healthcareplan",
              "planadminname", "adminplanname", "planadministrator", "medicalplandescription", "electedplan",
              "planenrolledname", "enrolledplanname", "benefitplan", "planadmin", "plannameadmin",
              "medical1planname", "medical1plan", "medical1plancode",
-             "medicalplanselected", "planselected", "selectedplan", "selectedmedicalplan"],
+             "medicalplanselected", "planselected", "selectedplan", "selectedmedicalplan",
+             "coverageoption", "coveragegroupoption", "coveragegroup"],
     "plan_type": ["plantype", "benefittype", "benefit", "benefitline", "benefitcategory",
                   "lineofcoverage", "coverageline", "producttype", "productline",
                   "benefitplantype", "benefitdescription", "lob", "lineofbusiness",
-                  "electedbenefit", "coveragecategory"],
+                  "electedbenefit", "coveragecategory", "coveragetype"],
     "plan_category": ["plancategory", "benefitcategory", "productcategory", "benefitplancategory"],
     "carrier": ["carrier", "provider", "carriercode", "carriername", "insurancecarrier", "vendor",
                 "medical1provider", "medical1carrier"],
     "ee_cost": ["employeecost", "eecost", "employeededuction", "eededuction",
                 "employeecontribution", "eecontribution", "employeedeductions", "eedeductions", "eecontrib",
                 "employeerate", "eerate", "employeecontributionamount",
-                "medical1employeecost", "medical1eecost"],
+                "medical1employeecost", "medical1eecost", "ghpeemonthlycontribution",
+                "eemonthlycontribution", "employeemonthlycontribution", "monthlyemployeecontribution", "monthlyeecontribution"],
     "er_cost": ["employercost", "ercost", "employercostamount", "companycost", "employercontribution",
                 "ercontribution", "companycontribution", "ercontrib", "employercontributionamount",
                 "medical1employercost", "medical1ercost"],
@@ -102,12 +105,14 @@ FIELD_ALIASES: dict[str, list[str]] = {
                "certificate", "certno", "certificatenumber", "memberno", "subscriberssn", "employeessn",
                "eessn", "subscribernumber", "employeenumber", "empno", "idnumber", "ssn4", "last4ssn",
                "householdid", "hhid", "familyid", "taxid", "employeetaxid", "positionid"],
-    "hire_date": ["hiredate", "dateofhire", "doh", "startdate", "originalhiredate"],
+    "hire_date": ["hiredate", "dateofhire", "doh", "startdate", "originalhiredate",
+                  "insperityhiredate", "clienthiredate", "companyhiredate", "employmenthiredate", "peohiredate"],
     "eligibility_class": ["benefiteligibilityclass", "eligibilityclass", "benefiteligibility",
                           "eligibilitygroup", "benefiteligroup", "medicaleligibilitygroup",
                           "medical1eligibilitygroup", "medicaleligibilityclass"],
     "worker_category": ["workercategory", "employeecategory", "employmentcategory", "employeetype",
-                        "employeestatuscategory", "workerstatus", "workertype", "ftpt", "fulltimeparttime"],
+                        "employeestatuscategory", "workerstatus", "workertype", "ftpt", "fulltimeparttime",
+                        "ftorpt", "ftorptstatus", "employeeclassification", "classification"],
     "position_status": ["positionstatus", "employmentstatus", "positionstate"],
     "waive_reason": ["medicalwaivereason", "waivereason", "waiverreason", "medicalwaiver",
                      "waivedreason", "enrollmentwaivereason", "waiver", "waivereasontext", "reasonforwaiving",
@@ -116,7 +121,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
                   "employeesjobtitle", "employeejobtitle"],
     "salary": ["annualsalary", "salary", "annualwages", "wages", "grosssalary", "annualcomp",
                "compensation", "annualcompensation", "basepay", "baseannualsalary",
-               "employeesannualpayrate", "employeeannualpayrate", "annualpayrate", "payrate", "annualrate"],
+               "employeesannualpayrate", "employeeannualpayrate", "annualpayrate", "payrate", "annualrate",
+               "annualpay"],
     "effective_date": ["effective_date", "effectivedate", "effdate", "enrollmenteffectivedate", "enrollmenteffdate",
                        "coverageeffectivedate", "coverageeffdate", "benefiteffectivedate", "benefiteffdate",
                        "enrollmentstartdate"],
@@ -235,6 +241,56 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
                     if "(" in prev_lab and "(" not in str(lab):
                         cols[canon] = idx
                 break
+
+    # Handle repeated unnumbered dependent column blocks (e.g., Benefits Enrollment report with 5 wide dependent slots)
+    dep_anchors = [idx for idx, _ in (cand_cols.get("dep_last") or cand_cols.get("dep_first") or [])]
+    if len(dep_anchors) > 1 and ("full_name" in cols or "first_name" in cols):
+        dep_anchors = sorted(dep_anchors)
+        for slot_i, start_col in enumerate(dep_anchors):
+            end_col = dep_anchors[slot_i + 1] if slot_i + 1 < len(dep_anchors) else len(labels)
+            slot_key = ("CH", str(slot_i + 1))
+            slot_dict = wide.setdefault(slot_key, {})
+            for canon_dep, target_fld in (
+                ("dep_last", "last"), ("dep_first", "first"), ("dep_full", "name"),
+                ("dep_dob", "dob"), ("dep_gender", "gender"), ("relationship", "rel"),
+            ):
+                for col_idx, col_lab in cand_cols.get(canon_dep, []):
+                    if start_col <= col_idx < end_col:
+                        slot_dict[target_fld] = col_idx
+                        wide_cands.setdefault(slot_key, {}).setdefault(target_fld, []).append((col_idx, col_lab))
+                        break
+        for k_rm in ("dep_last", "dep_first", "dep_full", "dep_dob", "dep_gender"):
+            cols.pop(k_rm, None)
+        if "relationship" in cols and cols["relationship"] >= dep_anchors[0]:
+            # Check if there was an earlier relationship column before dep_anchors[0]
+            earlier_rel = [idx for idx, _ in cand_cols.get("relationship", []) if idx < dep_anchors[0]]
+            if earlier_rel:
+                cols["relationship"] = earlier_rel[0]
+            else:
+                cols.pop("relationship", None)
+
+    # Handle swapped/misaligned 'Employee Name' (holding Last Name) + 'Last' (holding First Name)
+    if "full_name" in cols and "last_name" in cols and "first_name" not in cols:
+        c_full, c_last = cols["full_name"], cols["last_name"]
+        if c_last == c_full + 1 and best_i + 1 < len(df):
+            sample_rows = df.iloc[best_i + 1: min(best_i + 25, len(df))]
+            v0_list = [clean(v) for v in sample_rows.iloc[:, c_full].tolist() if clean(v)]
+            v1_list = [clean(v) for v in sample_rows.iloc[:, c_last].tolist() if clean(v)]
+            if v0_list and v1_list and not any("," in v for v in v0_list[:10]):
+                cols["last_name"] = c_full
+                cols["first_name"] = c_last
+                cols.pop("full_name", None)
+
+    # Fallback: if 'Coverage Type' mapped to plan_type and 'coverage' is unmapped, check if values are tier codes
+    if "coverage" not in cols and "plan_type" in cols and best_i + 1 < len(df):
+        from utils import std_coverage
+        c_pt = cols["plan_type"]
+        sample_vals = [clean(v) for v in df.iloc[best_i + 1: min(best_i + 30, len(df)), c_pt].tolist() if clean(v)]
+        tier_hits = sum(1 for v in sample_vals if std_coverage(v) in ("EE", "ES", "EC", "FAM", "WO", "WP", "NE", "RC"))
+        if sample_vals and tier_hits >= max(1, len(sample_vals) // 2):
+            cols["coverage"] = c_pt
+            cols.pop("plan_type", None)
+
     return Header(best_i, cols, wide, labels, cand_cols, wide_cands)
 
 
@@ -246,13 +302,13 @@ def body(df: pd.DataFrame, hdr: Header) -> pd.DataFrame:
 ROLE_FILENAME = [
     ("deliverable", r"(- marsh census|- sbu census|marsh_census_|sbu_census_|rapt_census_)"),
     ("claims", r"(claims?|large[_\-\s]*claim)"),
-    ("payroll", r"(payroll|wage|earnings)"),
+    ("payroll", r"(payroll|wage|earnings|(?:^|[_\-\s])schedule[_\-\s]*a\b)"),
     ("invoice", r"(invoice|inv[_\-\s]|billing|bill[_\-\s]|statement|premium\s*bill)"),
-    ("renewal", r"(renewal|renew|rate\s*(sheet|pass|card)|proposal)"),
+    ("renewal", r"(renewal|renew|rate\s*(sheet|pass|card)|proposal|\bmar[_\-\s]*report|medical[_\-\s]*allocation|financial[_\-\s]*stewardship|schedule[_\-\s]*b\b)"),
     ("ghq", r"(ghq|group\s*health\s*questionnaire|questionnaire)"),
     ("rfp", r"(rfp|request\s*for\s*proposal|mail|email|submission|inbox|application)"),
     ("census", r"(census|roster|enroll|eligib|employee|dependent|demographic)"),
-    ("plan_design", r"(plan[_\-\s]*design|summary[_\-\s]*of[_\-\s]*benefits?|sbc\b|benefit[_\-\s]*summary|\bplan\b.*(buy\s*up|base)|(buy\s*up|base)\s*plan)"),
+    ("plan_design", r"(plan[_\-\s]*design|group[_\-\s]*identification[_\-\s]*key|summary[_\-\s]*of[_\-\s]*benefits?|sbc\b|benefit[_\-\s]*summary|\bplan\b.*(buy\s*up|base)|(buy\s*up|base)\s*plan)"),
 ]
 ROLE_CONTENT = {
     "claims": [r"aggregate claims?", r"specific claims?", r"paid claims?", r"large claims?", r"stop loss"],
@@ -261,7 +317,8 @@ ROLE_CONTENT = {
                 r"earnings", r"\bcheck ?#", r"file ?#"],
     "invoice": [r"amount due", r"billing period", r"total (premium|due)", r"statement date",
                 r"medical insurance", r"premium"],
-    "renewal": [r"renewal", r"renewing", r"new rates?", r"rate (sheet|schedule)", r"proposed rates?"],
+    "renewal": [r"renewal", r"renewing", r"new rates?", r"rate (sheet|schedule)", r"proposed rates?",
+                r"medical allocation report", r"financial stewardship report", r"new monthly.*alloc"],
     "ghq": [r"group health questionnaire", r"ghq", r"prior carrier", r"sic code"],
     "rfp": [r"request for proposal", r"\brfp\b", r"new submission", r"submission", r"key details", r"peo consultant"],
     "census": [r"date of birth|\bdob\b", r"gender|\bsex\b", r"relationship", r"coverage tier|\btier\b"],
@@ -335,10 +392,22 @@ def classify(doc: RawDoc) -> str:
                 if llm_role == "census" and re.search(r"\b(claims?|large[_\-\s]*claim)\b", doc.name, re.I):
                     log.info("LLM classified '%s' as census; overridden to claims based on claim document signature", doc.name)
                     return "claims"
+                if llm_role == "census" and (
+                    re.search(r"(\bmar[_\-\s]*report|medical[_\-\s]*allocation|financial[_\-\s]*stewardship|schedule[_\-\s]*b\b)", doc.name, re.I)
+                    or re.search(r"(medical allocation report|financial stewardship report)", doc.text or "", re.I)
+                ):
+                    log.info("LLM classified '%s' as census; overridden to renewal based on MAR/Stewardship/Schedule B signature", doc.name)
+                    return "renewal"
+                if re.search(r"(group[_\-\s]*identification[_\-\s]*key|option[_\-\s]*key|plan[_\-\s]*key)", doc.name, re.I):
+                    log.info("Document '%s' is an option/plan legend -> overridden to plan_design", doc.name)
+                    return "plan_design"
+                if re.search(r"(?:^|[_\-\s])schedule[_\-\s]*a\b", doc.name, re.I):
+                    log.info("Document '%s' is Schedule A fee/payroll exhibit -> overridden to payroll", doc.name)
+                    return "payroll"
                 # Structural guard: a tabular employee roster (names + DOB header) that is not a
                 # payroll register must stay a census, even when it carries salary / WC-class /
                 # payroll-name columns that can mislead semantic classification.
-                if llm_role in {"payroll", "invoice", "rfp", "plan_design"} and _looks_like_roster(doc) and not re.search(r"\b(rfp|request\s*for\s*proposal)\b", doc.name, re.I):
+                if llm_role in {"payroll", "invoice", "rfp", "plan_design"} and _looks_like_roster(doc) and not re.search(r"\b(rfp|request\s*for\s*proposal|schedule[_\-\s]*a|group[_\-\s]*identification)\b", doc.name, re.I):
                     log.info("LLM-First classified '%s' as %s; overridden to census (employee roster "
                              "header detected, not a payroll register)", doc.name, llm_role)
                     return "census"

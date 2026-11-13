@@ -450,6 +450,90 @@ class UnderwritingValidator:
                     reason="All same-person gender/sex candidates resolved consistently to M/F",
                 ))
 
+            # Stacked dependent rows check (Section 9.5)
+            stacked_dep_issues = []
+            for emp in census.employees:
+                if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False):
+                    continue
+                job = clean(getattr(emp, "job_title", "")).lower()
+                from utils import std_relationship
+                if std_relationship(job) in ("SP", "CH", "DP"):
+                    stacked_dep_issues.append(f"{emp.first} {emp.last} (job_title='{job}')")
+
+            if stacked_dep_issues:
+                checks.append(CheckResult(
+                    rule_id="RULE_09_STACKED_DEPENDENTS",
+                    section="9.5",
+                    name="Stacked Dependent Row Reconstruction",
+                    status=CheckStatus.FAIL,
+                    reason=f"Found {len(stacked_dep_issues)} dependent rows registered as standalone employees: {stacked_dep_issues[:5]}",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_STACKED_DEPENDENTS_AS_EMPLOYEES",
+                    rule_id="RULE_09_STACKED_DEPENDENTS",
+                    target_ref="census.employees",
+                    issue_type=IssueType.BUSINESS_RULE_MISAPPLIED,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.NORMALIZATION,
+                    expected_state="Dependents in stacked rows linked to subscriber, not standalone employees",
+                    observed_state=f"{len(stacked_dep_issues)} dependents registered as employees",
+                    allowed_actions=[RepairAction.REPAIR_LINKAGE_OR_NORMALIZATION],
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_09_STACKED_DEPENDENTS",
+                    section="9.5",
+                    name="Stacked Dependent Row Reconstruction",
+                    status=CheckStatus.PASS,
+                    reason="All stacked dependent rows properly linked to subscribers",
+                ))
+
+            # Check for undecoded Insperity codes or non-medical coverage values
+            undecoded_codes = []
+            non_med_covs = []
+            for emp in census.employees:
+                if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False):
+                    continue
+                cov_raw = clean(getattr(emp, "cov_raw", ""))
+                if re.search(r"^\d+(?:\s*,\s*\d+)+$", cov_raw):
+                    undecoded_codes.append(f"{emp.first} {emp.last} (cov_raw='{cov_raw}')")
+                if cov_raw.lower() in ("dental", "vision", "commuter", "commuter benefit", "life", "fsa"):
+                    non_med_covs.append(f"{emp.first} {emp.last} (cov_raw='{cov_raw}')")
+
+            if undecoded_codes:
+                checks.append(CheckResult(
+                    rule_id="RULE_10_INSPERITY_CODE_DECODING",
+                    section="10.3",
+                    name="Insperity Code Decoding",
+                    status=CheckStatus.FAIL,
+                    reason=f"Found {len(undecoded_codes)} undecoded comma-separated option codes: {undecoded_codes[:5]}",
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_10_INSPERITY_CODE_DECODING",
+                    section="10.3",
+                    name="Insperity Code Decoding",
+                    status=CheckStatus.PASS,
+                    reason="Insperity coverage codes and options properly decoded",
+                ))
+
+            if non_med_covs:
+                checks.append(CheckResult(
+                    rule_id="RULE_11_BER_MULTI_BENEFIT_FILTER",
+                    section="11.1B",
+                    name="BER Multi-Benefit Filter",
+                    status=CheckStatus.FAIL,
+                    reason=f"Found {len(non_med_covs)} employees with non-medical coverage: {non_med_covs[:5]}",
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_11_BER_MULTI_BENEFIT_FILTER",
+                    section="11.1B",
+                    name="BER Multi-Benefit Filter",
+                    status=CheckStatus.PASS,
+                    reason="Multi-benefit lines properly filtered to medical only",
+                ))
+
             # Gate B2: Required Demographics Check (Section 10.1 & 10.3)
             # Obligation: Normalize Name, DOB, Gender, Zip, Coverage Tier, Plan. Preserve legitimate source blanks.
             missing_demographics: list[str] = []

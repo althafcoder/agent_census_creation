@@ -232,6 +232,15 @@ def build_instruction_registry(instruction_hash: str) -> dict[str, RuleSpec]:
         severity=IssueSeverity.CRITICAL,
         allowed_remediations=[RepairAction.REGENERATE_WORKBOOK],
     ))
+    _reg(RuleSpec(
+        rule_id="RULE_08_WORKSHEET_BOUNDARY",
+        section="8.1B",
+        name="Worksheet Boundary and Extent Enforcement",
+        obligation="Bound tabular data to structured headers and contiguous populated rows; exclude stray cells/extent beyond gap of >= 5 empty columns.",
+        precedence=1,
+        severity=IssueSeverity.CRITICAL,
+        allowed_remediations=[RepairAction.RE_READ_SOURCE_UNIT],
+    ))
 
     # Section 9: Population, Medical Filtering, Status Precedence
     _reg(RuleSpec(
@@ -264,6 +273,15 @@ def build_instruction_registry(instruction_hash: str) -> dict[str, RuleSpec]:
             RepairAction.RESOLVE_CARRIER_CENSUS_LEGAL_NAME_AND_DEPENDENTS,
         ],
     ))
+    _reg(RuleSpec(
+        rule_id="RULE_09_STACKED_DEPENDENTS",
+        section="9.5",
+        name="Stacked Census Dependent Row Reconstruction",
+        obligation="In census sheets where Job Title contains 'Spouse', 'Child', or 'Domestic Partner' with blank employment fields, treat as dependent and link to preceding subscriber; never register as standalone employee.",
+        precedence=2,
+        severity=IssueSeverity.CRITICAL,
+        allowed_remediations=[RepairAction.REPAIR_LINKAGE_OR_NORMALIZATION],
+    ))
 
     # Section 10: Census Standardization & Required Fields
     _reg(RuleSpec(
@@ -278,6 +296,15 @@ def build_instruction_registry(instruction_hash: str) -> dict[str, RuleSpec]:
             RepairAction.REPAIR_LINKAGE_OR_NORMALIZATION,
             RepairAction.RESOLVE_CARRIER_CENSUS_LEGAL_NAME_AND_DEPENDENTS,
         ],
+    ))
+    _reg(RuleSpec(
+        rule_id="RULE_10_INSPERITY_CODE_DECODING",
+        section="10.3",
+        name="Insperity Coverage Code and Option Decoding",
+        obligation="Decode single-letter coverage levels (E/S/C/K/F/W/I) and split comma-delimited options (3,57,58,12) using Group Identification Key legend; separate medical plan codes from non-medical.",
+        precedence=2,
+        severity=IssueSeverity.CRITICAL,
+        allowed_remediations=[RepairAction.REPLACE_STRUCTURED_VALUE],
     ))
 
     # Section 11: Invoice / BER Selection & Acceptability
@@ -310,6 +337,15 @@ def build_instruction_registry(instruction_hash: str) -> dict[str, RuleSpec]:
         severity=IssueSeverity.WARNING,
         allowed_remediations=[RepairAction.RECLASSIFY_SOURCE],
     ))
+    _reg(RuleSpec(
+        rule_id="RULE_11_BER_MULTI_BENEFIT_FILTER",
+        section="11.1B",
+        name="Benefits Enrollment Report Multi-Benefit Filter",
+        obligation="Filter BER strictly to medical rows; non-medical rows (Dental, Vision, Life, Commuter, etc.) must not inflate subscriber counts or generate invalid coverage errors.",
+        precedence=2,
+        severity=IssueSeverity.CRITICAL,
+        allowed_remediations=[RepairAction.RECLASSIFY_SOURCE, RepairAction.REPLACE_STRUCTURED_VALUE],
+    ))
 
     # Section 12: SBC Requirement
     _reg(RuleSpec(
@@ -331,6 +367,15 @@ def build_instruction_registry(instruction_hash: str) -> dict[str, RuleSpec]:
         precedence=2,
         severity=IssueSeverity.CRITICAL,
         allowed_remediations=[RepairAction.RECOMPUTE_FINDINGS],
+    ))
+    _reg(RuleSpec(
+        rule_id="RULE_13_RENEWAL_POPULATION_INVARIANCE",
+        section="13.5",
+        name="Renewal Rate Application and Population Invariance",
+        obligation="Renewal rates from MAR / Financial Stewardship Reports must be populated without overwriting or displacing the canonical active census population.",
+        precedence=2,
+        severity=IssueSeverity.CRITICAL,
+        allowed_remediations=[RepairAction.REGENERATE_WORKBOOK],
     ))
 
     # Section 14: Rate Sheet Requirement

@@ -1,0 +1,947 @@
+================================================================================
+DOCUMENT: Wellfit Technologies_Financial Stewardship Report.pdf
+SOURCE PATH: test_wellfit_input\Input\Wellfit Technologies_Financial Stewardship Report.pdf
+FILE EXTENSION: .pdf
+IS SCANNED (OCR USED): False
+EXTRACTION METHOD: Digital PDF (pdfplumber Direct Extraction)
+TOTAL CHARACTERS: 61,710 chars
+TOTAL TABLES DETECTED: 47 table(s)
+================================================================================
+
+--- [EXTRACTED TEXT CONTENT] ---
+Financial Stewardship Report - Base Check forWELLFIT TECHNOLOGIES, INC.         
+                                             HR360® Financial Information                                    
+    Full-Time Employee Count        106                                           Monthly Payroll  $1,312,425
+    Part-Time Employee Count          0                                   Average Gross Payroll Per EE $12,381
+    Seasonal Employee Count           0                                            Annual Payroll  $15,749,095
+    Total Employees                 106                                  Average Annual Payroll per EE $148,576
+    ACA Eligible                    106                                                                      
+    Employees on Medical             95                                                                      
+    % of Medical Participation    89.62%                                                                     
+                                                                                 Per EE     % of     Per EE  
+                  Service Fee Components           Monthly   Annual   % of Payroll Per Month Burden Per Diem $*
+    Direct Cost Allocations                                                                                  
+     Payroll Taxes                                   $98,735 $1,184,818  7.52%    $931.46    40.90%          
+     Workers' Compensation & EPLI                    $2,199    $26,387    .17%     $20.74     .91%           
+     Benefits                                       $117,952 $1,415,422  8.99%   $1,112.75   48.86%          
+     Co-Employment Risk                              $4,452    $53,424    .34%     $42.00    1.84%           
+    Total Direct Cost Allocations                   $223,338 $2,680,051  17.02%  $2,106.96   92.51%          
+    HR Svcs Compliance Tech & Admin Allocation                                                               
+     Full Time                                     $18,073.00 $216,876.00 1.38%   $170.50    7.48%    $5.61  
+     Part Time                                         $.00      $.00     .00%    $107.50     .00%     $.00  
+    Total HR Svcs Compliance Tech & Admin Allocation $18,073  $216,876   1.38%               7.48%           
+    Total Service Fee                               $241,411 $2,896,927  18.40%  $2,106.96    100%           
+  Base Check Bids: 5169600-13                                                                                
+  * All per diems are rounded to the nearest whole penny, which is consistent with the methodology of Insperity systems.
+  About Insperity: InsperityHR360 is provided by Insperity PEO Services, L.P. We are certified by the IRS as a Certified Professional Employer Organization and are licensed under applicable state laws governing professional
+  employer organizations. We provide our human resource services, including our benefits plans and workers’ compensation program, as an employer and not as an agent. Participation in our benefits plans is available only as a component of our human
+  resources services and only to eligible employees. We are also a wholly-owned subsidiary of Insperity, Inc., a publicly-traded company (NYSE: NSP).
+  About the Financial Information Report: We charge a service fee for the human resource services included in ourHR360 solution that we will provide to you. The Financial Information Report illustrates an internal
+  allocation of our proposed service fee among various categories relating to our human resources services. None of the allocations represent an insurance premium or rate. The allocations are based upon information you have provided to
+  us and our own estimates, assumptions, calculations, historical data and averages and are likely to vary from our actual costs; however, any such variances will not alter your service fee, except as provided in the Client Service Agreement.
+  The Financial Information Report is not intended to be used by you for any purpose other than to provide you with additional information concerning our proposed service fee.
+  Confidentiality: The Financial Information contains our confidential and proprietary information and trade secrets. You have agreed to maintain the Financial Information Report in confidence and have agreed that you will not provide it or any
+  information concerning the allocations to any third party. Prepared October 30, 2026                       
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                              Financial Stewardship Report - Renewal forWELLFIT TECHNOLOGIES, INC.           
+                                             HR360® Financial Information                                    
+    Full-Time Employee Count        106                                           Monthly Payroll  $1,312,425
+    Part-Time Employee Count          0                                   Average Gross Payroll Per EE $12,381
+    Seasonal Employee Count           0                                            Annual Payroll  $15,749,095
+    Total Employees                 106                                  Average Annual Payroll per EE $148,576
+    ACA Eligible                    106                                                                      
+    Employees on Medical             95                                                                      
+    % of Medical Participation    89.62%                                  Configuration/Onboarding Fee $.00  
+                                                                                 Per EE     % of     Per EE  
+                  Service Fee Components           Monthly   Annual   % of Payroll Per Month Burden Per Diem $*
+    Direct Cost Allocations                                                                                  
+     Payroll Taxes                                   $98,735 $1,184,818  7.52%    $931.46    37.79%          
+     Workers' Compensation & EPLI                    $2,551    $30,612    .19%     $24.07     .98%           
+     Benefits                                       $136,423 $1,637,077  10.39%  $1,287.01   52.21%          
+     Co-Employment Risk                              $4,452    $53,424    .34%     $42.00    1.70%           
+    Total Direct Cost Allocations                   $242,161 $2,905,931  18.45%  $2,284.54   92.68%          
+    HR Svcs Compliance Tech & Admin Allocation                                                               
+     Full Time                                     $19,133.00 $229,596.00 1.46%   $180.50    7.32%    $5.93  
+     Part Time                                         $.00      $.00     .00%    $117.50     .00%     $.00  
+    Total HR Svcs Compliance Tech & Admin Allocation $19,133  $229,596   1.46%               7.32%           
+    Total Service Fee                               $261,294 $3,135,527  19.91%  $2,284.54    100%           
+  Renewal Bids: 5169600-15                                                                                   
+  * All per diems are rounded to the nearest whole penny, which is consistent with the methodology of Insperity systems.
+  About Insperity: InsperityHR360 is provided by Insperity PEO Services, L.P. We are certified by the IRS as a Certified Professional Employer Organization and are licensed under applicable state laws governing professional
+  employer organizations. We provide our human resource services, including our benefits plans and workers’ compensation program, as an employer and not as an agent. Participation in our benefits plans is available only as a component of our human
+  resources services and only to eligible employees. We are also a wholly-owned subsidiary of Insperity, Inc., a publicly-traded company (NYSE: NSP).
+  About the Financial Information Report: We charge a service fee for the human resource services included in ourHR360 solution that we will provide to you. The Financial Information Report illustrates an internal
+  allocation of our proposed service fee among various categories relating to our human resources services. None of the allocations represent an insurance premium or rate. The allocations are based upon information you have provided to
+  us and our own estimates, assumptions, calculations, historical data and averages and are likely to vary from our actual costs; however, any such variances will not alter your service fee, except as provided in the Client Service Agreement.
+  The Financial Information Report is not intended to be used by you for any purpose other than to provide you with additional information concerning our proposed service fee.
+  Confidentiality: The Financial Information contains our confidential and proprietary information and trade secrets. You have agreed to maintain the Financial Information Report in confidence and have agreed that you will not provide it or any
+  information concerning the allocations to any third party. Prepared October 30, 2026                       
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                             Financial Stewardship Report - Comparison forWELLFIT TECHNOLOGIES, INC.         
+                                             HR360® Financial Information                                    
+    Full-Time Employee Count         106                                           Monthly Payroll  $1,312,425
+    Part-Time Employee Count          0                                     Average Gross Payroll Per EE $12,381
+    Seasonal Employee Count           0                                             Annual Payroll $15,749,095
+    Total Employees                  106                                   Average Annual Payroll per EE $148,576
+    ACA Eligible                     106                                                                     
+    Employees on Medical             95                                                                      
+    % of Medical Participation     89.62%                                                                    
+                          Comprehensive                       Annual Allocation     % of Payroll   $ Change  
+                       Service Fee Components              Base Check Renewal  Base Check Renewal  Renewal   
+    Direct Cost Allocations                                                                                  
+     Payroll Taxes                                          $1,184,818 $1,184,818  7.52%    7.52%       $0   
+     Workers' Compensation & EPLI                             $26,387   $30,612    .17%      .19%     $4,225 
+     Benefits                                               $1,415,422 $1,637,077  8.99%    10.39%   $221,655
+     Co-Employment Risk                                       $53,424   $53,424    .34%      .34%       $0   
+    Total Direct Cost Allocations                           $2,680,051 $2,905,931 17.02%    18.45%   $225,880
+    HR Svcs Compliance Tech & Admin Allocation                                                               
+     Full Time                                              $216,876.00 $229,596.00 1.38%   1.46%   $12,720.00
+     Part Time                                                  $.00      $.00     .00%      .00%      $.00  
+    Total HR Svcs Compliance Tech & Admin Allocation         $216,876  $229,596    1.38%    1.46%   $12,720.00
+    Total Service Fee                                       $2,896,927 $3,135,527 18.40%    19.91% $238,600.00
+  * All per diems are rounded to the nearest whole penny, which is consistent with the methodology of Insperity systems.
+  About Insperity: InsperityHR360 is provided by Insperity PEO Services, L.P. We are certified by the IRS as a Certified Professional Employer Organization and are licensed under applicable state laws governing professional
+  employer organizations. We provide our human resource services, including our benefits plans and workers’ compensation program, as an employer and not as an agent. Participation in our benefits plans is available only as a component of our human
+  resources services and only to eligible employees. We are also a wholly-owned subsidiary of Insperity, Inc., a publicly-traded company (NYSE: NSP).
+  About the Financial Information Report: We charge a service fee for the human resource services included in ourHR360 solution that we will provide to you. The Financial Information Report illustrates an internal
+  allocation of our proposed service fee among various categories relating to our human resources services. None of the allocations represent an insurance premium or rate. The allocations are based upon information you have provided to
+  us and our own estimates, assumptions, calculations, historical data and averages and are likely to vary from our actual costs; however, any such variances will not alter your service fee, except as provided in the Client Service Agreement.
+  The Financial Information Report is not intended to be used by you for any purpose other than to provide you with additional information concerning our proposed service fee.
+  Confidentiality: The Financial Information contains our confidential and proprietary information and trade secrets. You have agreed to maintain the Financial Information Report in confidence and have agreed that you will not provide it or any
+  information concerning the allocations to any third party. Prepared October 30, 2026                       
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                    WELLFIT TECHNOLOGIES, INC. Bid / Version 5169600 - 15 -R                 
+                                                                                                             
+                                           Medical, Dental/Vision Allocations                                
+                                       Benefit Plan: Independence Premier; Bundled: N                        
+                                             Annual Summary - Estimate Only                                  
+                     Current Current EE  Current      New       New        New   Total Alloc. Client Pymt # Electing
+                   Allocations  Contr. Client Pymnt Allocations EE Contr. Client Pymnt Change Change Coverage
+   Medical         $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24 16.8% 16.8% 95
+   Dental/Vision    $119,904.00 $39,744.00 $80,160.00 $119,904.00 $39,744.00 $80,160.00 .0%     .0%     94   
+                                                                                                             
+  Classing: OWNERS                                                                                           
+                                                                                                             
+                                         Current                New        New               Monthly         
+                     Current   Current   Monthly     New      Monthly   Monthly    Monthly  Employee No. EES 
+                     Monthly  Employee    Client   Monthly   Employee     Client    Alloc.    Contri. Electing
+                      Alloc.    Contr.  Payment      Alloc.    Contr.   Payment       +/-        +/-  Covg.  
+  250 Deductible                                                                                             
+    Employee Only     $907.17     $.00    $907.17   $1,059.55    $.00    $1,059.55  $152.38     $.00     0   
+    Emp. + Spouse    $1,904.65    $.00   $1,904.65  $2,224.74    $.00    $2,224.74  $320.09     $.00     0   
+    Emp. + Child     $1,725.94    $.00   $1,725.94  $2,015.54    $.00    $2,015.54  $289.60     $.00     0   
+    Emp. + Children  $1,725.94    $.00   $1,725.94  $2,015.54    $.00    $2,015.54  $289.60     $.00     0   
+    Emp. + Family    $2,816.41    $.00   $2,816.41  $3,289.17    $.00    $3,289.17  $472.76     $.00     1   
+  500 Deductible                                                                                             
+    Employee Only     $807.64     $.00    $807.64    $942.65     $.00     $942.65   $135.01     $.00     0   
+    Emp. + Spouse    $1,690.34    $.00   $1,690.34  $1,974.01    $.00    $1,974.01  $283.67     $.00     0   
+    Emp. + Child     $1,527.60    $.00   $1,527.60  $1,784.05    $.00    $1,784.05  $256.45     $.00     0   
+    Emp. + Children  $1,527.60    $.00   $1,527.60  $1,784.05    $.00    $1,784.05  $256.45     $.00     0   
+    Emp. + Family    $2,495.30    $.00   $2,495.30  $2,913.85    $.00    $2,913.85  $418.55     $.00     1   
+  1700 Deductible - HDHP (1750 in 2027)                                                                      
+    Employee Only     $706.66     $.00    $706.66    $824.98     $.00     $824.98   $118.32     $.00     0   
+    Emp. + Spouse    $1,484.02    $.00   $1,484.02  $1,733.29    $.00    $1,733.29  $249.27     $.00     0   
+    Emp. + Child     $1,339.44    $.00   $1,339.44  $1,564.09    $.00    $1,564.09  $224.65     $.00     0   
+    Emp. + Children  $1,339.44    $.00   $1,339.44  $1,564.09    $.00    $1,564.09  $224.65     $.00     0   
+    Emp. + Family    $2,185.09    $.00   $2,185.09  $2,552.38    $.00    $2,552.38  $367.29     $.00     0   
+  5000 Deductible - HDHP                                                                                     
+    Employee Only     $529.39     $.00    $529.39    $618.09     $.00     $618.09    $88.70     $.00     0   
+    Emp. + Spouse    $1,108.41    $.00   $1,108.41  $1,294.90    $.00    $1,294.90  $186.49     $.00     0   
+    Emp. + Child     $1,001.62    $.00   $1,001.62  $1,169.53    $.00    $1,169.53  $167.91     $.00     0   
+    Emp. + Children  $1,001.62    $.00   $1,001.62  $1,169.53    $.00    $1,169.53  $167.91     $.00     0   
+    Emp. + Family    $1,640.21    $.00   $1,640.21  $1,915.56    $.00    $1,915.56  $275.35     $.00     0   
+  BCA HMO North                                                                                              
+    Employee Only     $893.76     $.00    $893.76   $1,116.19    $.00    $1,116.19  $222.43     $.00     0   
+    Emp. + Spouse    $1,814.50    $.00   $1,814.50  $2,266.10    $.00    $2,266.10  $451.60     $.00     0   
+    Emp. + Child     $1,652.21    $.00   $1,652.21  $2,062.92    $.00    $2,062.92  $410.71     $.00     0   
+    Emp. + Children  $1,652.21    $.00   $1,652.21  $2,062.92    $.00    $2,062.92  $410.71     $.00     0   
+    Emp. + Family    $2,736.55    $.00   $2,736.55  $3,417.43    $.00    $3,417.43  $680.88     $.00     0   
+                                                                                                    Page 1 of 4
+                                                                                                             
+                                                                                                             
+                                    WELLFIT TECHNOLOGIES, INC. Bid / Version 5169600 - 15 -R                 
+                                                                                                             
+                                           Medical, Dental/Vision Allocations                                
+                                       Benefit Plan: Independence Premier; Bundled: N                        
+                                             Annual Summary - Estimate Only                                  
+                     Current Current EE  Current      New       New        New   Total Alloc. Client Pymt # Electing
+                   Allocations  Contr. Client Pymnt Allocations EE Contr. Client Pymnt Change Change Coverage
+   Medical         $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24 16.8% 16.8% 95
+   Dental/Vision    $119,904.00 $39,744.00 $80,160.00 $119,904.00 $39,744.00 $80,160.00 .0%     .0%     94   
+                                                                                                             
+  Classing: OWNERS                                                                                           
+                                                                                                             
+                                         Current                New        New               Monthly         
+                     Current   Current   Monthly     New      Monthly   Monthly    Monthly  Employee No. EES 
+                     Monthly  Employee    Client   Monthly   Employee     Client    Alloc.    Contri. Electing
+                      Alloc.    Contr.  Payment      Alloc.    Contr.   Payment       +/-        +/-  Covg.  
+  BCA HMO South                                                                                              
+    Employee Only     $664.06     $.00    $664.06    $829.60     $.00     $829.60   $165.54     $.00     0   
+    Emp. + Spouse    $1,342.67    $.00   $1,342.67  $1,676.53    $.00    $1,676.53  $333.86     $.00     0   
+    Emp. + Child     $1,224.88    $.00   $1,224.88  $1,528.95    $.00    $1,528.95  $304.07     $.00     0   
+    Emp. + Children  $1,224.88    $.00   $1,224.88  $1,528.95    $.00    $1,528.95  $304.07     $.00     0   
+    Emp. + Family    $2,035.03    $.00   $2,035.03  $2,541.99    $.00    $2,541.99  $506.96     $.00     0   
+  Kaiser HMO CA North                                                                                        
+    Employee Only     $586.84     $.00    $586.84    $678.47     $.00     $678.47    $91.63     $.00     0   
+    Emp. + Spouse    $1,209.83    $.00   $1,209.83  $1,397.79    $.00    $1,397.79  $187.96     $.00     0   
+    Emp. + Child     $1,126.07    $.00   $1,126.07  $1,301.54    $.00    $1,301.54  $175.47     $.00     0   
+    Emp. + Children  $1,126.07    $.00   $1,126.07  $1,301.54    $.00    $1,301.54  $175.47     $.00     0   
+    Emp. + Family    $1,724.19    $.00   $1,724.19  $1,992.34    $.00    $1,992.34  $268.15     $.00     0   
+  Kaiser HMO CA South                                                                                        
+    Employee Only     $470.36     $.00    $470.36    $543.73     $.00     $543.73    $73.37     $.00     0   
+    Emp. + Spouse    $1,031.18    $.00   $1,031.18  $1,191.76    $.00    $1,191.76  $160.58     $.00     0   
+    Emp. + Child      $936.95     $.00    $936.95   $1,082.68    $.00    $1,082.68  $145.73     $.00     0   
+    Emp. + Children   $936.95     $.00    $936.95   $1,082.68    $.00    $1,082.68  $145.73     $.00     0   
+    Emp. + Family    $1,406.15    $.00   $1,406.15  $1,625.20    $.00    $1,625.20  $219.05     $.00     0   
+  Kaiser HMO Northwest                                                                                       
+    Employee Only     $575.06     $.00    $575.06    $664.21     $.00     $664.21    $89.15     $.00     0   
+    Emp. + Spouse    $1,264.14    $.00   $1,264.14  $1,460.52    $.00    $1,460.52  $196.38     $.00     0   
+    Emp. + Child     $1,148.97    $.00   $1,148.97  $1,327.92    $.00    $1,327.92  $178.95     $.00     0   
+    Emp. + Children  $1,148.97    $.00   $1,148.97  $1,327.92    $.00    $1,327.92  $178.95     $.00     0   
+    Emp. + Family    $1,723.53    $.00   $1,723.53  $1,991.63    $.00    $1,991.63  $268.10     $.00     0   
+  Kaiser HMO Washington                                                                                      
+    Employee Only     $578.34     $.00    $578.34    $667.77     $.00     $667.77    $89.43     $.00     0   
+    Emp. + Spouse    $1,271.35    $.00   $1,271.35  $1,469.07    $.00    $1,469.07  $197.72     $.00     0   
+    Emp. + Child     $1,156.83    $.00   $1,156.83  $1,337.18    $.00    $1,337.18  $180.35     $.00     0   
+    Emp. + Children  $1,156.83    $.00   $1,156.83  $1,337.18    $.00    $1,337.18  $180.35     $.00     0   
+    Emp. + Family    $1,734.66    $.00   $1,734.66  $2,004.46    $.00    $2,004.46  $269.80     $.00     0   
+                                                                                                    Page 2 of 4
+                                                                                                             
+                                                                                                             
+                                    WELLFIT TECHNOLOGIES, INC. Bid / Version 5169600 - 15 -R                 
+                                                                                                             
+                                           Medical, Dental/Vision Allocations                                
+                                       Benefit Plan: Independence Premier; Bundled: N                        
+                                             Annual Summary - Estimate Only                                  
+                     Current Current EE  Current      New       New        New   Total Alloc. Client Pymt # Electing
+                   Allocations  Contr. Client Pymnt Allocations EE Contr. Client Pymnt Change Change Coverage
+   Medical         $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24 16.8% 16.8% 95
+   Dental/Vision    $119,904.00 $39,744.00 $80,160.00 $119,904.00 $39,744.00 $80,160.00 .0%     .0%     94   
+                                                                                                             
+  Classing: OWNERS                                                                                           
+                                                                                                             
+                                         Current                New        New               Monthly         
+                     Current   Current   Monthly     New      Monthly   Monthly    Monthly  Employee No. EES 
+                     Monthly  Employee    Client   Monthly   Employee     Client    Alloc.    Contri. Electing
+                      Alloc.    Contr.  Payment      Alloc.    Contr.   Payment       +/-        +/-  Covg.  
+  Kaiser HMO CO                                                                                              
+    Employee Only     $524.67     $.00    $524.67    $606.47     $.00     $606.47    $81.80     $.00     0   
+    Emp. + Spouse    $1,153.55    $.00   $1,153.55  $1,332.92    $.00    $1,332.92  $179.37     $.00     0   
+    Emp. + Child     $1,048.19    $.00   $1,048.19  $1,211.01    $.00    $1,211.01  $162.82     $.00     0   
+    Emp. + Children  $1,048.19    $.00   $1,048.19  $1,211.01    $.00    $1,211.01  $162.82     $.00     0   
+    Emp. + Family    $1,572.36    $.00   $1,572.36  $1,816.97    $.00    $1,816.97  $244.61     $.00     0   
+  UHC of CA HMO North                                                                                        
+    Employee Only    $1,017.44    $.00   $1,017.44  $1,222.41    $.00    $1,222.41  $204.97     $.00     0   
+    Emp. + Spouse    $2,092.62    $.00   $2,092.62  $2,515.61    $.00    $2,515.61  $422.99     $.00     0   
+    Emp. + Child     $1,953.23    $.00   $1,953.23  $2,347.37    $.00    $2,347.37  $394.14     $.00     0   
+    Emp. + Children  $1,953.23    $.00   $1,953.23  $2,347.37    $.00    $2,347.37  $394.14     $.00     0   
+    Emp. + Family    $2,983.91    $.00   $2,983.91  $3,585.67    $.00    $3,585.67  $601.76     $.00     0   
+  UHC of CA HMO South                                                                                        
+    Employee Only     $727.54     $.00    $727.54    $873.80     $.00     $873.80   $146.26     $.00     0   
+    Emp. + Spouse    $1,499.08    $.00   $1,499.08  $1,802.00    $.00    $1,802.00  $302.92     $.00     0   
+    Emp. + Child     $1,397.65    $.00   $1,397.65  $1,679.38    $.00    $1,679.38  $281.73     $.00     0   
+    Emp. + Children  $1,397.65    $.00   $1,397.65  $1,679.38    $.00    $1,679.38  $281.73     $.00     0   
+    Emp. + Family    $2,139.74    $.00   $2,139.74  $2,571.93    $.00    $2,571.93  $432.19     $.00     0   
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                    Page 3 of 4
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                    WELLFIT TECHNOLOGIES, INC. Bid / Version 5169600 - 15 -R                 
+                                                                                                             
+                                           Medical, Dental/Vision Allocations                                
+                                       Benefit Plan: Independence Premier; Bundled: N                        
+                                             Annual Summary - Estimate Only                                  
+                     Current Current EE  Current      New       New        New   Total Alloc. Client Pymt # Electing
+                   Allocations  Contr. Client Pymnt Allocations EE Contr. Client Pymnt Change Change Coverage
+   Medical         $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24 16.8% 16.8% 95
+   Dental/Vision    $119,904.00 $39,744.00 $80,160.00 $119,904.00 $39,744.00 $80,160.00 .0%     .0%     94   
+                                                                                                             
+  Classing: OWNERS                                                                                           
+                                                                                                             
+                                         Current                New        New               Monthly         
+                     Current   Current   Monthly     New      Monthly   Monthly    Monthly  Employee No. EES 
+                     Monthly  Employee    Client   Monthly   Employee     Client    Alloc.    Contri. Electing
+                      Alloc.    Contr.  Payment      Alloc.    Contr.   Payment       +/-        +/-  Covg.  
+  50 Deductible Dental and Vision                                                                            
+    Employee Only     $55.00      $.00     $55.00    $55.00      $.00     $55.00      $.00      $.00     0   
+    Emp. + Spouse     $107.00     $.00    $107.00    $107.00     $.00     $107.00     $.00      $.00     0   
+    Emp. + Child      $109.00     $.00    $109.00    $109.00     $.00     $109.00     $.00      $.00     0   
+    Emp. + Children   $109.00     $.00    $109.00    $109.00     $.00     $109.00     $.00      $.00     0   
+    Emp. + Family     $166.00     $.00    $166.00    $166.00     $.00     $166.00     $.00      $.00     2   
+  Bid-Version: 5169600-15                                                                                    
+                                                                                                             
+  PLEASE READ THIS IMPORTANT NOTICE AND DISCLAIMER:                                                          
+  Insperity charges a service fee for its personnel management services, as set forth and described in your Client Service Agreement (CSA). This Medical Allocation Report provides additional information concerning the portion of
+  your service fee that relates to the allocation for medical coverage (and the component employee/client payments that make up such allocation). Insperity provides this information to you as a co-employer and in connection
+  with Insperity's administration and operation of its employee benefits plans. Insperity's benefits plans are available only as a component of Insperity's personnel management services and only to eligible employees. Because the depicted
+  medical allocation is derived from Insperity's internal allocation of its service fee, this allocation is not an insurance premium or rate and may not correspond to Insperity's actual cost for medical coverage. COBRA rates
+  for continuation coverage may vary significantly from the allocation reflected in this Report as COBRA rates are determined by the insurer based on the total cost of coverage. This Report is not intended to be used by you for any purpose
+  other than to provide you with additional information concerning the portion of your service fee that is allocated to medical coverage (and the component employee/client payments that make up such allocation). Insperity provides
+  no warranties with respect to this Report, and it expressly disclaims that the information contained in this Report is fit for any other particular purpose. This Report contains Insperity's confidential and proprietary information and trade
+  You have agreed to maintain this Report in confidence and have agreed that you will not provide it or any information concerning your medical allocations to any third party. This Notice and Disclaimer is incorporated by reference into your CSA
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                    Page 4 of 4
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                    WELLFIT TECHNOLOGIES, INC. Bid / Version 5169600 - 15 -R                 
+                                                                                                             
+                                           Medical, Dental/Vision Allocations                                
+                                       Benefit Plan: Independence Premier; Bundled: N                        
+                                             Annual Summary - Estimate Only                                  
+                     Current Current EE  Current      New       New        New   Total Alloc. Client Pymt # Electing
+                   Allocations  Contr. Client Pymnt Allocations EE Contr. Client Pymnt Change Change Coverage
+   Medical         $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24 16.8% 16.8% 95
+   Dental/Vision    $119,904.00 $39,744.00 $80,160.00 $119,904.00 $39,744.00 $80,160.00 .0%     .0%     94   
+                                                                                                             
+  Classing: ALL OTHER EMPLOYEES                                                                              
+                                                                                                             
+                                         Current                New        New               Monthly         
+                     Current   Current   Monthly     New      Monthly   Monthly    Monthly  Employee No. EES 
+                     Monthly  Employee    Client   Monthly   Employee     Client    Alloc.    Contri. Electing
+                      Alloc.    Contr.  Payment      Alloc.    Contr.   Payment       +/-        +/-  Covg.  
+  250 Deductible                                                                                             
+    Employee Only     $907.17   $228.52   $678.65   $1,059.55  $266.90    $792.65   $152.38    $38.38    6   
+    Emp. + Spouse    $1,904.65  $711.80  $1,192.85  $2,224.74  $831.43   $1,393.31  $320.09    $119.63   0   
+    Emp. + Child     $1,725.94  $626.61  $1,099.33  $2,015.54  $731.70   $1,283.84  $289.60    $105.09   1   
+    Emp. + Children  $1,725.94  $626.61  $1,099.33  $2,015.54  $731.70   $1,283.84  $289.60    $105.09   1   
+    Emp. + Family    $2,816.41 $1,154.88 $1,661.53  $3,289.17 $1,348.71  $1,940.46  $472.76    $193.83   1   
+  500 Deductible                                                                                             
+    Employee Only     $807.64   $140.53   $667.11    $942.65   $164.02    $778.63   $135.01    $23.49   17   
+    Emp. + Spouse    $1,690.34  $371.18  $1,319.16  $1,974.01  $433.51   $1,540.50  $283.67    $62.33    7   
+    Emp. + Child     $1,527.60  $328.51  $1,199.09  $1,784.05  $383.71   $1,400.34  $256.45    $55.20    4   
+    Emp. + Children  $1,527.60  $328.51  $1,199.09  $1,784.05  $383.71   $1,400.34  $256.45    $55.20    3   
+    Emp. + Family    $2,495.30  $581.18  $1,914.12  $2,913.85  $678.70   $2,235.15  $418.55    $97.52   19   
+  1700 Deductible - HDHP (1750 in 2027)                                                                      
+    Employee Only     $706.66    $52.86   $653.80    $824.98    $61.71    $763.27   $118.32     $8.85   11   
+    Emp. + Spouse    $1,484.02  $345.61  $1,138.41  $1,733.29  $403.78   $1,329.51  $249.27    $58.17    0   
+    Emp. + Child     $1,339.44  $290.79  $1,048.65  $1,564.09  $339.62   $1,224.47  $224.65    $48.83    2   
+    Emp. + Children  $1,339.44  $290.79  $1,048.65  $1,564.09  $339.62   $1,224.47  $224.65    $48.83    3   
+    Emp. + Family    $2,185.09  $605.50  $1,579.59  $2,552.38  $707.41   $1,844.97  $367.29    $101.91   2   
+  5000 Deductible - HDHP                                                                                     
+    Employee Only     $529.39     $.00    $529.39    $618.09     $.00     $618.09    $88.70     $.00     4   
+    Emp. + Spouse    $1,108.41  $120.84   $987.57   $1,294.90  $141.25   $1,153.65  $186.49    $20.41    0   
+    Emp. + Child     $1,001.62   $98.08   $903.54   $1,169.53  $114.53   $1,055.00  $167.91    $16.45    2   
+    Emp. + Children  $1,001.62   $98.08   $903.54   $1,169.53  $114.53   $1,055.00  $167.91    $16.45    1   
+    Emp. + Family    $1,640.21  $232.05  $1,408.16  $1,915.56  $271.04   $1,644.52  $275.35    $38.99    4   
+  BCA HMO North                                                                                              
+    Employee Only     $893.76   $238.81   $654.95   $1,116.19  $298.25    $817.94   $222.43    $59.44    0   
+    Emp. + Spouse    $1,814.50  $670.36  $1,144.14  $2,266.10  $837.21   $1,428.89  $451.60    $166.85   0   
+    Emp. + Child     $1,652.21  $597.48  $1,054.73  $2,062.92  $745.96   $1,316.96  $410.71    $148.48   0   
+    Emp. + Children  $1,652.21  $597.48  $1,054.73  $2,062.92  $745.96   $1,316.96  $410.71    $148.48   0   
+    Emp. + Family    $2,736.55 $1,135.14 $1,601.41  $3,417.43 $1,417.57  $1,999.86  $680.88    $282.43   0   
+                                                                                                    Page 1 of 4
+                                                                                                             
+                                                                                                             
+                                    WELLFIT TECHNOLOGIES, INC. Bid / Version 5169600 - 15 -R                 
+                                                                                                             
+                                           Medical, Dental/Vision Allocations                                
+                                       Benefit Plan: Independence Premier; Bundled: N                        
+                                             Annual Summary - Estimate Only                                  
+                     Current Current EE  Current      New       New        New   Total Alloc. Client Pymt # Electing
+                   Allocations  Contr. Client Pymnt Allocations EE Contr. Client Pymnt Change Change Coverage
+   Medical         $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24 16.8% 16.8% 95
+   Dental/Vision    $119,904.00 $39,744.00 $80,160.00 $119,904.00 $39,744.00 $80,160.00 .0%     .0%     94   
+                                                                                                             
+  Classing: ALL OTHER EMPLOYEES                                                                              
+                                                                                                             
+                                         Current                New        New               Monthly         
+                     Current   Current   Monthly     New      Monthly   Monthly    Monthly  Employee No. EES 
+                     Monthly  Employee    Client   Monthly   Employee     Client    Alloc.    Contri. Electing
+                      Alloc.    Contr.  Payment      Alloc.    Contr.   Payment       +/-        +/-  Covg.  
+  BCA HMO South                                                                                              
+    Employee Only     $664.06    $56.38   $607.68    $829.60    $70.43    $759.17   $165.54    $14.05    0   
+    Emp. + Spouse    $1,342.67  $288.94  $1,053.73  $1,676.53  $360.67   $1,315.86  $333.86    $71.73    0   
+    Emp. + Child     $1,224.88  $252.05   $972.83   $1,528.95  $314.43   $1,214.52  $304.07    $62.38    0   
+    Emp. + Children  $1,224.88  $252.05   $972.83   $1,528.95  $314.43   $1,214.52  $304.07    $62.38    0   
+    Emp. + Family    $2,035.03  $564.46  $1,470.57  $2,541.99  $705.04   $1,836.95  $506.96    $140.58   0   
+  Kaiser HMO CA North                                                                                        
+    Employee Only     $586.84     $.00    $586.84    $678.47     $.00     $678.47    $91.63     $.00     0   
+    Emp. + Spouse    $1,209.83  $184.09  $1,025.74  $1,397.79  $212.56   $1,185.23  $187.96    $28.47    0   
+    Emp. + Child     $1,126.07  $177.89   $948.18   $1,301.54  $205.55   $1,095.99  $175.47    $27.66    0   
+    Emp. + Children  $1,126.07  $177.89   $948.18   $1,301.54  $205.55   $1,095.99  $175.47    $27.66    0   
+    Emp. + Family    $1,724.19  $305.38  $1,418.81  $1,992.34  $352.77   $1,639.57  $268.15    $47.39    0   
+  Kaiser HMO CA South                                                                                        
+    Employee Only     $470.36     $.00    $470.36    $543.73     $.00     $543.73    $73.37     $.00     0   
+    Emp. + Spouse    $1,031.18  $115.14   $916.04   $1,191.76  $133.04   $1,058.72  $160.58    $17.90    0   
+    Emp. + Child      $936.95   $102.46   $834.49   $1,082.68  $118.35    $964.33   $145.73    $15.89    1   
+    Emp. + Children   $936.95   $102.46   $834.49   $1,082.68  $118.35    $964.33   $145.73    $15.89    0   
+    Emp. + Family    $1,406.15   $99.94  $1,306.21  $1,625.20  $115.50   $1,509.70  $219.05    $15.56    2   
+  Kaiser HMO Northwest                                                                                       
+    Employee Only     $575.06     $.00    $575.06    $664.21     $.00     $664.21    $89.15     $.00     0   
+    Emp. + Spouse    $1,264.14  $203.62  $1,060.52  $1,460.52  $235.31   $1,225.21  $196.38    $31.69    0   
+    Emp. + Child     $1,148.97  $189.33   $959.64   $1,327.92  $218.96   $1,108.96  $178.95    $29.63    0   
+    Emp. + Children  $1,148.97  $189.33   $959.64   $1,327.92  $218.96   $1,108.96  $178.95    $29.63    0   
+    Emp. + Family    $1,723.53  $308.36  $1,415.17  $1,991.63  $356.41   $1,635.22  $268.10    $48.05    0   
+  Kaiser HMO Washington                                                                                      
+    Employee Only     $578.34     $.00    $578.34    $667.77     $.00     $667.77    $89.43     $.00     0   
+    Emp. + Spouse    $1,271.35  $204.78  $1,066.57  $1,469.07  $236.78   $1,232.29  $197.72    $32.00    0   
+    Emp. + Child     $1,156.83  $190.84   $965.99   $1,337.18  $220.84   $1,116.34  $180.35    $30.00    0   
+    Emp. + Children  $1,156.83  $190.84   $965.99   $1,337.18  $220.84   $1,116.34  $180.35    $30.00    0   
+    Emp. + Family    $1,734.66  $310.47  $1,424.19  $2,004.46  $358.90   $1,645.56  $269.80    $48.43    0   
+                                                                                                    Page 2 of 4
+                                                                                                             
+                                                                                                             
+                                    WELLFIT TECHNOLOGIES, INC. Bid / Version 5169600 - 15 -R                 
+                                                                                                             
+                                           Medical, Dental/Vision Allocations                                
+                                       Benefit Plan: Independence Premier; Bundled: N                        
+                                             Annual Summary - Estimate Only                                  
+                     Current Current EE  Current      New       New        New   Total Alloc. Client Pymt # Electing
+                   Allocations  Contr. Client Pymnt Allocations EE Contr. Client Pymnt Change Change Coverage
+   Medical         $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24 16.8% 16.8% 95
+   Dental/Vision    $119,904.00 $39,744.00 $80,160.00 $119,904.00 $39,744.00 $80,160.00 .0%     .0%     94   
+                                                                                                             
+  Classing: ALL OTHER EMPLOYEES                                                                              
+                                                                                                             
+                                         Current                New        New               Monthly         
+                     Current   Current   Monthly     New      Monthly   Monthly    Monthly  Employee No. EES 
+                     Monthly  Employee    Client   Monthly   Employee     Client    Alloc.    Contri. Electing
+                      Alloc.    Contr.  Payment      Alloc.    Contr.   Payment       +/-        +/-  Covg.  
+  Kaiser HMO CO                                                                                              
+    Employee Only     $524.67     $.00    $524.67    $606.47     $.00     $606.47    $81.80     $.00     0   
+    Emp. + Spouse    $1,153.55  $185.83   $967.72   $1,332.92  $214.67   $1,118.25  $179.37    $28.84    0   
+    Emp. + Child     $1,048.19  $172.71   $875.48   $1,211.01  $199.44   $1,011.57  $162.82    $26.73    1   
+    Emp. + Children  $1,048.19  $172.71   $875.48   $1,211.01  $199.44   $1,011.57  $162.82    $26.73    0   
+    Emp. + Family    $1,572.36  $281.30  $1,291.06  $1,816.97  $325.02   $1,491.95  $244.61    $43.72    0   
+  UHC of CA HMO North                                                                                        
+    Employee Only    $1,017.44  $250.80   $766.64   $1,222.41  $301.32    $921.09   $204.97    $50.52    0   
+    Emp. + Spouse    $2,092.62  $738.82  $1,353.80  $2,515.61  $888.30   $1,627.31  $422.99    $149.48   0   
+    Emp. + Child     $1,953.23  $696.33  $1,256.90  $2,347.37  $836.91   $1,510.46  $394.14    $140.58   0   
+    Emp. + Children  $1,953.23  $696.33  $1,256.90  $2,347.37  $836.91   $1,510.46  $394.14    $140.58   0   
+    Emp. + Family    $2,983.91 $1,108.18 $1,875.73  $3,585.67 $1,331.70  $2,253.97  $601.76    $223.52   0   
+  UHC of CA HMO South                                                                                        
+    Employee Only     $727.54    $10.33   $717.21    $873.80    $12.41    $861.39   $146.26     $2.08    0   
+    Emp. + Spouse    $1,499.08  $245.42  $1,253.66  $1,802.00  $295.23   $1,506.77  $302.92    $49.81    1   
+    Emp. + Child     $1,397.65  $236.29  $1,161.36  $1,679.38  $284.05   $1,395.33  $281.73    $47.76    0   
+    Emp. + Children  $1,397.65  $236.29  $1,161.36  $1,679.38  $284.05   $1,395.33  $281.73    $47.76    0   
+    Emp. + Family    $2,139.74  $406.88  $1,732.86  $2,571.93  $489.24   $2,082.69  $432.19    $82.36    0   
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                    Page 3 of 4
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                    WELLFIT TECHNOLOGIES, INC. Bid / Version 5169600 - 15 -R                 
+                                                                                                             
+                                           Medical, Dental/Vision Allocations                                
+                                       Benefit Plan: Independence Premier; Bundled: N                        
+                                             Annual Summary - Estimate Only                                  
+                     Current Current EE  Current      New       New        New   Total Alloc. Client Pymt # Electing
+                   Allocations  Contr. Client Pymnt Allocations EE Contr. Client Pymnt Change Change Coverage
+   Medical         $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24 16.8% 16.8% 95
+   Dental/Vision    $119,904.00 $39,744.00 $80,160.00 $119,904.00 $39,744.00 $80,160.00 .0%     .0%     94   
+                                                                                                             
+  Classing: ALL OTHER EMPLOYEES                                                                              
+                                                                                                             
+                                         Current                New        New               Monthly         
+                     Current   Current   Monthly     New      Monthly   Monthly    Monthly  Employee No. EES 
+                     Monthly  Employee    Client   Monthly   Employee     Client    Alloc.    Contri. Electing
+                      Alloc.    Contr.  Payment      Alloc.    Contr.   Payment       +/-        +/-  Covg.  
+  50 Deductible Dental and Vision                                                                            
+    Employee Only     $55.00     $11.00    $44.00    $55.00     $11.00    $44.00      $.00      $.00    36   
+    Emp. + Spouse     $107.00    $37.00    $70.00    $107.00    $37.00    $70.00      $.00      $.00    10   
+    Emp. + Child      $109.00    $38.00    $71.00    $109.00    $38.00    $71.00      $.00      $.00    11   
+    Emp. + Children   $109.00    $38.00    $71.00    $109.00    $38.00    $71.00      $.00      $.00     7   
+    Emp. + Family     $166.00    $66.50    $99.50    $166.00    $66.50    $99.50      $.00      $.00    28   
+  Bid-Version: 5169600-15                                                                                    
+                                                                                                             
+  PLEASE READ THIS IMPORTANT NOTICE AND DISCLAIMER:                                                          
+  Insperity charges a service fee for its personnel management services, as set forth and described in your Client Service Agreement (CSA). This Medical Allocation Report provides additional information concerning the portion of
+  your service fee that relates to the allocation for medical coverage (and the component employee/client payments that make up such allocation). Insperity provides this information to you as a co-employer and in connection
+  with Insperity's administration and operation of its employee benefits plans. Insperity's benefits plans are available only as a component of Insperity's personnel management services and only to eligible employees. Because the depicted
+  medical allocation is derived from Insperity's internal allocation of its service fee, this allocation is not an insurance premium or rate and may not correspond to Insperity's actual cost for medical coverage. COBRA rates
+  for continuation coverage may vary significantly from the allocation reflected in this Report as COBRA rates are determined by the insurer based on the total cost of coverage. This Report is not intended to be used by you for any purpose
+  other than to provide you with additional information concerning the portion of your service fee that is allocated to medical coverage (and the component employee/client payments that make up such allocation). Insperity provides
+  no warranties with respect to this Report, and it expressly disclaims that the information contained in this Report is fit for any other particular purpose. This Report contains Insperity's confidential and proprietary information and trade
+  You have agreed to maintain this Report in confidence and have agreed that you will not provide it or any information concerning your medical allocations to any third party. This Notice and Disclaimer is incorporated by reference into your CSA
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                    Page 4 of 4
+
+--- [EXTRACTED TABLES SUMMARY] ---
+
+[Table 1: p1_t1 (Rows: 19, Columns: 10)]
+                                                    Full-Time Employee Count  106               Monthly Payroll                              None                                     None                     None                               None                        None  $1,312,425        None
+                                                    Part-Time Employee Count    0  Average Gross Payroll Per EE                              None                                     None                     None                               None                        None     $12,381        None
+                                                     Seasonal Employee Count    0                Annual Payroll                              None                                     None                     None                               None                        None $15,749,095        None
+                                                             Total Employees  106 Average Annual Payroll per EE                              None                                     None                     None                               None                        None    $148,576        None
+ACA Eligible 106\nEmployees on Medical 95\n% of Medical Participation 89.62% None                          None                              None                                     None                     None                               None                        None        None        None
+                                                                        <NA> <NA>                          <NA>                              <NA>                                     <NA>                     <NA>                             Per EE                        <NA>        % of      Per EE
+                                                      Service Fee Components None                          None                           Monthly                                   Annual             % of Payroll                          Per Month                      Burden        None Per Diem $*
+                                                     Direct Cost Allocations None                          None $98,735\n$2,199\n$117,952\n$4,452 $1,184,818\n$26,387\n$1,415,422\n$53,424 7.52%\n.17%\n8.99%\n.34% $931.46\n$20.74\n$1,112.75\n$42.00 40.90%\n.91%\n48.86%\n1.84%        None        <NA>
+                                                               Payroll Taxes None                          None                              None                                     None                     None                               None                        None        None        None
+                                                Workers' Compensation & EPLI None                          None                              None                                     None                     None                               None                        None        None        None
+                                                                    Benefits None                          None                              None                                     None                     None                               None                        None        None        None
+                                                          Co-Employment Risk None                          None                              None                                     None                     None                               None                        None        None        None
+                                               Total Direct Cost Allocations None                          None                          $223,338                               $2,680,051                   17.02%                          $2,106.96                      92.51%        None        <NA>
+                                                                        <NA> None                          None                  $18,073.00\n$.00                        $216,876.00\n$.00              1.38%\n.00%                   $170.50\n$107.50                 7.48%\n.00%        None $5.61\n$.00
+                                  HR Svcs Compliance Tech & Admin Allocation None                          None                              None                                     None                     None                               None                        None        None        None
+                                                                   Full Time None                          None                              None                                     None                     None                               None                        None        None        None
+                                                                   Part Time None                          None                              None                                     None                     None                               None                        None        None        None
+                            Total HR Svcs Compliance Tech & Admin Allocation None                          None                           $18,073                                 $216,876                    1.38%                               <NA>                       7.48%        None        <NA>
+                                                           Total Service Fee None                          None                          $241,411                               $2,896,927                   18.40%                          $2,106.96                        100%        None        None
+------------------------------------------------------------
+
+[Table 2: p2_t1 (Rows: 19, Columns: 10)]
+                                                                                      Full-Time Employee Count  106               Monthly Payroll                              None                                     None                      None                               None                        None  $1,312,425        None
+                                                                                      Part-Time Employee Count    0  Average Gross Payroll Per EE                              None                                     None                      None                               None                        None     $12,381        None
+                                                                                       Seasonal Employee Count    0                Annual Payroll                              None                                     None                      None                               None                        None $15,749,095        None
+                                                                                               Total Employees  106 Average Annual Payroll per EE                              None                                     None                      None                               None                        None    $148,576        None
+ACA Eligible 106\nEmployees on Medical 95\n% of Medical Participation 89.62% Configuration/Onboarding Fee $.00 None                          None                              None                                     None                      None                               None                        None        None        None
+                                                                                                          <NA> <NA>                          <NA>                              <NA>                                     <NA>                      <NA>                             Per EE                        <NA>        % of      Per EE
+                                                                                        Service Fee Components None                          None                           Monthly                                   Annual              % of Payroll                          Per Month                      Burden        None Per Diem $*
+                                                                                       Direct Cost Allocations None                          None $98,735\n$2,551\n$136,423\n$4,452 $1,184,818\n$30,612\n$1,637,077\n$53,424 7.52%\n.19%\n10.39%\n.34% $931.46\n$24.07\n$1,287.01\n$42.00 37.79%\n.98%\n52.21%\n1.70%        None        <NA>
+                                                                                                 Payroll Taxes None                          None                              None                                     None                      None                               None                        None        None        None
+                                                                                  Workers' Compensation & EPLI None                          None                              None                                     None                      None                               None                        None        None        None
+                                                                                                      Benefits None                          None                              None                                     None                      None                               None                        None        None        None
+                                                                                            Co-Employment Risk None                          None                              None                                     None                      None                               None                        None        None        None
+                                                                                 Total Direct Cost Allocations None                          None                          $242,161                               $2,905,931                    18.45%                          $2,284.54                      92.68%        None        <NA>
+                                                                                                          <NA> None                          None                  $19,133.00\n$.00                        $229,596.00\n$.00               1.46%\n.00%                   $180.50\n$117.50                 7.32%\n.00%        None $5.93\n$.00
+                                                                    HR Svcs Compliance Tech & Admin Allocation None                          None                              None                                     None                      None                               None                        None        None        None
+                                                                                                     Full Time None                          None                              None                                     None                      None                               None                        None        None        None
+                                                                                                     Part Time None                          None                              None                                     None                      None                               None                        None        None        None
+                                                              Total HR Svcs Compliance Tech & Admin Allocation None                          None                           $19,133                                 $229,596                     1.46%                               <NA>                       7.32%        None        <NA>
+                                                                                             Total Service Fee None                          None                          $261,294                               $3,135,527                    19.91%                          $2,284.54                        100%        None        None
+------------------------------------------------------------
+
+[Table 3: p3_t1 (Rows: 19, Columns: 9)]
+                                                    Full-Time Employee Count     106               Monthly Payroll                                     None                                     None                     None                      None  $1,312,425                     None
+                                                    Part-Time Employee Count       0  Average Gross Payroll Per EE                                     None                                     None                     None                      None     $12,381                     None
+                                                     Seasonal Employee Count       0                Annual Payroll                                     None                                     None                     None                      None $15,749,095                     None
+                                                             Total Employees     106 Average Annual Payroll per EE                                     None                                     None                     None                      None    $148,576                     None
+ACA Eligible 106\nEmployees on Medical 95\n% of Medical Participation 89.62%    None                          None                                     None                                     None                     None                      None        None                     None
+                                                                      Compre hensive                          None                        Annual Allocation                                     None             % of Payroll                      None        None                 $ Change
+                                                      Service Fee Components    None                          None                               Base Check                                  Renewal               Base Check                   Renewal        None                  Renewal
+                                                     Direct Cost Allocations    None                          None $1,184,818\n$26,387\n$1,415,422\n$53,424 $1,184,818\n$30,612\n$1,637,077\n$53,424 7.52%\n.17%\n8.99%\n.34% 7.52%\n.19%\n10.39%\n.34%        None $0\n$4,225\n$221,655\n$0
+                                                               Payroll Taxes    None                          None                                     None                                     None                     None                      None        None                     None
+                                                Workers' Compensation & EPLI    None                          None                                     None                                     None                     None                      None        None                     None
+                                                                    Benefits    None                          None                                     None                                     None                     None                      None        None                     None
+                                                          Co-Employment Risk    None                          None                                     None                                     None                     None                      None        None                     None
+                                               Total Direct Cost Allocations    None                          None                               $2,680,051                               $2,905,931                   17.02%                    18.45%        None                 $225,880
+                                                                        <NA>    None                          None                        $216,876.00\n$.00                        $229,596.00\n$.00              1.38%\n.00%               1.46%\n.00%        None         $12,720.00\n$.00
+                                  HR Svcs Compliance Tech & Admin Allocation    None                          None                                     None                                     None                     None                      None        None                     None
+                                                                   Full Time    None                          None                                     None                                     None                     None                      None        None                     None
+                                                                   Part Time    None                          None                                     None                                     None                     None                      None        None                     None
+                            Total HR Svcs Compliance Tech & Admin Allocation    None                          None                                 $216,876                                 $229,596                    1.38%                     1.46%        None               $12,720.00
+                                                           Total Service Fee    None                          None                               $2,896,927                               $3,135,527                   18.40%                    19.91%        None              $238,600.00
+------------------------------------------------------------
+
+[Table 4: p4_t2 (Rows: 6, Columns: 10)]
+Annual Summary - Estimate Only          None        None          None          None        None          None         None        None       None
+                          <NA>       Current  Current EE       Current           New         New           New Total Alloc. Client Pymt # Electing
+                          <NA>   Allocations      Contr.  Client Pymnt   Allocations   EE Contr.  Client Pymnt       Change      Change   Coverage
+                       Medical $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24        16.8%       16.8%         95
+                 Dental/Vision   $119,904.00  $39,744.00    $80,160.00   $119,904.00  $39,744.00    $80,160.00          .0%         .0%         94
+              Classing: OWNERS          None        None          None          None        None          None         None        None       None
+------------------------------------------------------------
+
+[Table 5: p4_t3 (Rows: 4, Columns: 9)]
+   <NA>     <NA> Current    <NA>      New     New    <NA>  Monthly     <NA>
+Current  Current Monthly     New  Monthly Monthly Monthly Employee  No. EES
+Monthly Employee  Client Monthly Employee  Client  Alloc.  Contri. Electing
+ Alloc.   Contr. Payment  Alloc.   Contr. Payment     +/-      +/-    Covg.
+------------------------------------------------------------
+
+[Table 6: p4_t4 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 7: p4_t5 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 8: p4_t6 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 9: p4_t7 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 10: p4_t8 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 11: p5_t2 (Rows: 6, Columns: 10)]
+Annual Summary - Estimate Only          None        None          None          None        None          None         None        None       None
+                          <NA>       Current  Current EE       Current           New         New           New Total Alloc. Client Pymt # Electing
+                          <NA>   Allocations      Contr.  Client Pymnt   Allocations   EE Contr.  Client Pymnt       Change      Change   Coverage
+                       Medical $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24        16.8%       16.8%         95
+                 Dental/Vision   $119,904.00  $39,744.00    $80,160.00   $119,904.00  $39,744.00    $80,160.00          .0%         .0%         94
+              Classing: OWNERS          None        None          None          None        None          None         None        None       None
+------------------------------------------------------------
+
+[Table 12: p5_t3 (Rows: 4, Columns: 9)]
+   <NA>     <NA> Current    <NA>      New     New    <NA>  Monthly     <NA>
+Current  Current Monthly     New  Monthly Monthly Monthly Employee  No. EES
+Monthly Employee  Client Monthly Employee  Client  Alloc.  Contri. Electing
+ Alloc.   Contr. Payment  Alloc.   Contr. Payment     +/-      +/-    Covg.
+------------------------------------------------------------
+
+[Table 13: p5_t4 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 14: p5_t5 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 15: p5_t6 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 16: p5_t7 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 17: p5_t8 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 18: p6_t2 (Rows: 6, Columns: 10)]
+Annual Summary - Estimate Only          None        None          None          None        None          None         None        None       None
+                          <NA>       Current  Current EE       Current           New         New           New Total Alloc. Client Pymt # Electing
+                          <NA>   Allocations      Contr.  Client Pymnt   Allocations   EE Contr.  Client Pymnt       Change      Change   Coverage
+                       Medical $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24        16.8%       16.8%         95
+                 Dental/Vision   $119,904.00  $39,744.00    $80,160.00   $119,904.00  $39,744.00    $80,160.00          .0%         .0%         94
+              Classing: OWNERS          None        None          None          None        None          None         None        None       None
+------------------------------------------------------------
+
+[Table 19: p6_t3 (Rows: 4, Columns: 9)]
+   <NA>     <NA> Current    <NA>      New     New    <NA>  Monthly     <NA>
+Current  Current Monthly     New  Monthly Monthly Monthly Employee  No. EES
+Monthly Employee  Client Monthly Employee  Client  Alloc.  Contri. Electing
+ Alloc.   Contr. Payment  Alloc.   Contr. Payment     +/-      +/-    Covg.
+------------------------------------------------------------
+
+[Table 20: p6_t4 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 21: p6_t5 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 22: p6_t6 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 23: p7_t2 (Rows: 6, Columns: 10)]
+Annual Summary - Estimate Only          None        None          None          None        None          None         None        None       None
+                          <NA>       Current  Current EE       Current           New         New           New Total Alloc. Client Pymt # Electing
+                          <NA>   Allocations      Contr.  Client Pymnt   Allocations   EE Contr.  Client Pymnt       Change      Change   Coverage
+                       Medical $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24        16.8%       16.8%         95
+                 Dental/Vision   $119,904.00  $39,744.00    $80,160.00   $119,904.00  $39,744.00    $80,160.00          .0%         .0%         94
+              Classing: OWNERS          None        None          None          None        None          None         None        None       None
+------------------------------------------------------------
+
+[Table 24: p7_t3 (Rows: 4, Columns: 9)]
+   <NA>     <NA> Current    <NA>      New     New    <NA>  Monthly     <NA>
+Current  Current Monthly     New  Monthly Monthly Monthly Employee  No. EES
+Monthly Employee  Client Monthly Employee  Client  Alloc.  Contri. Electing
+ Alloc.   Contr. Payment  Alloc.   Contr. Payment     +/-      +/-    Covg.
+------------------------------------------------------------
+
+[Table 25: p7_t4 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 26: p8_t2 (Rows: 6, Columns: 10)]
+Annual Summary - Estimate Only          None        None          None          None        None          None         None        None       None
+                          <NA>       Current  Current EE       Current           New         New           New Total Alloc. Client Pymt # Electing
+                          <NA>   Allocations      Contr.  Client Pymnt   Allocations   EE Contr.  Client Pymnt       Change      Change   Coverage
+                       Medical $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24        16.8%       16.8%         95
+                 Dental/Vision   $119,904.00  $39,744.00    $80,160.00   $119,904.00  $39,744.00    $80,160.00          .0%         .0%         94
+ Classing: ALL OTHER EMPLOYEES          None        None          None          None        None          None         None        None       None
+------------------------------------------------------------
+
+[Table 27: p8_t3 (Rows: 4, Columns: 9)]
+   <NA>     <NA> Current    <NA>      New     New    <NA>  Monthly     <NA>
+Current  Current Monthly     New  Monthly Monthly Monthly Employee  No. EES
+Monthly Employee  Client Monthly Employee  Client  Alloc.  Contri. Electing
+ Alloc.   Contr. Payment  Alloc.   Contr. Payment     +/-      +/-    Covg.
+------------------------------------------------------------
+
+[Table 28: p8_t4 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 29: p8_t5 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 30: p8_t6 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 31: p8_t7 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 32: p8_t8 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 33: p9_t2 (Rows: 6, Columns: 10)]
+Annual Summary - Estimate Only          None        None          None          None        None          None         None        None       None
+                          <NA>       Current  Current EE       Current           New         New           New Total Alloc. Client Pymt # Electing
+                          <NA>   Allocations      Contr.  Client Pymnt   Allocations   EE Contr.  Client Pymnt       Change      Change   Coverage
+                       Medical $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24        16.8%       16.8%         95
+                 Dental/Vision   $119,904.00  $39,744.00    $80,160.00   $119,904.00  $39,744.00    $80,160.00          .0%         .0%         94
+ Classing: ALL OTHER EMPLOYEES          None        None          None          None        None          None         None        None       None
+------------------------------------------------------------
+
+[Table 34: p9_t3 (Rows: 4, Columns: 9)]
+   <NA>     <NA> Current    <NA>      New     New    <NA>  Monthly     <NA>
+Current  Current Monthly     New  Monthly Monthly Monthly Employee  No. EES
+Monthly Employee  Client Monthly Employee  Client  Alloc.  Contri. Electing
+ Alloc.   Contr. Payment  Alloc.   Contr. Payment     +/-      +/-    Covg.
+------------------------------------------------------------
+
+[Table 35: p9_t4 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 36: p9_t5 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 37: p9_t6 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 38: p9_t7 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 39: p9_t8 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 40: p10_t2 (Rows: 6, Columns: 10)]
+Annual Summary - Estimate Only          None        None          None          None        None          None         None        None       None
+                          <NA>       Current  Current EE       Current           New         New           New Total Alloc. Client Pymt # Electing
+                          <NA>   Allocations      Contr.  Client Pymnt   Allocations   EE Contr.  Client Pymnt       Change      Change   Coverage
+                       Medical $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24        16.8%       16.8%         95
+                 Dental/Vision   $119,904.00  $39,744.00    $80,160.00   $119,904.00  $39,744.00    $80,160.00          .0%         .0%         94
+ Classing: ALL OTHER EMPLOYEES          None        None          None          None        None          None         None        None       None
+------------------------------------------------------------
+
+[Table 41: p10_t3 (Rows: 4, Columns: 9)]
+   <NA>     <NA> Current    <NA>      New     New    <NA>  Monthly     <NA>
+Current  Current Monthly     New  Monthly Monthly Monthly Employee  No. EES
+Monthly Employee  Client Monthly Employee  Client  Alloc.  Contri. Electing
+ Alloc.   Contr. Payment  Alloc.   Contr. Payment     +/-      +/-    Covg.
+------------------------------------------------------------
+
+[Table 42: p10_t4 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 43: p10_t5 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 44: p10_t6 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------
+
+[Table 45: p11_t2 (Rows: 6, Columns: 10)]
+Annual Summary - Estimate Only          None        None          None          None        None          None         None        None       None
+                          <NA>       Current  Current EE       Current           New         New           New Total Alloc. Client Pymt # Electing
+                          <NA>   Allocations      Contr.  Client Pymnt   Allocations   EE Contr.  Client Pymnt       Change      Change   Coverage
+                       Medical $1,650,115.20 $327,573.60 $1,322,541.60 $1,926,773.52 $382,574.28 $1,544,199.24        16.8%       16.8%         95
+                 Dental/Vision   $119,904.00  $39,744.00    $80,160.00   $119,904.00  $39,744.00    $80,160.00          .0%         .0%         94
+ Classing: ALL OTHER EMPLOYEES          None        None          None          None        None          None         None        None       None
+------------------------------------------------------------
+
+[Table 46: p11_t3 (Rows: 4, Columns: 9)]
+   <NA>     <NA> Current    <NA>      New     New    <NA>  Monthly     <NA>
+Current  Current Monthly     New  Monthly Monthly Monthly Employee  No. EES
+Monthly Employee  Client Monthly Employee  Client  Alloc.  Contri. Electing
+ Alloc.   Contr. Payment  Alloc.   Contr. Payment     +/-      +/-    Covg.
+------------------------------------------------------------
+
+[Table 47: p11_t4 (Rows: 5, Columns: 1)]
+  Employee Only
+  Emp. + Spouse
+   Emp. + Child
+Emp. + Children
+  Emp. + Family
+------------------------------------------------------------

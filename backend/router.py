@@ -306,11 +306,13 @@ def check_renewal_required(
         ren_date = prospect.effective_date
 
     if ren_date:
-        days_diff = (ren_date - date.today()).days
-        # Within 90 days in either direction or upcoming
-        if 0 <= days_diff <= 90:
-            return True, f"Prospect is with PEO ({peo_name}) and renewal falls within 90 days ({ren_date:%m/%d/%Y})."
-        elif days_diff > 90:
+        diff_today = (ren_date - date.today()).days
+        diff_eff = abs((ren_date - ref_date).days) if ref_date else 999
+        # Satisfied if renewal is within 90 days of review/today, or within 90 days of proposed effective,
+        # or if valid renewal documents/rates are provided in the submission.
+        if (0 <= diff_today <= 90) or (diff_eff <= 90) or (renewal_doc and getattr(renewal_doc, "rates", None)):
+            return True, f"Prospect is with PEO ({peo_name}) and renewal ({ren_date:%m/%d/%Y}) is applicable."
+        elif diff_today > 90 and diff_eff > 90:
             return False, f"Prospect is with PEO ({peo_name}) but renewal date ({ren_date:%m/%d/%Y}) is more than 90 days away."
 
     return False, "Renewal date or PEO status does not satisfy the 90-day PEO requirement."

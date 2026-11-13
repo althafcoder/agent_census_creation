@@ -1,0 +1,541 @@
+================================================================================
+DOCUMENT: Wellfit Technologies Census 2026.xlsx
+SOURCE PATH: test_wellfit_input\Input\Wellfit Technologies Census 2026.xlsx
+FILE EXTENSION: .xlsx
+IS SCANNED (OCR USED): False
+EXTRACTION METHOD: Excel Spreadsheet (Direct Table Parsing)
+TOTAL CHARACTERS: 28,449 chars
+TOTAL TABLES DETECTED: 3 table(s)
+================================================================================
+
+--- [EXTRACTED TEXT CONTENT] ---
+=== Sheet: Census ===
+Employee  Name | Last | Coverage Level | Gender | DOB | ZIP CODE | Home State | Job Title | W/C Code | W/C State | Healthcare | F/T or P/T | Annual Pay  |  |  | 
+ABBOTT-BULLOCKS | JEANNETTE | S | Female | 1967-09-25 00:00:00 | 75181 | TX | HUMAN RESOURCE MANAGER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 125000 | Payroll Invoice Date | Payroll Frequency: | Total Annualized Payroll from Invoice
+BULLOCKS | PATRICK |  | MALE | 1965-05-21 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+ABUBAKAR MARICAR | ABDUL RASHEED MARICA | C | Male | 1983-04-08 00:00:00 | 75071 | TX | SR SOFTWARE ENGINEER III | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 159650 | 2026-10-30 00:00:00 | Semi-Monthly | 
+MARICAR | AFRAH |  | FEMALE | 2012-04-12 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MARICAR | AFEEF |  | MALE | 2015-03-10 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MARICAR | ARHAM |  | MALE | 2020-07-24 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+ANDERSON | ROBERT | C | Male | 1970-06-05 00:00:00 | 75067 | TX | SR AI ENGINEER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 171600 |  |  | 
+ANDERSON | KEVIN |  | MALE | 2001-11-06 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+ANTWINE | LEXUS | E | Female | 1995-12-22 00:00:00 | 75201-5743 | DE | ONBOARDING SPECIALIST | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 56650 |  |  | 
+ASPLEN | JOHN | E | Male | 1971-07-16 00:00:00 | 19971-8464 | TX | VICE PRESIDENT, COMPLIANCE | 953 | DE | UHC Choice Plus PPO HDHP 1750 | Full Time | 187460 |  |  | 
+ATAL | SHIKHA |  | Female | 1981-10-20 00:00:00 | 75035 | TX | SCRUM MASTER | 8810 | TX |  | Full Time | 120000 |  |  | 
+BAIRI | THARIKA |  | Female | 1986-04-25 00:00:00 | 75078 | TX | SQL DATABASE ENGINEER | 8810 | TX |  | Full Time | 139050 |  |  | 
+BANKAR | SUSHMA | F | Female | 1980-02-19 00:00:00 | 75056 | TX | BUSINESS ANALYST | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 123600 |  |  | 
+YUVARAJA | JANANI |  | FEMALE | 2014-07-12 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+YUVARAJA | JAI |  | MALE | 2017-11-03 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+BALASUBRAMANIAN | ARUN YUVARAJA |  | MALE | 1981-08-10 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+BARI | ABUL | F | Male | 1970-07-14 00:00:00 | 76002-4757 | TX | QA ANALYST III | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 106090 |  |  | 
+HOSSAIN | LIPI |  | FEMALE | 1972-08-23 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+BARI | ARIB |  | MALE | 2003-12-18 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+BAYYA | SWETHA | E | Female | 1996-08-25 00:00:00 | 75063-8570 | TX | BUSINESS ANALYST | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 118450 |  |  | 
+BELCONIS | EMMA | E | Female | 1988-09-19 00:00:00 | 76021-2537 | TX | DIRECTOR OF PEOPLE & ORGANIZATION | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 172000 |  |  | 
+BHARDWAJ | SHIVA | F | Female | 1974-05-30 00:00:00 | 75063 | TX | SR BUSINESS ANALYST | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 151178 |  |  | 
+SHARMA | AJAI |  | MALE | 1971-04-10 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+SHARMA | AAYUSH |  | MALE | 2004-06-11 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+BRIONES | CLARO | F | Male | 1984-08-11 00:00:00 | 75019 | TX | SR ARCHITECT | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 212285 |  |  | 
+RUIZ | CELENE |  | FEMALE | 1985-12-20 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+BRIONES | ANDREA |  | FEMALE | 2013-10-01 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+BRIONES | NIKOLAI |  | MALE | 2018-10-10 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+BYRAPAKA | NITHUSHA | E | Female | 1992-01-10 00:00:00 | 75009 | TX | PRODUCT OWNER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 132000 |  |  | 
+CHAWANDE | VIVIENNE | C | Female | 1979-03-07 00:00:00 | 75025-2062 | TX | SR. QA ENGINEER | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 111554 |  |  | 
+CHAWANDE | ANAVI |  | FEMALE | 2010-11-17 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+CHIPPS | JOHN | F | Male | 1967-12-20 00:00:00 | 75019 | TX | CHIEF TECHNOLOGY OFFICER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 309309 |  |  | 
+CHIPPS | NATASHA |  | FEMALE | 1974-08-04 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+CHIPPS | FAITH |  | FEMALE | 2007-11-22 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+COLLINS | GEORGE | F | Male | 1967-02-05 00:00:00 | 75205-1715 | TX | CEO | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 400000 |  |  | 
+COLLINS | SUSANNAH |  | FEMALE | 1970-11-30 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+WHITE | SADIE |  | FEMALE | 2006-10-31 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+CORDOVA | NATALIE | F | Female | 1983-01-06 00:00:00 | 76071-4345 | TX | MANAGER SMALL GROUP ACCOUNTS | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 90640 |  |  | 
+CORDOVA | RAFAEL |  | MALE | 1985-02-20 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+CORDOVA | HENDRIX |  | MALE | 2016-12-13 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+CORDOVA | JOEL |  | MALE | 2006-06-27 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+CORDOVA | JOVAN |  | MALE | 2004-12-09 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+CRUMP | KAREY | F | Female | 1981-07-30 00:00:00 | 75007 | TX | VICE PRESIDENT, PRODUCT | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 240620 |  |  | 
+CRUMP | ROBERT |  | MALE | 1972-03-16 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+CRUMP | LACHLAN |  | MALE | 2010-07-14 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+CRUMP | CAMILLE |  | FEMALE | 2013-02-05 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+CRUMP | CLAIRE |  | FEMALE | 2015-06-06 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+DAVIS | CHRISTOPHER | E | Male | 1980-03-31 00:00:00 | 75010 | TX | OPERATIONS SPECIALIST | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 80000 |  |  | 
+DEARMON | KRIS |  | Female | 1973-03-02 00:00:00 | 75056-7124 | TX | PROGRAM MANAGER | 8810 | TX |  | Full Time | 113300 |  |  | 
+DIAL | AUSTIN | F | Male | 1988-05-25 00:00:00 | 75033-3358 | TX | ACCOUNT MANAGER, PDS | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 130681 |  |  | 
+DIAL | ERICA |  | FEMALE | 1989-07-18 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+NADERI | AMORAH |  | FEMALE | 2015-02-11 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+NADERI | MILA |  | FEMALE | 2017-07-25 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+DIAL | NOAH |  | Male | 2026-02-19 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+DU PLESSIS | LODEWIKUS | E | Male | 1970-07-29 00:00:00 | 75009-3092 | TX | PRODUCT OWNER, MANAGER | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 150000 |  |  | 
+DUFRESNE | EMILY |  | Female | 2002-09-25 00:00:00 | 75025 | TX | UNDERWRITER & COMPLIANCE RISK ANALYST | 8810 | TX |  | Full Time | 68000 |  |  | 
+ESHETIE | GIZACHEW | C | Male | 1991-04-29 00:00:00 | 75042-4075 | TX | SR SOFTWARE ENGINEER III | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 148526 |  |  | 
+ESHETIE | BENAYAS |  | Male | 2021-11-15 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+ESHETIE | SAMUEL |  | Male | 2024-12-29 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+FARHEEN FATIMA | NO NAME GIVEN | E | Female | 1985-08-23 00:00:00 | 75048-4580 | CA | SR AI ENGINEER | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 180000 |  |  | 
+FUENTES SICAIROS | JORGE |  | Male | 1986-10-15 00:00:00 | 92805-5632 | TX | SR ARCHITECT | 8810 | CA |  | Full Time | 218182 |  |  | 
+GJINI | IRA | E | Female | 1996-07-15 00:00:00 | 76021-4514 | TX | PROJECT MANAGER, HR | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 75383 |  |  | 
+GUILLORY | GABRIELLE | E | Female | 1997-08-19 00:00:00 | 75225 | IL | DIRECTOR OF COMMERCIAL SUCCESS | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 145000 |  |  | 
+HALL | CLIFF | E | Male | 1978-09-04 00:00:00 | 60155-4701 | TX | MANAGER, COMPLIANCE AND RISK MANAGEMENT | 8810 | IL | UHC Choice Plus PPO 500 (90%) | Full Time | 135661 |  |  | 
+HILL | BRIANNA |  | Female | 1991-01-24 00:00:00 | 75454 | TX | ACCOUNT MANAGER, ENTERPRISE RELATIONSHIPS | 8810 | TX |  | Full Time | 125000 |  |  | 
+HOLTSCLAW | ANDREW | E | Male | 1975-08-20 00:00:00 | 76177 | CA | PRODUCT OWNER, PAYMENTS | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 140000 |  |  | 
+HORTON | DAVID |  | Male | 1985-08-03 00:00:00 | 90720-3797 | TX | ARCHITECT, SYSTEMS | 8810 | CA |  | Full Time | 190962 |  |  | 
+HUDSON | TAYLOR | E | Female | 1997-09-03 00:00:00 | 75204 | TX | PRODUCT OWNER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 110000 |  |  | 
+JOE | MICHAEL | E | Male | 1978-09-01 00:00:00 | 75052-7383 | FL | CONTACT CENTER REPRESENTATIVE | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 58533.45 |  |  | 
+JOHNSON | NICOLE | E | Female | 1974-10-27 00:00:00 | 34240-7738 | TX | FIELD SALES REPRESENTATIVE | 8742 | TX | UHC Choice Plus PPO 250 | Full Time | 120000 |  |  | 
+JONES | DAVID | F | Male | 1975-07-29 00:00:00 | 75060 | TX | SR SOFTWARE ENGINEER III | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 150000 |  |  | 
+JONES | CHRISTI |  | FEMALE | 1975-07-24 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+JONES | RACHEL |  | FEMALE | 2001-10-08 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+JONES | SARAH |  | FEMALE | 2004-08-21 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+JONES | TAYSHAUN |  | MALE | 2007-01-20 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KAMPERMAN | CONOR | C | Male | 1998-04-09 00:00:00 | 76179-1547 | CA | SOFTWARE ENGINEER II | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 90000 |  |  | 
+KAMPERMAN | SALEM |  | MALE | 2025-06-28 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KANDOORI | RADHIKA | F | Female | 1982-07-02 00:00:00 | 92620-3315 | TX | SR. QA ENGINEER I | 8810 | CA | UHC Choice Plus PPO 500 (90%) | Full Time | 138198 |  |  | 
+ATMAKUR | HARSHAVARDHAN |  | Male | 1974-03-05 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+ATMAKUR | AASHRAY |  | MALE | 2008-12-23 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+ATMAKUR | AASHRITA |  | FEMALE | 2008-12-23 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KHANDAKER | OBAIDUL | F | Male | 1982-01-19 00:00:00 | 75409-6181 | TX | LEAD PROGRAM MANAGER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 160000 |  |  | 
+KHANDAKER | TAHMINA |  | Female | 1980-03-01 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+KHANDAKER | ZAIN |  | Male | 2009-10-16 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KHANDAKER | ZEESHAN |  | Male | 2011-10-10 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KHANDAKER | UMAIZA |  | Female | 2014-06-05 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KING | VERA | C | Female | 1980-07-24 00:00:00 | 75061-8263 | AL | LEAD CONTACT CENTER REPRESENTATIVE | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 65772.13 |  |  | 
+MCGREW | MARIE |  | FEMALE | 2002-11-09 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KNIGHT | CAMILLE |  | Female | 1976-03-05 00:00:00 | 35803-1705 | TX | SR PRODUCT MANAGER, PLANS | 8810 | AL |  | Full Time | 158523 |  |  | 
+KROEHLE | TRACEY | S | Female | 1962-05-26 00:00:00 | 75093-6304 | TX | FIELD SALES REPRESENTATIVE | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 123600 |  |  | 
+KROEHLE | THOMAS |  | MALE | 1957-09-30 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+KULKARNI | SHRUTI |  | Female | 1995-10-25 00:00:00 | 75071 | TX | CRM DATA ANALYST | 8810 | TX |  | Full Time | 100000 |  |  | 
+LANASKI | CHRISTINA | E | Female | 1997-12-17 00:00:00 | 76109 | TX | LEAD INFRASTRUCTURE ENGINEER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 162792 |  |  | 
+LEDBETTER | SCOTT | E | Male | 1979-02-23 00:00:00 | 75035 | TX | SUPPORT ENGINEER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 125000 |  |  | 
+LIN | JUIYING |  | Female | 1980-05-31 00:00:00 | 75287 | TX | SR UX DESIGNER | 8810 | TX |  | Full Time | 118450 |  |  | 
+LITTLE | PAUL | E | Male | 1997-08-02 00:00:00 | 75234-5023 | VA | PRODUCT MANAGER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 158340 |  |  | 
+LOWRY | LISA |  | Female | 1972-12-28 00:00:00 | 22932 | TX | TERRITORY MANAGER | 8810 | VA |  | Full Time | 120000 |  |  | 
+LOYA HULSEY | LARYSSA | F | Female | 1991-03-30 00:00:00 | 75104 | TX | ENTERPRISE ACCOUNT MANAGER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 117500 |  |  | 
+HULSEY | AVA |  | Female | 2017-07-01 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+HULSEY | SARA |  | Female | 2018-05-09 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+HULSEY | JUSTIN |  | Male | 1989-11-29 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+ESPINOZA | ALLIE |  | Female | 2011-03-11 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+VALDIZON | JONAH |  | Male | 2017-06-02 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MARINENI | VIJAY DANIEL | F | Male | 1994-09-30 00:00:00 | 76227-2420 | TX | PRODUCT OWNER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 131222 |  |  | 
+MARINENI | REBECCA |  | FEMALE | 1998-06-08 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+MARINENI | EZRA |  | MALE | 2023-11-22 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MAYS | KIM | C | Female | 1981-07-14 00:00:00 | 76065 | TX | ACCOUNTING MANAGER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 133385 |  |  | 
+FURROW | BREANNA |  | FEMALE | 2001-12-29 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+FURROW | BRIAN |  | MALE | 2003-05-13 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MAYS | SKYLAR |  | FEMALE | 2013-05-09 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MAYS | JADON |  | MALE | 2019-01-09 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MBAHYAM | LUCY | E | Female | 1988-08-13 00:00:00 | 75068 | TX | SCRUM MASTER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 113300 |  |  | 
+MCARDLE | ALEXANDER | F | Male | 1992-02-06 00:00:00 | 76034-5024 | TX | SOFTWARE ENGINEER II | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 144200 |  |  | 
+MCARDLE | OLIVER |  | MALE | 2024-01-22 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MCARDLE | MEGAN |  | FEMALE | 1994-04-07 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+MCGEE | MATTHEW |  | Male | 1982-11-08 00:00:00 | 75075 | TX | VENDOR MANAGER, STRATEGIC ACCOUNTS | 8810 | TX |  | Full Time | 125000 |  |  | 
+MCGLUMPHY | MICHAEL | F | Male | 1970-10-01 00:00:00 | 75024 | TX | SOFTWARE ENGINEER III | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 144200 |  |  | 
+MCGLUMPHY | YULIYA |  | FEMALE | 1976-01-18 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+MCGLUMPHY | EMMA |  | FEMALE | 2006-11-16 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MCGLUMPHY | LAURA |  | FEMALE | 2010-01-31 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MCKEE | MATTHEW | E | Male | 1983-07-02 00:00:00 | 78256-1776 | NE | SR RECRUITER | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 127308 |  |  | 
+MEYER | CHRISTIAN | E | Male | 1981-10-27 00:00:00 | 68507 | TX | FIELD SALES REPRESENTATIVE | 8742 | NE | UHC Choice Plus PPO 500 (90%) | Full Time | 121200 |  |  | 
+MITCHELL | STEPHANIE | C | Female | 1972-04-25 00:00:00 | 75072 | TX | OPERATIONS SPECIALIST | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 80000 |  |  | 
+MITCHELL | MYLES |  | MALE | 2007-09-18 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MONROE | DESTINY | E | Female | 1988-05-29 00:00:00 | 75071 | TX | IMPLEMENTATION SPECIALIST | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 70000 |  |  | 
+MOORE | RASHAD | E | Male | 1980-08-19 00:00:00 | 76244 | TX | OPERATIONS MANAGER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 115000 |  |  | 
+MORRIS | GENE | E | Male | 1972-11-26 00:00:00 | 75234 | TX | LEAD TECHNICAL BUSINESS ANALYST | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 140000 |  |  | 
+MORRIS | JASON | F | Male | 1986-11-07 00:00:00 | 76052 | TX | DIRECTOR OF FP&A | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 190000 |  |  | 
+MORRIS | CHELSEA |  | FEMALE | 1988-02-16 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+MORRIS | KENZIE |  | FEMALE | 2011-10-03 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MORRIS | PIPER |  | FEMALE | 2013-02-19 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+MORRIS | WILLOW |  | FEMALE | 2017-09-06 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+NARAYANAN | HARIHARA SUBRAMANIAN | F | Male | 1979-02-27 00:00:00 | 75019-2981 | TX | DIRECTOR, QA | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 210263 |  |  | 
+PICHAI | HEMA |  | FEMALE | 1979-06-26 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+NARAYANAN | BHARGAV |  | MALE | 2009-07-28 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+NARAYANAN | BHAVNA |  | FEMALE | 2012-11-02 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PANCHAL | NIMESH | F | Male | 1983-05-26 00:00:00 | 75071-7160 | TX | SR SOFTWARE ENGINEER III | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 163909 |  |  | 
+PANCHAL | KIAAN |  | MALE | 2020-04-11 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KARELIA | HAILLEY |  | FEMALE | 1993-06-23 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+PANCHAL | INAAYA |  | FEMALE | 2024-04-22 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PARIKH | AMIT | F | Male | 1970-11-27 00:00:00 | 75034 | CA | DIRECTOR OF ARCHITECTS & INNOVATION | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 233450 |  |  | 
+PARIKH | DIPALI |  | FEMALE | 1972-12-14 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+PARIKH | ROHAN |  | MALE | 2001-10-12 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PARIKH | KUNAAL |  | MALE | 2003-05-18 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PARIKH | DIYA |  | FEMALE | 2005-01-20 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PARK | EDMUND |  | Male | 1986-07-22 00:00:00 | 92656 | CO | SR SOFTWARE ENGINEER I | 8810 | CA |  | Full Time | 153062 |  |  | 
+PARRA | CARLOS | S | Male | 1972-11-23 00:00:00 | 80109 | TX | DATABASE MANAGER | 8810 | CO | UHC Choice Plus PPO 500 (90%) | Full Time | 166448 |  |  | 
+PARRA | JENNIFER |  | FEMALE | 1976-05-24 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+PATEL | JAY | F | Male | 1992-12-27 00:00:00 | 75067 | TX | SENIOR SOFTWARE ENGINEER I | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 150000 |  |  | 
+PATEL | SMITABEN |  | FEMALE | 1995-09-09 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+PATEL | RIAAN |  | MALE | 2024-01-05 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PATEL | RIVA |  | Female | 2026-10-12 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PELC | ORRIE | S | Male | 1974-02-18 00:00:00 | 76210 | TX | SR. SOFTWARE ENGINEER I | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 145000 |  |  | 
+PELC | CORRIE |  | FEMALE | 1976-08-03 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+PEMBERTON | THOMAS | F | Male | 1980-12-21 00:00:00 | 75248 | TX | DIRECTOR OF PMO | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 190000 |  |  | 
+PEMBERTON | KELLY |  | FEMALE | 1980-10-15 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+PEMBERTON | HANNAH |  | FEMALE | 2007-10-02 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PEMBERTON | MARGARET |  | FEMALE | 2014-10-07 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+PERRY | JOHN | E | Male | 1988-11-07 00:00:00 | 76001 | TX | SOFTWARE ENGINEER II | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 116500 |  |  | 
+PETRE | DANIELLE | E | Female | 1990-10-27 00:00:00 | 75204-5269 | TX | ACCOUNT SPECIALIST | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 72100 |  |  | 
+POSINA | ROHIT | C | Male | 1982-08-18 00:00:00 | 75036 | CA | SOFTWARE ARCHITECT | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 180000 |  |  | 
+POSINA | AAHNA |  | FEMALE | 2013-03-06 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+REW | ROBERT | E | Male | 1961-03-27 00:00:00 | 92649-2061 | TX | GENERAL COUNSEL | 8810 | CA | UHC Choice Plus PPO 500 (90%) | Full Time | 215000 |  |  | 
+RICHARDSON | JOSHUA | S | Male | 1984-05-12 00:00:00 | 76071 | TX | ACCOUNT SPECIALIST | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 70000 |  |  | 
+KIRKWOOD | DANIEL |  | MALE | 1990-02-24 00:00:00 |  |  | Domestic Partner |  |  |  |  |  |  |  | 
+ROSENBAUM | CHARLES | E | Male | 1970-10-27 00:00:00 | 75072 | TX | TECHNICAL OPERATIONS SPECIALIST | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 85000 |  |  | 
+ROY | BRETT | E | Male | 1964-10-01 00:00:00 | 75028 | CA | SR SOFTWARE ENGINEER III | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 155324 |  |  | 
+RUBIO | CHRISTOPHER | F | Male | 1973-10-02 00:00:00 | 92604-4618 | TX | SR. ARCHITECT | 8810 | CA | UHC Choice Plus PPO HDHP 5000 | Full Time | 224287 |  |  | 
+RUBIO | JULIE |  | FEMALE | 2006-11-29 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+RUBIO | KARA |  | FEMALE | 2009-07-30 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+SAKAGAMI | YOKO |  | FEMALE | 1977-04-17 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+SANTAMARIA | JESSE | E | Male | 1992-05-11 00:00:00 | 76226 | TX | SUPPORT ENGINEER | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 125000 |  |  | 
+SARWAR | QUAZI | C | Female | 1980-06-01 00:00:00 | 75033 | CA | BUSINESS ANALYST | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 126875 |  |  | 
+KHAN | WILDAN |  | MALE | 2011-04-04 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+KHAN | ZAYDAAN |  | MALE | 2014-03-26 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+SCHENTUR | KIMBERLY |  | Female | 1960-08-15 00:00:00 | 92867 | TX | FIELD SALES REPRESENTATIVE | 8742 | CA |  | Full Time | 124836 |  |  | 
+SCHNIEDERJAN | JEFFREY | F | Male | 1991-03-26 00:00:00 | 75019 | CA | DATA ANALYST | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 123000 |  |  | 
+SCHNIEDERJAN | LISA |  | FEMALE | 1986-06-11 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+SCHNIEDERJAN | BENSON |  | MALE | 2018-06-07 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+SCHNIEDERJAN | DAWSON |  | MALE | 2020-05-18 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+SERRANO | LISA | C | Female | 1975-12-15 00:00:00 | 92865-3691 | CA | DIRECTOR OF ENGINEERING | 8810 | CA | UHC Choice Plus PPO 500 (90%) | Full Time | 188764 |  |  | 
+CHOI | AIDEN |  | MALE | 2004-09-02 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+CHOI | GAVIN |  | MALE | 2007-04-18 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+SIDAVANH | VANNARY | E | Female | 1983-02-04 00:00:00 | 92109-4340 | TX | SR. FINANCIAL ANALYST | 8810 | CA | UHC Choice Plus PPO 500 (90%) | Full Time | 123865 |  |  | 
+SIMPSON | JEFFREY | E | Male | 1976-05-27 00:00:00 | 76054-2317 | TX | IT SECURITY SYSTEM ADMINISTRATOR | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 105000 |  |  | 
+SKEETE | EZRA | E | Male | 1995-10-24 00:00:00 | 75052 | WA | ACCOUNT SPECIALIST | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 72100 |  |  | 
+SMITH | BRADLEY | E | Male | 1968-07-30 00:00:00 | 98075-9177 | CO | FIELD SALES REPRESENTATIVE | 5302 | WA | UHC Choice Plus PPO HDHP 1750 | Full Time | 123600 |  |  | 
+SNIDER | MARY |  | Female | 1984-07-10 00:00:00 | 80210 | CA | VP, BUSINESS DEVELOPMENT & STRATEGIC PARTNERSHIPS | 8810 | CO |  | Full Time | 250000 |  |  | 
+SONG | JIYOON | E | Female | 1970-05-19 00:00:00 | 92694-1526 | TX | VP, ACCOUNTING & ADMINISTRATION | 8810 | CA | UHC Choice Plus PPO 500 (90%) | Full Time | 233398 |  |  | 
+STANLY SUNDARSINGH | WESLEY SAMUEL | C | Male | 1982-04-08 00:00:00 | 75071 | TX | PRINCIPAL SOFTWARE ENGINEER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 169950 |  |  | 
+WESLEY SAMUEL | TANYA WESLEY |  | FEMALE | 2008-07-24 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+WESLEY | JADEN |  | MALE | 2012-11-05 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+TANG | CHUAN | C | Male | 1976-01-08 00:00:00 | 76227 | TX | SOFTWARE ARCHITECT | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 180000 |  |  | 
+TANG | CAITLYN |  | FEMALE | 2002-03-25 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+TANG | CATHERINE |  | FEMALE | 2009-01-06 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+TEBEAU | JOHNATHAN | E | Male | 1986-12-06 00:00:00 | 75002-1817 | TX | PRODUCT MANAGER, FINANCING MARKET PLACE | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 144200 |  |  | 
+THAPA | ROJESH | E | Male | 1998-07-10 00:00:00 | 75063-5227 | TX | SR POWER PLATFORM DEVELOPER | 8810 | TX | UHC Choice Plus PPO HDHP 5000 | Full Time | 131950 |  |  | 
+THARP | WALLACE | F | Male | 1972-03-10 00:00:00 | 76039-1440 | TX | CHIEF OPERATING OFFICER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 320289 |  |  | 
+THARP | KELLIE |  | FEMALE | 1974-12-26 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+THARP | BECKETT |  | MALE | 2009-10-29 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+THARP | BRITTON |  | MALE | 2009-10-29 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+THOMAS | JASON | F | Male | 1985-08-13 00:00:00 | 76244 | TX | ARCHITECT | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 166650 |  |  | 
+THOMAS | CABRERA |  | FEMALE | 1988-10-28 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+THOMAS | NOELLA |  | FEMALE | 2019-09-05 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+THOMAS | ROMAN |  | MALE | 2013-09-01 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+TOKERUD | TIMOTHY | C | Male | 1967-04-28 00:00:00 | 76051 | TX | DIRECTOR OF DATA & ANALYTICS | 8810 | TX | UHC Choice Plus PPO HDHP 1750 | Full Time | 188443 |  |  | 
+TOKERUD | AUTUMN |  | FEMALE | 2010-12-10 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+VICK | TODD | F | Male | 1967-11-02 00:00:00 | 75036-7294 | TX | CHIEF FINANCIAL OFFICER | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 335000 |  |  | 
+VICK | SHELLEY |  | FEMALE | 1968-11-09 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+VICK | MELISSA |  | FEMALE | 2001-09-25 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+VILLIAPAKAM PREMSAGAR | DIPIKA | C | Female | 1991-04-27 00:00:00 | 75050 | TX | .NET & BI INTEGRATION ENGINEER | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 128750 |  |  | 
+BAUGH | KIRAN |  | Male | 2026-07-14 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+WATKINS | JAMIE | S | Female | 1985-10-16 00:00:00 | 76082 | AZ | DIRECTOR, REVENUE OPERATIONS | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 182700 |  |  | 
+WATKINS | CODY |  | MALE | 1988-05-25 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+WERNER | MARK | F | Male | 1965-03-04 00:00:00 | 86336-7139 | TX | PRINCIPAL SOFTWARE ENGINEER | 8810 | AZ | UHC Choice Plus PPO 500 (90%) | Full Time | 234226 |  |  | 
+WERNER | JORDAN |  | FEMALE | 2000-11-08 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+WERNER | MADISON |  | FEMALE | 2001-02-05 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+WERNER | KAYLEIGH |  | FEMALE | 2003-03-14 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+WERNER | MARY |  | FEMALE | 1967-05-16 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+WEST | CARMEN | E | Female | 1977-10-21 00:00:00 | 75061 | TX | CONTACT CENTER REPRESENTATIVE | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 49401.9 |  |  | 
+WILSON | CHRISTOPHER | F | Male | 1982-03-28 00:00:00 | 75071-3376 | TX | VICE PRESIDENT, INFORMATION SECURITY | 8810 | TX | UHC Choice Plus PPO 500 (90%) | Full Time | 222789.6 |  |  | 
+VARNER | DANIELLE |  | FEMALE | 1986-08-23 00:00:00 |  |  | Spouse |  |  |  |  |  |  |  | 
+WILSON | C. RYLEY |  | MALE | 2023-11-10 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+YOUNGBLOOD | LISA | C | Female | 1972-06-09 00:00:00 | 75035 |  | DIRECTOR, OPERATIONS | 8810 | TX | UHC Choice Plus PPO 250 | Full Time | 182700 |  |  | 
+YOUNGBLOOD | MADISON |  | FEMALE | 2009-06-11 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+YOUNGBLOOD | KENNEDY |  | FEMALE | 2003-11-22 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+YOUNGBLOOD | MILES |  | MALE | 2002-01-29 00:00:00 |  |  | Child |  |  |  |  |  |  |  | 
+ |  |  |  |  |  |  |  |  |  |  |  | 15503185.08 | 0 |  | 
+=== Sheet: WC Tab ===
+Row Labels | Number of Employees | Sum of Annual Pay 
+IL | 1 | 135661
+8810 | 1 | 135661
+CA | 10 | 1810554
+8810 | 9 | 1685718
+8742 | 1 | 124836
+AZ | 1 | 234226
+8810 | 1 | 234226
+TX | 85 | 12195513.08
+8810 | 84 | 12075513.08
+8742 | 1 | 120000
+VA | 1 | 120000
+8810 | 1 | 120000
+WA | 1 | 123600
+5302 | 1 | 123600
+CO | 2 | 416448
+8810 | 2 | 416448
+DE | 1 | 187460
+953 | 1 | 187460
+AL | 1 | 158523
+8810 | 1 | 158523
+NE | 1 | 121200
+8742 | 1 | 121200
+Grand Total | 104 | 15503185.08
+=== Sheet: Sheet1 ===
+Payroll Frequency
+Bi-Weekly
+Semi-Monthly
+Monthly
+Weekly
+
+--- [EXTRACTED TABLES SUMMARY] ---
+
+[Table 1: Census (Rows: 229, Columns: 16)]
+       Employee  Name                 Last Coverage Level Gender                 DOB   ZIP CODE Home State                                         Job Title W/C Code W/C State                    Healthcare F/T or P/T  Annual Pay                   NaN                NaN                                   NaN
+      ABBOTT-BULLOCKS            JEANNETTE              S Female 1967-09-25 00:00:00      75181         TX                            HUMAN RESOURCE MANAGER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       125000 Payroll Invoice Date Payroll Frequency: Total Annualized Payroll from Invoice
+             BULLOCKS              PATRICK            NaN   MALE 1965-05-21 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+     ABUBAKAR MARICAR ABDUL RASHEED MARICA              C   Male 1983-04-08 00:00:00      75071         TX                          SR SOFTWARE ENGINEER III     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       159650  2026-10-30 00:00:00       Semi-Monthly                                   NaN
+              MARICAR                AFRAH            NaN FEMALE 2012-04-12 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              MARICAR                AFEEF            NaN   MALE 2015-03-10 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              MARICAR                ARHAM            NaN   MALE 2020-07-24 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             ANDERSON               ROBERT              C   Male 1970-06-05 00:00:00      75067         TX                                    SR AI ENGINEER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       171600                  NaN                NaN                                   NaN
+             ANDERSON                KEVIN            NaN   MALE 2001-11-06 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              ANTWINE                LEXUS              E Female 1995-12-22 00:00:00 75201-5743         DE                             ONBOARDING SPECIALIST     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time        56650                  NaN                NaN                                   NaN
+               ASPLEN                 JOHN              E   Male 1971-07-16 00:00:00 19971-8464         TX                        VICE PRESIDENT, COMPLIANCE      953        DE UHC Choice Plus PPO HDHP 1750  Full Time       187460                  NaN                NaN                                   NaN
+                 ATAL               SHIKHA            NaN Female 1981-10-20 00:00:00      75035         TX                                      SCRUM MASTER     8810        TX                           NaN  Full Time       120000                  NaN                NaN                                   NaN
+                BAIRI              THARIKA            NaN Female 1986-04-25 00:00:00      75078         TX                             SQL DATABASE ENGINEER     8810        TX                           NaN  Full Time       139050                  NaN                NaN                                   NaN
+               BANKAR               SUSHMA              F Female 1980-02-19 00:00:00      75056         TX                                  BUSINESS ANALYST     8810        TX       UHC Choice Plus PPO 250  Full Time       123600                  NaN                NaN                                   NaN
+             YUVARAJA               JANANI            NaN FEMALE 2014-07-12 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             YUVARAJA                  JAI            NaN   MALE 2017-11-03 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+      BALASUBRAMANIAN        ARUN YUVARAJA            NaN   MALE 1981-08-10 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 BARI                 ABUL              F   Male 1970-07-14 00:00:00 76002-4757         TX                                    QA ANALYST III     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       106090                  NaN                NaN                                   NaN
+              HOSSAIN                 LIPI            NaN FEMALE 1972-08-23 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 BARI                 ARIB            NaN   MALE 2003-12-18 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                BAYYA               SWETHA              E Female 1996-08-25 00:00:00 75063-8570         TX                                  BUSINESS ANALYST     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       118450                  NaN                NaN                                   NaN
+             BELCONIS                 EMMA              E Female 1988-09-19 00:00:00 76021-2537         TX                 DIRECTOR OF PEOPLE & ORGANIZATION     8810        TX       UHC Choice Plus PPO 250  Full Time       172000                  NaN                NaN                                   NaN
+             BHARDWAJ                SHIVA              F Female 1974-05-30 00:00:00      75063         TX                               SR BUSINESS ANALYST     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       151178                  NaN                NaN                                   NaN
+               SHARMA                 AJAI            NaN   MALE 1971-04-10 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               SHARMA               AAYUSH            NaN   MALE 2004-06-11 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              BRIONES                CLARO              F   Male 1984-08-11 00:00:00      75019         TX                                      SR ARCHITECT     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       212285                  NaN                NaN                                   NaN
+                 RUIZ               CELENE            NaN FEMALE 1985-12-20 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              BRIONES               ANDREA            NaN FEMALE 2013-10-01 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              BRIONES              NIKOLAI            NaN   MALE 2018-10-10 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             BYRAPAKA             NITHUSHA              E Female 1992-01-10 00:00:00      75009         TX                                     PRODUCT OWNER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       132000                  NaN                NaN                                   NaN
+             CHAWANDE             VIVIENNE              C Female 1979-03-07 00:00:00 75025-2062         TX                                   SR. QA ENGINEER     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       111554                  NaN                NaN                                   NaN
+             CHAWANDE                ANAVI            NaN FEMALE 2010-11-17 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               CHIPPS                 JOHN              F   Male 1967-12-20 00:00:00      75019         TX                          CHIEF TECHNOLOGY OFFICER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       309309                  NaN                NaN                                   NaN
+               CHIPPS              NATASHA            NaN FEMALE 1974-08-04 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               CHIPPS                FAITH            NaN FEMALE 2007-11-22 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              COLLINS               GEORGE              F   Male 1967-02-05 00:00:00 75205-1715         TX                                               CEO     8810        TX       UHC Choice Plus PPO 250  Full Time       400000                  NaN                NaN                                   NaN
+              COLLINS             SUSANNAH            NaN FEMALE 1970-11-30 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                WHITE                SADIE            NaN FEMALE 2006-10-31 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              CORDOVA              NATALIE              F Female 1983-01-06 00:00:00 76071-4345         TX                      MANAGER SMALL GROUP ACCOUNTS     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time        90640                  NaN                NaN                                   NaN
+              CORDOVA               RAFAEL            NaN   MALE 1985-02-20 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              CORDOVA              HENDRIX            NaN   MALE 2016-12-13 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              CORDOVA                 JOEL            NaN   MALE 2006-06-27 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              CORDOVA                JOVAN            NaN   MALE 2004-12-09 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                CRUMP                KAREY              F Female 1981-07-30 00:00:00      75007         TX                           VICE PRESIDENT, PRODUCT     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       240620                  NaN                NaN                                   NaN
+                CRUMP               ROBERT            NaN   MALE 1972-03-16 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                CRUMP              LACHLAN            NaN   MALE 2010-07-14 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                CRUMP              CAMILLE            NaN FEMALE 2013-02-05 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                CRUMP               CLAIRE            NaN FEMALE 2015-06-06 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                DAVIS          CHRISTOPHER              E   Male 1980-03-31 00:00:00      75010         TX                             OPERATIONS SPECIALIST     8810        TX       UHC Choice Plus PPO 250  Full Time        80000                  NaN                NaN                                   NaN
+              DEARMON                 KRIS            NaN Female 1973-03-02 00:00:00 75056-7124         TX                                   PROGRAM MANAGER     8810        TX                           NaN  Full Time       113300                  NaN                NaN                                   NaN
+                 DIAL               AUSTIN              F   Male 1988-05-25 00:00:00 75033-3358         TX                              ACCOUNT MANAGER, PDS     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       130681                  NaN                NaN                                   NaN
+                 DIAL                ERICA            NaN FEMALE 1989-07-18 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               NADERI               AMORAH            NaN FEMALE 2015-02-11 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               NADERI                 MILA            NaN FEMALE 2017-07-25 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 DIAL                 NOAH            NaN   Male 2026-02-19 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+           DU PLESSIS            LODEWIKUS              E   Male 1970-07-29 00:00:00 75009-3092         TX                            PRODUCT OWNER, MANAGER     8810        TX       UHC Choice Plus PPO 250  Full Time       150000                  NaN                NaN                                   NaN
+             DUFRESNE                EMILY            NaN Female 2002-09-25 00:00:00      75025         TX             UNDERWRITER & COMPLIANCE RISK ANALYST     8810        TX                           NaN  Full Time        68000                  NaN                NaN                                   NaN
+              ESHETIE             GIZACHEW              C   Male 1991-04-29 00:00:00 75042-4075         TX                          SR SOFTWARE ENGINEER III     8810        TX       UHC Choice Plus PPO 250  Full Time       148526                  NaN                NaN                                   NaN
+              ESHETIE              BENAYAS            NaN   Male 2021-11-15 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              ESHETIE               SAMUEL            NaN   Male 2024-12-29 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+       FARHEEN FATIMA        NO NAME GIVEN              E Female 1985-08-23 00:00:00 75048-4580         CA                                    SR AI ENGINEER     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       180000                  NaN                NaN                                   NaN
+     FUENTES SICAIROS                JORGE            NaN   Male 1986-10-15 00:00:00 92805-5632         TX                                      SR ARCHITECT     8810        CA                           NaN  Full Time       218182                  NaN                NaN                                   NaN
+                GJINI                  IRA              E Female 1996-07-15 00:00:00 76021-4514         TX                               PROJECT MANAGER, HR     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time        75383                  NaN                NaN                                   NaN
+             GUILLORY            GABRIELLE              E Female 1997-08-19 00:00:00      75225         IL                    DIRECTOR OF COMMERCIAL SUCCESS     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       145000                  NaN                NaN                                   NaN
+                 HALL                CLIFF              E   Male 1978-09-04 00:00:00 60155-4701         TX           MANAGER, COMPLIANCE AND RISK MANAGEMENT     8810        IL UHC Choice Plus PPO 500 (90%)  Full Time       135661                  NaN                NaN                                   NaN
+                 HILL              BRIANNA            NaN Female 1991-01-24 00:00:00      75454         TX         ACCOUNT MANAGER, ENTERPRISE RELATIONSHIPS     8810        TX                           NaN  Full Time       125000                  NaN                NaN                                   NaN
+            HOLTSCLAW               ANDREW              E   Male 1975-08-20 00:00:00      76177         CA                           PRODUCT OWNER, PAYMENTS     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       140000                  NaN                NaN                                   NaN
+               HORTON                DAVID            NaN   Male 1985-08-03 00:00:00 90720-3797         TX                                ARCHITECT, SYSTEMS     8810        CA                           NaN  Full Time       190962                  NaN                NaN                                   NaN
+               HUDSON               TAYLOR              E Female 1997-09-03 00:00:00      75204         TX                                     PRODUCT OWNER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       110000                  NaN                NaN                                   NaN
+                  JOE              MICHAEL              E   Male 1978-09-01 00:00:00 75052-7383         FL                     CONTACT CENTER REPRESENTATIVE     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time     58533.45                  NaN                NaN                                   NaN
+              JOHNSON               NICOLE              E Female 1974-10-27 00:00:00 34240-7738         TX                        FIELD SALES REPRESENTATIVE     8742        TX       UHC Choice Plus PPO 250  Full Time       120000                  NaN                NaN                                   NaN
+                JONES                DAVID              F   Male 1975-07-29 00:00:00      75060         TX                          SR SOFTWARE ENGINEER III     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       150000                  NaN                NaN                                   NaN
+                JONES              CHRISTI            NaN FEMALE 1975-07-24 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                JONES               RACHEL            NaN FEMALE 2001-10-08 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                JONES                SARAH            NaN FEMALE 2004-08-21 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                JONES             TAYSHAUN            NaN   MALE 2007-01-20 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            KAMPERMAN                CONOR              C   Male 1998-04-09 00:00:00 76179-1547         CA                              SOFTWARE ENGINEER II     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time        90000                  NaN                NaN                                   NaN
+            KAMPERMAN                SALEM            NaN   MALE 2025-06-28 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             KANDOORI              RADHIKA              F Female 1982-07-02 00:00:00 92620-3315         TX                                 SR. QA ENGINEER I     8810        CA UHC Choice Plus PPO 500 (90%)  Full Time       138198                  NaN                NaN                                   NaN
+              ATMAKUR        HARSHAVARDHAN            NaN   Male 1974-03-05 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              ATMAKUR              AASHRAY            NaN   MALE 2008-12-23 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              ATMAKUR             AASHRITA            NaN FEMALE 2008-12-23 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            KHANDAKER              OBAIDUL              F   Male 1982-01-19 00:00:00 75409-6181         TX                              LEAD PROGRAM MANAGER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       160000                  NaN                NaN                                   NaN
+            KHANDAKER              TAHMINA            NaN Female 1980-03-01 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            KHANDAKER                 ZAIN            NaN   Male 2009-10-16 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            KHANDAKER              ZEESHAN            NaN   Male 2011-10-10 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            KHANDAKER               UMAIZA            NaN Female 2014-06-05 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 KING                 VERA              C Female 1980-07-24 00:00:00 75061-8263         AL                LEAD CONTACT CENTER REPRESENTATIVE     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time     65772.13                  NaN                NaN                                   NaN
+               MCGREW                MARIE            NaN FEMALE 2002-11-09 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               KNIGHT              CAMILLE            NaN Female 1976-03-05 00:00:00 35803-1705         TX                         SR PRODUCT MANAGER, PLANS     8810        AL                           NaN  Full Time       158523                  NaN                NaN                                   NaN
+              KROEHLE               TRACEY              S Female 1962-05-26 00:00:00 75093-6304         TX                        FIELD SALES REPRESENTATIVE     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       123600                  NaN                NaN                                   NaN
+              KROEHLE               THOMAS            NaN   MALE 1957-09-30 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             KULKARNI               SHRUTI            NaN Female 1995-10-25 00:00:00      75071         TX                                  CRM DATA ANALYST     8810        TX                           NaN  Full Time       100000                  NaN                NaN                                   NaN
+              LANASKI            CHRISTINA              E Female 1997-12-17 00:00:00      76109         TX                      LEAD INFRASTRUCTURE ENGINEER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       162792                  NaN                NaN                                   NaN
+            LEDBETTER                SCOTT              E   Male 1979-02-23 00:00:00      75035         TX                                  SUPPORT ENGINEER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       125000                  NaN                NaN                                   NaN
+                  LIN              JUIYING            NaN Female 1980-05-31 00:00:00      75287         TX                                    SR UX DESIGNER     8810        TX                           NaN  Full Time       118450                  NaN                NaN                                   NaN
+               LITTLE                 PAUL              E   Male 1997-08-02 00:00:00 75234-5023         VA                                   PRODUCT MANAGER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       158340                  NaN                NaN                                   NaN
+                LOWRY                 LISA            NaN Female 1972-12-28 00:00:00      22932         TX                                 TERRITORY MANAGER     8810        VA                           NaN  Full Time       120000                  NaN                NaN                                   NaN
+          LOYA HULSEY              LARYSSA              F Female 1991-03-30 00:00:00      75104         TX                        ENTERPRISE ACCOUNT MANAGER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       117500                  NaN                NaN                                   NaN
+               HULSEY                  AVA            NaN Female 2017-07-01 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               HULSEY                 SARA            NaN Female 2018-05-09 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               HULSEY               JUSTIN            NaN   Male 1989-11-29 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             ESPINOZA                ALLIE            NaN Female 2011-03-11 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             VALDIZON                JONAH            NaN   Male 2017-06-02 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             MARINENI         VIJAY DANIEL              F   Male 1994-09-30 00:00:00 76227-2420         TX                                     PRODUCT OWNER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       131222                  NaN                NaN                                   NaN
+             MARINENI              REBECCA            NaN FEMALE 1998-06-08 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             MARINENI                 EZRA            NaN   MALE 2023-11-22 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 MAYS                  KIM              C Female 1981-07-14 00:00:00      76065         TX                                ACCOUNTING MANAGER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       133385                  NaN                NaN                                   NaN
+               FURROW              BREANNA            NaN FEMALE 2001-12-29 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               FURROW                BRIAN            NaN   MALE 2003-05-13 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 MAYS               SKYLAR            NaN FEMALE 2013-05-09 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 MAYS                JADON            NaN   MALE 2019-01-09 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              MBAHYAM                 LUCY              E Female 1988-08-13 00:00:00      75068         TX                                      SCRUM MASTER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       113300                  NaN                NaN                                   NaN
+              MCARDLE            ALEXANDER              F   Male 1992-02-06 00:00:00 76034-5024         TX                              SOFTWARE ENGINEER II     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       144200                  NaN                NaN                                   NaN
+              MCARDLE               OLIVER            NaN   MALE 2024-01-22 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              MCARDLE                MEGAN            NaN FEMALE 1994-04-07 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                MCGEE              MATTHEW            NaN   Male 1982-11-08 00:00:00      75075         TX                VENDOR MANAGER, STRATEGIC ACCOUNTS     8810        TX                           NaN  Full Time       125000                  NaN                NaN                                   NaN
+            MCGLUMPHY              MICHAEL              F   Male 1970-10-01 00:00:00      75024         TX                             SOFTWARE ENGINEER III     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       144200                  NaN                NaN                                   NaN
+            MCGLUMPHY               YULIYA            NaN FEMALE 1976-01-18 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            MCGLUMPHY                 EMMA            NaN FEMALE 2006-11-16 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            MCGLUMPHY                LAURA            NaN FEMALE 2010-01-31 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                MCKEE              MATTHEW              E   Male 1983-07-02 00:00:00 78256-1776         NE                                      SR RECRUITER     8810        TX       UHC Choice Plus PPO 250  Full Time       127308                  NaN                NaN                                   NaN
+                MEYER            CHRISTIAN              E   Male 1981-10-27 00:00:00      68507         TX                        FIELD SALES REPRESENTATIVE     8742        NE UHC Choice Plus PPO 500 (90%)  Full Time       121200                  NaN                NaN                                   NaN
+             MITCHELL            STEPHANIE              C Female 1972-04-25 00:00:00      75072         TX                             OPERATIONS SPECIALIST     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time        80000                  NaN                NaN                                   NaN
+             MITCHELL                MYLES            NaN   MALE 2007-09-18 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               MONROE              DESTINY              E Female 1988-05-29 00:00:00      75071         TX                         IMPLEMENTATION SPECIALIST     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time        70000                  NaN                NaN                                   NaN
+                MOORE               RASHAD              E   Male 1980-08-19 00:00:00      76244         TX                                OPERATIONS MANAGER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       115000                  NaN                NaN                                   NaN
+               MORRIS                 GENE              E   Male 1972-11-26 00:00:00      75234         TX                   LEAD TECHNICAL BUSINESS ANALYST     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       140000                  NaN                NaN                                   NaN
+               MORRIS                JASON              F   Male 1986-11-07 00:00:00      76052         TX                                  DIRECTOR OF FP&A     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       190000                  NaN                NaN                                   NaN
+               MORRIS              CHELSEA            NaN FEMALE 1988-02-16 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               MORRIS               KENZIE            NaN FEMALE 2011-10-03 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               MORRIS                PIPER            NaN FEMALE 2013-02-19 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               MORRIS               WILLOW            NaN FEMALE 2017-09-06 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            NARAYANAN HARIHARA SUBRAMANIAN              F   Male 1979-02-27 00:00:00 75019-2981         TX                                      DIRECTOR, QA     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       210263                  NaN                NaN                                   NaN
+               PICHAI                 HEMA            NaN FEMALE 1979-06-26 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            NARAYANAN              BHARGAV            NaN   MALE 2009-07-28 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            NARAYANAN               BHAVNA            NaN FEMALE 2012-11-02 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              PANCHAL               NIMESH              F   Male 1983-05-26 00:00:00 75071-7160         TX                          SR SOFTWARE ENGINEER III     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       163909                  NaN                NaN                                   NaN
+              PANCHAL                KIAAN            NaN   MALE 2020-04-11 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              KARELIA              HAILLEY            NaN FEMALE 1993-06-23 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              PANCHAL               INAAYA            NaN FEMALE 2024-04-22 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               PARIKH                 AMIT              F   Male 1970-11-27 00:00:00      75034         CA               DIRECTOR OF ARCHITECTS & INNOVATION     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       233450                  NaN                NaN                                   NaN
+               PARIKH               DIPALI            NaN FEMALE 1972-12-14 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               PARIKH                ROHAN            NaN   MALE 2001-10-12 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               PARIKH               KUNAAL            NaN   MALE 2003-05-18 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               PARIKH                 DIYA            NaN FEMALE 2005-01-20 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 PARK               EDMUND            NaN   Male 1986-07-22 00:00:00      92656         CO                            SR SOFTWARE ENGINEER I     8810        CA                           NaN  Full Time       153062                  NaN                NaN                                   NaN
+                PARRA               CARLOS              S   Male 1972-11-23 00:00:00      80109         TX                                  DATABASE MANAGER     8810        CO UHC Choice Plus PPO 500 (90%)  Full Time       166448                  NaN                NaN                                   NaN
+                PARRA             JENNIFER            NaN FEMALE 1976-05-24 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                PATEL                  JAY              F   Male 1992-12-27 00:00:00      75067         TX                        SENIOR SOFTWARE ENGINEER I     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       150000                  NaN                NaN                                   NaN
+                PATEL             SMITABEN            NaN FEMALE 1995-09-09 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                PATEL                RIAAN            NaN   MALE 2024-01-05 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                PATEL                 RIVA            NaN Female 2026-10-12 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 PELC                ORRIE              S   Male 1974-02-18 00:00:00      76210         TX                           SR. SOFTWARE ENGINEER I     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       145000                  NaN                NaN                                   NaN
+                 PELC               CORRIE            NaN FEMALE 1976-08-03 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            PEMBERTON               THOMAS              F   Male 1980-12-21 00:00:00      75248         TX                                   DIRECTOR OF PMO     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       190000                  NaN                NaN                                   NaN
+            PEMBERTON                KELLY            NaN FEMALE 1980-10-15 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            PEMBERTON               HANNAH            NaN FEMALE 2007-10-02 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            PEMBERTON             MARGARET            NaN FEMALE 2014-10-07 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                PERRY                 JOHN              E   Male 1988-11-07 00:00:00      76001         TX                              SOFTWARE ENGINEER II     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       116500                  NaN                NaN                                   NaN
+                PETRE             DANIELLE              E Female 1990-10-27 00:00:00 75204-5269         TX                                ACCOUNT SPECIALIST     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time        72100                  NaN                NaN                                   NaN
+               POSINA                ROHIT              C   Male 1982-08-18 00:00:00      75036         CA                                SOFTWARE ARCHITECT     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       180000                  NaN                NaN                                   NaN
+               POSINA                AAHNA            NaN FEMALE 2013-03-06 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                  REW               ROBERT              E   Male 1961-03-27 00:00:00 92649-2061         TX                                   GENERAL COUNSEL     8810        CA UHC Choice Plus PPO 500 (90%)  Full Time       215000                  NaN                NaN                                   NaN
+           RICHARDSON               JOSHUA              S   Male 1984-05-12 00:00:00      76071         TX                                ACCOUNT SPECIALIST     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time        70000                  NaN                NaN                                   NaN
+             KIRKWOOD               DANIEL            NaN   MALE 1990-02-24 00:00:00        NaN        NaN                                  Domestic Partner      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+            ROSENBAUM              CHARLES              E   Male 1970-10-27 00:00:00      75072         TX                   TECHNICAL OPERATIONS SPECIALIST     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time        85000                  NaN                NaN                                   NaN
+                  ROY                BRETT              E   Male 1964-10-01 00:00:00      75028         CA                          SR SOFTWARE ENGINEER III     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       155324                  NaN                NaN                                   NaN
+                RUBIO          CHRISTOPHER              F   Male 1973-10-02 00:00:00 92604-4618         TX                                     SR. ARCHITECT     8810        CA UHC Choice Plus PPO HDHP 5000  Full Time       224287                  NaN                NaN                                   NaN
+                RUBIO                JULIE            NaN FEMALE 2006-11-29 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                RUBIO                 KARA            NaN FEMALE 2009-07-30 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             SAKAGAMI                 YOKO            NaN FEMALE 1977-04-17 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+           SANTAMARIA                JESSE              E   Male 1992-05-11 00:00:00      76226         TX                                  SUPPORT ENGINEER     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       125000                  NaN                NaN                                   NaN
+               SARWAR                QUAZI              C Female 1980-06-01 00:00:00      75033         CA                                  BUSINESS ANALYST     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       126875                  NaN                NaN                                   NaN
+                 KHAN               WILDAN            NaN   MALE 2011-04-04 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 KHAN              ZAYDAAN            NaN   MALE 2014-03-26 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             SCHENTUR             KIMBERLY            NaN Female 1960-08-15 00:00:00      92867         TX                        FIELD SALES REPRESENTATIVE     8742        CA                           NaN  Full Time       124836                  NaN                NaN                                   NaN
+         SCHNIEDERJAN              JEFFREY              F   Male 1991-03-26 00:00:00      75019         CA                                      DATA ANALYST     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       123000                  NaN                NaN                                   NaN
+         SCHNIEDERJAN                 LISA            NaN FEMALE 1986-06-11 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+         SCHNIEDERJAN               BENSON            NaN   MALE 2018-06-07 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+         SCHNIEDERJAN               DAWSON            NaN   MALE 2020-05-18 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              SERRANO                 LISA              C Female 1975-12-15 00:00:00 92865-3691         CA                           DIRECTOR OF ENGINEERING     8810        CA UHC Choice Plus PPO 500 (90%)  Full Time       188764                  NaN                NaN                                   NaN
+                 CHOI                AIDEN            NaN   MALE 2004-09-02 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 CHOI                GAVIN            NaN   MALE 2007-04-18 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+             SIDAVANH              VANNARY              E Female 1983-02-04 00:00:00 92109-4340         TX                             SR. FINANCIAL ANALYST     8810        CA UHC Choice Plus PPO 500 (90%)  Full Time       123865                  NaN                NaN                                   NaN
+              SIMPSON              JEFFREY              E   Male 1976-05-27 00:00:00 76054-2317         TX                  IT SECURITY SYSTEM ADMINISTRATOR     8810        TX       UHC Choice Plus PPO 250  Full Time       105000                  NaN                NaN                                   NaN
+               SKEETE                 EZRA              E   Male 1995-10-24 00:00:00      75052         WA                                ACCOUNT SPECIALIST     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time        72100                  NaN                NaN                                   NaN
+                SMITH              BRADLEY              E   Male 1968-07-30 00:00:00 98075-9177         CO                        FIELD SALES REPRESENTATIVE     5302        WA UHC Choice Plus PPO HDHP 1750  Full Time       123600                  NaN                NaN                                   NaN
+               SNIDER                 MARY            NaN Female 1984-07-10 00:00:00      80210         CA VP, BUSINESS DEVELOPMENT & STRATEGIC PARTNERSHIPS     8810        CO                           NaN  Full Time       250000                  NaN                NaN                                   NaN
+                 SONG               JIYOON              E Female 1970-05-19 00:00:00 92694-1526         TX                   VP, ACCOUNTING & ADMINISTRATION     8810        CA UHC Choice Plus PPO 500 (90%)  Full Time       233398                  NaN                NaN                                   NaN
+   STANLY SUNDARSINGH        WESLEY SAMUEL              C   Male 1982-04-08 00:00:00      75071         TX                       PRINCIPAL SOFTWARE ENGINEER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       169950                  NaN                NaN                                   NaN
+        WESLEY SAMUEL         TANYA WESLEY            NaN FEMALE 2008-07-24 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               WESLEY                JADEN            NaN   MALE 2012-11-05 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 TANG                CHUAN              C   Male 1976-01-08 00:00:00      76227         TX                                SOFTWARE ARCHITECT     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       180000                  NaN                NaN                                   NaN
+                 TANG              CAITLYN            NaN FEMALE 2002-03-25 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 TANG            CATHERINE            NaN FEMALE 2009-01-06 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               TEBEAU            JOHNATHAN              E   Male 1986-12-06 00:00:00 75002-1817         TX           PRODUCT MANAGER, FINANCING MARKET PLACE     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       144200                  NaN                NaN                                   NaN
+                THAPA               ROJESH              E   Male 1998-07-10 00:00:00 75063-5227         TX                       SR POWER PLATFORM DEVELOPER     8810        TX UHC Choice Plus PPO HDHP 5000  Full Time       131950                  NaN                NaN                                   NaN
+                THARP              WALLACE              F   Male 1972-03-10 00:00:00 76039-1440         TX                           CHIEF OPERATING OFFICER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       320289                  NaN                NaN                                   NaN
+                THARP               KELLIE            NaN FEMALE 1974-12-26 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                THARP              BECKETT            NaN   MALE 2009-10-29 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                THARP              BRITTON            NaN   MALE 2009-10-29 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               THOMAS                JASON              F   Male 1985-08-13 00:00:00      76244         TX                                         ARCHITECT     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       166650                  NaN                NaN                                   NaN
+               THOMAS              CABRERA            NaN FEMALE 1988-10-28 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               THOMAS               NOELLA            NaN FEMALE 2019-09-05 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               THOMAS                ROMAN            NaN   MALE 2013-09-01 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              TOKERUD              TIMOTHY              C   Male 1967-04-28 00:00:00      76051         TX                      DIRECTOR OF DATA & ANALYTICS     8810        TX UHC Choice Plus PPO HDHP 1750  Full Time       188443                  NaN                NaN                                   NaN
+              TOKERUD               AUTUMN            NaN FEMALE 2010-12-10 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 VICK                 TODD              F   Male 1967-11-02 00:00:00 75036-7294         TX                           CHIEF FINANCIAL OFFICER     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       335000                  NaN                NaN                                   NaN
+                 VICK              SHELLEY            NaN FEMALE 1968-11-09 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 VICK              MELISSA            NaN FEMALE 2001-09-25 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+VILLIAPAKAM PREMSAGAR               DIPIKA              C Female 1991-04-27 00:00:00      75050         TX                    .NET & BI INTEGRATION ENGINEER     8810        TX       UHC Choice Plus PPO 250  Full Time       128750                  NaN                NaN                                   NaN
+                BAUGH                KIRAN            NaN   Male 2026-07-14 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+              WATKINS                JAMIE              S Female 1985-10-16 00:00:00      76082         AZ                      DIRECTOR, REVENUE OPERATIONS     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time       182700                  NaN                NaN                                   NaN
+              WATKINS                 CODY            NaN   MALE 1988-05-25 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               WERNER                 MARK              F   Male 1965-03-04 00:00:00 86336-7139         TX                       PRINCIPAL SOFTWARE ENGINEER     8810        AZ UHC Choice Plus PPO 500 (90%)  Full Time       234226                  NaN                NaN                                   NaN
+               WERNER               JORDAN            NaN FEMALE 2000-11-08 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               WERNER              MADISON            NaN FEMALE 2001-02-05 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               WERNER             KAYLEIGH            NaN FEMALE 2003-03-14 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               WERNER                 MARY            NaN FEMALE 1967-05-16 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                 WEST               CARMEN              E Female 1977-10-21 00:00:00      75061         TX                     CONTACT CENTER REPRESENTATIVE     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time      49401.9                  NaN                NaN                                   NaN
+               WILSON          CHRISTOPHER              F   Male 1982-03-28 00:00:00 75071-3376         TX              VICE PRESIDENT, INFORMATION SECURITY     8810        TX UHC Choice Plus PPO 500 (90%)  Full Time     222789.6                  NaN                NaN                                   NaN
+               VARNER             DANIELLE            NaN FEMALE 1986-08-23 00:00:00        NaN        NaN                                            Spouse      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+               WILSON             C. RYLEY            NaN   MALE 2023-11-10 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+           YOUNGBLOOD                 LISA              C Female 1972-06-09 00:00:00      75035        NaN                              DIRECTOR, OPERATIONS     8810        TX       UHC Choice Plus PPO 250  Full Time       182700                  NaN                NaN                                   NaN
+           YOUNGBLOOD              MADISON            NaN FEMALE 2009-06-11 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+           YOUNGBLOOD              KENNEDY            NaN FEMALE 2003-11-22 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+           YOUNGBLOOD                MILES            NaN   MALE 2002-01-29 00:00:00        NaN        NaN                                             Child      NaN       NaN                           NaN        NaN          NaN                  NaN                NaN                                   NaN
+                  NaN                  NaN            NaN    NaN                 NaN        NaN        NaN                                               NaN      NaN       NaN                           NaN        NaN  15503185.08                    0                NaN                                   NaN
+------------------------------------------------------------
+
+[Table 2: WC Tab (Rows: 24, Columns: 3)]
+ Row Labels Number of Employees Sum of Annual Pay 
+         IL                   1             135661
+       8810                   1             135661
+         CA                  10            1810554
+       8810                   9            1685718
+       8742                   1             124836
+         AZ                   1             234226
+       8810                   1             234226
+         TX                  85        12195513.08
+       8810                  84        12075513.08
+       8742                   1             120000
+         VA                   1             120000
+       8810                   1             120000
+         WA                   1             123600
+       5302                   1             123600
+         CO                   2             416448
+       8810                   2             416448
+         DE                   1             187460
+        953                   1             187460
+         AL                   1             158523
+       8810                   1             158523
+         NE                   1             121200
+       8742                   1             121200
+Grand Total                 104        15503185.08
+------------------------------------------------------------
+
+[Table 3: Sheet1 (Rows: 5, Columns: 1)]
+Payroll Frequency
+        Bi-Weekly
+     Semi-Monthly
+          Monthly
+           Weekly
+------------------------------------------------------------
