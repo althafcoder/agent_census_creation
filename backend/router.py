@@ -484,7 +484,17 @@ def build_missing_information_email_parts(
 
     # 3. SBC Section
     sbc_items = []
-    all_docs = (docs or []) + (roles.get("sbc", []) if roles else [])
+    raw_all_docs = (
+        list(docs or [])
+        + (list(roles.get("sbc", [])) if roles else [])
+        + (list(roles.get("plan_design", [])) if roles else [])
+    )
+    seen_doc_ids: set[int] = set()
+    all_docs = []
+    for d in raw_all_docs:
+        if id(d) not in seen_doc_ids:
+            seen_doc_ids.add(id(d))
+            all_docs.append(d)
     sbc_docs = [
         d for d in all_docs
         if "sbc" in d.name.lower() or "summary of benefits" in d.name.lower() or
@@ -493,6 +503,7 @@ def build_missing_information_email_parts(
     has_sbc_doc = bool(sbc_docs)
 
     from census_builder import _is_non_medical
+    from utils import _extract_plan_codes
 
     plan_candidates: set[str] = set()
     if census:
@@ -506,6 +517,25 @@ def build_missing_information_email_parts(
 
     active_plans = sorted(plan_candidates)
 
+    # Harvest any carrier plan-to-Rx code pairs from renewal/plan docs (e.g. 'EO-UI/RXK65S' links 'eoui' <-> 'k65s')
+    linked_plan_codes: dict[str, set[str]] = {}
+    for d in all_docs:
+        for m_pair in re.finditer(r"\b([A-Za-z]{2}-[A-Za-z0-9]{2,4})/([A-Za-z0-9]{3,8})\b", getattr(d, "text", "") or ""):
+            c_main = re.sub(r"[^a-z0-9]", "", m_pair.group(1).lower())
+            c_rx = re.sub(r"[^a-z0-9]", "", m_pair.group(2).lower())
+            c_rx_short = c_rx[2:] if c_rx.startswith("rx") and len(c_rx) >= 5 else c_rx
+            for k_code in (c_main, c_rx, c_rx_short):
+                linked_plan_codes.setdefault(k_code, set()).update({c_main, c_rx, c_rx_short})
+
+    def _num_in_sbc(n: str, sbc_norm: str) -> bool:
+        if re.search(rf"\b{re.escape(n)}\b", sbc_norm):
+            return True
+        if n == "100" and ("no charge" in sbc_norm or "0% coinsurance" in sbc_norm):
+            return True
+        if n in ("90", "80", "70", "60", "50") and f"{100 - int(n)}% coinsurance" in sbc_norm:
+            return True
+        return False
+
     if sbc_missing:
         missing_list = [p for p in sbc_missing if not _is_non_medical(p)]
     elif has_sbc_doc and active_plans:
@@ -513,18 +543,29 @@ def build_missing_information_email_parts(
         for p in active_plans:
             matched = False
             p_no_year = re.sub(r"\b202[3-9]\b", " ", p)
+            p_no_year = re.sub(r"\b(pos|ppo|hmo|epo|hsa|hdhp)\s+2[4-9]\b", r"\1", p_no_year, flags=re.I)
             p_low = p_no_year.lower()
-            model_codes = [
+            p_codes = set(_extract_plan_codes(p_no_year))
+            for c_tok in list(p_codes):
+                p_codes.update(linked_plan_codes.get(c_tok, set()))
+            long_model_codes = [
                 tok for tok in re.findall(r"\b[a-z]{1,5}\d{3,6}[a-z0-9]*\b", p_low)
                 if any(ch.isdigit() for ch in tok) and any(ch.isalpha() for ch in tok)
             ]
-            nums = re.findall(r"\d+", p_no_year)
+            # Strip trailing alphanumeric plan code tokens before extracting numeric benefit parameters
+            p_for_nums = re.sub(r"\b[A-Za-z]{1,4}\d{1,4}[A-Za-z0-9]*\b", " ", p_no_year)
+            nums = re.findall(r"\d+", p_for_nums)
             metals = [m for m in ["bronze", "silver", "gold", "platinum"] if m in p_low]
             carriers = [c for c in ["oxford", "anthem", "aetna", "cigna", "uhc", "united", "blue", "bcbs", "florida blue", "humana"] if c in p_low]
             for sbc in sbc_docs:
-                sbc_str = (sbc.name + " " + (sbc.text or "")[:1500]).lower()
-                if model_codes:
-                    if all(mc in sbc_str for mc in model_codes):
+                sbc_raw = (sbc.name + " " + (sbc.text or "")[:2500])
+                sbc_str = re.sub(r"(?<=\d),(?=\d)", "", sbc_raw.lower())
+                sbc_codes = _extract_plan_codes(sbc_raw)
+                if p_codes and (p_codes & sbc_codes):
+                    matched = True
+                    break
+                if long_model_codes:
+                    if all(mc in sbc_str for mc in long_model_codes):
                         matched = True
                         break
                     continue
@@ -533,11 +574,11 @@ def build_missing_information_email_parts(
                 if metals and not any(m in sbc_str for m in metals):
                     continue
                 if nums:
-                    key_nums = [n for n in nums if len(n) >= 3 or n in ("40", "80", "50", "60", "30", "100")]
-                    if key_nums and all(n in sbc_str for n in key_nums):
+                    key_nums = [n for n in nums if len(n) >= 3 or n in ("10", "15", "20", "25", "30", "35", "40", "45", "50", "60", "70", "80", "90", "100")]
+                    if key_nums and all(_num_in_sbc(n, sbc_str) for n in key_nums):
                         matched = True
                         break
-                    elif not key_nums and any(n in sbc_str for n in nums):
+                    elif not key_nums and any(_num_in_sbc(n, sbc_str) for n in nums):
                         matched = True
                         break
                 else:

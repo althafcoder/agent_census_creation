@@ -448,6 +448,50 @@ def _plan_deductibles(name: str) -> set[str]:
     return nums
 
 
+_PLAN_CODE_STOPWORDS = {
+    "plan", "plus", "pos", "ppo", "hmo", "hdhp", "hsa", "hra", "epo", "base", "buyup",
+    "gold", "silver", "bronze", "platinum", "choice", "direct", "open", "access", "care",
+    "cash", "medical", "health", "united", "cigna", "aetna", "anthem", "oxford", "blue",
+    "select", "core", "option", "network", "premier", "value", "standard", "total",
+    "high", "low", "deductible", "coinsurance", "copay", "member", "group",
+}
+
+
+def _extract_plan_codes(name: str) -> set[str]:
+    """Extract distinct carrier plan/Rx model codes (e.g. 'EOT6', 'EO-T6/RXK35S' -> {'eot6', 'rxk35s'},
+    'EOUI', 'EOSY', 'E2000i8022B') for deterministic cross-document plan matching."""
+    raw = clean(name)
+    if not raw:
+        return set()
+    codes: set[str] = set()
+    # 1. Hyphenated / slash-separated carrier plan/Rx codes (e.g. EO-T6/RXK35S, EO-SY/RXE83, EO-UI/RXK65S)
+    for m in re.finditer(r"\b([A-Za-z]{2}-[A-Za-z0-9]{2,4})(?:/([A-Za-z0-9]{3,8}))?\b", raw):
+        c1 = re.sub(r"[^a-z0-9]", "", m.group(1).lower())
+        if c1 and c1 not in _PLAN_CODE_STOPWORDS:
+            codes.add(c1)
+        if m.group(2):
+            c2 = re.sub(r"[^a-z0-9]", "", m.group(2).lower())
+            if c2 and c2 not in _PLAN_CODE_STOPWORDS:
+                codes.add(c2)
+                if c2.startswith("rx") and len(c2) >= 5:
+                    codes.add(c2[2:])
+    # 2. Alphanumeric mixed codes (letters + digits, e.g. EOT6, K35S, E83, E2000i8022B)
+    for tok in re.findall(r"\b[A-Za-z0-9]{3,14}\b", raw):
+        low = tok.lower()
+        if low in _PLAN_CODE_STOPWORDS or low.isdigit():
+            continue
+        has_alpha = any(ch.isalpha() for ch in low)
+        has_digit = any(ch.isdigit() for ch in low)
+        if has_alpha and has_digit and not re.fullmatch(r"202\d[a-z]?", low):
+            codes.add(low)
+    # 3. Trailing or standalone 4-letter uppercase carrier plan codes (e.g. EOSY, EOUI, EOUJ)
+    for tok in re.findall(r"\b[A-Z]{4}\b", raw):
+        low = tok.lower()
+        if low not in _PLAN_CODE_STOPWORDS:
+            codes.add(low)
+    return codes
+
+
 def match_plan(plan: str, candidates: list[str]) -> Optional[str]:
     """Confident plan matching only. Returns the candidate string or None."""
     if not clean(plan):
@@ -461,6 +505,14 @@ def match_plan(plan: str, candidates: list[str]) -> Optional[str]:
         hits = [c for c in candidates if plan_loose_key(c) == lk]
         if len(hits) == 1:
             return hits[0]
+
+    # Carrier plan code matching (e.g. 'NC G CHC + NG 30/60/2000/80 POS 26 EOT6' <-> 'EO-T6/RXK35S')
+    p_codes = _extract_plan_codes(plan)
+    if p_codes:
+        code_hits = [c for c in candidates if p_codes & _extract_plan_codes(c)]
+        if len(code_hits) == 1:
+            return code_hits[0]
+
     best, score = None, 0.0
     for c in candidates:
         r = SequenceMatcher(None, pk, plan_key(c)).ratio()

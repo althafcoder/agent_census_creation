@@ -82,11 +82,53 @@ def match_employees(emps: list[Person], invs: list[InvoiceRecord]) -> dict[int, 
     for i, e in enumerate(emps):
         if i in res or not emp_tok[i]:
             continue
-        cands = [j for j in by_tok.get(tuple(emp_tok[i]), []) if j not in used]
-        if cands:
-            cands.sort(key=lambda j: 0 if (e.dob and invs[j].dob == e.dob) else 1)
-            res[i] = (cands[0], 1.0)
-            used.add(cands[0])
+        tok_candidates = [tuple(emp_tok[i])]
+        if getattr(e, "middle_name", "") and e.last:
+            full_mid_tok = tuple(name_tokens(f"{e.first} {e.middle_name}", e.last))
+            if full_mid_tok and full_mid_tok not in tok_candidates:
+                tok_candidates.append(full_mid_tok)
+        for tk in tok_candidates:
+            cands = [j for j in by_tok.get(tk, []) if j not in used]
+            if cands:
+                cands.sort(key=lambda j: 0 if (e.dob and invs[j].dob == e.dob) else 1)
+                res[i] = (cands[0], 1.0)
+                used.add(cands[0])
+                break
+
+    # pass 2a - primary first-name token + last-name match when one side includes a middle name
+    for i, e in enumerate(emps):
+        if i in res or not e.first or not e.last:
+            continue
+        ef_parts = [re.sub(r"[^a-z]", "", p.lower()) for p in clean(e.first).split() if re.sub(r"[^a-z]", "", p.lower())]
+        el_clean = re.sub(r"[^a-z]", "", clean(e.last).lower())
+        em_clean = re.sub(r"[^a-z]", "", clean(getattr(e, "middle_name", "") or "").lower())
+        if not ef_parts or not el_clean:
+            continue
+        ef0 = ef_parts[0]
+        ef_mid = ef_parts[1] if len(ef_parts) > 1 else em_clean
+        # Ensure no other unmatched employee shares the same (primary_first, last)
+        competing = [
+            k for k, other in enumerate(emps)
+            if k != i and k not in res
+            and other.first and other.last
+            and re.sub(r"[^a-z]", "", clean(other.first).split()[0].lower()) == ef0
+            and re.sub(r"[^a-z]", "", clean(other.last).lower()) == el_clean
+        ]
+        if competing:
+            continue
+        for j, inv in enumerate(invs):
+            if j in used or not inv.first or not inv.last:
+                continue
+            if_parts = [re.sub(r"[^a-z]", "", p.lower()) for p in clean(inv.first).split() if re.sub(r"[^a-z]", "", p.lower())]
+            il_clean = re.sub(r"[^a-z]", "", clean(inv.last).lower())
+            if not if_parts or il_clean != el_clean or if_parts[0] != ef0:
+                continue
+            if_mid = if_parts[1] if len(if_parts) > 1 else ""
+            if ef_mid and if_mid and not (ef_mid.startswith(if_mid) or if_mid.startswith(ef_mid)):
+                continue
+            res[i] = (j, 1.0)
+            used.add(j)
+            break
 
     # pass 2b - preferred name / middle name / alias exact matching
     for i, e in enumerate(emps):
@@ -214,10 +256,41 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
     cnt = Counter()
     wp = Counter()
 
-    def renewal_for(plan: str, tier: str) -> tuple[Optional[float], str]:
+    def _lookup_member_renewal_rate(emp_obj: Optional[Person] = None, inv_obj: Optional[InvoiceRecord] = None) -> Optional[float]:
+        if not renewal or not getattr(renewal, "employee_rates", None):
+            return None
+        emp_rates = renewal.employee_rates
+        candidates: list[tuple[str, str, str]] = []
+        if emp_obj and (emp_obj.first or emp_obj.last):
+            fp = re.sub(r"[^a-z]", "", (emp_obj.first.split()[0] if emp_obj.first and emp_obj.first.split() else "").lower())
+            fc = re.sub(r"[^a-z]", "", (emp_obj.first or "").lower())
+            mc = re.sub(r"[^a-z]", "", (getattr(emp_obj, "middle_name", "") or "").lower())
+            lc = re.sub(r"[^a-z]", "", (emp_obj.last or "").lower())
+            if fp and lc:
+                candidates.append((fp, mc[:1] if mc else (fc[len(fp):len(fp)+1] if len(fc) > len(fp) else ""), lc))
+        if inv_obj and (inv_obj.first or inv_obj.last):
+            fp = re.sub(r"[^a-z]", "", (inv_obj.first.split()[0] if inv_obj.first and inv_obj.first.split() else "").lower())
+            parts = [re.sub(r"[^a-z]", "", p.lower()) for p in (inv_obj.first or "").split() if re.sub(r"[^a-z]", "", p.lower())]
+            mi = parts[1][:1] if len(parts) > 1 else ""
+            lc = re.sub(r"[^a-z]", "", (inv_obj.last or "").lower())
+            if fp and lc:
+                candidates.append((fp, mi, lc))
+        for fp, mi, lc in candidates:
+            for key_cand in (f"{fp}{mi}{lc}", f"{fp}{lc}", f"{lc}{fp}{mi}", f"{lc}{fp}"):
+                if key_cand in emp_rates:
+                    return emp_rates[key_cand].get("renewal_premium")
+            for k, rec in emp_rates.items():
+                if k.startswith(fp) and k.endswith(lc) and len(k) == len(fp) + len(lc) + 1:
+                    return rec.get("renewal_premium")
+        return None
+
+    def renewal_for(plan: str, tier: str, emp: Optional[Person] = None, inv: Optional[InvoiceRecord] = None) -> tuple[Optional[float], str]:
         if not renewal:
             return None, "no_doc"
         rp = match_plan(plan, renewal.plans) if plan else (renewal.plans[0] if len(renewal.plans) == 1 else None)
+        member_amt = _lookup_member_renewal_rate(emp, inv)
+        if member_amt is not None:
+            return member_amt, "ok"
         if not rp:
             return None, "unmapped"
         return renewal.rates.get((rp, tier)), "ok"
@@ -305,7 +378,7 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     exc("Eligibility conflicts", who, f"Marked {cov}, active on invoice")
                     cnt["eligibility_conflict"] += 1
                     tier_for_renewal = inv.tier if inv.tier in ACTIVE_TIERS else tier_from_deps(e)
-                    amt, status = renewal_for(rr.plan, tier_for_renewal)
+                    amt, status = renewal_for(rr.plan, tier_for_renewal, emp=e, inv=inv)
                     if status == "ok":
                         rr.renewal_premium = amt
                 else:
@@ -375,7 +448,7 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
             if cov not in NON_ENROLLED:
                 tier_for_renewal = (inv.tier if inv.tier in ACTIVE_TIERS else
                                     cov if cov in ACTIVE_TIERS else tier_from_deps(e))
-                amt, status = renewal_for(rr.plan, tier_for_renewal)
+                amt, status = renewal_for(rr.plan, tier_for_renewal, emp=e, inv=inv)
                 if status == "unmapped":
                     rr.notes.append(("Renewal Plan Match Not Identified", True))
                     F.renewal_unmapped_plans.add(rr.plan or "(no plan name)")
@@ -494,7 +567,7 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
 
             rr.notes.append((note_text, True))
             if renewal:
-                amt, status = renewal_for(r.plan, r.tier or "EE") if (r.tier or "EE") in ACTIVE_TIERS else (None, "none")
+                amt, status = renewal_for(r.plan, r.tier or "EE", inv=r) if (r.tier or "EE") in ACTIVE_TIERS else (None, "none")
                 if status == "ok":
                     rr.renewal_premium = amt
                 elif status == "unmapped":
@@ -546,6 +619,31 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                 amt, st = renewal_for(p, t)
                 if st == "ok" and amt is not None:
                     F.renewal_rates[(p, t)] = amt
+        # Fallback for member-level / age-banded renewals where an employee's census/invoice tier
+        # differs from the renewal appendix tier code: populate F.renewal_rates from matched employee renewal_premiums
+        emp_ren_bucket: dict[tuple[str, str], list[float]] = defaultdict(list)
+        for p_person in census.people:
+            if p_person.role != "EE":
+                continue
+            rr_p = results.get(id(p_person))
+            if rr_p and rr_p.plan and rr_p.renewal_premium is not None:
+                t_std = std_coverage(rr_p.tier or p_person.coverage)
+                if t_std in ACTIVE_TIERS:
+                    emp_ren_bucket[(rr_p.plan, t_std)].append(round(rr_p.renewal_premium, 2))
+        for k_pt, vals in emp_ren_bucket.items():
+            if k_pt not in F.renewal_rates and vals:
+                F.renewal_rates[k_pt] = _modal(vals)
+        # Record current -> renewal plan mapping on F.plan_display_names / F.notes when present
+        if getattr(renewal, "plan_mapping", None):
+            for p in sorted(plans):
+                if not p:
+                    continue
+                matched_curr = match_plan(p, list(renewal.plan_mapping.keys()))
+                if matched_curr and renewal.plan_mapping.get(matched_curr):
+                    ren_code = renewal.plan_mapping[matched_curr]
+                    base_disp = F.plan_display_names.get(p, p)
+                    if ren_code not in base_disp:
+                        F.plan_display_names[p] = f"{base_disp} (Renewal: {ren_code})"
 
     # Deterministic Premium Reconciliation calculation
     matched_emps = [e for e in census.employees if not e.invoice_only and results.get(id(e)) and results[id(e)].inv is not None]

@@ -13,12 +13,13 @@ log = logging.getLogger("census.prospect")
 
 LABELS = {
     "effective_date": ["proposedeffectivedate", "requestedeffectivedate", "effectivedate",
-                       "coverageeffectivedate", "proposedeffective", "desiredeffectivedate"],
+                       "coverageeffectivedate", "proposedeffective", "desiredeffectivedate", "ed"],
     "sic": ["siccode", "sicnaicscode", "sicnaics", "naicscode", "sic", "naics", "siccodenaics"],
-    "company": ["companyname", "clientlegalname", "legalname", "prospectname", "employername", "nameofcompany", "businessname",
+    "company": ["companyname", "companylegalentityname", "legalentityname", "legalentity",
+                "clientlegalname", "legalname", "prospectname", "employername", "nameofcompany", "businessname",
                 "groupname", "organizationname", "legalbusinessname", "nameofemployer", "company", "employer"],
     "address": ["address", "streetaddress", "businessaddress", "mailingaddress", "addressline1", "address1",
-                "physicaladdress", "hqaddress", "locationaddress", "locationaddresses",
+                "physicaladdress", "hqaddress", "hqlegaladdress", "locationaddress", "locationaddresses",
                 "pleaseattachalistwithalllocationaddresses"],
     "city": ["city"],
     "state": ["state", "states", "primarystate"],
@@ -99,6 +100,9 @@ def _kv_pairs(doc: RawDoc) -> dict[str, str]:
         grid = t.df.values.tolist()
         for row in grid:
             cells = [clean(c) for c in row]
+            row_keys = {norm_key(c) for c in cells if c}
+            if len(row_keys & {"firstname", "lastname", "dateofbirth", "dob", "membernumber", "relationship", "relationshipdesc"}) >= 2:
+                continue
             for i, c in enumerate(cells[:-1]):
                 if c and len(c) <= 45:
                     nxt = next((x for x in cells[i + 1:] if x), "")

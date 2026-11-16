@@ -747,6 +747,20 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
     used = False
     body_df = body(df, hdr)
     is_stacked_multi_benefit = _infer_table_benefit_lines(body_df, hdr, st)
+    med_col_indices = [
+        idx for idx, lab in enumerate(hdr.labels)
+        if norm_key(lab).startswith("medical")
+        and any(w in norm_key(lab) for w in ("plan", "coverage", "effective", "tier", "option", "elected", "marketing"))
+        and "waive" not in norm_key(lab)
+        and "term" not in norm_key(lab)
+    ]
+    anc_col_indices = [
+        idx for idx, lab in enumerate(hdr.labels)
+        if norm_key(lab).startswith(("dental", "vision", "life", "std", "ltd", "accident", "critical", "disability"))
+        and any(w in norm_key(lab) for w in ("plan", "coverage", "effective", "tier", "option", "elected", "marketing"))
+        and "term" not in norm_key(lab)
+    ]
+    is_wide_multi_benefit = bool(med_col_indices and anc_col_indices)
 
     for _, series in body_df.iterrows():
         r = _Row(hdr, series)
@@ -788,8 +802,22 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
             ((pt_val or p_val) and _is_non_medical(p_val, pt_val))
             or (p_val and p_val.strip().lower() in st.inferred_non_med_plans)
         )
+        if is_wide_multi_benefit and not is_non_med:
+            has_med_col_data = any(
+                c < len(series) and not is_blank(series.iloc[c])
+                and clean(series.iloc[c]).lower() not in ("none", "n/a", "na", "waived", "declined")
+                for c in med_col_indices
+            )
+            has_anc_col_data = any(
+                c < len(series) and not is_blank(series.iloc[c])
+                and clean(series.iloc[c]).lower() not in ("none", "n/a", "na", "waived", "declined")
+                for c in anc_col_indices
+            )
+            if not has_med_col_data and has_anc_col_data:
+                is_non_med = True
         has_benefit_lines = bool(
-            dep_listing or is_stacked_multi_benefit or "plan_type" in cols or "plan_category" in cols
+            dep_listing or is_stacked_multi_benefit or is_wide_multi_benefit
+            or "plan_type" in cols or "plan_category" in cols
             or ("plan" in cols and "premium" in cols)
         )
         cov_assoc = {

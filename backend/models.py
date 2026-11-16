@@ -121,6 +121,8 @@ class RenewalDoc:
     rates: dict = field(default_factory=dict)   # (plan_name, tier) -> premium
     plans: list[str] = field(default_factory=list)
     age_banded: bool = False
+    employee_rates: dict = field(default_factory=dict)  # norm_emp_key -> {current_plan, current_premium, renewal_plan, renewal_premium, tier, raw_name}
+    plan_mapping: dict = field(default_factory=dict)    # current_plan -> renewal_plan
 
 
 @dataclass

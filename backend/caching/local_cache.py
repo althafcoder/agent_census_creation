@@ -26,6 +26,7 @@ try:
         PROMPT_CACHE_ENABLED,
         PROMPT_CACHE_TTL_HOURS,
         SCHEMA_VERSION,
+        get_code_fingerprint,
         get_instruction_hash,
     )
     from .logger import log_local_hit
@@ -42,6 +43,7 @@ except ImportError:
         PROMPT_CACHE_ENABLED,
         PROMPT_CACHE_TTL_HOURS,
         SCHEMA_VERSION,
+        get_code_fingerprint,
         get_instruction_hash,
     )
     from caching.logger import log_local_hit
@@ -111,14 +113,42 @@ class LocalPromptCache:
         schema_version: str | None = None,
         parser_version: str | None = None,
         instruction_version: str | None = None,
+        effort: str | None = None,
+        output_schema: dict[str, Any] | None = None,
     ) -> str:
-        """Compute deterministic SHA-256 hash incorporating prompt, model, instruction, schema, and parser versions."""
+        """Compute deterministic SHA-256 hash incorporating prompt, model, instruction, schema, code fingerprint, and effort."""
         app_v = app_version or APP_VERSION
         schema_v = schema_version or SCHEMA_VERSION
-        parser_v = parser_version or PARSER_VERSION
+        parser_v = parser_version or f"{PARSER_VERSION}:{get_code_fingerprint()}"
         inst_v = instruction_version or get_instruction_hash()
-        normalized = f"{model.strip().lower()}:::{inst_v}:::{schema_v}:::{parser_v}:::{app_v}:::{prompt.strip()}"
+        extra = ""
+        if effort or output_schema:
+            schema_str = json.dumps(output_schema, sort_keys=True) if output_schema else ""
+            extra = f":::{effort or ''}:::{schema_str}"
+        normalized = f"{model.strip().lower()}:::{inst_v}:::{schema_v}:::{parser_v}:::{app_v}{extra}:::{prompt.strip()}"
         return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+    def invalidate(
+        self,
+        prompt: str,
+        model: str,
+        effort: str | None = None,
+        output_schema: dict[str, Any] | None = None,
+    ) -> bool:
+        """Evict a specific prompt entry from the local SQLite cache when validation fails."""
+        prompt_hash = self.compute_hash(prompt, model, effort=effort, output_schema=output_schema)
+        try:
+            self._ensure_init()
+            if not self._initialized:
+                return False
+            with self._lock:
+                with self._get_connection(timeout=5.0) as conn:
+                    with conn:
+                        cur = conn.execute("DELETE FROM prompt_cache WHERE prompt_hash = ?", (prompt_hash,))
+                        return cur.rowcount > 0
+        except Exception as exc:
+            log.debug("Cache invalidation skipped: %s", exc)
+            return False
 
     def get(
         self,
@@ -126,6 +156,8 @@ class LocalPromptCache:
         model: str,
         step_name: str = "",
         bypass_cache: bool = False,
+        effort: str | None = None,
+        output_schema: dict[str, Any] | None = None,
     ) -> Any | None:
         """Retrieve cached response if available, not expired, and not bypassed."""
         bypass_active = bypass_cache or BYPASS_LOCAL_CACHE or (os.getenv("BYPASS_LOCAL_CACHE", "false").lower() in ("true", "1", "yes"))
@@ -136,7 +168,9 @@ class LocalPromptCache:
 
         t0 = time.perf_counter()
         inst_hash = get_instruction_hash()
-        prompt_hash = self.compute_hash(prompt, model, instruction_version=inst_hash)
+        prompt_hash = self.compute_hash(
+            prompt, model, instruction_version=inst_hash, effort=effort, output_schema=output_schema
+        )
 
         try:
             self._ensure_init()
@@ -207,13 +241,17 @@ class LocalPromptCache:
         response_data: Any,
         step_name: str = "",
         tokens_saved_estimate: int = 0,
+        effort: str | None = None,
+        output_schema: dict[str, Any] | None = None,
     ) -> None:
         """Store prompt and parsed response in persistent SQLite cache."""
         if not PROMPT_CACHE_ENABLED:
             return
 
         inst_hash = get_instruction_hash()
-        prompt_hash = self.compute_hash(prompt, model, instruction_version=inst_hash)
+        prompt_hash = self.compute_hash(
+            prompt, model, instruction_version=inst_hash, effort=effort, output_schema=output_schema
+        )
         try:
             self._ensure_init()
             if not self._initialized:

@@ -149,6 +149,29 @@ def test_cache_metrics_and_summary():
     print("[PASS] test_cache_metrics_and_summary passed.")
 
 
+def test_code_fingerprint_and_cache_invalidation():
+    """Verify dynamic code fingerprint hashing, effort/schema differentiation, and targeted eviction (Upgrade 1)."""
+    from caching.config import get_code_fingerprint
+    fp = get_code_fingerprint()
+    assert isinstance(fp, str) and len(fp) == 16
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        cache = LocalPromptCache(db_dir=Path(tmp_dir), ttl_hours=24)
+        prompt = "Extract prospect fields from document..."
+        model = "claude-opus-5-5"
+
+        h_high = cache.compute_hash(prompt, model, effort="high")
+        h_low = cache.compute_hash(prompt, model, effort="low")
+        h_schema = cache.compute_hash(prompt, model, effort="high", output_schema={"type": "object"})
+        assert h_high != h_low
+        assert h_high != h_schema
+
+        cache.set(prompt, model, {"sic_naics_code": "4142"}, step_name="prospect", effort="high")
+        assert cache.get(prompt, model, step_name="prospect", effort="high") == {"sic_naics_code": "4142"}
+        assert cache.invalidate(prompt, model, effort="high") is True
+        assert cache.get(prompt, model, step_name="prospect", effort="high") is None
+
+
 if __name__ == "__main__":
     test_local_prompt_cache_lifecycle()
     test_anthropic_cache_message_builder()

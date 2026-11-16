@@ -77,12 +77,29 @@ def get_instruction_hash() -> str:
     return h.hexdigest()[:16]
 
 
+def get_code_fingerprint() -> str:
+    """Return dynamic SHA-256 fingerprint of core extraction and parser modules for automatic cache invalidation."""
+    import hashlib
+    h = hashlib.sha256()
+    h.update(PARSER_VERSION.encode("utf-8"))
+    for mod_name in ("llm_client.py", "prospect.py", "invoice_parser.py", "renewal_parser.py", "census_builder.py", "classifier.py"):
+        mod_path = BACKEND_DIR / mod_name
+        if mod_path.is_file():
+            try:
+                h.update(mod_name.encode("utf-8"))
+                h.update(mod_path.read_bytes())
+            except Exception:
+                pass
+    return h.hexdigest()[:16]
+
+
 def get_cache_settings() -> dict:
     """Return dictionary representation of current caching settings."""
     return {
         "app_version": APP_VERSION,
         "schema_version": SCHEMA_VERSION,
         "parser_version": PARSER_VERSION,
+        "code_fingerprint": get_code_fingerprint(),
         "instruction_version": INSTRUCTION_VERSION,
         "instruction_hash": get_instruction_hash(),
         "bypass_local_cache": BYPASS_LOCAL_CACHE,

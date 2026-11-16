@@ -172,6 +172,25 @@ def test_complex_reconciliation_high_effort_conflict_flagging():
                 print("[PASS] Complex reconciliation high-effort & conflict flagging test passed.")
 
 
+def test_dynamic_source_text_grounding_rejects_ungrounded_sic():
+    """Verify dynamic source-text grounding strips ungrounded calendar-year/hallucinated SIC codes (Upgrade 2)."""
+    ungrounded_source = "Client Legal Name: US Bus Charter & Limo, Inc.\nChild DOB: 03/02/2022\nSIC Code: \n"
+    res_bad = _validate_prospect_dict(
+        {"company_name": "US Bus Charter & Limo, Inc.", "sic_naics_code": "2022", "ein": "99-9999999"},
+        source_text=ungrounded_source,
+    )
+    assert res_bad["sic_naics_code"] == ""
+    assert res_bad["ein"] == ""
+
+    grounded_source = "Effective Date: 4/1/2026\nSIC Code: 4142   Zip Code: 07733\nFEIN: 26-0156156"
+    res_good = _validate_prospect_dict(
+        {"company_name": "US Bus Charter & Limo, Inc.", "sic_naics_code": "4142", "ein": "26-0156156"},
+        source_text=grounded_source,
+    )
+    assert res_good["sic_naics_code"] == "4142"
+    assert res_good["ein"] == "26-0156156"
+
+
 if __name__ == "__main__":
     test_json_parsing()
     test_anthropic_call_mock()

@@ -417,6 +417,26 @@ def dob_discrepancy_items(
     return items
 
 
+def gender_discrepancy_items(census: Any) -> list[ClarificationItem]:
+    """Flag any canonical census member whose gender has an unresolved conflict across sources (Upgrade 4)."""
+    if census is None:
+        return []
+    items: list[ClarificationItem] = []
+    for p in getattr(census, "people", []) or []:
+        if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False):
+            continue
+        if str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_"):
+            continue
+        if getattr(p, "gender_resolution_status", "") == "CONFLICT":
+            who_label = _display(p)
+            cands = getattr(p, "gender_candidates", []) or []
+            vals = sorted({c.get("normalized") for c in cands if c.get("normalized") in ("M", "F")})
+            val_str = "/".join(vals) if vals else "conflicting values"
+            text = f"{who_label}: Conflicting gender values ({val_str}) found across submission sources. Please confirm the correct gender."
+            items.append(ClarificationItem("GENDER_DISCREPANCY", [who_label], text, {"person": who_label, "values": vals}))
+    return items
+
+
 # ----------------------------------------- 6. invoice validity / recency -----
 _EMAIL_SENT_DATE_RE = re.compile(
     r"Sent\s*:\s*(?:[A-Za-z]+,\s*)?([A-Za-z]+\s+\d{1,2},\s+20\d{2}|\d{1,2}/\d{1,2}/20\d{2,4})",
@@ -490,17 +510,158 @@ def invoice_recency_items(
     return items
 
 
+# --------------------- 7. legal-entity mismatch & missing SIC ----------------
+_CORP_STOPWORDS = {
+    "llc", "inc", "incorporated", "corp", "corporation", "ltd", "lp", "llp", "pc", "pa",
+    "pllc", "co", "company", "group", "the", "and", "of", "dba", "services", "service",
+    "enterprises", "holdings", "international", "usa",
+}
+
+
+def _entity_tokens(name: str) -> set[str]:
+    from utils import clean
+    return {
+        t.lower()
+        for t in re.findall(r"[A-Za-z0-9]{2,}", clean(name))
+        if t.lower() not in _CORP_STOPWORDS
+    }
+
+
+def _entities_compatible(a: str, b: str) -> bool:
+    ta, tb = _entity_tokens(a), _entity_tokens(b)
+    if not ta or not tb:
+        return True
+    if ta & tb:
+        return True
+    raw_a = re.sub(r"[^a-z0-9]", "", (a or "").lower())
+    raw_b = re.sub(r"[^a-z0-9]", "", (b or "").lower())
+    if any(len(t) >= 4 and t in raw_b for t in ta) or any(len(t) >= 4 and t in raw_a for t in tb):
+        return True
+    return False
+
+
+def legal_entity_mismatch_items(
+    prospect: Any,
+    roles: Optional[dict] = None,
+    docs: Optional[Iterable[Any]] = None,
+) -> list[ClarificationItem]:
+    """Detect when the prospect legal entity name (from RFP/email/GHQ) differs from the entity/group name
+    on the submitted carrier census, invoice, or renewal documents."""
+    from utils import clean, norm_key
+    if prospect is None:
+        return []
+    p_comp = clean(getattr(prospect, "company", "") or "")
+    p_dba = clean(getattr(prospect, "dba", "") or "")
+    if not p_comp:
+        return []
+
+    roles = roles or {}
+    observed_entities: list[tuple[str, str]] = []  # (entity_name, source_label)
+
+    # 1. Check census table 'Company Name' / 'Legal Entity' / 'Employer Name' columns
+    for d in roles.get("census") or []:
+        for tbl in getattr(d, "tables", []) or []:
+            df = getattr(tbl, "df", None)
+            if df is None or df.empty:
+                continue
+            for r_i in range(min(10, len(df))):
+                row_vals = [clean(v) for v in df.iloc[r_i].tolist()]
+                comp_col = next(
+                    (c_i for c_i, lab in enumerate(row_vals)
+                     if norm_key(lab) in ("companyname", "legalentity", "legalentityname", "employername", "groupname", "clientname")),
+                    None,
+                )
+                if comp_col is not None and r_i + 1 < len(df):
+                    for data_i in range(r_i + 1, min(r_i + 15, len(df))):
+                        val = clean(df.iloc[data_i, comp_col])
+                        if val and len(val) >= 4 and norm_key(val) not in ("companyname", "nan", "none"):
+                            observed_entities.append((val, "census"))
+                            break
+                    break
+
+    # 2. Check medical invoice group / customer headers
+    for d in roles.get("invoice") or []:
+        txt = getattr(d, "text", "") or ""
+        m_grp = re.search(
+            r"\b\d{5,9}\s*-\s*([A-Z][A-Z0-9\s,\.&'\-]{4,60}?\b(?:INC|LLC|CORP|LTD|LP|PC|PA|PLLC|CENTER|COMPANY)\b)",
+            txt,
+        )
+        if m_grp:
+            observed_entities.append((clean(m_grp.group(1)), "medical invoice"))
+            continue
+        m_cust = re.search(
+            r"^\s*([A-Z][A-Z0-9\s,\.&'\-]{4,60}?\b(?:INC|LLC|CORP|LTD|LP|PC|PA|PLLC)\b)\s*\n\s*Customer\s*No\s*:",
+            txt,
+            re.M,
+        )
+        if m_cust:
+            observed_entities.append((clean(m_cust.group(1)), "medical invoice"))
+
+    # 3. Check renewal customer / employer name headers
+    for d in roles.get("renewal") or []:
+        txt = getattr(d, "text", "") or ""
+        m_ren = re.search(r"Customer\s*Name\s*:\s*([A-Za-z0-9\s,\.&'\-]+?)(?:\s+State\s*:|\n|$)", txt, re.I)
+        if m_ren and len(clean(m_ren.group(1))) >= 4:
+            observed_entities.append((clean(m_ren.group(1)), "renewal"))
+
+    mismatched: list[tuple[str, str]] = []
+    for ent, src_lbl in observed_entities:
+        if not _entities_compatible(p_comp, ent) and (not p_dba or not _entities_compatible(p_dba, ent)):
+            mismatched.append((ent, src_lbl))
+
+    if not mismatched:
+        return []
+
+    # Prefer a well-spaced entity name for display (e.g. 'RALEIGH HAND REHABILITATION CENTER, INC')
+    spaced_cands = [ent for ent, _ in mismatched if " " in ent]
+    best_ent = max(spaced_cands, key=len) if spaced_cands else mismatched[0][0]
+    src_labels = []
+    for _, s_lbl in mismatched:
+        if s_lbl not in src_labels:
+            src_labels.append(s_lbl)
+    src_str = _join_names(src_labels) if src_labels else "carrier documents"
+    text = (
+        f"Legal Entity Mismatch: The submission identifies the prospect legal entity as {p_comp}, "
+        f"whereas the submitted {src_str} list {best_ent}. Please clarify the legal-entity relationship "
+        f"(e.g., DBA, parent/subsidiary, or common ownership) and confirm the applying legal entity."
+    )
+    return [ClarificationItem("LEGAL_ENTITY_MISMATCH", [], text, {
+        "prospect_company": p_comp,
+        "document_entity": best_ent,
+        "sources": src_labels,
+    })]
+
+
+def missing_sic_items(prospect: Any) -> list[ClarificationItem]:
+    """Flag when the prospect's 4-digit SIC code is missing from the submission."""
+    from utils import clean
+    if prospect is None:
+        return []
+    p_comp = clean(getattr(prospect, "company", "") or "")
+    p_sic = clean(getattr(prospect, "sic", "") or "")
+    if not p_comp or p_sic:
+        return []
+    text = (
+        f"Missing SIC Code: The 4-digit Standard Industrial Classification (SIC) code for {p_comp} "
+        f"was not provided in the submission. Please provide the prospect's 4-digit SIC code."
+    )
+    return [ClarificationItem("MISSING_SIC", [], text, {"company": p_comp})]
+
+
 # ------------------------------------------------------------ aggregate -----
 def collect_clarifications(prospect: Any, census: Any, roles: Optional[dict] = None,
                            docs: Optional[Iterable[Any]] = None, invoice_records: Optional[Iterable[Any]] = None,
                            extra_payroll_names: Optional[Iterable[tuple[str, str]]] = None,
                            selected_invoices: Optional[Iterable[Any]] = None) -> list[ClarificationItem]:
     items: list[ClarificationItem] = []
-    for fn in (lambda: unresolved_coverage_items(census),
+    for fn in (lambda: legal_entity_mismatch_items(prospect, roles, docs),
+               lambda: missing_sic_items(prospect),
+               lambda: unresolved_coverage_items(census),
                lambda: inferred_coverage_items(census),
                lambda: payroll_not_on_census_items(census, roles, docs, invoice_records, extra_payroll_names),
                lambda: headcount_items(prospect, census),
                lambda: dob_discrepancy_items(census, roles, docs, invoice_records),
+               lambda: gender_discrepancy_items(census),
                lambda: invoice_recency_items(selected_invoices, prospect, roles, docs)):
         try:
             items.extend(fn())
@@ -514,6 +675,14 @@ def missing_from_email(items: list[ClarificationItem], email_text: str) -> list[
     low = (email_text or "").lower()
     gaps = []
     for it in items:
+        if it.category == "LEGAL_ENTITY_MISMATCH":
+            if "legal entity" not in low and "legal-entity" not in low:
+                gaps.append(it.text)
+            continue
+        if it.category == "MISSING_SIC":
+            if "sic" not in low:
+                gaps.append(it.text)
+            continue
         if it.category == "HEADCOUNT_MISMATCH":
             if "headcount" not in low:
                 gaps.append(it.text)

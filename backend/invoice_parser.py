@@ -657,6 +657,71 @@ def _records_from_carrier_statement(doc: RawDoc) -> tuple[list[InvoiceRecord], d
 
     matches = list(entry_start_re.finditer(text))
     if not matches:
+        # Check for UHC / masked-ID carrier statement format:
+        # <policy_no> <Last, First> <Plan_Line_1> <*****1234> <Tier> <Status> $<Charge> [$<Total>]
+        # followed by 1-2 wrapped plan description lines (e.g. '30/60/2000/80 POS 26' / 'EOT6')
+        uhc_line_re = re.compile(
+            r"^\s*(\d{5,10})\s+([A-Za-z'\-\.]+,\s*[A-Za-z'\-\. ]+?)\s+"
+            r"([A-Za-z0-9][^\*]+?)\s+(\*{2,}\d{2,6})\s+"
+            r"(EE|EC|ES|ESC|FAM|E|E1D|E2D|E3D)\s+([AC])\s+(?:[\d\.]+\s+)?\$([\d,]+\.\d{2})"
+        )
+        lines = text.splitlines()
+        uhc_recs: list[InvoiceRecord] = []
+        from census_builder import _is_non_medical
+        m_cov = re.search(r"Coverage Period:\s*(\d{1,2}/\d{1,2}/\d{4})\s*-\s*(\d{1,2}/\d{1,2}/\d{4})", text, re.I)
+        cov_period = f"{m_cov.group(1)}-{m_cov.group(2)}" if m_cov else ""
+        i_ln = 0
+        while i_ln < len(lines):
+            m_u = uhc_line_re.match(lines[i_ln])
+            if not m_u:
+                i_ln += 1
+                continue
+            pol_no = m_u.group(1).strip()
+            r_name = " ".join(m_u.group(2).split())
+            plan_parts = [clean(m_u.group(3))]
+            sub_id_masked = m_u.group(4).strip()
+            tier_raw = m_u.group(5).strip().upper()
+            st_code = m_u.group(6).strip().upper()
+            charge_val = float(m_u.group(7).replace(",", ""))
+            i_ln += 1
+            while i_ln < len(lines):
+                nxt = lines[i_ln].strip()
+                if not nxt:
+                    break
+                if uhc_line_re.match(lines[i_ln]) or re.match(
+                    r"^(?:Total|Subtotal|Questions|Toll\s+free|Page\s+\d|Customer\s+No|Invoice\s+No|Bill\s+Group|Coverage\s+Period|Due\s+Date|Details|Current\s+Detail|Policy|No\.)",
+                    nxt,
+                    re.I,
+                ):
+                    break
+                if len(nxt) <= 45 and not nxt.startswith("$"):
+                    plan_parts.append(clean(nxt))
+                    i_ln += 1
+                else:
+                    break
+            full_plan = " ".join(p for p in plan_parts if p)
+            if _is_non_medical(full_plan) or charge_val < 100.0:
+                continue
+            if tier_raw in ("E1D", "E2D", "E3D", "EC"):
+                tier = "EC"
+            elif tier_raw in ("ESC", "FAM"):
+                tier = "FAM"
+            elif tier_raw == "ES":
+                tier = "ES"
+            else:
+                tier = "EE"
+            f_name, l_name = split_full_name(r_name)
+            st_str = "COBRA" if st_code == "C" else "Active"
+            uhc_recs.append(InvoiceRecord(
+                first=f_name, last=l_name, raw_name=r_name,
+                tier=tier, plan=full_plan, raw_plan=full_plan,
+                premium=charge_val, current_premium=charge_val,
+                service_period=cov_period, total_amount=charge_val,
+                status=st_str, sub_id=sub_id_masked, group_no=pol_no,
+                source=doc.name,
+            ))
+        if uhc_recs:
+            return uhc_recs, {"service_period": cov_period}
         return [], {}
 
     meta: dict[str, Any] = {}
@@ -786,7 +851,24 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
             carrier_meta.update(m_meta)
             log.info("Successfully extracted %d structured records from Meritain statement: %s", len(recs), doc.name)
 
-    # 1. LLM-First semantic extraction (Matching Copilot Studio)
+    # 1. LLM-First semantic extraction (Matching Copilot Studio) with Mathematical Control-Total Verification (Upgrade 3)
+    det_recs: list[InvoiceRecord] = []
+    if not recs:
+        m_recs, m_meta = _records_from_meritain_statement(doc)
+        c_recs, c_meta = _records_from_carrier_statement(doc)
+        if m_recs and not c_recs:
+            c_recs = m_recs
+            c_meta.update(m_meta)
+        if c_meta:
+            carrier_meta.update(c_meta)
+        det_recs = (
+            c_recs
+            or _records_from_peo_employee_details(doc)
+            or _records_from_peo_statement(doc)
+            or _records_from_tables(doc)
+            or _records_from_text(doc)
+        )
+
     if not recs and LLM_FIRST and USE_LLM_FALLBACK:
         try:
             log.info("Applying LLM-First semantic extraction for invoice: %s", doc.name)
@@ -796,15 +878,22 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
         except Exception as exc:
             log.warning("LLM-First invoice extraction failed for %s: %s (falling back to statement parsers)", doc.name, exc)
 
+    # Upgrade 3: Mathematical Control-Total Verification against printed statement header charges
+    printed_cur = carrier_meta.get("current_charges")
+    if printed_cur is not None and float(printed_cur) > 0 and recs and det_recs:
+        llm_sum = round(sum((r.premium or 0.0) for r in recs), 2)
+        det_sum = round(sum((r.premium or 0.0) for r in det_recs), 2)
+        target_tot = float(printed_cur)
+        if abs(llm_sum - target_tot) > 0.05 and abs(det_sum - target_tot) < abs(llm_sum - target_tot):
+            log.info(
+                "Control-Total Verification (%s): switching to deterministic invoice records (det_sum=%.2f vs llm_sum=%.2f, target=%.2f)",
+                doc.name, det_sum, llm_sum, target_tot,
+            )
+            recs = det_recs
+
     # 2. Rule / statement parser fallback if LLM not used or yielded 0 records
     if not recs:
-        m_recs, m_meta = _records_from_meritain_statement(doc)
-        carrier_recs, carrier_meta = _records_from_carrier_statement(doc)
-        if m_recs and not carrier_recs:
-            carrier_recs = m_recs
-            carrier_meta.update(m_meta)
-        recs = (carrier_recs or _records_from_peo_employee_details(doc) or _records_from_peo_statement(doc)
-                or _records_from_tables(doc) or _records_from_text(doc) or _records_from_llm(doc))
+        recs = det_recs or (_records_from_llm(doc) if USE_LLM_FALLBACK else [])
 
 
     text = (doc.text or "")[:4000]

@@ -365,8 +365,9 @@ def extract_json(
     bypass_cache: bool = False,
     output_schema: dict[str, Any] | None = None,
     use_structured_output: bool = False,
+    validator_fn: Any | None = None,
 ) -> Any:
-    """Execute prompt via Anthropic Claude and return parsed JSON data."""
+    """Execute prompt via Anthropic Claude and return parsed (and deterministically validated) JSON data."""
     if not ANTHROPIC_API_KEY:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured in .env.")
 
@@ -374,15 +375,27 @@ def extract_json(
     step_name = _CURRENT_STEP.get() or "llm_extraction"
     file_name = _CURRENT_FILE.get() or "benefits_submission"
     effective_effort = effort or ANTHROPIC_EFFORT or "high"
+    schema_for_cache = output_schema if use_structured_output else None
 
     # 1. Tier 1: Check local persistent prompt cache (exact match, 0 tokens, <1ms)
     if not bypass_cache and not ANTHROPIC_API_KEY.startswith("sk-ant-test"):
         try:
             from caching import get_local_cache
-            cached = get_local_cache().get(prompt, ANTHROPIC_MODEL, step_name=step_name, bypass_cache=bypass_cache)
+            cache_inst = get_local_cache()
+            cached = cache_inst.get(
+                prompt, ANTHROPIC_MODEL, step_name=step_name, bypass_cache=bypass_cache,
+                effort=effective_effort, output_schema=schema_for_cache,
+            )
             if cached is not None:
-                log.info("⚡ [CACHE HIT] [%s] using instruction: '%s' (file: %s)", step_name, doc_name, file_name)
-                return cached
+                if callable(validator_fn):
+                    try:
+                        cached = validator_fn(cached)
+                    except Exception:
+                        cache_inst.invalidate(prompt, ANTHROPIC_MODEL, effort=effective_effort, output_schema=schema_for_cache)
+                        cached = None
+                if cached is not None:
+                    log.info("⚡ [CACHE HIT] [%s] using instruction: '%s' (file: %s)", step_name, doc_name, file_name)
+                    return cached
         except Exception as _c_err:
             log.debug("Local prompt cache lookup skipped: %s", _c_err)
 
@@ -463,9 +476,11 @@ def extract_json(
                 content_parts.append(block["text"])
         content = "".join(content_parts)
         parsed = _parse_json_robust(content)
+        if callable(validator_fn):
+            parsed = validator_fn(parsed)
 
-        # Save to local persistent cache for future runs
-        if not ANTHROPIC_API_KEY.startswith("sk-ant-test"):
+        # Validate-Before-Cache: Save only validated output to local persistent cache for future runs
+        if not ANTHROPIC_API_KEY.startswith("sk-ant-test") and parsed is not None:
             try:
                 from caching import get_local_cache
                 step_name = _CURRENT_STEP.get() or "llm_extraction"
@@ -476,6 +491,8 @@ def extract_json(
                     response_data=parsed,
                     step_name=step_name,
                     tokens_saved_estimate=tokens_est,
+                    effort=effective_effort,
+                    output_schema=schema_for_cache,
                 )
             except Exception as _store_err:
                 log.debug("Local prompt cache store skipped: %s", _store_err)
@@ -499,8 +516,8 @@ def _clean_field_str(val: Any) -> str:
     return s
 
 
-def _validate_prospect_dict(raw: Any) -> dict[str, str]:
-    """Deterministic post-extraction schema validation for prospect metadata."""
+def _validate_prospect_dict(raw: Any, source_text: str = "") -> dict[str, str]:
+    """Deterministic post-extraction schema validation and source-text grounding for prospect metadata."""
     if not isinstance(raw, dict):
         return {}
     schema_keys = (
@@ -516,6 +533,39 @@ def _validate_prospect_dict(raw: Any) -> dict[str, str]:
     for k, v in raw.items():
         if k not in out:
             out[k] = _clean_field_str(v)
+
+    # Dynamic Source-Text Grounding (Upgrade 2):
+    # Reject any LLM-invented code (SIC/NAICS, EIN, Salesforce ID) that is not grounded in source_text.
+    if source_text and source_text.strip():
+        sic_val = out.get("sic_naics_code", "")
+        if sic_val:
+            sic_digits = re.sub(r"\D", "", sic_val)
+            # Must exist as a standalone non-date token (not preceded/followed by '/' or '-') in the source text
+            non_date_token = bool(
+                sic_digits and re.search(rf"(?<![/\-])\b{re.escape(sic_digits)}\b(?![/\-])", source_text)
+            )
+            # If the 4-digit number looks like a calendar year (19xx/20xx), it must follow a SIC/NAICS label
+            is_calendar_year = bool(re.fullmatch(r"(?:19|20)\d{2}", sic_digits))
+            labeled_sic = bool(
+                sic_digits and re.search(
+                    rf"(?i)\b(?:sic|naics)(?:\s*code)?\s*[:=\-\|]?\s*{re.escape(sic_digits)}\b",
+                    source_text,
+                )
+            )
+            if not non_date_token or (is_calendar_year and not labeled_sic):
+                log.info("Stripped ungrounded LLM SIC/NAICS candidate '%s' (not grounded in source text)", sic_val)
+                out["sic_naics_code"] = ""
+
+        ein_val = out.get("ein", "")
+        if ein_val:
+            ein_digits = re.sub(r"\D", "", ein_val)
+            if len(ein_digits) >= 7 and ein_digits not in re.sub(r"\D", "", source_text):
+                out["ein"] = ""
+
+        sf_val = out.get("salesforce_id", "")
+        if sf_val and sf_val.lower() not in source_text.lower():
+            out["salesforce_id"] = ""
+
     return out
 
 
@@ -736,8 +786,13 @@ Return JSON only:
 }}
 """
     try:
-        data = extract_json(prompt, max_tokens=16000, effort="high")
-        return _validate_prospect_dict(data)
+        data = extract_json(
+            prompt,
+            max_tokens=16000,
+            effort="high",
+            validator_fn=lambda d: _validate_prospect_dict(d, source_text=combined_text),
+        )
+        return _validate_prospect_dict(data, source_text=combined_text)
     except Exception as exc:
         log.warning("extract_prospect_fields failed: %s", exc)
         return {}

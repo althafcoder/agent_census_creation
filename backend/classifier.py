@@ -76,7 +76,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "plan": ["plan", "planname", "medicalplan", "plancode", "planelected", "medicalplanname", "product",
              "productname", "planenrolled", "currentplan", "planoption", "medicalplancode", "plandescription",
              "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan", "healthcare", "healthcareplan",
-             "planadminname", "adminplanname", "planadministrator", "medicalplandescription", "electedplan",
+             "planadminname", "adminplanname", "planadministrator", "medicalplandescription", "medicalplandesc",
+             "medicalexternalmarketingname", "medicalplanid", "electedplan",
              "planenrolledname", "enrolledplanname", "benefitplan", "planadmin", "plannameadmin",
              "medical1planname", "medical1plan", "medical1plancode",
              "medicalplanselected", "planselected", "selectedplan", "selectedmedicalplan",
@@ -104,7 +105,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
                 "currentrate", "billedrate", "totalbilled", "totalcost", "cost", "totalamountbilled", "billedcost",
                 "planrate", "medicalrate"],
     "sub_id": ["subscriberid", "memberid", "employeeid", "eeid", "empid", "id", "ssn", "ssnlast4",
-               "certificate", "certno", "certificatenumber", "memberno", "subscriberssn", "employeessn",
+               "certificate", "certno", "certificatenumber", "memberno", "membernumber", "subscriberno",
+               "subscriberssn", "employeessn",
                "eessn", "subscribernumber", "employeenumber", "empno", "idnumber", "ssn4", "last4ssn",
                "householdid", "hhid", "familyid", "taxid", "employeetaxid", "positionid"],
     "hire_date": ["hiredate", "dateofhire", "doh", "startdate", "originalhiredate",
@@ -128,7 +130,7 @@ FIELD_ALIASES: dict[str, list[str]] = {
                "annualpay"],
     "effective_date": ["effective_date", "effectivedate", "effdate", "enrollmenteffectivedate", "enrollmenteffdate",
                        "coverageeffectivedate", "coverageeffdate", "benefiteffectivedate", "benefiteffdate",
-                       "enrollmentstartdate"],
+                       "enrollmentstartdate", "medicalcoverageeffectivedate", "medicaleffectivedate"],
     "txn_type": ["transactiontype", "chargetype", "adjustmenttype", "billingtype", "linetype", "activity"],
     # explicit dependent columns (dependent listing files)
     "dep_first": ["dependentfirstname", "depfirstname", "dependentfirst", "depfirst", "dependentfname", "depfname",
@@ -275,6 +277,13 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
                     prev_lab = str(labels[cols[canon]])
                     if "(" in prev_lab and "(" not in str(lab):
                         cols[canon] = idx
+                elif canon == "plan":
+                    prev_k = norm_key(str(labels[cols["plan"]]))
+                    curr_k = norm_key(str(lab))
+                    if prev_k in ("medicalplanid", "plancode", "medicalplancode") and curr_k in (
+                        "medicalplandesc", "medicalplandescription", "medicalplanname", "planname", "plandescription"
+                    ):
+                        cols["plan"] = idx
                 break
 
     # Handle repeated unnumbered dependent column blocks (e.g., Benefits Enrollment report with 5 wide dependent slots)
@@ -468,8 +477,8 @@ def classify(doc: RawDoc) -> str:
                 ):
                     log.info("LLM classified '%s' as census; overridden to renewal based on MAR/Stewardship/Schedule B signature", doc.name)
                     return "renewal"
-                if re.search(r"(group[_\-\s]*identification[_\-\s]*key|option[_\-\s]*key|plan[_\-\s]*key)", doc.name, re.I):
-                    log.info("Document '%s' is an option/plan legend -> overridden to plan_design", doc.name)
+                if re.search(r"(group[_\-\s]*identification[_\-\s]*key|option[_\-\s]*key|plan[_\-\s]*key|\bsbc\b|summary[_\-\s]*of[_\-\s]*benefits)", doc.name, re.I) or re.search(r"summary\s+of\s+benefits\s+and\s+coverage\s*:", (doc.text or "")[:800], re.I):
+                    log.info("Document '%s' is an SBC or option/plan legend -> overridden to plan_design", doc.name)
                     return "plan_design"
                 if re.search(r"(?:^|[_\-\s])schedule[_\-\s]*a\b", doc.name, re.I):
                     log.info("Document '%s' is Schedule A fee/payroll exhibit -> overridden to payroll", doc.name)

@@ -32,7 +32,7 @@ def _dates(doc: RawDoc) -> tuple[Optional[date], Optional[date]]:
     if explicit:
         eff = parse_date(m.group(1))
     if not eff:
-        m = re.search(rf"(?:renewal\s*)?effective\s*(?:date)?\s*[:\-]?\s*{_DATE}", text, re.I)
+        m = re.search(rf"(?:renewal\s*date|(?:renewal\s*)?effective\s*(?:date)?)\s*[:\-]?\s*{_DATE}", text, re.I)
         if m:
             eff = parse_date(m.group(1))
     if not term:
@@ -116,9 +116,67 @@ def _records_from_renewal_text(text: str) -> dict:
     return rates
 
 
+_MEMBER_RENEWAL_LINE_RE = re.compile(
+    r"^\s*([A-Za-z][A-Za-z'\-\. ]{3,45}?)\s+(\d{2})\s+([MF])\s+([ECFS]|EE|ES|EC|FAM)\s+([AC])\s+"
+    r"(?:\d{1,2}\s+)?(?:\d{1,2}\s+)?([A-Za-z0-9\-/]{3,25})\s+\$\s*([0-9,]+\.[0-9]{2})\s+"
+    r"([A-Za-z0-9\-/]{3,25})\s+\$\s*([0-9,]+\.[0-9]{2})\b",
+    re.M,
+)
+
+
+def _parse_member_level_renewal(text: str) -> tuple[dict, dict[str, str], dict]:
+    """Dynamically extract member-level renewal schedules (e.g. Appendix A 'Employee enrollment detail and rates')
+    returning (employee_rates, plan_mapping, modal_tier_rates)."""
+    from collections import Counter, defaultdict
+    emp_rates: dict = {}
+    plan_map: dict[str, str] = {}
+    bucket: dict[tuple[str, str], list[float]] = defaultdict(list)
+
+    for m in _MEMBER_RENEWAL_LINE_RE.finditer(text or ""):
+        raw_name = clean(m.group(1))
+        if raw_name.lower().replace(" ", "") in ("coveredemployee", "totalpremium", "employeename"):
+            continue
+        cov_raw = clean(m.group(4))
+        tier = std_coverage(cov_raw) or "EE"
+        curr_plan = clean(m.group(6))
+        curr_prem = to_money(m.group(7))
+        ren_plan = clean(m.group(8))
+        ren_prem = to_money(m.group(9))
+        if not curr_plan or not ren_plan or ren_prem is None:
+            continue
+        norm_name = re.sub(r"[^a-z]", "", raw_name.lower())
+        if not norm_name:
+            continue
+        emp_rates[norm_name] = {
+            "raw_name": raw_name,
+            "tier": tier,
+            "current_plan": curr_plan,
+            "current_premium": curr_prem,
+            "renewal_plan": ren_plan,
+            "renewal_premium": ren_prem,
+        }
+        plan_map[curr_plan] = ren_plan
+        bucket[(curr_plan, tier)].append(round(ren_prem, 2))
+        bucket[(ren_plan, tier)].append(round(ren_prem, 2))
+
+    modal_rates: dict[tuple[str, str], float] = {}
+    for k, vals in bucket.items():
+        if vals:
+            modal_rates[k] = Counter(vals).most_common(1)[0][0]
+    return emp_rates, plan_map, modal_rates
+
+
 def parse_renewal(doc: RawDoc) -> RenewalDoc:
     eff, term = _dates(doc)
     rd = RenewalDoc(path=doc.name, effective=eff, termination=term, version_rank=_version_rank(doc))
+
+    if (doc.text or "").strip():
+        emp_rates, plan_map, member_modal_rates = _parse_member_level_renewal(doc.text)
+        if emp_rates:
+            rd.employee_rates.update(emp_rates)
+            rd.plan_mapping.update(plan_map)
+            rd.rates.update(member_modal_rates)
+            rd.age_banded = True
 
     from census_config import LLM_FIRST, USE_LLM_FALLBACK
     if LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip():
