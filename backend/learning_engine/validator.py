@@ -701,6 +701,7 @@ class UnderwritingValidator:
                 for p in getattr(census, "people", [])
                 if getattr(p, "invoice_only", False)
             }
+            from census_builder import _is_same_person_as_subscriber
             unverified_deps = []
             for dep in census.dependents:
                 has_rel = bool((getattr(dep, "rel_raw", "") or "").strip())
@@ -710,6 +711,8 @@ class UnderwritingValidator:
                     unverified_deps.append(f"{dep.display} (no relationship, DOB, or gender)")
                 elif dep_key in invoice_only_names:
                     unverified_deps.append(f"{dep.display} (appears in both census.dependents and invoice_only)")
+                elif _is_same_person_as_subscriber(dep, getattr(dep, "employee", None)):
+                    unverified_deps.append(f"{dep.display} (listed as own dependent)")
             if unverified_deps:
                 checks.append(CheckResult(
                     rule_id="RULE_09_DEPENDENT_PROVENANCE",
@@ -1108,8 +1111,11 @@ class UnderwritingValidator:
         # 'QW', payroll employees absent from the census, declared-vs-census headcount) must be asked.
         try:
             from clarifications import collect_clarifications, missing_from_email
-            clar_items = collect_clarifications(prospect, census, roles=roles, docs=None,
-                                                invoice_records=[r for inv in (selected_invoices or []) for r in (getattr(inv, "records", []) or [])])
+            clar_items = collect_clarifications(
+                prospect, census, roles=roles, docs=None,
+                invoice_records=[r for inv in (selected_invoices or []) for r in (getattr(inv, "records", []) or [])],
+                selected_invoices=selected_invoices,
+            )
         except Exception:
             clar_items = []
         if email_text and clar_items:
@@ -1381,17 +1387,33 @@ class UnderwritingValidator:
 
         # 16. Template Example Row Filtering Check (Section 8.1)
         example_names = {
-            ("john", "smith"), ("cindy", "parker"), ("robert", "johnson"),
+            ("cindy", "parker"), ("robert", "johnson"),
             ("caden", "parker"), ("victoria", "parker"), ("bruna", "andrea"),
-            ("joseph", "abel"), ("sabrina", "abel")
+            ("joseph", "abel"), ("sabrina", "abel"),
+            ("bob", "smith"), ("dan", "smith"), ("danielle", "smith"),
+            ("bruce", "wayne"), ("jack", "wayne"),
+            ("peter", "parker"), ("marco", "russo sr"), ("marco", "russo jr"),
         }
         leaked_example_rows = []
         if census:
-            for p in getattr(census, "people", []):
+            people_list = getattr(census, "people", [])
+            has_multi_example = sum(
+                1 for p in people_list
+                if ((p.first or "").strip().lower(), (p.last or "").strip().lower()) in (example_names | {("john", "smith")})
+            ) >= 2
+            for p in people_list:
                 fn = (p.first or "").strip().lower()
                 ln = (p.last or "").strip().lower()
-                if (fn, ln) in example_names:
-                    leaked_example_rows.append(f"{p.first} {p.last}")
+                tbl = str((getattr(p, "raw_data", {}) or {}).get("table", "") or "").strip().lower()
+                pl = (getattr(p, "plan", "") or "").strip().lower()
+                if (
+                    (fn, ln) in example_names
+                    or (has_multi_example and (fn, ln) in {("john", "smith"), ("jane", "doe"), ("john", "doe")})
+                    or tbl in ("example", "sample")
+                    or pl in ("plan abc", "plan def", "plan xyz")
+                    or fn.startswith("*") or ln.startswith("*")
+                ):
+                    leaked_example_rows.append(f"{p.first} {p.last}".strip())
         if leaked_example_rows:
             checks.append(CheckResult(
                 rule_id="RULE_08_EXAMPLE_ROWS_FILTERED",

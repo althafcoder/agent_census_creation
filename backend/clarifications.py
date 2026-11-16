@@ -55,12 +55,17 @@ def _join_names(names: list[str]) -> str:
     return f"{', '.join(names[:-1])} and {names[-1]}"
 
 
+_NAME_SUFFIX_WORD_RE = re.compile(r"\b(?:jr|sr|ii|iii|iv)\.?$", re.I)
+
+
 def _alnum(s: str) -> str:
-    return re.sub(r"[^a-z]", "", (s or "").lower())
+    s_clean = _NAME_SUFFIX_WORD_RE.sub("", (s or "").strip()).strip()
+    return re.sub(r"[^a-z]", "", s_clean.lower())
 
 
 def _norm_last(s: str) -> str:
-    k = _alnum(s)
+    s_clean = _NAME_SUFFIX_WORD_RE.sub("", (s or "").strip()).strip()
+    k = re.sub(r"[^a-z]", "", s_clean.lower())
     if len(k) > 5:
         k2 = _NAME_SUFFIX_RE.sub("", k)
         if len(k2) >= 3:
@@ -236,30 +241,267 @@ def headcount_items(prospect: Any, census: Any) -> list[ClarificationItem]:
     declared = getattr(prospect, "ft_employees", None) if prospect is not None else None
     if not declared or census is None:
         return []
-    actual = census_full_time_count(census)
-    if not actual or int(declared) == actual:
+    reportable = [e for e in (getattr(census, "employees", []) or []) if _is_reportable_employee(e)]
+    actual = len(reportable)
+    cobra_cnt = sum(1 for e in reportable if str(getattr(e, "cobra", "") or "").upper() == "Y")
+    active_cnt = actual - cobra_cnt
+    if not actual or (int(declared) == actual and cobra_cnt == 0):
         return []
     src = (getattr(prospect, "ft_employees_source", "") or "")
     if not src or re.search(r"ghq|questionnaire|company\s*info", src, re.I):
         src_label = "the GHQ"
+    elif re.search(r"application", src, re.I):
+        from pathlib import Path as _P
+        src_label = f"the {_P(src.split(',')[0].strip()).stem}"
     elif re.search(r"census|rfp|proposal", src, re.I):
         src_label = "the GHQ/RFP business information"
     else:
         src_label = f"the {src}"
-    text = (f"Headcount: {src_label} shows {int(declared)} full-time employees, but the census lists {actual}. "
+
+    declared_pt = getattr(prospect, "pt_employees", None) if prospect is not None else None
+    pt_clause = f" (and {int(declared_pt)} part-time)" if (declared_pt is not None and int(declared_pt) > 0) else ""
+    if cobra_cnt > 0:
+        census_clause = (
+            f"{active_cnt} active employee{'s' if active_cnt != 1 else ''} + "
+            f"{cobra_cnt} COBRA participant{'s' if cobra_cnt != 1 else ''} ({actual} total)"
+        )
+    else:
+        census_clause = f"{actual}"
+
+    text = (f"Headcount: {src_label} shows {int(declared)} full-time employees{pt_clause}, "
+            f"but the census lists {census_clause}. "
             f"Please confirm the eligible employee count.")
-    return [ClarificationItem("HEADCOUNT_MISMATCH", [], text, {"declared": int(declared), "census": actual, "source": src})]
+    return [ClarificationItem("HEADCOUNT_MISMATCH", [], text, {
+        "declared": int(declared),
+        "declared_pt": int(declared_pt) if declared_pt is not None else 0,
+        "census": actual,
+        "active_employees": active_cnt,
+        "cobra_participants": cobra_cnt,
+        "source": src,
+    })]
+
+
+# ----------------------------------------- 5. cross-document DOB conflicts ---
+_RENEWAL_MEMBER_LINE_RE = re.compile(
+    r"^\s*([A-Z][A-Za-z'\-\. ]{1,35}?)\s*,\s*([A-Z][A-Za-z'\-\. ]{1,25}?)\s+"
+    r"(-|EE|E|C|CH|S|SP|D|DP|Employee|Child|Spouse)\s+(?:\d{1,3}\s+)?(\d{1,2}/\d{1,2}/\d{2,4})\b",
+    re.M,
+)
+
+
+def dob_discrepancy_items(
+    census: Any,
+    roles: Optional[dict] = None,
+    docs: Optional[Iterable[Any]] = None,
+    invoice_records: Optional[Iterable[Any]] = None,
+) -> list[ClarificationItem]:
+    """Detect and flag DOB discrepancies between the canonical census and renewal/invoice sources (P0.4)."""
+    if census is None:
+        return []
+    people = [
+        p for p in (getattr(census, "people", []) or [])
+        if not getattr(p, "is_duplicate", False)
+        and not getattr(p, "invoice_only", False)
+        and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")
+        and getattr(p, "dob", None) is not None
+    ]
+    if not people:
+        return []
+
+    from utils import parse_date
+    roles = roles or {}
+    aux_docs: list[Any] = []
+    for k in ("renewal", "invoice", "ghq", "rfp"):
+        for d in roles.get(k) or []:
+            if d not in aux_docs:
+                aux_docs.append(d)
+    for d in docs or []:
+        if d not in aux_docs and d not in (roles.get("census") or []) and d not in (roles.get("deliverable") or []):
+            aux_docs.append(d)
+
+    observed: list[tuple[str, str, str, date, str]] = []  # (first, last, role_hint, dob, source_label)
+    for d in aux_docs:
+        d_name = getattr(d, "name", "") or ""
+        low_name = d_name.lower()
+        if "renewal" in low_name or "proposal" in low_name:
+            src_label = "the renewal proposal"
+        elif "invoice" in low_name or "bill" in low_name:
+            src_label = "the invoice"
+        else:
+            src_label = d_name or "the supporting document"
+        # 1. Dynamic structured table scan across any auxiliary document (renewal, GHQ, RFP, invoice)
+        from classifier import body as _tbl_body, detect_header as _detect_hdr
+        from utils import clean as _clean_cell, split_full_name as _split_name, std_relationship as _std_rel
+        for tbl in getattr(d, "tables", []) or []:
+            hdr = _detect_hdr(tbl.df)
+            if not hdr or "dob" not in hdr.columns:
+                continue
+            cols = hdr.columns
+            if not any(k in cols for k in ("first_name", "last_name", "full_name")):
+                continue
+            for _, row_s in _tbl_body(tbl.df, hdr).iterrows():
+                fn_c = _clean_cell(row_s.iloc[cols["first_name"]]) if "first_name" in cols else ""
+                ln_c = _clean_cell(row_s.iloc[cols["last_name"]]) if "last_name" in cols else ""
+                if (not fn_c or not ln_c) and "full_name" in cols:
+                    f2, l2 = _split_name(_clean_cell(row_s.iloc[cols["full_name"]]))
+                    fn_c, ln_c = fn_c or f2, ln_c or l2
+                dt_c = parse_date(row_s.iloc[cols["dob"]])
+                if not (fn_c and ln_c and dt_c):
+                    continue
+                rel_c = _std_rel(row_s.iloc[cols["relationship"]]) if "relationship" in cols else "EE"
+                r_hint = "EE" if rel_c in ("", "EE") else rel_c
+                observed.append((fn_c, ln_c, r_hint, dt_c, src_label))
+
+        # 2. Unstructured / PDF text line scan (e.g. Renewal Proposal 'Census Details' blocks)
+        txt = getattr(d, "text", "") or ""
+        for m in _RENEWAL_MEMBER_LINE_RE.finditer(txt):
+            last_raw, first_raw, rel_tok, dob_str = m.group(1).strip(), m.group(2).strip(), m.group(3).strip().upper(), m.group(4).strip()
+            dt = parse_date(dob_str)
+            if not dt:
+                continue
+            r_hint = "EE" if rel_tok in ("-", "EE", "E", "EMPLOYEE") else ("SP" if rel_tok in ("S", "SP", "SPOUSE", "D", "DP") else "CH")
+            observed.append((first_raw, last_raw, r_hint, dt, src_label))
+
+    for inv_r in invoice_records or []:
+        inv_dob = getattr(inv_r, "dob", None)
+        if inv_dob:
+            inv_d = inv_dob.date() if hasattr(inv_dob, "date") and callable(inv_dob.date) else inv_dob
+            observed.append((getattr(inv_r, "first", "") or "", getattr(inv_r, "last", "") or "", "EE", inv_d, "the invoice"))
+
+    items: list[ClarificationItem] = []
+    seen_person_ids: set[int] = set()
+
+    for first_raw, last_raw, r_hint, other_dob, src_label in observed:
+        cands = [p for p in people if _same_person(first_raw, last_raw, p.first, p.last)]
+        if not cands:
+            continue
+        if r_hint == "EE":
+            role_cands = [p for p in cands if p.role == "EE"] or cands
+        else:
+            role_cands = [p for p in cands if p.role != "EE"] or cands
+        if len(role_cands) > 1:
+            role_cands.sort(key=lambda p: (
+                0 if (p.dob.month == other_dob.month and p.dob.day == other_dob.day) else 1,
+                abs(p.dob.year - other_dob.year),
+            ))
+        target = role_cands[0]
+        if id(target) in seen_person_ids:
+            continue
+        p_dob = target.dob.date() if hasattr(target.dob, "date") and callable(target.dob.date) else target.dob
+        if p_dob == other_dob:
+            continue
+
+        seen_person_ids.add(id(target))
+        if target.role != "EE" and getattr(target, "employee", None) is not None:
+            sub_disp = _display(target.employee)
+            who_label = f"{_display(target)} (dependent of {sub_disp})"
+            emp_names = [_display(target.employee), _display(target)]
+        else:
+            who_label = _display(target)
+            emp_names = [who_label]
+
+        note_txt = f"DOB Discrepancy: Census shows {p_dob:%m/%d/%Y} vs {src_label} {other_dob:%m/%d/%Y} - confirm correct DOB"
+        if hasattr(target, "note"):
+            target.note(note_txt, red=True)
+        text = (
+            f"{who_label}: Date of birth discrepancy between the submitted census ({p_dob:%m/%d/%Y}) "
+            f"and {src_label} ({other_dob:%m/%d/%Y}). Please confirm the correct date of birth."
+        )
+        items.append(ClarificationItem("DOB_DISCREPANCY", emp_names, text, {
+            "person": who_label,
+            "census_dob": f"{p_dob:%m/%d/%Y}",
+            "other_dob": f"{other_dob:%m/%d/%Y}",
+            "source": src_label,
+        }))
+
+    return items
+
+
+# ----------------------------------------- 6. invoice validity / recency -----
+_EMAIL_SENT_DATE_RE = re.compile(
+    r"Sent\s*:\s*(?:[A-Za-z]+,\s*)?([A-Za-z]+\s+\d{1,2},\s+20\d{2}|\d{1,2}/\d{1,2}/20\d{2,4})",
+    re.I,
+)
+
+
+def invoice_recency_items(
+    selected_invoices: Optional[Iterable[Any]] = None,
+    prospect: Any = None,
+    roles: Optional[dict] = None,
+    docs: Optional[Iterable[Any]] = None,
+) -> list[ClarificationItem]:
+    """Flag selected invoices that are older than 90 days relative to submission/effective date (Section 11.2 / P1.7)."""
+    if not selected_invoices:
+        return []
+    from utils import parse_date
+    sent_date: Optional[date] = None
+    all_scan_docs = list(docs or [])
+    if roles:
+        for d_list in roles.values():
+            for d in d_list or []:
+                if d not in all_scan_docs:
+                    all_scan_docs.append(d)
+    for d in all_scan_docs:
+        m = _EMAIL_SENT_DATE_RE.search(getattr(d, "text", "") or "")
+        if m:
+            dt = parse_date(m.group(1))
+            if dt:
+                sent_date = dt
+                break
+
+    eff_date = getattr(prospect, "effective_date", None) if prospect is not None else None
+    if hasattr(eff_date, "date") and callable(eff_date.date):
+        eff_date = eff_date.date()
+    ref_date = sent_date or eff_date
+    if not ref_date:
+        return []
+
+    items: list[ClarificationItem] = []
+    for inv_doc in selected_invoices:
+        p_start = getattr(inv_doc, "period_start", None)
+        p_end = getattr(inv_doc, "period_end", None)
+        d_date = getattr(inv_doc, "doc_date", None)
+        inv_ref = p_end or p_start or d_date
+        if not inv_ref:
+            continue
+        if hasattr(inv_ref, "date") and callable(inv_ref.date):
+            inv_ref = inv_ref.date()
+        days_old = (ref_date - inv_ref).days
+        if days_old > 90:
+            doc_dt_part = f"is dated {d_date:%m/%d/%Y} " if d_date else ""
+            if p_start and p_end:
+                cov_part = f"with coverage {p_start:%m/%d/%Y}–{p_end:%m/%d/%Y}"
+            elif p_start:
+                cov_part = f"with coverage starting {p_start:%m/%d/%Y}"
+            else:
+                cov_part = ""
+            inv_name = getattr(inv_doc, "path", "") or "the submitted invoice"
+            text = (
+                f"Invoice Validity: The submitted invoice ({inv_name}) {doc_dt_part}{cov_part} "
+                f"is more than 90 days old. Please provide an updated current medical invoice."
+            ).replace("  ", " ")
+            items.append(ClarificationItem("OUTDATED_INVOICE", [], text, {
+                "invoice": inv_name,
+                "doc_date": f"{d_date:%m/%d/%Y}" if d_date else "",
+                "period_start": f"{p_start:%m/%d/%Y}" if p_start else "",
+                "period_end": f"{p_end:%m/%d/%Y}" if p_end else "",
+                "days_old": days_old,
+            }))
+    return items
 
 
 # ------------------------------------------------------------ aggregate -----
 def collect_clarifications(prospect: Any, census: Any, roles: Optional[dict] = None,
                            docs: Optional[Iterable[Any]] = None, invoice_records: Optional[Iterable[Any]] = None,
-                           extra_payroll_names: Optional[Iterable[tuple[str, str]]] = None) -> list[ClarificationItem]:
+                           extra_payroll_names: Optional[Iterable[tuple[str, str]]] = None,
+                           selected_invoices: Optional[Iterable[Any]] = None) -> list[ClarificationItem]:
     items: list[ClarificationItem] = []
     for fn in (lambda: unresolved_coverage_items(census),
                lambda: inferred_coverage_items(census),
                lambda: payroll_not_on_census_items(census, roles, docs, invoice_records, extra_payroll_names),
-               lambda: headcount_items(prospect, census)):
+               lambda: headcount_items(prospect, census),
+               lambda: dob_discrepancy_items(census, roles, docs, invoice_records),
+               lambda: invoice_recency_items(selected_invoices, prospect, roles, docs)):
         try:
             items.extend(fn())
         except Exception:  # clarification detection must never break the pipeline
@@ -274,6 +516,10 @@ def missing_from_email(items: list[ClarificationItem], email_text: str) -> list[
     for it in items:
         if it.category == "HEADCOUNT_MISMATCH":
             if "headcount" not in low:
+                gaps.append(it.text)
+            continue
+        if it.category == "OUTDATED_INVOICE":
+            if "updated" not in low and "90 days" not in low and "invoice validity" not in low:
                 gaps.append(it.text)
             continue
         for n in it.employees:

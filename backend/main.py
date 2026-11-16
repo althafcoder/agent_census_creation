@@ -93,7 +93,14 @@ def run_pipeline(
                 RepairPatch,
             )
             if LEARNING_ENGINE_ENABLED:
-                le_orchestrator = LearningEngineOrchestrator()
+                from learning_engine.memory_store import MemoryStore
+                _is_test_tmp = bool(
+                    os.getenv("PYTEST_CURRENT_TEST")
+                    and not os.getenv("LEARNING_ENGINE_DATA_DIR")
+                    and output_dir.resolve() != C.OUTPUT_DIR.resolve()
+                )
+                _ms = MemoryStore(data_dir=output_dir / "learning_engine_data") if _is_test_tmp else None
+                le_orchestrator = LearningEngineOrchestrator(memory_store=_ms)
                 le_ctx, le_snapshot = le_orchestrator.initialize_run_context(
                     case_id=case_id,
                     bypass_cache=bypass_cache,
@@ -396,6 +403,65 @@ def run_pipeline(
         renewal_required=ren_required, tracer=tracer,
     )
 
+    # 6b. Cross-document DOB discrepancy detection (P0.4) & Invoice Recency check (P1.7 / Section 11.2)
+    try:
+        from clarifications import dob_discrepancy_items, invoice_recency_items
+        dob_items = dob_discrepancy_items(census, roles=roles, docs=docs, invoice_records=invoice_records)
+        for ditem in dob_items:
+            ev = ditem.evidence or {}
+            who_lbl = ev.get("person") or ", ".join(ditem.employees)
+            detail_lbl = f"Census {ev.get('census_dob', '')} vs {ev.get('source', 'supporting doc')} {ev.get('other_dob', '')}"
+            if ("DOB discrepancies", who_lbl, detail_lbl) not in F.exceptions:
+                F.exceptions.append(("DOB discrepancies", who_lbl, detail_lbl))
+            if ditem.text not in F.notes:
+                F.notes.append(ditem.text)
+        # Sync any newly attached dependent/employee DOB notes into results
+        for p in census.people:
+            rr_p = results.get(id(p))
+            if rr_p is not None and p.notes:
+                for n_txt, n_col in p.notes:
+                    if "DOB Discrepancy" in str(n_txt) and not any(t == n_txt for t, _ in rr_p.notes):
+                        rr_p.notes.append((n_txt, True))
+        recency_items = invoice_recency_items(selected, prospect=prospect, roles=roles, docs=docs)
+        for ritem in recency_items:
+            if ritem.text not in F.notes:
+                F.notes.append(ritem.text)
+            inv_lbl = (ritem.evidence or {}).get("invoice", "Selected Invoice")
+            if ("Outdated invoice", inv_lbl, ritem.text) not in F.exceptions:
+                F.exceptions.append(("Outdated invoice", inv_lbl, ritem.text))
+    except Exception as _post_comp_err:
+        log.debug("Post-comparison DOB/recency check skipped: %s", _post_comp_err)
+
+    # Record field-level provenance for every canonical census record (P2.13 / G3)
+    if provenance and census:
+        try:
+            from learning_engine.contracts import FieldStatus, SourceRef
+            for idx_p, p in enumerate(census.people):
+                if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False):
+                    continue
+                rec_key = p.record_id or f"rec_{idx_p + 1:04d}"
+                rd = getattr(p, "raw_data", {}) or {}
+                s_ref = SourceRef(
+                    document_id=p.source or (rd.get("file") or "census"),
+                    unit_id=str(rd.get("table") or "main"),
+                    row_index=p.row_no or idx_p + 1,
+                )
+                for fname_k, fval in (
+                    ("first_name", p.first),
+                    ("last_name", p.last),
+                    ("gender", p.gender),
+                    ("dob", f"{p.dob:%Y-%m-%d}" if hasattr(p.dob, "strftime") else str(p.dob or "")),
+                    ("zip", p.zip),
+                    ("relationship", p.role),
+                    ("coverage", p.coverage),
+                    ("cobra", p.cobra),
+                    ("plan", p.plan),
+                ):
+                    st_f = FieldStatus.PRESENT_SUPPORTED if fval not in (None, "") else FieldStatus.MISSING_IN_SOURCE
+                    provenance.record_field(rec_key, fname_k, fval, fval, status=st_f, source_ref=s_ref)
+        except Exception as _prov_err:
+            log.debug("Provenance recording skipped: %s", _prov_err)
+
     # Per the Payroll and Wage Document Exclusion rule (Section 1.2 & Section 29),
     # payroll/wage documents must never drive enrollment deficiencies or cross-document conflict exceptions.
     # Non-employee wage/tax registers are strictly excluded from generating medical deficiency notes.
@@ -566,10 +632,16 @@ def run_pipeline(
                     log.info("✅ [SELF-HEALING] Repair cycle %d succeeded! Failures: %d -> %d (Accuracy: %.1f%%, Target: %.1f%%)",
                              repair_cycle, le_val_report.failed_checks, re_report.failed_checks, re_acc * 100, re_thresh * 100)
                     le_val_report = re_report
-                    if re_report.failed_checks == 0 or (re_acc >= re_thresh and re_report.blocked_checks == 0):
+                    if re_report.failed_checks == 0:
                         le_val_report.release_status = EngineStatus.REPAIRED_AND_PASSED
                         le_status = "REPAIRED_AND_PASSED"
                         break
+                    elif re_report.release_status != EngineStatus.BLOCKED_TECHNICAL and re_acc >= re_thresh and re_report.blocked_checks == 0:
+                        le_val_report.release_status = EngineStatus.REPAIRED_AND_PASSED
+                        le_status = "REPAIRED_AND_PASSED"
+                        break
+                    else:
+                        le_status = re_report.release_status.value
                 else:
                     break
 

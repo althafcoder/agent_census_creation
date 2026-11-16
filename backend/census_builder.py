@@ -252,7 +252,11 @@ def _fill(person: Person, **kw):
                     person.aliases.append(a)
             continue
         curr = getattr(person, k, None)
-        if not curr or (k == "coverage" and str(curr).lower() in ("enrolled", "active", "yes") and str(v).lower() not in ("enrolled", "active", "yes")):
+        if (
+            not curr
+            or (k == "coverage" and str(curr).lower() in ("enrolled", "active", "yes") and str(v).lower() not in ("enrolled", "active", "yes"))
+            or (k == "cobra" and str(curr).upper() == "N" and str(v).upper() == "Y")
+        ):
             setattr(person, k, v)
 
 
@@ -361,7 +365,14 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
             a2 = f"{p.middle_name} {p.last}".strip()
             if a2 not in p.aliases:
                 p.aliases.append(a2)
-        p.cobra = std_cobra(row_vals.get("cobra")) or "N"
+        cobra_cand = (
+            std_cobra(row_vals.get("cobra"))
+            or std_cobra(row_vals.get("status"))
+            or std_cobra(row_vals.get("worker_category"))
+            or std_cobra(row_vals.get("position_status"))
+            or std_cobra(row_vals.get("eligibility_class"))
+        )
+        p.cobra = "Y" if cobra_cand == "Y" else (cobra_cand or getattr(p, "cobra", "") or "N")
         p.plan = clean(row_vals.get("plan"))
         p.premium = to_money(row_vals.get("premium"))
         p.hire_date = parse_date(row_vals.get("hire"))
@@ -383,7 +394,12 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
             if p.plan and p.plan.lower() in ("waiting period", "wp", "waiting", "in waiting period"):
                 p.plan = ""
     else:
-        p.cobra = std_cobra(row_vals.get("cobra")) or "N"
+        cobra_cand = (
+            std_cobra(row_vals.get("cobra"))
+            or std_cobra(row_vals.get("status"))
+            or std_cobra(row_vals.get("worker_category"))
+        )
+        p.cobra = "Y" if cobra_cand == "Y" else (cobra_cand or getattr(p, "cobra", "") or "N")
         p.waive_reason = clean(row_vals.get("waive_reason")) or getattr(p, "waive_reason", "")
 
     if not p.first or not p.last:
@@ -425,7 +441,18 @@ _DISCLAIMER_WORDS = re.compile(
 _JUNK_NAME_WORDS = {"required", "optional", "first", "firstname", "first name", "ee", "sp", "ch",
                     "see", "separately", "attached", "document", "none", "notes", "note", "n/a", "na",
                     "last", "lastname", "last name", "name", "row labels", "number of employees",
-                    "grand total", "sum of annual pay", "sum of pay", "row label"}
+                    "grand total", "sum of annual pay", "sum of pay", "row label",
+                    "legal first name", "legal last name", "employee", "spouse", "child", "dependent",
+                    "relationship definition", "coverage type definition", "entitysourceid", "carrierid",
+                    "gender", "male", "female"}
+
+_HEADER_NAME_PHRASES = (
+    "legal first", "legal last", "first name", "last name", "employee name",
+    "dependent name", "member name", "birth date", "date of birth", "home zip",
+    "coverage tier", "contract tier", "contract type", "plan name",
+    "relationship definition", "coverage type definition", "paste values",
+    "required field", "select one",
+)
 
 
 def _names(r: _Row, first_f="first_name", last_f="last_name", full_f="full_name") -> tuple[str, str]:
@@ -437,6 +464,11 @@ def _names(r: _Row, first_f="first_name", last_f="last_name", full_f="full_name"
         first, last = first or f2, last or l2
     full = f"{first} {last}".strip()
     if not full:
+        return "", ""
+    if first.startswith("*") or last.startswith("*"):
+        return "", ""
+    low_full = full.lower()
+    if any(ph in low_full for ph in _HEADER_NAME_PHRASES):
         return "", ""
     if _DISCLAIMER_WORDS.search(full):
         return "", ""
@@ -675,13 +707,13 @@ def _infer_table_benefit_lines(body_df: pd.DataFrame, hdr: Header, st: _State) -
 
 # ------------------------------------------------------------ table parse ---
 def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
-    if tname.strip().lower() in ("data", "lookup", "lookups", "dropdown", "dropdowns", "validation", "lists", "codes"):
-        return False
     if any(w in tname.lower() for w in ["note", "company", "info", "summary", "population"]):
         for _, row in df.iterrows():
             text_vals = [clean(v) for v in row.dropna() if clean(v)]
             if text_vals:
                 st.census.census_notes.append(" | ".join(text_vals))
+    if _is_non_census_or_example_sheet(tname, df):
+        return False
 
     hdr = detect_header(df)
     if not hdr:
@@ -738,6 +770,20 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
 
         pt_val = r.t("plan_type") if "plan_type" in cols else (r.t("plan_category") if "plan_category" in cols else "")
         p_val = r.t("plan") if "plan" in cols else ""
+        cov_hdr_low = _col_label(r, "coverage").lower() if "coverage" in cols else ""
+        cov_std_row = std_coverage(r.g("coverage")) if "coverage" in cols else ""
+        # If the table has an explicit 'Medical Coverage Tier' column with an active medical tier (EE/ES/EC/FAM)
+        # and no multi-benefit 'plan_type' column, a stray ancillary word like 'Dental' in the optional plan-name cell
+        # must not turn an enrolled medical employee into a non-medical-only waiver.
+        if (
+            not pt_val
+            and not is_stacked_multi_benefit
+            and "medical" in cov_hdr_low
+            and cov_std_row in ("EE", "ES", "EC", "FAM")
+            and p_val
+            and _is_non_medical(p_val, "")
+        ):
+            p_val = ""
         is_non_med = bool(
             ((pt_val or p_val) and _is_non_medical(p_val, pt_val))
             or (p_val and p_val.strip().lower() in st.inferred_non_med_plans)
@@ -859,9 +905,16 @@ def _parse_table(doc: RawDoc, tname: str, df: pd.DataFrame, st: _State) -> bool:
         if "relationship" not in cols and rel not in ("SP", "CH", "DP"):
             cov_val = clean(r.g("coverage")) if "coverage" in cols else ""
             is_emp_dep_col = any("dependent" in lab.lower() for lab in hdr.labels[:3])
+            row_dob = parse_date(r.g("dob"))
+            existing_emp_matches = _match_employee_by_name(st, first, last)
+            matches_existing_emp_identity = any(
+                (not row_dob or not e_m.dob or row_dob == e_m.dob)
+                for e_m in existing_emp_matches
+            )
             has_emp_evidence = bool(
                 r.g("hire_date") or r.g("salary") or (r.g("job_title") and not rel_from_job) or
-                r.g("worker_category") or r.g("position_status") or r.t("sub_id")
+                r.g("worker_category") or r.g("position_status") or r.t("sub_id") or
+                matches_existing_emp_identity
             )
             has_dep_demo = bool(r.g("dob") or r.t("gender") or is_emp_dep_col)
             row_plan = clean(r.g("plan")) if "plan" in cols else ""
@@ -1454,6 +1507,25 @@ def update_candidate_dispositions(census: Census) -> None:
     census.candidate_dispositions = dispositions
 
 
+def _is_same_person_as_subscriber(dep: Person, emp: Person) -> bool:
+    """Hard invariant (P0.3): A person cannot be their own dependent.
+    Distinguishes true Jr/Sr parent-child pairs (different DOBs) from cross-sheet/duplicate self-dependents (same DOB)."""
+    if not dep or not emp:
+        return False
+    _suf = re.compile(r"\b(jr|sr|ii|iii|iv)\b", re.I)
+    df = re.sub(r"[^a-z]", "", _suf.sub("", (dep.first or "")).strip().split()[0] if _suf.sub("", (dep.first or "")).strip() else "").lower()
+    ef = re.sub(r"[^a-z]", "", _suf.sub("", (emp.first or "")).strip().split()[0] if _suf.sub("", (emp.first or "")).strip() else "").lower()
+    dl = re.sub(r"[^a-z]", "", _suf.sub("", (dep.last or ""))).lower()
+    el = re.sub(r"[^a-z]", "", _suf.sub("", (emp.last or ""))).lower()
+    if not df or not dl or df != ef or dl != el:
+        return False
+    if dep.dob and emp.dob:
+        return dep.dob == emp.dob
+    # If one DOB is missing, treat as same person unless explicitly labeled Child/Spouse
+    rel_explicit = std_relationship(dep.rel_raw) if dep.rel_raw else ""
+    return rel_explicit not in ("CH", "SP", "DP")
+
+
 def _link_dependents(st: _State, effective_date=None) -> None:
     cand_deps_by_emp: dict[int, list[Person]] = {}
     for ref in st.dep_refs:
@@ -1498,6 +1570,11 @@ def _link_dependents(st: _State, effective_date=None) -> None:
                 p.disposition = "UNRESOLVED"
                 p.note("Unassigned Dependent - No Matching Subscriber", red=True)
                 st.census.unassigned_dependents.append(p)
+            continue
+
+        # Enforce hard self-dependent invariant: never allow an employee to be linked as their own dependent
+        if _is_same_person_as_subscriber(p, emp):
+            _fill(emp, gender=p.gender, dob=p.dob, zip=p.zip)
             continue
 
         dk = name_key(p.first, p.last)
@@ -1697,17 +1774,62 @@ NON_CENSUS_SHEET_NAMES = {
     "data", "generic conv", "generic_conv", "data validation", "data_validation",
     "validation", "lookup", "lookups", "codes", "code", "reference", "ref",
     "instructions", "instruction", "dropdowns", "dropdown", "config", "settings",
-    "example", "sample", "metadata", "summary", "census summary", "rate sheet",
-    "rates", "plans", "tier rates"
+    "example", "examples", "sample", "samples", "metadata", "summary",
+    "census summary", "rate sheet", "rates", "plans", "tier rates", "lists",
 }
+
+_TEMPLATE_EXAMPLE_PERSONAS = {
+    ("bob", "smith"), ("dan", "smith"), ("danielle", "smith"),
+    ("bruce", "wayne"), ("jack", "wayne"),
+    ("peter", "parker"), ("cindy", "parker"), ("caden", "parker"),
+    ("victoria", "parker"), ("bruna", "andrea"), ("joseph", "abel"),
+    ("sabrina", "abel"), ("marco", "russo sr"), ("marco", "russo jr"),
+}
+
+_PLACEHOLDER_PLANS = {"plan abc", "plan def", "plan xyz", "sample plan", "example plan"}
+_PLACEHOLDER_PLAN_RE = re.compile(r"^(?:plan\s+(?:abc|def|xyz|123)|(?:sample|example|test|dummy)\s+plan)\b", re.I)
+
+
+def _is_non_census_or_example_sheet(tname: str, df: pd.DataFrame) -> bool:
+    """Unified gate (P0.1 & P0.2): Return True if a sheet is a non-census lookup/reference tab
+    or a template example/sample sheet (by sheet name or placeholder content)."""
+    clean_name = str(tname or "").strip().lower()
+    if clean_name in NON_CENSUS_SHEET_NAMES:
+        return True
+    if any(tok in clean_name for tok in ("example", "sample", "data validation", "generic conv", "generic_conv")):
+        return True
+    if not isinstance(df, pd.DataFrame) or df.empty:
+        return False
+
+    # Content-based check for template example/sample rosters (e.g. Plan ABC/DEF, Bruce Wayne, Peter Parker, Jane Doe)
+    hdr = detect_header(df)
+    if not hdr:
+        return False
+    b_df = body(df, hdr)
+    if b_df.empty:
+        return False
+    persona_hits = 0
+    placeholder_plan_hits = 0
+    for _, series in b_df.head(35).iterrows():
+        r = _Row(hdr, series)
+        fn, ln = _names(r)
+        if fn and ln and (fn.strip().lower(), ln.strip().lower()) in _TEMPLATE_EXAMPLE_PERSONAS:
+            persona_hits += 1
+        p_val = r.t("plan").strip().lower() if "plan" in hdr.columns else ""
+        if p_val in _PLACEHOLDER_PLANS or _PLACEHOLDER_PLAN_RE.search(p_val):
+            placeholder_plan_hits += 1
+    if persona_hits >= 2 or placeholder_plan_hits >= 2 or (persona_hits >= 1 and placeholder_plan_hits >= 1):
+        log.info("Skipping template example/sample sheet '%s' (persona_hits=%d, placeholder_plans=%d)",
+                 tname, persona_hits, placeholder_plan_hits)
+        return True
+    return False
 
 
 def _is_candidate_census_table(tname: str, df: pd.DataFrame) -> bool:
     """Return True if this sheet/table plausibly contains employee census rows."""
     if not isinstance(df, pd.DataFrame) or df.empty:
         return False
-    clean_name = str(tname or "").strip().lower()
-    if clean_name in NON_CENSUS_SHEET_NAMES:
+    if _is_non_census_or_example_sheet(tname, df):
         return False
     # Safety cap: Fallback LLM extraction is designed for small/unstructured rosters.
     # Large sheets with >500 rows are database tables or internal reference data, never individual prospect rosters.
@@ -1914,8 +2036,38 @@ def _parse_llm_census_rows(doc: RawDoc, rows: list[dict], st: _State) -> bool:
 
 
 
+def _sheet_person_names_and_info(tname: str, df: pd.DataFrame) -> tuple[set[tuple[str, str]], bool, bool, bool]:
+    """Return (valid_person_names, is_dep_sheet, has_cov_and_dob, has_plan_values) for primary-sheet selection."""
+    hdr = detect_header(df)
+    if not hdr:
+        return set(), False, False, False
+    cols = hdr.columns
+    is_dep_sheet = bool(
+        any(k in cols for k in ("dep_first", "dep_last", "dep_full"))
+        or "dependent" in str(tname or "").lower()
+    )
+    has_cov_and_dob = ("coverage" in cols and "dob" in cols and "relationship" in cols)
+    b_df = body(df, hdr)
+    names: set[tuple[str, str]] = set()
+    has_plan_vals = False
+    for _, series in b_df.iterrows():
+        r = _Row(hdr, series)
+        non_empty = [clean(v) for v in series.tolist() if clean(v)]
+        if not non_empty:
+            continue
+        first_ne = non_empty[0].lower()
+        if first_ne in ("ex", "example", "sample", "eg", "e.g.", "ex.", "example:"):
+            continue
+        fn, ln = _names(r)
+        if fn and ln and (is_valid_person_name(fn) or is_valid_person_name(ln)):
+            names.add((fn.strip().lower().split()[0], ln.strip().lower()))
+            if "plan" in cols and clean(r.g("plan")) and clean(r.g("plan")).lower() not in ("na", "n/a", "none", "*plan name"):
+                has_plan_vals = True
+    return names, is_dep_sheet, has_cov_and_dob, has_plan_vals
+
+
 def _prepare_doc_tables(doc: RawDoc) -> list[tuple[str, pd.DataFrame]]:
-    raw_tables = [(t.name, t.df) for t in doc.tables]
+    raw_tables = [(t.name, t.df) for t in doc.tables if not _is_non_census_or_example_sheet(t.name, t.df)]
     if len(raw_tables) <= 1:
         return raw_tables
 
@@ -1970,6 +2122,41 @@ def _prepare_doc_tables(doc: RawDoc) -> list[tuple[str, pd.DataFrame]]:
             combined.append((f"{name_i}+{name_j}", df_merged))
         else:
             combined.append((name_i, df_i))
+
+    # P0.1 Primary vs. Secondary Sheet Selection for multi-sheet Excel census workbooks:
+    # When one sheet is a comprehensive primary census roster (has relationship + coverage + dob and >= 5 people),
+    # exclude secondary conversion/template/macro tabs (e.g. 'SAIL', 'CRQS Census', 'Census Template', 'BCBS MI', 'UHC')
+    # whose valid person names are empty or a subset (>= 80% overlap) of the primary sheet and carry no distinct plans.
+    is_excel = getattr(doc, "ext", "").lower() in (".xlsx", ".xls", ".xlsm") or (
+        getattr(doc, "path", None) and getattr(doc.path, "suffix", "").lower() in (".xlsx", ".xls", ".xlsm")
+    )
+    if is_excel and len(combined) > 1:
+        sheet_infos = [
+            (idx, tname, tdf, *_sheet_person_names_and_info(tname, tdf))
+            for idx, (tname, tdf) in enumerate(combined)
+        ]
+        primary_candidates = [info for info in sheet_infos if info[5] and len(info[3]) >= 5]
+        if primary_candidates:
+            primary_candidates.sort(key=lambda x: len(x[3]), reverse=True)
+            pri_idx, pri_name, _, pri_names, _, _, pri_has_plans = primary_candidates[0]
+            filtered = []
+            for idx, tname, tdf, names_j, is_dep_j, _, has_plans_j in sheet_infos:
+                if idx == pri_idx or is_dep_j:
+                    filtered.append((tname, tdf))
+                    continue
+                if any(w in tname.lower() for w in ("note", "company", "info", "summary", "population")):
+                    filtered.append((tname, tdf))
+                    continue
+                if not names_j:
+                    log.info("Skipping empty/template sheet '%s' in %s (primary sheet is '%s')", tname, doc.name, pri_name)
+                    continue
+                overlap = len(names_j & pri_names) / len(names_j)
+                if overlap >= 0.80 and len(names_j) <= len(pri_names) and (not has_plans_j or pri_has_plans):
+                    log.info("Skipping redundant conversion/template sheet '%s' in %s (%d/%d names in primary sheet '%s')",
+                             tname, doc.name, len(names_j & pri_names), len(names_j), pri_name)
+                    continue
+                filtered.append((tname, tdf))
+            return filtered
 
     return combined
 

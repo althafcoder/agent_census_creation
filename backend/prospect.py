@@ -212,6 +212,8 @@ _PHONE_RE = re.compile(r"(?<!\d)(?:\+?1[\s.\-]?)?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]
 _EIN_RE = re.compile(r"\b(\d{2}-\d{7})\b")
 _FT_RE = re.compile(r"#?\s*FT\s*Employees?\s*[:\-]?\s*(\d{1,5})", re.I)
 _FULLTIME_RE = re.compile(r"full[\s\-]?time\s+employees?\s*[:\-]?\s*(\d{1,5})", re.I)
+_PT_RE = re.compile(r"#?\s*PT\s*Employees?\s*[:\-]?\s*(\d{1,5})", re.I)
+_PARTTIME_RE = re.compile(r"part[\s\-]?time\s+employees?\s*[:\-]?\s*(\d{1,5})", re.I)
 # Broker / agency / vendor domains that must never be captured as the *client's* contact email.
 _AGENCY_DOMAINS = ("adp.com", "archonpeo.com", "archon", "benefitfocus", "bswift", "peo")
 
@@ -326,15 +328,24 @@ def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[Raw
         val = _harvest(_EIN_RE, primary_docs) or _harvest(_EIN_RE, fallback_docs)
         merged["ein"] = val
     if not merged.get("ft_employees"):
-        m = _FT_RE.search("\n".join(d.text or "" for d in primary_docs)) or \
-            _FULLTIME_RE.search("\n".join(d.text or "" for d in primary_docs))
-        if m:
-            merged["ft_employees"] = int(m.group(1))
+        for d in primary_docs:
+            txt_d = d.text or ""
+            m = _FT_RE.search(txt_d) or _FULLTIME_RE.search(txt_d)
+            if m:
+                merged["ft_employees"] = int(m.group(1))
+                merged["ft_employees_source"] = d.name
+                m_pt = _PT_RE.search(txt_d) or _PARTTIME_RE.search(txt_d)
+                if m_pt:
+                    merged["pt_employees"] = int(m_pt.group(1))
+                break
     if not merged.get("ft_employees"):
         # Grid / spreadsheet layouts: label cell in one row, value in the same column below.
         hit = _grid_label_value(_FT_LABEL_CELL_RE, primary_docs) or _grid_label_value(_FT_LABEL_CELL_RE, fallback_docs)
         if hit:
             merged["ft_employees"], merged["ft_employees_source"] = hit
+            pt_hit = _grid_label_value(_PT_LABEL_CELL_RE, primary_docs) or _grid_label_value(_PT_LABEL_CELL_RE, fallback_docs)
+            if pt_hit:
+                merged["pt_employees"] = pt_hit[0]
     if merged.get("ft_employees") and not merged.get("ft_employees_source"):
         merged["ft_employees_source"] = ", ".join(d.name for d in primary_docs[:2])
 
@@ -342,6 +353,9 @@ def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[Raw
 # A cell that is (only) a full-time-employee-count label, e.g. "# of FT employees:".
 _FT_LABEL_CELL_RE = re.compile(
     r"^\s*(?:#|no\.?|number|total)?\s*(?:of\s+)?(?:FT|full[\s\-]?time)\s+(?:benefit[\s\-]?eligible\s+)?"
+    r"(?:employees?|ees?|staff)\s*[:\-]?\s*$", re.I)
+_PT_LABEL_CELL_RE = re.compile(
+    r"^\s*(?:#|no\.?|number|total)?\s*(?:of\s+)?(?:PT|part[\s\-]?time)\s+(?:benefit[\s\-]?eligible\s+)?"
     r"(?:employees?|ees?|staff)\s*[:\-]?\s*$", re.I)
 
 
@@ -411,10 +425,14 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
             log.warning("LLM-First prospect extraction error on GHQ/RFP: %s", exc)
 
     # 2. Rule-based extraction pass for any remaining unfilled fields
+    # Deterministic labelled SIC code always takes precedence over an unlabelled LLM guess (P1.8)
+    det_sic = ""
     for doc in sources:
         vals = _from_doc(doc)
+        if vals.get("sic") and not _is_invalid_sic(vals["sic"]) and not det_sic:
+            det_sic = vals["sic"]
         for k, v in vals.items():
-            if v and not merged[k]:
+            if v and (not merged[k] or (k == "sic" and not _is_invalid_sic(v))):
                 merged[k] = v
 
     if _is_invalid_sic(merged.get("sic", "")):
@@ -517,8 +535,9 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
     # 3b. Harvest supported contact details (email, phone, EIN) from all current-submission documents
     _text_fill(merged, sources, list(all_docs or []))
 
+    # P1.8: Explicit labelled SIC code in source documents beats LLM guess when GHQ/RFP SIC was blank
     sic_from_text = _sic_from_text(sources + list(all_docs or []))
-    if sic_from_text and ("-" in sic_from_text or not merged.get("sic")):
+    if sic_from_text and ("-" in sic_from_text or not merged.get("sic") or not det_sic):
         merged["sic"] = sic_from_text
 
     pr = Prospect()
@@ -544,6 +563,11 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
             pr.ft_employees = int(merged["ft_employees"])
         except (TypeError, ValueError):
             pr.ft_employees = None
+    if merged.get("pt_employees") is not None:
+        try:
+            pr.pt_employees = int(merged["pt_employees"])
+        except (TypeError, ValueError):
+            pr.pt_employees = None
 
     if merged.get("csz"):
         csz_clean = re.sub(r"\([^)]*\)", "", merged["csz"]).strip()

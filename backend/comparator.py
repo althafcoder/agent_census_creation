@@ -534,7 +534,7 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
         exc("Invalid dependent structures", d.display, "Unassigned dependent - no matching subscriber")
 
     for d in census.dependents:
-        rr_dep = RowResult()
+        rr_dep = RowResult(notes=list(d.notes))
         rr_dep.result = "Dependent"
         results[id(d)] = rr_dep
 

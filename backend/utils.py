@@ -331,7 +331,7 @@ def std_relationship(v) -> str:
     s = clean(v).lower()
     if not s:
         return ""
-    if s in {"ee", "e", "emp", "employee", "self", "subscriber", "primary", "member", "s", "insured"}:
+    if s in {"ee", "e", "emp", "employee", "self", "subscriber", "sub", "primary", "member", "s", "insured"}:
         return "EE"
 
     if re.search(r"\b(domestic\s*partner|\bdp\b)\b", s) or s == "dp":
@@ -397,10 +397,10 @@ def decode_insperity_coverage(v: str) -> dict:
 
 def std_cobra(v) -> str:
     s = clean(v).lower()
-    if s in {"y", "yes", "true", "1", "cobra"}:
-        return "Y"
-    if s in {"n", "no", "false", "0"}:
+    if s in {"n", "no", "false", "0", "no cobra", "not cobra", "active"}:
         return "N"
+    if s in {"y", "yes", "true", "1", "cobra"} or re.search(r"\bcobra\b", s):
+        return "Y"
     return ""
 
 

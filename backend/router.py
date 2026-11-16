@@ -719,7 +719,8 @@ def build_missing_information_email_parts(
             from clarifications import collect_clarifications
             _, _, _, _pay_names = _extract_payroll_info(roles, docs)
             clar = collect_clarifications(prospect, census, roles=roles, docs=docs,
-                                          invoice_records=invoice_records, extra_payroll_names=_pay_names)
+                                          invoice_records=invoice_records, extra_payroll_names=_pay_names,
+                                          selected_invoices=selected_invoices)
             existing_low = "\n".join(comparison_items).lower()
             clar_items = [c.text for c in clar if c.text and c.text.lower() not in existing_low]
             if clar_items:

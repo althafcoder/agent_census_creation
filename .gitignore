@@ -44,6 +44,8 @@ backend/scratch_output2/
 backend/scratch_output3/
 backend/test_out/
 backend/cache_storage/
+test_output_wellfit/
+test_wellfit_input/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm

@@ -513,12 +513,17 @@ class RepairEngine:
                     for p in getattr(census, "people", [])
                     if getattr(p, "invoice_only", False)
                 }
+                from census_builder import _is_same_person_as_subscriber
                 phantom_ids = set()
                 for dep in getattr(census, "dependents", []):
                     has_rel = bool((getattr(dep, "rel_raw", "") or "").strip())
                     has_demo = bool(getattr(dep, "dob", None) or (getattr(dep, "gender", "") or "").strip())
                     dep_key = ((dep.first or "").strip().lower(), (dep.last or "").strip().lower())
-                    if (not has_rel and not has_demo) or dep_key in invoice_only_keys:
+                    if (
+                        (not has_rel and not has_demo)
+                        or dep_key in invoice_only_keys
+                        or _is_same_person_as_subscriber(dep, getattr(dep, "employee", None))
+                    ):
                         phantom_ids.add(id(dep))
                 if phantom_ids:
                     census.people = [p for p in census.people if id(p) not in phantom_ids]
@@ -709,13 +714,23 @@ class RepairEngine:
                 example_names = {
                     ("john", "smith"), ("cindy", "parker"), ("robert", "johnson"),
                     ("caden", "parker"), ("victoria", "parker"), ("bruna", "andrea"),
-                    ("joseph", "abel"), ("sabrina", "abel")
+                    ("joseph", "abel"), ("sabrina", "abel"),
+                    ("bob", "smith"), ("dan", "smith"), ("danielle", "smith"),
+                    ("bruce", "wayne"), ("jack", "wayne"),
+                    ("peter", "parker"), ("marco", "russo sr"), ("marco", "russo jr"),
                 }
                 removed_ids = set()
                 for p in list(census.people):
                     fn = (p.first or "").strip().lower()
                     ln = (p.last or "").strip().lower()
-                    if (fn, ln) in example_names:
+                    tbl = str((getattr(p, "raw_data", {}) or {}).get("table", "") or "").strip().lower()
+                    pl = (getattr(p, "plan", "") or "").strip().lower()
+                    if (
+                        (fn, ln) in example_names
+                        or tbl in ("example", "sample")
+                        or pl in ("plan abc", "plan def", "plan xyz")
+                        or fn.startswith("*") or ln.startswith("*")
+                    ):
                         removed_ids.add(id(p))
                 if removed_ids:
                     census.people = [p for p in census.people if id(p) not in removed_ids]

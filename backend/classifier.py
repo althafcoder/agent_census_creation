@@ -69,8 +69,10 @@ FIELD_ALIASES: dict[str, list[str]] = {
                  "currenthealthcoveragelevel", "currentanticipatedcoveragelevel"],
     "status": ["status", "employeestatus", "memberstatus", "billingstatus", "policystatus",
                "enrollmentstatus", "enrolled", "coveragestatus", "medicalstatus", "medicalenrollment",
-               "employeesstatus", "employeesstatusftfulltimeptparttime", "employeestatusftfulltimeptparttime"],
-    "cobra": ["cobra", "cobraparticipant", "cobrastatus", "cobraindicator", "cobrayn", "oncobra", "oncobra1yes0no"],
+               "employeesstatus", "employeesstatusftfulltimeptparttime", "employeestatusftfulltimeptparttime",
+               "activeemployeedependentorcobra", "activeemployeedependentcobra", "activeorcobra", "employeestatusorcobra"],
+    "cobra": ["cobra", "cobraparticipant", "cobrastatus", "cobraindicator", "cobrayn", "oncobra", "oncobra1yes0no",
+              "cobraorstatecontinuation"],
     "plan": ["plan", "planname", "medicalplan", "plancode", "planelected", "medicalplanname", "product",
              "productname", "planenrolled", "currentplan", "planoption", "medicalplancode", "plandescription",
              "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan", "healthcare", "healthcareplan",
@@ -112,6 +114,7 @@ FIELD_ALIASES: dict[str, list[str]] = {
                           "medical1eligibilitygroup", "medicaleligibilityclass"],
     "worker_category": ["workercategory", "employeecategory", "employmentcategory", "employeetype",
                         "employeestatuscategory", "workerstatus", "workertype", "ftpt", "fulltimeparttime",
+                        "fulltimeorparttime", "fulltimeparttimedependentorcobra",
                         "ftorpt", "ftorptstatus", "employeeclassification", "classification"],
     "position_status": ["positionstatus", "employmentstatus", "positionstate"],
     "waive_reason": ["medicalwaivereason", "waivereason", "waiverreason", "medicalwaiver",
@@ -143,7 +146,7 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "emp_first": ["employeefirstname", "subscriberfirstname", "eefirst", "empfirstname", "primaryfirstname"],
     "emp_last": ["employeelastname", "subscriberlastname", "eelast", "emplastname", "primarylastname"],
     "emp_full": ["employeename", "employeefullname", "subscribername", "subscriberfullname", "eename", "eefullname", "empfullname", "primaryname", "primaryfullname", "policyholder", "primarymember",
-                 "subscriber", "employee"],
+                 "subscriber", "employee", "ifadependentlinkedemployeename", "linkedemployeename", "dependentsemployeename", "dependentemployeename"],
     "address": ["address", "homeaddress1", "homeaddress", "streetaddress", "address1", "street", "primaryaddressline1", "primaryaddress"],
     "city": ["city", "town", "primaryaddresscity", "residentcity"],
     "state": ["state", "st", "primaryaddressstateterritory", "primaryaddressstate", "livedinstate", "residentstate", "workstate", "workst"],
@@ -250,6 +253,21 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
                       "waive_reason", "job_title", "salary",
                       "emp_first", "emp_last", "emp_full", "address", "city", "state"):
             if any(x in FIELD_ALIASES[canon] for x in variants):
+                if canon in ("gender", "dep_gender") and canon in cols:
+                    # Dynamic structural guard: if a second 'Gender' column to the right contains non-gender
+                    # values (e.g. a side-by-side lookup table or coverage legend), ignore it as a gender column.
+                    from utils import is_unavailable_gender, std_gender
+                    sample_col_vals = [
+                        clean(df.iloc[r_i, idx])
+                        for r_i in range(best_i + 1, min(len(df), best_i + 20))
+                        if idx < df.shape[1] and not pd.isna(df.iloc[r_i, idx]) and clean(df.iloc[r_i, idx])
+                    ]
+                    non_gender_vals = [
+                        v for v in sample_col_vals
+                        if not std_gender(v) and not is_unavailable_gender(v)
+                    ]
+                    if sample_col_vals and len(non_gender_vals) >= 1:
+                        break
                 cand_cols.setdefault(canon, []).append((idx, str(lab)))
                 if canon not in cols:
                     cols[canon] = idx

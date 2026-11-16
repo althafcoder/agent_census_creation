@@ -3,6 +3,7 @@
     "learned_deduplicate_census_employees",
     "learned_disambiguate_same_name_persons",
     "learned_filter_template_example_rows",
+    "learned_recompute_findings",
     "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_eligibility_and_dob_conflict",
     "learned_reconcile_invoice_presence",
@@ -37,6 +38,7 @@
     "learned_deduplicate_census_employees",
     "learned_disambiguate_same_name_persons",
     "learned_filter_template_example_rows",
+    "learned_recompute_findings",
     "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_eligibility_and_dob_conflict",
     "learned_reconcile_invoice_presence",
@@ -63,7 +65,7 @@
     "pattern_template_example_row_filtration",
     "pattern_worksheet_boundary_enforcement"
   ],
-  "last_updated": "2026-11-13T15:13:40.595710",
+  "last_updated": "2026-11-16T12:15:19.317415",
   "validated_pattern_fingerprints": [
     "fp_abbreviated_first_name_invoice_matching_v1",
     "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1",
@@ -83,6 +85,7 @@
     "learned_deduplicate_census_employees",
     "learned_disambiguate_same_name_persons",
     "learned_filter_template_example_rows",
+    "learned_recompute_findings",
     "learned_reconcile_abbreviated_name_subscriber",
     "learned_reconcile_eligibility_and_dob_conflict",
     "learned_reconcile_invoice_presence",
