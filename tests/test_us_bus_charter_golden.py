@@ -325,6 +325,8 @@ def test_us_bus_charter_golden_feedback(monkeypatch):
     assert "20 active employees + 1 COBRA participant (21 total)" in hc_items[0].text
 
     routing = determine_routing(prospect, docs=all_docs)
+    assert routing.state == "NJ"
+    assert routing.carrier == "Cigna"
     email_text = generate_missing_information_email(
         prospect=prospect,
         routing=routing,
@@ -366,4 +368,27 @@ def test_us_bus_charter_golden_feedback(monkeypatch):
     failed = [c for c in val_report.checks if c.status != CheckStatus.PASS]
     assert failed == [], f"Unexpected failed checks: {[(c.rule_id, c.reason) for c in failed]}"
     assert val_report.release_status == EngineStatus.PASSED
+
+    print("\n=== US BUS CHARTER GOLDEN TEST CASE VERIFICATION ===")
+    print(f"1. Routing & SIC       : State={routing.state}, Carrier={routing.carrier}, SIC={prospect.sic}")
+    print(f"2. Census Population   : {len(emps)} employees ({len(active_emps)} active + {len(cobra_emps)} COBRA), {len(deps)} dependents")
+    print(f"3. Maria Composto COBRA: {composto.cobra}")
+    print(f"4. Kim Calabrese Gender: {calabrese.gender}")
+    print(f"5. Edward Telmany Deps : {[(d.display, d.role, str(d.dob)) for d in edward.dependents]}")
+    print(f"   Mark Telmany Deps   : {[(d.display, d.role, str(d.dob)) for d in mark.dependents]}")
+    print(f"   Michael Yehia Deps  : {[(d.display, d.role, str(d.dob)) for d in yehia.dependents]}")
+    print(f"6. Invoice Comparison  : {len(matched)}/{len(inv_doc.records)} billed employees matched; Missing from invoice: {[e.display for e in missing_inv]}")
+    print("7. DOB Discrepancies   :")
+    for item in dob_items:
+        print(f"   * {item.text}")
+    print("8. Invoice Validity    :")
+    for item in rec_items:
+        print(f"   * {item.text}")
+    print("9. Headcount Mismatch  :")
+    for item in hc_items:
+        print(f"   * {item.text}")
+    print(f"10. Validator Status   : {val_report.release_status.value} ({val_report.passed_checks}/{val_report.total_checks} checks passed)")
+    print("\n--- MISSING INFORMATION EMAIL ---")
+    print(email_text)
+
 

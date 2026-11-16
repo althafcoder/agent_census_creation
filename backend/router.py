@@ -129,14 +129,14 @@ def extract_prospect_state(prospect: Prospect, docs: list[RawDoc] | None = None)
         for d in docs:
             role = getattr(d, "role", "")
             d_name = d.name.lower()
-            is_prospect_doc = any(k in d_name for k in ["ghq", "rfp", "questionnaire", "company", "group"])
+            is_prospect_doc = any(k in d_name for k in ["ghq", "rfp", "questionnaire", "company", "group", "application"])
             if is_prospect_doc or role in ("ghq", "rfp"):
                 # Review first 2000 chars of text for company address
                 text_sample = (d.text or "")[:2500]
                 lines = text_sample.splitlines()
                 for line in lines:
                     low = line.lower()
-                    if any(k in low for k in ["company address", "business address", "hq address", "physical address", "headquarters"]):
+                    if any(k in low for k in ["company address", "business address", "hq address", "physical address", "headquarters", "location address", "locations:"]):
                         st = normalize_state(line)
                         if st:
                             _record(st, f"{d.name} company address line")
@@ -642,8 +642,13 @@ def build_missing_information_email_parts(
                     ded_clause = ""
                     inv_clause = f"{p_subj_cap} is not billed for medical on the {inv_ref}."
 
+                if emp.plan:
+                    lead_clause = f"The enrollment report shows {p_obj} on {emp.plan}, {tier_str}{eff_str}{ded_clause}."
+                else:
+                    cobra_tag = " (COBRA)" if str(getattr(emp, "cobra", "") or "").upper() == "Y" else ""
+                    lead_clause = f"The submitted census shows {p_obj}{cobra_tag} enrolled in {tier_str} medical coverage{eff_str}{ded_clause}."
                 paragraph = (
-                    f"{who}: The enrollment report shows {p_obj} on {emp.plan}, {tier_str}{eff_str}{ded_clause}. "
+                    f"{who}: {lead_clause} "
                     f"{inv_clause} Please confirm {p_poss} coverage status and provide a corrected invoice or Benefit Enrollment Register."
                 )
                 comparison_items.append(paragraph)

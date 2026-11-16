@@ -18,7 +18,8 @@ LABELS = {
     "company": ["companyname", "clientlegalname", "legalname", "prospectname", "employername", "nameofcompany", "businessname",
                 "groupname", "organizationname", "legalbusinessname", "nameofemployer", "company", "employer"],
     "address": ["address", "streetaddress", "businessaddress", "mailingaddress", "addressline1", "address1",
-                "physicaladdress", "hqaddress"],
+                "physicaladdress", "hqaddress", "locationaddress", "locationaddresses",
+                "pleaseattachalistwithalllocationaddresses"],
     "city": ["city"],
     "state": ["state", "states", "primarystate"],
     "zip": ["zip", "zipcode", "postalcode"],
@@ -89,7 +90,7 @@ def _kv_pairs(doc: RawDoc) -> dict[str, str]:
                     pairs.setdefault(mk, mv)
                 continue
             k, _, v = line.partition(":")
-            if 0 < len(k.strip()) <= 45 and clean(v):
+            if 0 < len(k.strip()) <= 55 and clean(v):
                 cleaned_v = clean(v)
                 if norm_key(k) in LABELS["company"]:
                     cleaned_v = clean_company_name(cleaned_v)

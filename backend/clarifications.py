@@ -477,9 +477,9 @@ def invoice_recency_items(
                 cov_part = ""
             inv_name = getattr(inv_doc, "path", "") or "the submitted invoice"
             text = (
-                f"Invoice Validity: The submitted invoice ({inv_name}) {doc_dt_part}{cov_part} "
-                f"is more than 90 days old. Please provide an updated current medical invoice."
-            ).replace("  ", " ")
+                f"Invoice Validity: The submitted invoice ({inv_name}) {doc_dt_part}{cov_part}, "
+                f"which is more than 90 days old. Please provide an updated current medical invoice."
+            ).replace(" ,", ",").replace("  ", " ")
             items.append(ClarificationItem("OUTDATED_INVOICE", [], text, {
                 "invoice": inv_name,
                 "doc_date": f"{d_date:%m/%d/%Y}" if d_date else "",
