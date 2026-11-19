@@ -2312,7 +2312,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.085650",
-    "updated_at": "2026-11-19T12:56:33.837558",
+    "updated_at": "2026-11-19T15:58:03.583803",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -2406,11 +2406,11 @@
         "RULE_10_GENDER_RESOLUTION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.566839"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125633",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2446,7 +2446,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.105085",
-    "updated_at": "2026-11-19T12:56:33.875126",
+    "updated_at": "2026-11-19T15:58:03.612110",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -2523,11 +2523,11 @@
         "RULE_09_DEPENDENT_DISPOSITION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125633",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2570,7 +2570,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.124349",
-    "updated_at": "2026-11-19T12:56:33.945879",
+    "updated_at": "2026-11-19T15:58:03.643517",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -2662,11 +2662,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125633",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2701,7 +2701,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T15:50:29.143900",
-    "updated_at": "2026-11-19T12:56:33.984591",
+    "updated_at": "2026-11-19T15:58:03.672028",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -2774,11 +2774,11 @@
         "RULE_09_SUBSCRIBER_ROW_LINKS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125633",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2813,7 +2813,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:09:37.757118",
-    "updated_at": "2026-11-19T12:56:34.026607",
+    "updated_at": "2026-11-19T15:58:03.698316",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -2887,11 +2887,11 @@
         "RULE_18_MATCH_PERCENTAGE_FORMATTING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -2926,7 +2926,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-28T17:57:21.012296",
-    "updated_at": "2026-11-19T12:56:34.063247",
+    "updated_at": "2026-11-19T15:58:03.720391",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -3001,11 +3001,11 @@
         "RULE_16_PREFERRED_NAME_MATCHING"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -3039,7 +3039,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.666013",
-    "updated_at": "2026-11-19T12:56:34.102127",
+    "updated_at": "2026-11-19T15:58:03.753528",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -3113,11 +3113,11 @@
         "RULE_08_EXAMPLE_ROWS_FILTERED"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -3151,7 +3151,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T11:09:01.687639",
-    "updated_at": "2026-11-19T12:56:34.136854",
+    "updated_at": "2026-11-19T15:58:03.784167",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -3227,11 +3227,11 @@
         "RULE_23_SUMMARY_PLAN_TABLE_COMPLETENESS"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -3265,7 +3265,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.525959",
-    "updated_at": "2026-11-19T12:56:34.170210",
+    "updated_at": "2026-11-19T15:58:03.819589",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -3337,11 +3337,11 @@
         "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -3374,7 +3374,7 @@
       "status": "PASS"
     },
     "created_at": "2026-10-29T13:24:05.543465",
-    "updated_at": "2026-11-19T12:56:34.211335",
+    "updated_at": "2026-11-19T15:58:03.839418",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -3447,11 +3447,11 @@
         "RULE_09_PART_TIME_EXCLUSION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.831051"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -3484,7 +3484,7 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T12:00:30.051455",
-    "updated_at": "2026-11-19T12:56:34.249331",
+    "updated_at": "2026-11-19T15:58:03.869376",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -3555,11 +3555,11 @@
         "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.832070"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -3592,7 +3592,7 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T12:00:30.099949",
-    "updated_at": "2026-11-19T12:56:34.289167",
+    "updated_at": "2026-11-19T15:58:03.901649",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -3661,11 +3661,11 @@
         "RULE_06_CENSUS_CONSERVATION"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.832070"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {
@@ -3699,7 +3699,7 @@
       "status": "PASS"
     },
     "created_at": "2026-11-02T13:10:56.063185",
-    "updated_at": "2026-11-19T12:56:34.319908",
+    "updated_at": "2026-11-19T15:58:03.932445",
     "compatibility": {
       "instruction_hashes": [
         "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -3773,11 +3773,11 @@
         "RULE_21_ELIGIBILITY_AND_DOB_CONFLICT"
       ],
       "promotion_eligible": true,
-      "last_verified_at": "2026-11-19T12:56:33.832070"
+      "last_verified_at": "2026-11-19T15:58:03.575517"
     },
     "promotion": {
       "mode": "auto_allowlisted",
-      "decision_ref": "verified_20261119_125634",
+      "decision_ref": "verified_20261119_155803",
       "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
     },
     "usage": {

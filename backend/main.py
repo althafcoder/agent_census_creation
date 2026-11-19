@@ -322,6 +322,8 @@ def run_pipeline(
     # 3. census (employees + dependents from all files) ------------------------------------------
     log.info("[3/7] Building Census: parsing employee & dependent records...")
     anchored_med_plans: set[str] = set()
+    used_agent_py_first = False
+    py_first_invoices: Optional[list[Any]] = None
     if not roles["census"]:
         log.warning("No census / enrollment file was found among the uploads; proceeding to generate missing info deliverable.")
         census = Census()
@@ -333,25 +335,53 @@ def run_pipeline(
             if "sbc" in d_low or "summary of benefits" in d_low or d in roles.get("invoice", []):
                 for tok in re.findall(r"\b[a-z]{1,5}\d{3,6}[a-z]\d{3,5}[a-z]?\b", (d.name + " " + (d.text or "")[:4000]), re.I):
                     anchored_med_plans.add(tok.lower())
-        census, meta = build_census(
-            roles["census"],
-            effective_date=prospect.effective_date,
-            tracer=tracer,
-            anchored_medical_plans=anchored_med_plans,
-            blueprint=blueprint,
-        )
-        meta["company"] = prospect.company
-        if not census.employees:
-            excluded_fallback = set(id(x) for x in (roles.get("census", []) + roles.get("deliverable", [])))
-            fallback_docs = [d for d in docs if id(d) not in excluded_fallback and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
-            if fallback_docs:
-                log.info("      * Primary census yielded 0 employees; attempting fallback consolidation with %s", [d.name for d in fallback_docs])
-                census, meta = build_census(
-                    roles["census"] + fallback_docs,
-                    effective_date=prospect.effective_date,
-                    tracer=tracer,
-                    anchored_medical_plans=anchored_med_plans,
+
+        # Pillar #1 & #4: Agent-Python-First Mode (Claude + Sandboxed Python is the PRIMARY builder
+        # on live runs; deterministic census_builder.py acts strictly as offline/error fallback).
+        try:
+            from agent_orchestrator import run_agent_python_first_build
+            py_first_census, py_first_invoices = run_agent_python_first_build(
+                docs,
+                blueprint=blueprint,
+                prospect=prospect,
+                effective_date=prospect.effective_date,
+            )
+            if py_first_census is not None and py_first_census.canonical_census_employees:
+                census = py_first_census
+                meta = {
+                    "has_coverage_column": any(bool(e.coverage) for e in census.canonical_census_employees),
+                    "saw_dependent_source": bool(census.dependents),
+                    "company": prospect.company,
+                    "builder": "agent_python_first",
+                }
+                used_agent_py_first = True
+                log.info(
+                    "🚀 [AGENT PYTHON-FIRST] Primary Census built directly via Python Sandbox: %d EEs, %d Deps",
+                    len(census.canonical_census_employees), len(census.dependents),
                 )
+        except Exception as _pyf_err:
+            log.warning("Agent-Python-First primary build skipped (falling back to deterministic census_builder): %s", _pyf_err)
+
+        if not used_agent_py_first:
+            census, meta = build_census(
+                roles["census"],
+                effective_date=prospect.effective_date,
+                tracer=tracer,
+                anchored_medical_plans=anchored_med_plans,
+                blueprint=blueprint,
+            )
+            meta["company"] = prospect.company
+            if not census.employees:
+                excluded_fallback = set(id(x) for x in (roles.get("census", []) + roles.get("deliverable", [])))
+                fallback_docs = [d for d in docs if id(d) not in excluded_fallback and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
+                if fallback_docs:
+                    log.info("      * Primary census yielded 0 employees; attempting fallback consolidation with %s", [d.name for d in fallback_docs])
+                    census, meta = build_census(
+                        roles["census"] + fallback_docs,
+                        effective_date=prospect.effective_date,
+                        tracer=tracer,
+                        anchored_medical_plans=anchored_med_plans,
+                    )
         if not census.employees:
             log.warning("Census files were found but no employee rows could be parsed; proceeding to generate missing info deliverable.")
             F.notes.append("Census files were provided but 0 employee rows could be read from them.")
@@ -365,7 +395,11 @@ def run_pipeline(
 
     # 4. invoices ----------------------------------------------------------------------------------
     log.info("[4/7] Parsing and selecting invoices...")
-    inv_docs = [parse_invoice(d) for d in roles["invoice"]]
+    if py_first_invoices and any(getattr(i, "records", None) for i in py_first_invoices):
+        inv_docs = py_first_invoices
+        log.info("🚀 [AGENT PYTHON-FIRST] Using %d Python-verified medical invoice(s)", len(inv_docs))
+    else:
+        inv_docs = [parse_invoice(d) for d in roles["invoice"]]
     if blueprint is not None:
         blueprint.apply_to_invoices(inv_docs)
     selected, inv_findings, period = select_invoices(inv_docs)
@@ -405,13 +439,16 @@ def run_pipeline(
     ref_date = (selected[0].period_start if selected else None) or prospect.effective_date
     wait_rule = extract_waiting_period_rule(docs)
     wait_days = wait_rule.get("days") if wait_rule else None
-    refine_non_enrolled_statuses(
-        census, reference_date=ref_date, waiting_days=wait_days, waiting_rule=wait_rule,
-        docs=docs, effective_date=prospect.effective_date, tracer=tracer,
-    )
+    if not used_agent_py_first:
+        refine_non_enrolled_statuses(
+            census, reference_date=ref_date, waiting_days=wait_days, waiting_rule=wait_rule,
+            docs=docs, effective_date=prospect.effective_date, tracer=tracer,
+        )
 
     # 4.2 Authoritative Population Controls (Test/Placeholder rows + Agent-identified excluded/terminated employees)
-    if census and census.employees:
+    # Skip heuristic multi-file exclusion when Agent-Python-First already built the exact canonical population
+    # (so email-added employees like new hires are never accidentally stripped by file-membership heuristics).
+    if census and census.employees and not used_agent_py_first:
         from utils import name_similarity, split_full_name
         from census_builder import recalculate_row_numbers
         bp_exclusions = list(getattr(blueprint, "excluded_employees", None) or []) if blueprint is not None else []
@@ -1064,7 +1101,8 @@ def run_pipeline(
             _rep_excl = _rep.get("exclude_employees") or []
             _rep_ov = _rep.get("status_overrides") or []
             _rep_dl = _rep.get("dependent_links") or []
-            if _rep_excl or _rep_ov or _rep_dl:
+            _rep_ff = _rep.get("field_fixes") or []
+            if _rep_excl or _rep_ov or _rep_dl or _rep_ff:
                 from utils import name_similarity as _rep_sim, split_full_name as _rep_split
                 from census_builder import apply_dependent_links as _rep_apply_dl, recalculate_row_numbers as _rep_recalc
                 _inv_pairs = [(r.first, r.last) for r in (invoice_records or []) if r.first or r.last]
@@ -1125,6 +1163,37 @@ def run_pipeline(
 
                 if _rep_dl:
                     _changed += _rep_apply_dl(census, _rep_dl)
+
+                if _rep_ff:
+                    from utils import parse_date as _rep_parse_date, std_zip as _rep_std_zip
+                    for ff in _rep_ff:
+                        ff_f, ff_l = _rep_split(ff["person_name"])
+                        for p in census.people:
+                            if getattr(p, "invoice_only", False) or str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_"):
+                                continue
+                            if _rep_sim((p.first, p.last), (ff_f, ff_l)) >= 0.88:
+                                patched_any = False
+                                if ff.get("gender") in ("M", "F"):
+                                    p.gender = ff["gender"]
+                                    p.gender_resolution_status = "RESOLVED"
+                                    patched_any = True
+                                if ff.get("dob"):
+                                    d_parsed = _rep_parse_date(ff["dob"])
+                                    if d_parsed:
+                                        p.dob = d_parsed
+                                        patched_any = True
+                                if ff.get("zip"):
+                                    zv = _rep_std_zip(ff["zip"])
+                                    z_str = zv[0] if isinstance(zv, tuple) else str(zv or "")
+                                    if z_str:
+                                        p.zip = z_str
+                                        patched_any = True
+                                if ff.get("cobra") in ("Y", "N"):
+                                    p.cobra = ff["cobra"]
+                                    patched_any = True
+                                if patched_any:
+                                    _changed += 1
+                                break
 
                 if _changed > 0:
                     log.info(

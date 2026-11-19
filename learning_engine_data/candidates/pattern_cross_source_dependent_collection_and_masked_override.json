@@ -25,7 +25,7 @@
     "status": "PASS"
   },
   "created_at": "2026-10-28T15:50:29.105085",
-  "updated_at": "2026-11-19T12:56:33.875126",
+  "updated_at": "2026-11-19T15:58:03.612110",
   "compatibility": {
     "instruction_hashes": [
       "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef"
@@ -102,11 +102,11 @@
       "RULE_09_DEPENDENT_DISPOSITION"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-11-19T12:56:33.831051"
+    "last_verified_at": "2026-11-19T15:58:03.575517"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261119_125633",
+    "decision_ref": "verified_20261119_155803",
     "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
   },
   "usage": {

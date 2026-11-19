@@ -103,7 +103,7 @@ AUDIT_SCHEMA: dict[str, Any] = {
         "repair_actions": {
             "type": "object",
             "additionalProperties": False,
-            "required": ["exclude_employees", "status_overrides", "dependent_links"],
+            "required": ["exclude_employees", "status_overrides", "dependent_links", "field_fixes"],
             "properties": {
                 "exclude_employees": {
                     "type": "array",
@@ -143,6 +143,22 @@ AUDIT_SCHEMA: dict[str, Any] = {
                         "properties": {
                             "dependent_name": {"type": "string"},
                             "subscriber_name": {"type": "string"},
+                            "reason": {"type": "string"},
+                        },
+                    },
+                },
+                "field_fixes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["person_name", "gender", "dob", "zip", "cobra", "reason"],
+                        "properties": {
+                            "person_name": {"type": "string"},
+                            "gender": {"type": "string", "enum": ["", "M", "F"]},
+                            "dob": {"type": "string"},
+                            "zip": {"type": "string"},
+                            "cobra": {"type": "string", "enum": ["", "Y", "N"]},
                             "reason": {"type": "string"},
                         },
                     },
@@ -834,6 +850,7 @@ def _validate_audit_dict(raw: Any) -> dict[str, Any]:
         "exclude_employees": [],
         "status_overrides": [],
         "dependent_links": [],
+        "field_fixes": [],
     }
     raw_repairs = raw.get("repair_actions")
     if isinstance(raw_repairs, dict):
@@ -860,6 +877,21 @@ def _validate_audit_dict(raw: Any) -> dict[str, Any]:
                     "subscriber_name": clean(dl.get("subscriber_name", "")),
                     "reason": clean(dl.get("reason", "")) or "Post-Generation Auditor dependent link",
                 })
+        for ff in (raw_repairs.get("field_fixes") or []):
+            if isinstance(ff, dict) and clean(ff.get("person_name", "")):
+                g_u = clean(ff.get("gender", "")).upper()
+                c_u = clean(ff.get("cobra", "")).upper()
+                dob_s = clean(ff.get("dob", ""))
+                zip_s = clean(ff.get("zip", ""))
+                if any((g_u in ("M", "F"), dob_s, zip_s, c_u in ("Y", "N"))):
+                    clean_repairs["field_fixes"].append({
+                        "person_name": clean(ff.get("person_name", "")),
+                        "gender": g_u if g_u in ("M", "F") else "",
+                        "dob": dob_s,
+                        "zip": zip_s,
+                        "cobra": c_u if c_u in ("Y", "N") else "",
+                        "reason": clean(ff.get("reason", "")) or "Adversarial Verifier field fix",
+                    })
 
     return {
         "overall_status": status,

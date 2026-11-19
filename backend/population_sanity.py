@@ -193,28 +193,46 @@ def evaluate_population_sanity(
         ))
 
     # 2. Employer-stated headcount (GHQ / RFP / client email) vs parsed census employees
-    # Account for legitimately excluded Part-Time employees when the stated count is a total-payroll headcount.
+    # Account for legitimately excluded Part-Time employees (both on-census excluded PT rows AND
+    # employer-declared PT count on GHQ/RFP that was omitted from an FT-only medical census).
     pt_excluded_count = len(getattr(census, "excluded_employees", []) or [])
-    total_source_emp_count = emp_count + pt_excluded_count
+    declared_pt_count = getattr(prospect, "pt_employees", None) if prospect is not None else None
+    declared_pt_int = declared_pt_count if (isinstance(declared_pt_count, int) and declared_pt_count > 0) else 0
+    total_source_emp_count = emp_count + max(pt_excluded_count, declared_pt_int)
     if stated_hc is not None and stated_hc >= 5 and emp_count > 0:
         diff = emp_count - stated_hc
         ratio = emp_count / stated_hc
         total_ratio = total_source_emp_count / stated_hc
         total_matches = 0.65 <= total_ratio <= 1.45
+        # When parsed census is SMALLER than stated total payroll (e.g. employer submitted FT-only
+        # medical census omitting 60 part-time/seasonal workers), check whether the medical invoice
+        # confirms the parsed census size. If invoice matches parsed census, downgrade to warning
+        # (do NOT withhold the Excel workbook for a legitimate FT-only census!).
+        invoice_confirms_smaller_census = bool(
+            ratio <= 0.5
+            and inv_count > 0
+            and (abs(emp_count - inv_count) <= 3 or (0.5 <= (emp_count / inv_count) <= 2.5))
+        )
         if not total_matches and ((ratio >= 1.5 and diff >= 5) or (ratio <= 0.5 and -diff >= 5)):
+            sev = "warning" if invoice_confirms_smaller_census else "critical"
             issues.append(SanityIssue(
                 code="STATED_HEADCOUNT_DIVERGENCE",
-                severity="critical",
+                severity=sev,
                 message=(
                     f"Population sanity gate: parsed {emp_count} census employees, but {stated_src} "
-                    f"states {stated_hc} employees ({ratio:.2f}x) — check for duplicated rows or "
-                    f"mis-classified employee/dependent records."
+                    f"states {stated_hc} employees ({ratio:.2f}x) — "
+                    + (
+                        "consistent with medical invoice subscriber count (likely FT-only census omitting part-time staff); please confirm headcount."
+                        if invoice_confirms_smaller_census
+                        else "check for duplicated rows or mis-classified employee/dependent records."
+                    )
                 ),
                 details={
                     "parsed_employees": emp_count,
                     "stated_headcount": stated_hc,
                     "source": stated_src,
                     "ratio": round(ratio, 2),
+                    "invoice_subscribers": inv_count,
                 },
             ))
 

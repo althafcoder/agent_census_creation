@@ -145,3 +145,19 @@ def test_validator_enforces_population_sanity_gate():
     assert gate_checks[0].status == CheckStatus.BLOCKED
     assert any(iss.issue_id == "ISSUE_POPULATION_SANITY_BLOCKED" for iss in report.issues)
 
+
+def test_ft_only_census_confirmed_by_invoice_or_declared_pt_is_not_blocked():
+    # Case A: GHQ states 64 total payroll (4 FT + 60 PT), census lists 4 FT, invoice bills 5 subscribers
+    census = Census(people=[_make_person("EE", f"Emp{i}", "Smith", cov="EE") for i in range(4)])
+    pr = Prospect(stated_total_employees=64, stated_total_source="Submission Blueprint (GHQ/RFP/Email)")
+    invs = [InvoiceRecord(first=f"Emp{i}", last="Smith", plan="FL Blue", tier="EE") for i in range(5)]
+    rep = evaluate_population_sanity(census, prospect=pr, invoice_records=invs)
+    assert not rep.blocked
+    assert any(i.code == "STATED_HEADCOUNT_DIVERGENCE" and i.severity == "warning" for i in rep.issues)
+
+    # Case B: GHQ also explicitly states pt_employees=60 -> total 4 + 60 = 64 matches stated_total_employees
+    pr2 = Prospect(stated_total_employees=64, pt_employees=60, stated_total_source="GHQ")
+    rep2 = evaluate_population_sanity(census, prospect=pr2, invoice_records=[])
+    assert not rep2.blocked
+
+

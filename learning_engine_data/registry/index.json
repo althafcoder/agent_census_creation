@@ -65,7 +65,7 @@
     "pattern_template_example_row_filtration",
     "pattern_worksheet_boundary_enforcement"
   ],
-  "last_updated": "2026-11-19T12:56:34.333666",
+  "last_updated": "2026-11-19T15:58:03.952370",
   "validated_pattern_fingerprints": [
     "fp_abbreviated_first_name_invoice_matching_v1",
     "fp_carrier_census_legal_name_and_dependent_subscriber_linkage_v1",

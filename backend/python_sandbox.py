@@ -40,9 +40,14 @@ FORBIDDEN_BUILTINS: frozenset[str] = frozenset({
 
 FORBIDDEN_ATTR_CALLS: frozenset[str] = frozenset({
     "system", "popen", "spawnl", "spawnv", "execv", "execl",
-    "remove", "unlink", "rmdir", "removedirs", "rename", "replace",
+    "unlink", "rmdir", "removedirs",
     "chmod", "chown", "kill", "fork", "startfile", "rmtree",
     "write_text", "write_bytes",
+})
+
+# Attributes that are dangerous ONLY on `os` (not on str/DataFrame/list/set!)
+FORBIDDEN_OS_CALLS: frozenset[str] = frozenset({
+    "remove", "rename", "replace",
 })
 
 
@@ -87,6 +92,12 @@ def validate_sandbox_code(code: str) -> Optional[str]:
             elif isinstance(node.func, ast.Attribute):
                 if node.func.attr in FORBIDDEN_ATTR_CALLS:
                     return f"SECURITY BLOCK: Calling '.{node.func.attr}()' is not permitted in the sandbox."
+                if (
+                    node.func.attr in FORBIDDEN_OS_CALLS
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "os"
+                ):
+                    return f"SECURITY BLOCK: Calling 'os.{node.func.attr}()' is not permitted in the sandbox."
         elif isinstance(node, ast.Attribute):
             if node.attr == "environ":
                 return "SECURITY BLOCK: Accessing environment variables is not permitted in the sandbox."
@@ -241,6 +252,42 @@ def emit_canonical_census(payload):
     print(f"EMITTED canonical_census.json: {len(emps)} employees, {deps} dependents, excluded_count={payload.get('excluded_count', 0)}")
 
 
+def emit_canonical_invoices(payload):
+    """Write Python-verified canonical medical invoice data to the session's output slot.
+
+    Expected shape:
+      {
+        "invoices": [
+          {
+            "file_name": "Oct_Invoice.pdf",
+            "period_start": "2026-10-01", "period_end": "2026-10-31",
+            "group_number": "14179816", "current_charges": 19511.64,
+            "total_adjustments": 0.0, "total_due": 19511.64,
+            "records": [
+              {"first": "Jane", "last": "Doe", "raw_name": "DOE, JANE", "plan": "AETNA EPO",
+               "tier": "EE", "premium": 650.00, "sub_id": "12345", "group_no": "001"}
+            ]
+          }
+        ]
+      }
+    """
+    if isinstance(payload, list):
+        payload = {"invoices": payload}
+    if not isinstance(payload, dict) or not isinstance(payload.get("invoices"), list):
+        raise ValueError("emit_canonical_invoices expects a dict with an 'invoices' list.")
+    def _default(o):
+        if hasattr(o, "isoformat"):
+            return o.isoformat()
+        if isinstance(o, Decimal):
+            return float(o)
+        return str(o)
+    with open("canonical_invoices.json", "w", encoding="utf-8") as _out:
+        json.dump(payload, _out, default=_default, ensure_ascii=False)
+    invs = payload["invoices"]
+    recs = sum(len(inv.get("records") or []) for inv in invs if isinstance(inv, dict))
+    print(f"EMITTED canonical_invoices.json: {len(invs)} invoice(s), {recs} medical subscriber record(s)")
+
+
 with open("agent_script.py", "r", encoding="utf-8") as _sf:
     _AGENT_CODE = _sf.read()
 
@@ -289,7 +336,25 @@ class PythonSandboxSession:
 
         for k, v in (extra_files or {}).items():
             if v and os.path.exists(str(v)):
-                files_map[str(k)] = str(Path(str(v)).resolve())
+                abs_v = str(Path(str(v)).resolve())
+                files_map[str(k)] = abs_v
+                # Also pre-load extra .xlsx/.xls workbooks (e.g. generated Marsh/RAPT/SBU deliverables)
+                # into TABLES so `sheet_df(wb_name)` works seamlessly in Post-Generation Audit!
+                if abs_v.lower().endswith((".xlsx", ".xls")):
+                    try:
+                        import openpyxl as _oxl
+                        import pandas as _pd
+                        _wb = _oxl.load_workbook(abs_v, data_only=True)
+                        _etmap: dict[str, Any] = {}
+                        for _sn in _wb.sheetnames:
+                            _ws = _wb[_sn]
+                            _rows = list(_ws.iter_rows(values_only=True))
+                            _etmap[_sn] = _pd.DataFrame(_rows)
+                        if _etmap:
+                            tables_map[str(k)] = _etmap
+                        _wb.close()
+                    except Exception as _ex_err:
+                        log.debug("Could not pre-load extra workbook '%s' into TABLES: %s", k, _ex_err)
 
         ctx_path = os.path.join(self._tmpdir, "context.pkl")
         with open(ctx_path, "wb") as f:
@@ -361,6 +426,20 @@ class PythonSandboxSession:
             return data if isinstance(data, dict) else None
         except Exception as exc:
             log.warning("Failed reading canonical_census.json from sandbox: %s", exc)
+            return None
+
+    def read_canonical_invoices(self) -> Optional[dict[str, Any]]:
+        """Read back the JSON emitted via `emit_canonical_invoices(...)` inside this session, if any."""
+        p = os.path.join(self._tmpdir, "canonical_invoices.json")
+        if not os.path.exists(p):
+            return None
+        try:
+            import json
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else None
+        except Exception as exc:
+            log.warning("Failed reading canonical_invoices.json from sandbox: %s", exc)
             return None
 
     def close(self) -> None:

@@ -60,8 +60,10 @@ def test_sandbox_security_blocks_dangerous_code():
     assert validate_sandbox_code("open('evil.txt', 'w').write('x')") is not None
     assert validate_sandbox_code("eval('1+1')") is not None
     assert validate_sandbox_code("import os\nos.remove('x')") is not None
-    # Safe analysis code passes
-    assert validate_sandbox_code("import re\ndf = sheet_df('a.xlsx')\nprint(len(df))") is None
+    # Safe analysis code passes (including str.replace, df.rename, list.remove)
+    assert validate_sandbox_code("import re\ndf = sheet_df('a.xlsx').rename(columns={'A':'B'})\ns = '$100'.replace('$','')\nlst=[1,2]; lst.remove(1)\nprint(len(df), s, lst)") is None
+    assert validate_sandbox_code("import os\nos.rename('a', 'b')") is not None
+    assert validate_sandbox_code("import os\nos.replace('a', 'b')") is not None
 
 
 def test_sandbox_timeout_guard():
@@ -129,4 +131,27 @@ emit_canonical_census({
 
     sanity = evaluate_population_sanity(census=census, invoice_records=[])
     assert not sanity.blocked
+
+
+def test_sandbox_preloads_extra_xlsx_and_pads_4digit_zip(tmp_path):
+    import openpyxl
+    from agent_orchestrator import canonical_json_to_census
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Census"
+    ws.append(["First", "Last", "ZIP"])
+    ws.append(["Jane", "Doe", "07109"])
+    xlsx_path = tmp_path / "Generated_Output.xlsx"
+    wb.save(xlsx_path)
+
+    with PythonSandboxSession([], extra_files={"Generated_Output.xlsx": str(xlsx_path)}) as sb:
+        out = sb.run("df = sheet_df('Generated_Output.xlsx', 'Census', header_row=0)\nprint('ROWS:', len(df), 'FIRST:', df.iloc[0]['First'].replace('J', 'j'))")
+    assert "ROWS: 1 FIRST: jane" in out
+
+    c = canonical_json_to_census({
+        "employees": [{"first": "Jane", "last": "Doe", "zip": "7109", "coverage": "EE", "plan": "HMO"}],
+    })
+    assert c is not None
+    assert c.employees[0].zip == "07109"
 

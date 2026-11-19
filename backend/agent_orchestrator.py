@@ -542,12 +542,16 @@ def run_tool_based_workbook_audit(
     audit_tools = [_RUN_PYTHON_TOOL, audit_tool] if has_sandbox else [audit_tool]
 
     py_hint = (
-        "\nYou also have `run_python` with read-only access to the generated Excel workbook(s) in `FILES` "
-        "and source files in `TABLES`/`TEXTS`. Use it to verify exact employee & dependent counts, check "
-        "for dropped different-surname dependents or leaked terminated/part-time rows, and check blank coverage "
-        "cells before calling `submit_workbook_audit`. If you discover concrete population, status, or dependent-linking "
-        "defects, populate `repair_actions` (`exclude_employees`, `status_overrides`, `dependent_links`) so the pipeline "
-        "can automatically repair and regenerate the workbook before delivery!\n"
+        "\nYou are operating as an INDEPENDENT ADVERSARIAL VERIFIER with `run_python` (read-only access to the "
+        "saved Excel workbook(s) in `FILES` and all raw source files in `TABLES`/`TEXTS`).\n"
+        "BEFORE calling `submit_workbook_audit`, run a quick Python verification script over `FILES[wb_name]` vs `TABLES` to check:\n"
+        "  1. Any blank `Gender`, `DOB`, or `ZIP` cell in the Excel that IS populated in the source spreadsheet -> emit `repair_actions.field_fixes`.\n"
+        "  2. Any employee marked `COBRA = Y` when source has NO explicit COBRA column/value (e.g. Auto Enrollment = Y) -> emit `repair_actions.field_fixes` with `cobra='N'`.\n"
+        "  3. Any duplicate child/spouse under the same subscriber, or dropped different-surname dependent -> emit `repair_actions.dependent_links`.\n"
+        "  4. Any leaked Terminated/Inactive non-COBRA or Part-Time employee -> emit `repair_actions.exclude_employees`.\n"
+        "  5. Any blank or wrong medical coverage status (`WO`/`WP`/`NE`) -> emit `repair_actions.status_overrides`.\n"
+        "  6. Verify `Summary` medical premium totals match the printed invoice totals.\n"
+        "If you populate any `repair_actions`, the pipeline will automatically repair and regenerate the Excel before delivery!\n"
         if has_sandbox else ""
     )
     prompt = f"""You are the Post-Generation Underwriting QA Auditor operating under {doc_name}.
@@ -627,13 +631,11 @@ DELIVERABLE SNAPSHOT & SOURCE GROUND TRUTH:
                 break
 
             tool_results: list[dict[str, Any]] = []
+            # Execute all `run_python` calls first before reading `submit_workbook_audit`
             for tu in tool_uses:
                 t_name = getattr(tu, "name", "")
                 t_input = getattr(tu, "input", {}) or {}
                 t_id = getattr(tu, "id", "")
-                if t_name == "submit_workbook_audit" and isinstance(t_input, dict):
-                    submitted_raw = t_input
-                    break
                 if t_name == "run_python" and sb_ctx is not None:
                     res_text = sb_ctx.run(str(t_input.get("code") or ""))
                     log.info("🔎 [AUDIT PYTHON] Turn %d -> %d chars", turn + 1, len(res_text))
@@ -642,6 +644,8 @@ DELIVERABLE SNAPSHOT & SOURCE GROUND TRUTH:
                         "tool_use_id": t_id,
                         "content": res_text,
                     })
+                elif t_name == "submit_workbook_audit" and isinstance(t_input, dict):
+                    submitted_raw = t_input
 
             if submitted_raw is not None or turn == turns - 1:
                 break
@@ -722,7 +726,10 @@ def canonical_json_to_census(
         if cov in ("WO", "WP", "NE", "RC") and not plan:
             plan = "NA"
         cobra = std_cobra(er.get("cobra")) or "N"
-        emp_zip_val = std_zip(er.get("zip") or "")
+        raw_ez = er.get("zip")
+        if isinstance(raw_ez, str) and raw_ez.strip().isdigit() and len(raw_ez.strip()) == 4:
+            raw_ez = raw_ez.strip().zfill(5)
+        emp_zip_val = std_zip(raw_ez or "")
         emp_zip = emp_zip_val[0] if isinstance(emp_zip_val, tuple) else str(emp_zip_val or "")
         emp = Person(
             role="EE",
@@ -772,7 +779,10 @@ def canonical_json_to_census(
             drole = std_relationship(dr.get("role") or dr.get("relationship") or "") or "CH"
             if drole not in ("SP", "CH", "DP"):
                 drole = "CH"
-            dep_zip_val = std_zip(dr.get("zip") or "")
+            raw_dz = dr.get("zip")
+            if isinstance(raw_dz, str) and raw_dz.strip().isdigit() and len(raw_dz.strip()) == 4:
+                raw_dz = raw_dz.strip().zfill(5)
+            dep_zip_val = std_zip(raw_dz or "")
             dep_zip = (dep_zip_val[0] if isinstance(dep_zip_val, tuple) else str(dep_zip_val or "")) or emp.zip
             dep = Person(
                 role=drole,
@@ -931,13 +941,12 @@ YOUR TASK (use `run_python` — `FILES`, `TABLES`, `TEXTS`, `list_files()`, `she
                     continue
 
                 tool_results: list[dict[str, Any]] = []
+                confirm_tu = None
+                # Always execute all `run_python` calls FIRST so parallel tool calls never skip `emit_canonical_census`
                 for tu in tool_uses:
                     t_name = getattr(tu, "name", "")
                     t_input = getattr(tu, "input", {}) or {}
                     t_id = getattr(tu, "id", "")
-                    if t_name == "confirm_canonical_census":
-                        confirmed = True
-                        break
                     if t_name == "run_python":
                         res_text = sandbox.run(str(t_input.get("code") or ""))
                         log.info("🐍 [SANITY RESCUE PY] Turn %d -> %d chars", turn + 1, len(res_text))
@@ -945,6 +954,18 @@ YOUR TASK (use `run_python` — `FILES`, `TABLES`, `TEXTS`, `list_files()`, `she
                             "type": "tool_result",
                             "tool_use_id": t_id,
                             "content": res_text,
+                        })
+                    elif t_name == "confirm_canonical_census":
+                        confirm_tu = tu
+
+                if confirm_tu is not None:
+                    if sandbox.read_canonical_census() is not None:
+                        confirmed = True
+                    else:
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": getattr(confirm_tu, "id", ""),
+                            "content": "ERROR: canonical_census.json was NOT emitted yet. Call emit_canonical_census(...) inside run_python first, then call confirm_canonical_census.",
                         })
 
                 if confirmed or turn == max_turns - 1:
@@ -972,3 +993,282 @@ YOUR TASK (use `run_python` — `FILES`, `TABLES`, `TEXTS`, `list_files()`, `she
     except Exception as exc:
         log.warning("Sanity-Gate Python Rescue skipped: %s", exc)
         return None
+
+
+# ------------------- Pillar #1 & #4: Agent-Python-First Census + Invoices ---
+def _agent_python_first_enabled() -> bool:
+    if os.getenv("CENSUS_AGENT_PYTHON_FIRST", "1").strip().lower() in ("0", "false", "no"):
+        return False
+    if os.getenv("PYTEST_CURRENT_TEST", "") != "" and os.getenv("CENSUS_FORCE_AGENT_PY_IN_TEST", "") != "1":
+        return False
+    return _agent_loop_enabled()
+
+
+def canonical_json_to_invoices(payload: dict[str, Any]) -> list[Any]:
+    """Convert Python-emitted `canonical_invoices.json` into validated `InvoiceDoc` objects."""
+    if not isinstance(payload, dict) or not isinstance(payload.get("invoices"), list):
+        return []
+    from models import InvoiceDoc, InvoiceRecord
+    from utils import parse_date, split_full_name, std_coverage, to_money
+
+    out_docs: list[InvoiceDoc] = []
+    for inv in payload["invoices"]:
+        if not isinstance(inv, dict):
+            continue
+        raw_recs = inv.get("records") or []
+        recs: list[InvoiceRecord] = []
+        for r in raw_recs:
+            if not isinstance(r, dict):
+                continue
+            first = clean(r.get("first") or "")
+            last = clean(r.get("last") or "")
+            raw_name = clean(r.get("raw_name") or f"{first} {last}".strip())
+            if not (first or last) and raw_name:
+                first, last = split_full_name(raw_name)
+            if not (first or last):
+                continue
+            prem = to_money(r.get("premium"))
+            tier = std_coverage(r.get("tier") or "") or clean(r.get("tier") or "").upper()
+            recs.append(InvoiceRecord(
+                first=first,
+                last=last,
+                raw_name=raw_name,
+                tier=tier,
+                plan=clean(r.get("plan") or ""),
+                raw_plan=clean(r.get("raw_plan") or r.get("plan") or ""),
+                premium=prem,
+                sub_id=clean(r.get("sub_id") or ""),
+                group_no=clean(r.get("group_no") or inv.get("group_number") or ""),
+                source=clean(inv.get("file_name") or "agent_python_invoice"),
+            ))
+        if not recs:
+            continue
+        out_docs.append(InvoiceDoc(
+            path=clean(inv.get("file_name") or "agent_python_invoice"),
+            records=recs,
+            period_start=parse_date(inv.get("period_start")),
+            period_end=parse_date(inv.get("period_end")),
+            group_number=clean(inv.get("group_number") or ""),
+            current_charges=to_money(inv.get("current_charges")),
+            total_adjustments=to_money(inv.get("total_adjustments")),
+            total_due=to_money(inv.get("total_due")),
+        ))
+    return out_docs
+
+
+def run_agent_python_first_build(
+    docs: list[Any],
+    *,
+    blueprint: Any = None,
+    prospect: Any = None,
+    effective_date: Any = None,
+    max_turns: int = 8,
+    bypass_cache: bool = False,
+) -> tuple[Optional[Any], Optional[list[Any]]]:
+    """Pillar #1 & #4 (Agent-Python-First Mode): Claude + Sandboxed Python builds the canonical
+    `Census` (and optionally Python-verified `InvoiceDoc`s) directly from 100% of rows using
+    retrieved Experiential Procedural Recipes (Pillar #2).
+
+    Returns ``(census, invoice_docs)`` where either element may be ``None`` if not emitted
+    (falling back cleanly to deterministic engines).
+    """
+    if not docs or not _agent_python_first_enabled():
+        return None, None
+
+    from census_config import ANTHROPIC_API_KEY, ANTHROPIC_EFFORT, ANTHROPIC_MODEL, ANTHROPIC_WORKSPACE_ID
+    from llm_client import (
+        get_instruction_doc_name,
+        get_scoped_instructions,
+        get_system_prompt,
+        set_current_tracking,
+    )
+    from recipe_memory import format_recipes_for_prompt, retrieve_relevant_recipes
+
+    set_current_tracking(file_name="whole_submission", step_name="agent_python_first_build")
+    doc_name = get_instruction_doc_name()
+    scoped_rules = get_scoped_instructions("blueprint")
+    digest = build_submission_digest(docs)
+    recipes = retrieve_relevant_recipes(docs, max_recipes=5)
+    recipes_block = format_recipes_for_prompt(recipes)
+    effective_effort = ANTHROPIC_EFFORT or "high"
+    cache_key_prompt = f"AGENT_PY_FIRST_V2\n{doc_name}\n{digest}\n{recipes_block}"
+    src_names = [getattr(d, "name", "") for d in docs if getattr(d, "name", "")]
+
+    # 1. Local SQLite cache check (0 tokens on repeat runs)
+    if not bypass_cache:
+        try:
+            from caching import get_local_cache
+            cached = get_local_cache().get(
+                cache_key_prompt, ANTHROPIC_MODEL, step_name="agent_python_first_build",
+                bypass_cache=bypass_cache, effort=effective_effort,
+            )
+            if isinstance(cached, dict) and cached.get("census_payload"):
+                c_obj = canonical_json_to_census(cached["census_payload"], source_files=src_names)
+                i_objs = canonical_json_to_invoices(cached["invoices_payload"]) if cached.get("invoices_payload") else None
+                if c_obj is not None:
+                    log.info(
+                        "⚡ [AGENT PYTHON-FIRST CACHE HIT] Restored %d EEs / %d Deps (invoices=%d)",
+                        len(c_obj.employees), len(c_obj.dependents), len(i_objs or []),
+                    )
+                    return c_obj, (i_objs or None)
+        except Exception as _ce:
+            log.debug("Agent Python-First cache lookup skipped: %s", _ce)
+
+    confirm_tool = {
+        "name": "confirm_agent_build",
+        "description": (
+            "Call ONCE after your `run_python` script has called `emit_canonical_census(...)` "
+            "(and optionally `emit_canonical_invoices(...)` if medical invoices are present) and verified all counts."
+        ),
+        "input_schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["summary", "employee_count", "dependent_count", "excluded_count", "invoice_subscriber_count"],
+            "properties": {
+                "summary": {"type": "string"},
+                "employee_count": {"type": "integer"},
+                "dependent_count": {"type": "integer"},
+                "excluded_count": {"type": "integer"},
+                "invoice_subscriber_count": {"type": "integer"},
+            },
+        },
+    }
+
+    system_prompt = (
+        get_system_prompt()
+        + "\n\nYou are the PRIMARY Underwriting Data Builder operating in Agent-Python-First Mode with a live "
+        "Sandboxed Python Code Interpreter (`run_python`). Inspect 100% of the uploaded files in Python, write clean "
+        "`pandas` logic that faithfully implements the governing instructions and learned procedural recipes, call "
+        "`emit_canonical_census(payload)` (and `emit_canonical_invoices(payload)` when medical invoices are present), "
+        "verify every count and total in Python, and then call `confirm_agent_build`."
+    )
+    user_prompt = f"""Build the canonical medical census (and medical invoice records if invoices are present) for this submission under {doc_name}.
+
+SCOPED GOVERNING RULES:
+{scoped_rules}
+
+{recipes_block}
+
+PROSPECT CONTEXT:
+- Company: {getattr(prospect, 'company', '') if prospect else ''}
+- Proposed Effective Date: {effective_date or ''}
+- Blueprint Summary: {blueprint.to_summary_dict() if (blueprint and hasattr(blueprint, 'to_summary_dict')) else 'None'}
+
+INSTRUCTIONS (pre-loaded in `run_python`: `FILES`, `TABLES`, `TEXTS`, `list_files()`, `sheet_df()`, `column_summary()`, `search_text()`, `emit_canonical_census()`, `emit_canonical_invoices()`):
+1. Profile EVERY census spreadsheet with `run_python` (`list_files()`, `column_summary(...)`).
+2. Write clean `pandas` code to build the exact active Full-Time (plus active COBRA) medical census:
+   - Exclude Terminated/Inactive non-COBRA employees, Part-Time/Seasonal/Contractor employees, and template example rows (e.g. John/Jane/Johnny Doe, Test Employee).
+   - Exclude ALL non-medical benefit lines (Dental, Vision, DPPO, DHMO, Life, AD&D, STD, LTD, DBL, PFL, Critical Illness, Accident, Hospital Indemnity, MCO Tax).
+   - Keep Employee Gender, DOB, and zero-padded 5-digit ZIP (`str(int(z)).zfill(5)`) intact for EVERY employee.
+   - Set `cobra='Y'` ONLY when an explicit COBRA column or 'COBRA' text says so (never from 'Auto Enrollment = Y').
+   - Link ONLY active medical dependents to their true subscriber (`ES`->SP, `EC`->CH, `FAM`->SP+CH; exclude dependents on `EE`/`WO`/`WP`/`NE` employees; link different-surname dependents on separate tabs via exact 5-digit ZIP + tier compatibility; deduplicate same-name children under the same subscriber).
+   - AUTHORITATIVE SUBMISSION EMAIL ADDITIONS/TERMINATIONS: Inspect all email/PDF text in `TEXTS` (`search_text(...)`). If a broker or client email explicitly asks to ADD an employee (and/or spouse/dependents) not yet in the Excel census (providing name, DOB, tier, etc.), INCLUDE them directly in `emit_canonical_census(...)` with all demographics stated in the email (leaving any unstated Gender/ZIP blank so they are flagged for confirmation) and note `"Added per submission email"`. Conversely, exclude any employee confirmed terminated in the email (unless COBRA).
+   - Call `emit_canonical_census({{"employees": [...], "excluded_count": N, "notes": [...]}})`.
+3. If medical invoice spreadsheet(s) or structured PDF billing text exist in `TABLES`/`TEXTS`, extract ONLY active medical subscriber rows (excluding Dental/Vision/Life/WC/Payroll), verify in Python that `sum(premiums)` reconciles to the printed medical subtotal, and call `emit_canonical_invoices({{"invoices": [...]}})`. (If invoice PDF is scanned/unstructured, skip `emit_canonical_invoices` so the dedicated PDF invoice parser handles it.)
+4. Print final verification counts in Python and call `confirm_agent_build`.
+
+SUBMISSION DIGEST ({len(docs)} files):
+{digest}
+"""
+
+    import anthropic
+
+    headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else None
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, default_headers=headers)
+    messages: list[dict[str, Any]] = [{"role": "user", "content": user_prompt}]
+    confirmed = False
+    t0 = time.perf_counter()
+
+    try:
+        with PythonSandboxSession(docs) as sandbox:
+            for turn in range(max_turns):
+                resp = client.messages.create(
+                    model=ANTHROPIC_MODEL,
+                    max_tokens=8192,
+                    output_config={"effort": effective_effort},
+                    system=system_prompt,
+                    tools=[_RUN_PYTHON_TOOL, confirm_tool],
+                    messages=messages,
+                )
+                try:
+                    from core.universal_token_monitor import track_usage
+                    track_usage(
+                        resp.usage, model=ANTHROPIC_MODEL, poc_name="BENEFITS_UW",
+                        file_name="whole_submission", step_name=f"agent_py_first_turn_{turn + 1}",
+                    )
+                except Exception:
+                    pass
+
+                assistant_blocks = list(getattr(resp, "content", []) or [])
+                tool_uses = [b for b in assistant_blocks if getattr(b, "type", "") == "tool_use"]
+                if not tool_uses:
+                    messages.append({"role": "assistant", "content": assistant_blocks})
+                    messages.append({"role": "user", "content": "Call `emit_canonical_census(...)` via `run_python` and then `confirm_agent_build`."})
+                    continue
+
+                tool_results: list[dict[str, Any]] = []
+                confirm_tu = None
+                # Always execute all `run_python` calls FIRST so parallel tool calls never skip `emit_canonical_census`
+                for tu in tool_uses:
+                    t_name = getattr(tu, "name", "")
+                    t_input = getattr(tu, "input", {}) or {}
+                    t_id = getattr(tu, "id", "")
+                    if t_name == "run_python":
+                        res_text = sandbox.run(str(t_input.get("code") or ""))
+                        log.info("🐍 [AGENT PYTHON-FIRST] Turn %d -> %d chars", turn + 1, len(res_text))
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": t_id,
+                            "content": res_text,
+                        })
+                    elif t_name == "confirm_agent_build":
+                        confirm_tu = tu
+
+                if confirm_tu is not None:
+                    if sandbox.read_canonical_census() is not None:
+                        confirmed = True
+                    else:
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": getattr(confirm_tu, "id", ""),
+                            "content": "ERROR: canonical_census.json has NOT been emitted yet! Call emit_canonical_census(...) inside run_python first, then call confirm_agent_build.",
+                        })
+
+                if confirmed or turn == max_turns - 1:
+                    break
+                if turn >= max_turns - 2:
+                    tool_results.append({
+                        "type": "text",
+                        "text": "Call `emit_canonical_census(...)` now if not yet emitted, then call `confirm_agent_build`.",
+                    })
+                messages.append({"role": "assistant", "content": assistant_blocks})
+                messages.append({"role": "user", "content": tool_results})
+
+            c_payload = sandbox.read_canonical_census()
+            i_payload = sandbox.read_canonical_invoices()
+            if c_payload is None:
+                log.warning("⚠️ [AGENT PYTHON-FIRST] Completed without emitting canonical_census.json; falling back to deterministic parser.")
+            c_obj = canonical_json_to_census(c_payload, source_files=src_names) if c_payload else None
+            i_objs = canonical_json_to_invoices(i_payload) if i_payload else None
+
+            if c_obj is not None:
+                log.info(
+                    "🤖 [AGENT PYTHON-FIRST] Built primary Census in %.2fs: %d EEs, %d Deps (invoices=%d)",
+                    time.perf_counter() - t0, len(c_obj.employees), len(c_obj.dependents), len(i_objs or []),
+                )
+                try:
+                    from caching import get_local_cache
+                    get_local_cache().set(
+                        prompt=cache_key_prompt,
+                        model=ANTHROPIC_MODEL,
+                        response_data={"census_payload": c_payload, "invoices_payload": i_payload},
+                        step_name="agent_python_first_build",
+                        tokens_saved_estimate=len(cache_key_prompt) // 4,
+                        effort=effective_effort,
+                    )
+                except Exception:
+                    pass
+            return c_obj, (i_objs or None)
+    except Exception as exc:
+        log.warning("Agent-Python-First build skipped (falling back to deterministic parser): %s", exc)
+        return None, None
