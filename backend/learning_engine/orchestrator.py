@@ -311,9 +311,13 @@ class LearningEngineOrchestrator:
             or (getattr(last_report, "accuracy", 1.0) >= getattr(last_report, "accuracy_threshold", 0.90) and last_report.blocked_checks == 0)
         )
         if is_release_eligible:
-            self._ensure_validated_repair_patterns(ctx, last_report)
+            sanity_ok = getattr(getattr(working_state.get("census"), "population_sanity", None), "passed", True)
+            if sanity_ok:
+                self._ensure_validated_repair_patterns(ctx, last_report)
             if executed_patches:
-                self._persist_verified_learning(executed_patches, ctx)
+                self._persist_verified_learning(
+                    executed_patches, ctx, validation_report=last_report, sanity_passed=sanity_ok,
+                )
 
         # 9. Record private current-case audit (Section 8)
         census_obj = working_state.get("census")
@@ -1243,13 +1247,94 @@ class LearningEngineOrchestrator:
             self.memory_store._validated_patterns_path,
         )
 
+    _SHARED_RULE_TARGETS: dict[str, dict[str, str]] = {
+        "APPLY_HEADER_MAPPING": {
+            "target_module": "backend/column_semantics.py + backend/classifier.py",
+            "target_function": "detect_header / build_value_map",
+            "generalized_fix": "Extend dynamic header/value-code resolution or canonical FIELD_ALIASES instead of per-case mapping patches.",
+            "suggested_test": "tests/test_coded_relationship_census.py",
+        },
+        "RECONCILE_ABBREVIATED_NAME_SUBSCRIBER": {
+            "target_module": "backend/comparator.py",
+            "target_function": "match_employees",
+            "generalized_fix": "Improve shared first-name abbreviation / initial matching rule in match_employees().",
+            "suggested_test": "tests/test_generalized_regression.py",
+        },
+        "REPAIR_LINKAGE_OR_NORMALIZATION": {
+            "target_module": "backend/census_builder.py",
+            "target_function": "_link_dependents",
+            "generalized_fix": "Strengthen structural dependent-to-subscriber linkage rules in _link_dependents().",
+            "suggested_test": "tests/test_coded_relationship_census.py",
+        },
+        "RESOLVE_MULTI_COLUMN_GENDER": {
+            "target_module": "backend/utils.py",
+            "target_function": "resolve_gender_candidates",
+            "generalized_fix": "Refine multi-column gender candidate resolution in utils.resolve_gender_candidates().",
+            "suggested_test": "tests/test_generalized_regression.py",
+        },
+        "DEDUPLICATE_CENSUS_EMPLOYEES": {
+            "target_module": "backend/census_builder.py",
+            "target_function": "_register_employee",
+            "generalized_fix": "Strengthen cross-source employee deduplication keys in _register_employee().",
+            "suggested_test": "tests/test_generalized_regression.py",
+        },
+        "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS": {
+            "target_module": "backend/census_builder.py",
+            "target_function": "refine_non_enrolled_statuses",
+            "generalized_fix": "Refine waived/non-enrolled coverage & dependent disposition rules in refine_non_enrolled_statuses().",
+            "suggested_test": "tests/test_generalized_regression.py",
+        },
+    }
+
+    def _build_shared_rule_proposal(self, patch: RepairPatch, ctx: RunContext) -> dict[str, str]:
+        act = patch.action.value
+        meta_t = self._SHARED_RULE_TARGETS.get(act, {
+            "target_module": "backend/comparator.py / backend/census_builder.py",
+            "target_function": "core_pipeline",
+            "generalized_fix": f"Generalize root-cause handling for {act} in shared pipeline code rather than relying on post-hoc patches.",
+            "suggested_test": "tests/test_generalized_regression.py",
+        })
+        return {
+            "proposal_id": f"shared_rule_{act.lower()}",
+            "action": act,
+            "case_id": ctx.case_id,
+            **meta_t,
+        }
+
     def _persist_verified_learning(
         self,
         patches: list[RepairPatch],
         ctx: RunContext,
+        validation_report: Optional[ValidationReport] = None,
+        sanity_passed: bool = True,
     ) -> None:
-        """Create candidate learning rules for verified repairs across all repair actions."""
+        """Record generalized shared-rule proposals and gate candidate rule promotion.
+
+        Fix #6 hardening:
+        1. Never promote any rule during a failed, blocked, or sanity-gate-rejected run.
+        2. Always record a generalized shared-rule proposal (target module + test) in
+           ``shared_rule_backlog.json`` so recurring issues drive shared code fixes instead
+           of one-off per-case JSON patches.
+        3. Require multi-case confirmation (>= 2 distinct cases) or explicit regression
+           fixtures before auto-promoting a candidate rule to VALIDATED.
+        """
+        run_verified = bool(sanity_passed) and (
+            validation_report is None
+            or (validation_report.blocked_checks == 0 and validation_report.failed_checks == 0)
+        )
+
         for p in patches:
+            proposal = self._build_shared_rule_proposal(p, ctx)
+            self.memory_store.record_shared_rule_proposal(proposal)
+
+            if not run_verified:
+                log.info(
+                    "Withholding learning rule promotion for %s: run did not pass validation/sanity gate "
+                    "(recorded generalized shared-rule proposal '%s' instead).",
+                    p.action.value, proposal["proposal_id"],
+                )
+                continue
+
             rule_id = ""
             rule = None
             if p.action == RepairAction.APPLY_HEADER_MAPPING:
@@ -1258,6 +1343,11 @@ class LearningEngineOrchestrator:
                 target_field = params.get("target_field")
                 if src_header and target_field:
                     rule_id = f"learned_mapping_{src_header.lower().replace(' ', '_')}"
+                    prev = self.memory_store.load_candidate_rule(rule_id) or {}
+                    prev_ver = prev.get("verification") or {}
+                    seen_cases = list(dict.fromkeys(list(prev_ver.get("seen_case_ids") or []) + [ctx.case_id]))
+                    reg_fixtures = list(prev_ver.get("regression_fixture_ids") or [])
+                    promo_ready = len(seen_cases) >= 2 or bool(reg_fixtures)
                     rule = LearningRule(
                         learning_id=rule_id,
                         version=1,
@@ -1282,8 +1372,9 @@ class LearningEngineOrchestrator:
                         business_rule_refs=["10.1"],
                         root_cause={
                             "code": "HEADER_MAPPING_FAILED",
-                            "verification_status": "verified",
+                            "verification_status": "verified" if promo_ready else "candidate_pending_multi_case",
                             "summary": f"Source column '{src_header}' corresponds to {target_field}.",
+                            "shared_rule_proposal": proposal,
                         },
                         strategy={
                             "action": "APPLY_HEADER_MAPPING",
@@ -1292,23 +1383,29 @@ class LearningEngineOrchestrator:
                             "exclusions": ["non-medical benefit columns"],
                         },
                         verification={
-                            "case_successes": 1,
+                            "case_successes": len(seen_cases),
+                            "seen_case_ids": seen_cases,
                             "case_failures": 0,
-                            "regression_fixture_ids": [],
+                            "regression_fixture_ids": reg_fixtures,
                             "negative_fixture_ids": [],
                             "checks_passed": ["RULE_10_REQUIRED_FIELDS"],
-                            "promotion_eligible": True,
+                            "promotion_eligible": promo_ready,
                             "last_verified_at": datetime.now().isoformat(),
                         },
                         promotion={
-                            "mode": "auto_allowlisted",
+                            "mode": "auto_allowlisted" if promo_ready else "candidate_only",
                             "decision_ref": ctx.run_id,
-                            "reason": "Verified in live repair loop",
+                            "reason": "Verified across multiple cases" if promo_ready else "Awaiting multi-case confirmation or regression fixture",
                         },
                     )
             else:
                 act_name = p.action.value.lower()
                 rule_id = f"learned_{act_name}"
+                prev = self.memory_store.load_candidate_rule(rule_id) or {}
+                prev_ver = prev.get("verification") or {}
+                seen_cases = list(dict.fromkeys(list(prev_ver.get("seen_case_ids") or []) + [ctx.case_id]))
+                reg_fixtures = list(prev_ver.get("regression_fixture_ids") or [])
+                promo_ready = len(seen_cases) >= 2 or bool(reg_fixtures)
                 rule = LearningRule(
                     learning_id=rule_id,
                     version=1,
@@ -1332,8 +1429,9 @@ class LearningEngineOrchestrator:
                     business_rule_refs=list(p.issue_ids),
                     root_cause={
                         "code": p.action.value,
-                        "verification_status": "verified",
+                        "verification_status": "verified" if promo_ready else "candidate_pending_multi_case",
                         "summary": f"Automated repair pattern for {p.action.value}",
+                        "shared_rule_proposal": proposal,
                     },
                     strategy={
                         "action": p.action.value,
@@ -1342,27 +1440,38 @@ class LearningEngineOrchestrator:
                         "exclusions": [],
                     },
                     verification={
-                        "case_successes": 1,
+                        "case_successes": len(seen_cases),
+                        "seen_case_ids": seen_cases,
                         "case_failures": 0,
-                        "regression_fixture_ids": [],
+                        "regression_fixture_ids": reg_fixtures,
                         "negative_fixture_ids": [],
                         "checks_passed": list(p.verification_checks or ["REPAIR_PASSED"]),
-                        "promotion_eligible": True,
+                        "promotion_eligible": promo_ready,
                         "last_verified_at": datetime.now().isoformat(),
                     },
                     promotion={
-                        "mode": "auto_allowlisted",
+                        "mode": "auto_allowlisted" if promo_ready else "candidate_only",
                         "decision_ref": ctx.run_id,
-                        "reason": f"Verified during successful run repair of {p.action.value}",
+                        "reason": (
+                            f"Verified across {len(seen_cases)} cases ({p.action.value})"
+                            if promo_ready
+                            else "Held as CANDIDATE until confirmed on >= 2 distinct cases or regression fixture"
+                        ),
                     },
                 )
 
             if rule and rule_id:
                 self.memory_store.save_candidate_rule(rule)
-                self.memory_store.promote_rule(
-                    learning_id=rule_id,
-                    mode="auto_allowlisted",
-                    reason=f"Verified during successful run repair ({p.action.value})",
-                )
-                log.info("Saved and promoted verified learning rule: %s", rule_id)
+                if rule.verification.get("promotion_eligible"):
+                    self.memory_store.promote_rule(
+                        learning_id=rule_id,
+                        mode="auto_allowlisted",
+                        reason=f"Verified across {rule.verification.get('case_successes', 1)} cases ({p.action.value})",
+                    )
+                    log.info("Saved and promoted multi-case verified learning rule: %s", rule_id)
+                else:
+                    log.info(
+                        "Saved candidate rule %s (held as CANDIDATE after 1 case; generalized proposal recorded in shared_rule_backlog.json)",
+                        rule_id,
+                    )
 

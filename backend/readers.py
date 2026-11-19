@@ -594,6 +594,8 @@ def _read_pdf(path: Path) -> RawDoc:
             t = page.extract_text(layout=True)
             if not t or not t.strip():
                 t = page.extract_text() or ""
+            from utils import normalize_reversed_text
+            t = normalize_reversed_text(t)
             texts.append(t)
             found = 0
             for ti, tbl in enumerate(page.extract_tables() or [], 1):          # ruled tables

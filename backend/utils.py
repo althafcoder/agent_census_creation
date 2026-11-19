@@ -284,18 +284,83 @@ _COVERAGE_MAP = {
     "wo": "WO", "waived": "WO", "waive": "WO", "waivedothercoverage": "WO",
     "waivingforothercoverage": "WO", "waiver": "WO", "optout": "WO", "optedout": "WO",
     "waivedcoverage": "WO", "w": "WO", "otherCoverage".lower(): "WO",
+    "sub": "EE", "subscriber": "EE", "subscriberonly": "EE",
+    "sps": "ES", "ch1": "EC",
 }
+
+
+def deduplicate_overprint_token(tok: str) -> str:
+    """Collapse PDF faux-bold overprint tokens where every character was emitted twice
+    (e.g. 'SSPPSS++' -> 'SPS+', 'SSUUBB' -> 'SUB', 'CCHH11++' -> 'CH1+').
+    Purely structural: only triggers on even-length tokens >= 4 with >= 2 distinct characters
+    where every adjacent pair is identical, so normal words and codes like 'EE'/'0000' are untouched."""
+    if not tok or len(tok) < 4 or len(tok) % 2 != 0:
+        return tok
+    if tok[0::2] == tok[1::2] and len(set(tok[0::2])) >= 2:
+        return tok[0::2]
+    return tok
+
+
+def clean_overprint_text(text: str) -> str:
+    """Apply ``deduplicate_overprint_token`` across whitespace-separated tokens while preserving layout."""
+    if not text:
+        return text
+    return re.sub(r"\S+", lambda m: deduplicate_overprint_token(m.group(0)), text)
+
+
+_COMMON_WORDS_FWD = {
+    "the", "and", "for", "you", "this", "plan", "your", "with", "from", "that",
+    "coverage", "benefits", "summary", "deductible", "medical", "services", "network",
+    "total", "date", "employee", "premium", "period", "cost", "care",
+}
+_COMMON_WORDS_REV = {w[::-1] for w in _COMMON_WORDS_FWD}
+
+
+def normalize_reversed_text(text: str) -> str:
+    """Detect and repair 180-degree rotated / reversed-character-stream PDF text
+    (e.g. ``egarevoC :doireP 6202/10/10`` -> ``01/01/2026 Period: Coverage``).
+    Purely statistical over universal English/insurance tokens; zero hardcoding."""
+    if not text:
+        return text
+    tokens = text.split()
+    if len(tokens) < 12:
+        return text
+    sample = tokens[:400]
+    fwd_hits = 0
+    rev_hits = 0
+    for tok in sample:
+        alpha = re.sub(r"[^a-z]", "", tok.lower())
+        if len(alpha) < 3:
+            continue
+        if alpha in _COMMON_WORDS_FWD:
+            fwd_hits += 1
+        elif alpha in _COMMON_WORDS_REV:
+            rev_hits += 1
+    if rev_hits >= 5 and rev_hits > fwd_hits * 3:
+        # Reverse both line/token order and character order per token
+        return " ".join(tok[::-1] for tok in reversed(tokens))
+    return text
 
 
 def std_coverage(v) -> str:
     """Map any wording to an approved code; returns '' when it cannot be mapped."""
-    k = norm_key(v)
+    raw_clean = clean(v)
+    if not raw_clean:
+        return ""
+    raw_dedup = " ".join(deduplicate_overprint_token(t) for t in raw_clean.split())
+    # Preserve '+' suffix semantics before norm_key strips punctuation (e.g. BCBS 'SPS+' = FAM, 'CH1+' = EC)
+    up_tight = re.sub(r"\s+", "", raw_dedup).upper()
+    if up_tight in ("SPS+", "SP+", "ES+"):
+        return "FAM"
+    if up_tight in ("CH1+", "CH+", "EC+", "DEP+"):
+        return "EC"
+    k = norm_key(raw_dedup)
     if not k:
         return ""
     if k in _COVERAGE_MAP:
         return _COVERAGE_MAP[k]
     # token-based fallbacks
-    low = clean(v).lower()
+    low = raw_dedup.lower()
     if re.search(r"famil", low):
         return "FAM"
     if re.search(r"(spouse|partner)", low) and re.search(r"(child|dep)", low):
@@ -331,7 +396,7 @@ def std_relationship(v) -> str:
     s = clean(v).lower()
     if not s:
         return ""
-    if s in {"ee", "e", "emp", "employee", "self", "subscriber", "sub", "primary", "member", "s", "insured"}:
+    if s in {"ee", "e", "emp", "employee", "self", "subscriber", "sub", "primary", "member", "s", "insured", "owner"}:
         return "EE"
 
     if re.search(r"\b(domestic\s*partner|\bdp\b)\b", s) or s == "dp":

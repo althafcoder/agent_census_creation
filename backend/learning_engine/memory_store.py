@@ -50,6 +50,7 @@ class MemoryStore:
         self._active_registry_path = self.data_dir / "registry" / "active_rules.json"
         self._validated_patterns_path = self.data_dir / "registry" / "validated_patterns.json"
         self._rejected_registry_path = self.data_dir / "registry" / "rejected_rules.json"
+        self._shared_backlog_path = self.data_dir / "registry" / "shared_rule_backlog.json"
         self._index_path = self.data_dir / "registry" / "index.json"
         self._ensure_registry_files()
 
@@ -62,6 +63,8 @@ class MemoryStore:
                 self._atomic_write(self._validated_patterns_path, [])
             if not self._rejected_registry_path.exists():
                 self._atomic_write(self._rejected_registry_path, [])
+            if not self._shared_backlog_path.exists():
+                self._atomic_write(self._shared_backlog_path, [])
             if not self._index_path.exists():
                 self._atomic_write(self._index_path, {
                     "active_rule_ids": [],
@@ -116,6 +119,75 @@ class MemoryStore:
         target = quarantine_dir / f"{file_path.name}.corrupt_{stamp}"
         shutil.move(str(file_path), str(target))
         log.warning("Corrupt file %s quarantined to %s", file_path.name, target)
+
+    def load_candidate_rule(self, learning_id: str) -> Optional[dict[str, Any]]:
+        """Load an existing candidate rule dict if present."""
+        with self._lock:
+            cand_path = self.data_dir / "candidates" / f"{learning_id}.json"
+            if not cand_path.exists():
+                return None
+            try:
+                return json.loads(cand_path.read_text(encoding="utf-8"))
+            except Exception:
+                return None
+
+    def load_shared_rule_backlog(self) -> list[dict[str, Any]]:
+        """Load generalized shared-rule improvement proposals."""
+        with self._lock:
+            if not self._shared_backlog_path.exists():
+                return []
+            try:
+                return json.loads(self._shared_backlog_path.read_text(encoding="utf-8"))
+            except Exception:
+                return []
+
+    def record_shared_rule_proposal(self, proposal: dict[str, Any]) -> dict[str, Any]:
+        """Record or update a generalized shared-rule fix proposal (deduplicated by proposal_id).
+
+        Instead of accumulating one-off per-case JSON patches, the learning engine aggregates
+        repeated failure classes into shared core-module proposals + suggested regression tests.
+        """
+        with self._lock:
+            items: list[dict[str, Any]] = []
+            if self._shared_backlog_path.exists():
+                try:
+                    items = json.loads(self._shared_backlog_path.read_text(encoding="utf-8"))
+                except Exception:
+                    items = []
+            pid = str(proposal.get("proposal_id") or "")
+            case_id = str(proposal.get("case_id") or "")
+            now_iso = datetime.now().isoformat()
+
+            existing = next((it for it in items if it.get("proposal_id") == pid), None)
+            if existing is not None:
+                cases = list(existing.get("observed_case_ids") or [])
+                if case_id and case_id not in cases:
+                    cases.append(case_id)
+                existing["observed_case_ids"] = cases
+                existing["occurrence_count"] = int(existing.get("occurrence_count", 1)) + 1
+                existing["last_seen_at"] = now_iso
+                if len(cases) >= 2:
+                    existing["status"] = "ready_for_core_rule_fix"
+                record = existing
+            else:
+                cases = [case_id] if case_id else []
+                record = {
+                    "proposal_id": pid,
+                    "action": proposal.get("action", ""),
+                    "target_module": proposal.get("target_module", ""),
+                    "target_function": proposal.get("target_function", ""),
+                    "generalized_fix": proposal.get("generalized_fix", ""),
+                    "suggested_test": proposal.get("suggested_test", ""),
+                    "observed_case_ids": cases,
+                    "occurrence_count": 1,
+                    "status": "proposed",
+                    "first_seen_at": now_iso,
+                    "last_seen_at": now_iso,
+                }
+                items.append(record)
+
+            self._atomic_write(self._shared_backlog_path, items)
+            return record
 
     def save_candidate_rule(self, rule: LearningRule) -> Path:
         """Save a new or updated candidate learning rule, deduplicated by fingerprint."""

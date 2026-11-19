@@ -166,10 +166,94 @@ def _parse_member_level_renewal(text: str) -> tuple[dict, dict[str, str], dict]:
     return emp_rates, plan_map, modal_rates
 
 
+_PLAN_ID_LINE_RE = re.compile(
+    r"^\s*Plan\s+ID\s*[:\-]?\s*([A-Z0-9][A-Z0-9\-]{3,19})(?:\s+([A-Z0-9][A-Z0-9\-]{3,19}))?\s*$",
+    re.I,
+)
+_COMP_TIER_PAIR_RE = re.compile(
+    r"\b(EO|EE|ES|EC|EF|FAM|Employee\s+Only|Employee\s*\+\s*Spouse|Employee\s*\+\s*Child(?:\(ren\)|ren)?|Family)\s*:\s*\$\s*([0-9,]+\.[0-9]{2})",
+    re.I,
+)
+_PLAN_DIR_LINE_RE = re.compile(
+    r"^\s*([A-Z][A-Z0-9]{4,14})\s+([A-Za-z][A-Za-z0-9\s\-/&\.]{5,60}?)\s+\d+\s+\$[0-9,]+\.[0-9]{2}\s*$"
+)
+_COMP_TIER_NORM = {
+    "eo": "EE", "ee": "EE", "employeeonly": "EE",
+    "es": "ES", "employee+spouse": "ES",
+    "ec": "EC", "employee+child": "EC", "employee+children": "EC", "employee+child(ren)": "EC",
+    "ef": "FAM", "fam": "FAM", "family": "FAM",
+}
+
+
+def _parse_composite_renewal_blocks(text: str) -> tuple[dict, dict, dict[str, str], dict[str, str]]:
+    """Deterministically extract Current & Renewal composite rate blocks and Plan ID -> Name directory.
+
+    Handles carrier 'Renewal at a Glance' blocks where a ``Plan ID <curr> [<ren>]`` line is followed
+    by tier lines such as ``EO: $809.86   EO: $1,173.52`` (current rate then renewal rate, or a
+    single renewal rate). Returns ``(renewal_rates, current_rates, plan_mapping, plan_names)``.
+    """
+    ren_rates: dict[tuple[str, str], float] = {}
+    cur_rates: dict[tuple[str, str], float] = {}
+    plan_map: dict[str, str] = {}
+    plan_names: dict[str, str] = {}
+
+    curr_plan = ""
+    ren_plan = ""
+    lines_since_plan = 0
+
+    for line in (text or "").splitlines():
+        if re.match(r"^\s*(?:---+\s*\[EXTRACTED\s+TABLES|===\s*Table)", line, re.I):
+            curr_plan = ren_plan = ""
+            continue
+        m_dir = _PLAN_DIR_LINE_RE.match(line)
+        if m_dir:
+            pid, pname = m_dir.group(1).strip(), clean(m_dir.group(2))
+            if pid and pname and not any(w in pname.upper() for w in ("DENTAL", "VISION", "LIFE")):
+                plan_names.setdefault(pid, pname)
+
+        m_pid = _PLAN_ID_LINE_RE.match(line)
+        if m_pid:
+            curr_plan = m_pid.group(1).strip()
+            ren_plan = (m_pid.group(2) or m_pid.group(1)).strip()
+            lines_since_plan = 0
+            if curr_plan and ren_plan:
+                plan_map.setdefault(curr_plan, ren_plan)
+            continue
+        if re.match(r"^\s*Plan\s+ID\b", line, re.I):
+            # Any other Plan ID header (e.g. a table row with NaN) ends the previous plan block
+            curr_plan = ren_plan = ""
+            continue
+
+        if ren_plan:
+            lines_since_plan += 1
+            if lines_since_plan > 25 or re.search(r"Total\s+Monthly\s+Medical\s+Premium", line, re.I):
+                curr_plan = ren_plan = ""
+                continue
+            pairs = _COMP_TIER_PAIR_RE.findall(line)
+            if not pairs:
+                continue
+            # Group amounts by canonical tier on this line (typical layout: Current col then Renewal col)
+            by_tier: dict[str, list[float]] = {}
+            for raw_t, raw_amt in pairs:
+                tk = _COMP_TIER_NORM.get(re.sub(r"\s+", "", raw_t).lower())
+                amt = to_money(raw_amt)
+                if tk and amt is not None and amt > 0:
+                    by_tier.setdefault(tk, []).append(amt)
+            for tk, amts in by_tier.items():
+                if len(amts) >= 2:
+                    cur_rates.setdefault((curr_plan, tk), amts[0])
+                    ren_rates.setdefault((ren_plan, tk), amts[1])
+                elif len(amts) == 1:
+                    ren_rates.setdefault((ren_plan, tk), amts[0])
+
+    return ren_rates, cur_rates, plan_map, plan_names
+
+
 def parse_renewal(doc: RawDoc) -> RenewalDoc:
     eff, term = _dates(doc)
     rd = RenewalDoc(path=doc.name, effective=eff, termination=term, version_rank=_version_rank(doc))
 
+    has_structured_composite = False
     if (doc.text or "").strip():
         emp_rates, plan_map, member_modal_rates = _parse_member_level_renewal(doc.text)
         if emp_rates:
@@ -178,8 +262,19 @@ def parse_renewal(doc: RawDoc) -> RenewalDoc:
             rd.rates.update(member_modal_rates)
             rd.age_banded = True
 
+        comp_ren, comp_cur, comp_map, comp_names = _parse_composite_renewal_blocks(doc.text)
+        if comp_names:
+            rd.plan_names.update(comp_names)
+        if comp_ren:
+            rd.rates.update(comp_ren)
+            rd.current_rates.update(comp_cur)
+            rd.plan_mapping.update(comp_map)
+            has_structured_composite = True
+            log.info("Extracted %d composite renewal rate(s) and %d current rate(s) across %d plan(s) from %s",
+                     len(comp_ren), len(comp_cur), len({p for p, _ in comp_ren}), doc.name)
+
     from census_config import LLM_FIRST, USE_LLM_FALLBACK
-    if LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip():
+    if LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip() and not has_structured_composite:
         try:
             log.info("Applying LLM-First semantic extraction for renewal: %s", doc.name)
             from llm_client import extract_renewal_rates

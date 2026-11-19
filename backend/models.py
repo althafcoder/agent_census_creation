@@ -91,6 +91,9 @@ class InvoiceRecord:
     dep_count: int = 0
     dep_rels: set = field(default_factory=set)
     has_dep_detail: bool = False
+    ancillary_only: bool = False               # $0 medical on combined bill, billed only for dental/vision/ancillary
+    ancillary_premium: Optional[float] = None  # total non-medical charges on this subscriber row
+    ancillary_detail: str = ""                 # e.g. "Dental $33.28 + Blue 20/20 $9.04"
     source: str = ""
     raw_data: dict = field(default_factory=dict)
 
@@ -105,10 +108,15 @@ class InvoiceDoc:
     revised: bool = False
     draft: bool = False
     number: str = ""                            # statement / invoice number found in the document
+    group_number: str = ""                      # carrier group / policy number (e.g. Group Number: 14179816)
     doc_date: Optional[date] = None              # statement / invoice date found in the document
     current_charges: Optional[float] = None      # total current monthly charges
     total_adjustments: Optional[float] = None    # total adjustments / retro
     total_due: Optional[float] = None            # total balance due
+    gross_total_premium: Optional[float] = None  # gross all-benefits total before invoice-level credits/adjustments
+    non_medical_charges: Optional[float] = None  # sum of dental/vision/ancillary totals on combined invoice
+    non_medical_breakdown: dict = field(default_factory=dict)  # e.g. {"Dental": 623.20, "Blue 20/20": 161.62}
+    non_medical_records: list[InvoiceRecord] = field(default_factory=list)  # $0 medical / ancillary-only subscribers
     retro_adjustments: list[dict] = field(default_factory=list)
 
 
@@ -119,7 +127,9 @@ class RenewalDoc:
     termination: Optional[date] = None
     version_rank: int = 0                       # Final/Revised higher
     rates: dict = field(default_factory=dict)   # (plan_name, tier) -> premium
+    current_rates: dict = field(default_factory=dict)  # (plan_name, tier) -> current-period premium (when shown alongside renewal)
     plans: list[str] = field(default_factory=list)
+    plan_names: dict = field(default_factory=dict)     # plan_id -> descriptive plan name (e.g. P621CHC -> Blue Choice Platinum PPO 811)
     age_banded: bool = False
     employee_rates: dict = field(default_factory=dict)  # norm_emp_key -> {current_plan, current_premium, renewal_plan, renewal_premium, tier, raw_name}
     plan_mapping: dict = field(default_factory=dict)    # current_plan -> renewal_plan
@@ -149,6 +159,9 @@ class Prospect:
     ft_employees: Optional[int] = None          # employer-declared full-time employee count
     pt_employees: Optional[int] = None          # employer-declared part-time employee count
     ft_employees_source: str = ""               # document the declared FT count was read from
+    stated_total_employees: Optional[int] = None  # total headcount stated in a GHQ/RFP table (e.g. '# of Employees' Totals row)
+    stated_total_source: str = ""
+    renewal_date: Optional[date] = None           # current carrier plan renewal date (e.g. from Insurance Renewal Date / RD:)
 
     @property
     def zip(self) -> str:
@@ -250,6 +263,11 @@ class Findings:
     invoice_only_difference: Optional[float] = None
     invoice_retro_adjustments: Optional[float] = None
     invoice_total_balance_due: Optional[float] = None
+    invoice_adjustments_label: str = ""
+    invoice_non_medical_charges: Optional[float] = None
+    invoice_non_medical_label: str = ""
+    invoice_unexplained_adjustment: Optional[float] = None
+    invoice_unexplained_label: str = ""
     reconciliation_items: list[tuple[str, float]] = field(default_factory=list)
     # Renewal status
     renewal_required: bool = False

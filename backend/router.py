@@ -231,7 +231,7 @@ def check_peo_status(prospect: Prospect, docs: list[RawDoc] | None = None) -> tu
 
     if prospect.peo_name:
         low = prospect.peo_name.lower().strip()
-        if low and low not in ("none", "n/a", "no", "false", "0"):
+        if low and low not in ("none", "n/a", "na", "no", "false", "0", "direct", "not applicable"):
             return True, prospect.peo_name
 
     # Check prospect carrier or notes
@@ -248,7 +248,7 @@ def check_peo_status(prospect: Prospect, docs: list[RawDoc] | None = None) -> tu
                 for line in t.splitlines():
                     if "current peo:" in line or "peo:" in line:
                         val = line.split(":")[-1].strip()
-                        if val and val not in ("none", "n/a", "no", "false", ""):
+                        if val and val.lower() not in ("none", "n/a", "na", "no", "false", "direct", "not applicable", ""):
                             return True, val
             for p in PEO_PROVIDERS:
                 if f"peo: {p}" in t or f"peo - {p}" in t or f"payroll: {p}" in t:
@@ -307,13 +307,12 @@ def check_renewal_required(
 
     if ren_date:
         diff_today = (ren_date - date.today()).days
-        diff_eff = abs((ren_date - ref_date).days) if ref_date else 999
-        # Satisfied if renewal is within 90 days of review/today, or within 90 days of proposed effective,
-        # or if valid renewal documents/rates are provided in the submission.
-        if (0 <= diff_today <= 90) or (diff_eff <= 90) or (renewal_doc and getattr(renewal_doc, "rates", None)):
+        # Satisfied when renewal falls within the next 90 days from today/review date,
+        # or when a valid future renewal document with rates is provided in the submission.
+        if (0 <= diff_today <= 90) or (renewal_doc and getattr(renewal_doc, "rates", None)):
             return True, f"Prospect is with PEO ({peo_name}) and renewal ({ren_date:%m/%d/%Y}) is applicable."
-        elif diff_today > 90 and diff_eff > 90:
-            return False, f"Prospect is with PEO ({peo_name}) but renewal date ({ren_date:%m/%d/%Y}) is more than 90 days away."
+        elif diff_today > 90:
+            return False, f"Prospect is with PEO ({peo_name}) but renewal date ({ren_date:%m/%d/%Y}) is more than 90 days away ({diff_today} days)."
 
     return False, "Renewal date or PEO status does not satisfy the 90-day PEO requirement."
 
@@ -495,10 +494,30 @@ def build_missing_information_email_parts(
         if id(d) not in seen_doc_ids:
             seen_doc_ids.add(id(d))
             all_docs.append(d)
+    from classifier import is_sbc_document
+    from census_builder import _is_non_medical
+
+    def _is_medical_benefit_summary(d) -> bool:
+        if _is_non_medical(d.name, "") or re.search(r"(?:^|[^a-z0-9])(dental|vision|vsp|life|std|ltd)(?:$|[^a-z0-9])", d.name, re.I):
+            return False
+        head = (d.text or "")[:4000]
+        # Employee benefits booklets / guides are NOT official carrier SBCs (Section 14)
+        if re.search(r"\b(benefits?\s+booklet|benefits?\s+guide|enrollment\s+guide|employee\s+guide)\b", f"{d.name} {head[:1200]}", re.I):
+            return False
+        return bool(
+            re.search(r"benefit\s+(?:highlights|overview|summary)", head, re.I)
+            and re.search(r"deductible", head, re.I)
+            and re.search(r"out[\-\s]of[\-\s]pocket", head, re.I)
+        )
+
     sbc_docs = [
         d for d in all_docs
-        if "sbc" in d.name.lower() or "summary of benefits" in d.name.lower() or
-        re.search(r"summary of benefits and coverage|\bcoverage period\b", (d.text or "")[:1500], re.I)
+        if "sbc" in d.name.lower()
+        or "summary of benefits" in d.name.lower()
+        or is_sbc_document(d)
+        or _is_medical_benefit_summary(d)
+        or (roles and d in (roles.get("sbc", []) or []))
+        or re.search(r"summary of benefits and coverage|\bcoverage period\b", (d.text or "")[:4000], re.I)
     ]
     has_sbc_doc = bool(sbc_docs)
 
@@ -548,17 +567,29 @@ def build_missing_information_email_parts(
             p_codes = set(_extract_plan_codes(p_no_year))
             for c_tok in list(p_codes):
                 p_codes.update(linked_plan_codes.get(c_tok, set()))
+            # Harvest any renewal/billing-code links (e.g. "Renewal plan linked: '0006-PPO' -> 'P621CHC'")
+            if findings and getattr(findings, "renewal_notes", None):
+                for rn in findings.renewal_notes:
+                    m_lnk = re.search(r"Renewal plan linked:\s*'([^']+)'\s*->\s*'([^']+)'", str(rn))
+                    if m_lnk:
+                        src_c = re.sub(r"[^a-z0-9]", "", m_lnk.group(1).lower())
+                        dst_c = re.sub(r"[^a-z0-9]", "", m_lnk.group(2).lower())
+                        if src_c and dst_c and (src_c in p_codes or m_lnk.group(1).lower() in p_low):
+                            p_codes.add(dst_c)
             long_model_codes = [
-                tok for tok in re.findall(r"\b[a-z]{1,5}\d{3,6}[a-z0-9]*\b", p_low)
-                if any(ch.isdigit() for ch in tok) and any(ch.isalpha() for ch in tok)
+                tok for tok in re.findall(r"\b(?=[a-z0-9]*[a-z])(?=[a-z0-9]*\d)[a-z0-9]{5,}\b", p_low)
+                if not re.fullmatch(r"202\d[a-z]?", tok)
             ]
             # Strip trailing alphanumeric plan code tokens before extracting numeric benefit parameters
             p_for_nums = re.sub(r"\b[A-Za-z]{1,4}\d{1,4}[A-Za-z0-9]*\b", " ", p_no_year)
             nums = re.findall(r"\d+", p_for_nums)
             metals = [m for m in ["bronze", "silver", "gold", "platinum"] if m in p_low]
             carriers = [c for c in ["oxford", "anthem", "aetna", "cigna", "uhc", "united", "blue", "bcbs", "florida blue", "humana"] if c in p_low]
+            from utils import normalize_reversed_text
             for sbc in sbc_docs:
-                sbc_raw = (sbc.name + " " + (sbc.text or "")[:2500])
+                sbc_head = normalize_reversed_text(re.sub(r"\s+", " ", (sbc.text or "")[:25000]))[:4000]
+                bp_ids_str = " ".join(getattr(sbc, "sbc_plan_ids", None) or [])
+                sbc_raw = (sbc.name + " " + bp_ids_str + " " + sbc_head)
                 sbc_str = re.sub(r"(?<=\d),(?=\d)", "", sbc_raw.lower())
                 sbc_codes = _extract_plan_codes(sbc_raw)
                 if p_codes and (p_codes & sbc_codes):
@@ -595,6 +626,15 @@ def build_missing_information_email_parts(
         sbc_items.append("Please provide complete SBCs for each currently enrolled medical plan:")
         sbc_items.extend(missing_list)
         sections.append(("SBC", sbc_items))
+    elif not has_sbc_doc and census and census.active_medical_employees and any(
+        re.search(r"\b(benefits?\s+booklet|benefits?\s+guide|enrollment\s+guide|employee\s+guide)\b", f"{d.name} {(d.text or '')[:1200]}", re.I)
+        for d in all_docs
+    ):
+        sbc_items.append(
+            "Please provide the current carrier Summary of Benefits and Coverage (SBC) for each medical plan in which employees are currently enrolled "
+            "(an employee benefits booklet/guide does not replace the official carrier SBC)."
+        )
+        sections.append(("SBC", sbc_items))
 
     # 4. Census vs. Invoice Comparison Section
     comparison_items = []
@@ -604,7 +644,7 @@ def build_missing_information_email_parts(
         if not have_invoice:
             comparison_items.append("Current medical invoice or Benefit Enrollment Register was not provided. Full census versus invoice comparison could not be completed.")
 
-        # Check for missing required demographics (Section 10.3 / 10.4)
+        # Check for missing required demographics & structural spouse-flag anomalies (Section 10.3 / 10.4)
         if census:
             for emp in census.canonical_census_employees:
                 if not getattr(emp, "invoice_only", False) and getattr(emp, "disposition", "") != "EXCLUDE_PART_TIME":
@@ -612,6 +652,9 @@ def build_missing_information_email_parts(
                         comparison_items.append(f"{emp.last}: First name is missing or illegible in the uploaded census. Please provide the employee's full legal name.")
                     if emp.coverage == "WP" and (not emp.plan or emp.plan.upper() in ("NA", "N/A", "NONE", "")) and not have_invoice:
                         comparison_items.append(f"{emp.last}: No medical election is on file. Please confirm whether {emp.last} will elect medical coverage upon completing the waiting period.")
+                    for nt_txt, _ in (emp.notes or []):
+                        if "spouse = y" in str(nt_txt).lower():
+                            comparison_items.append(f"{emp.display}: {nt_txt}")
 
         unbilled_handled = set()
         conflict_handled = set()
@@ -748,7 +791,19 @@ def build_missing_information_email_parts(
                 if ("missing from invoice" in cat_low or "missing from invoice" in det_low) and low_who not in unbilled_handled:
                     comparison_items.append(f"Employee {who} is listed on the census with active coverage but is missing from the invoice.")
                 elif "missing from census" in cat_low or "missing from census" in det_low:
-                    comparison_items.append(f"Employee {who} appears on the invoice but is not included on the employee census.")
+                    if "terminated" in det_low or "recent term" in det_low:
+                        m_eff = re.search(r"effective\s+([A-Za-z0-9/,\-\s]{4,20}?)(?:$|;|\.)", detail, re.I)
+                        eff_part = f" effective {m_eff.group(1).strip()}" if m_eff else ""
+                        comparison_items.append(
+                            f"Employee {who} appears on the medical invoice but is not included on the employee census; "
+                            f"per the submission email, this employee was terminated{eff_part} and has not been added to the census. "
+                            f"Please confirm removal from coverage/billing."
+                        )
+                    else:
+                        comparison_items.append(
+                            f"Employee {who} appears on the invoice but is not included on the employee census "
+                            f"(not added to the census pending confirmation)."
+                        )
                 elif "tier mismatch" in cat_low or "tier mismatch" in det_low:
                     comparison_items.append(f"Coverage tier mismatch for {who}: {detail}.")
                 elif ("eligibility conflict" in cat_low or "eligibility conflict" in det_low) and low_who not in conflict_handled:

@@ -378,7 +378,7 @@ class RepairEngine:
                 expected_old_state="collapsed invoice extraction with missing subscribers",
                 proposed_new_state="high-fidelity statement extraction across all divisions",
                 parameters={"action": "parse_meritain_statement"},
-                affected_stages=[EarliestStage.INVOICE_PARSING, EarliestStage.COMPARISON, EarliestStage.WRITER],
+                affected_stages=[EarliestStage.EXTRACTION, EarliestStage.COMPARISON, EarliestStage.WRITER],
                 verification_checks=["RULE_26_INVOICE_EXTRACTION_FIDELITY"],
             )
 
@@ -944,7 +944,10 @@ class RepairEngine:
             from invoice_parser import _records_from_meritain_statement
             parsed_recs = []
             for doc in inv_docs:
-                r, _m = _records_from_meritain_statement(doc)
+                src_doc = getattr(doc, "doc", doc)
+                if not hasattr(src_doc, "text"):
+                    continue
+                r, _m = _records_from_meritain_statement(src_doc)
                 parsed_recs.extend(r)
             if parsed_recs:
                 working_state["invs"] = parsed_recs
@@ -1179,6 +1182,8 @@ class RepairEngine:
         if not census or not results or not findings:
             return
 
+        from utils import recover_ocr_name, split_full_name
+
         carrier_label = self._detect_carrier_label_from_state(working_state)
         for emp in getattr(census, "employees", []):
             notes_str = " ".join(str(n) for n in (emp.notes or [])).lower() if isinstance(emp.notes, list) else str(emp.notes or "").lower()
@@ -1278,7 +1283,7 @@ class RepairEngine:
         full_inv_text = " \n ".join(inv_texts)
         lines = full_inv_text.splitlines()
 
-        from utils import to_money, clean, std_coverage, match_plan
+        from utils import to_money, clean, std_coverage, match_plan, recover_ocr_name, split_full_name
         from models import InvoiceRecord
 
         for emp in getattr(census, "employees", []):
@@ -1571,7 +1576,7 @@ class RepairEngine:
         if not census:
             return
 
-        from utils import to_money
+        from utils import to_money, recover_ocr_name, split_full_name
 
         for emp in getattr(census, "employees", []):
             notes_str = " ".join(str(n) for n in (emp.notes or [])).lower() if isinstance(emp.notes, list) else str(emp.notes or "").lower()

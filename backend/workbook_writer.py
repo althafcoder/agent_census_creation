@@ -375,13 +375,14 @@ class _Sheet:
         self.r += 1
 
 
-def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, audit: dict, results: dict[int, RowResult] | None = None) -> None:
+def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, audit: dict,
+                        results: dict[int, RowResult] | None = None, template_label: str = "") -> None:
     ws = wb.create_sheet("Summary")
     s = _Sheet(ws)
     cnt = F.counters
     res_map = results or {}
 
-    carrier_disp = prospect.current_carrier or "FL Blue / RAPT"
+    carrier_disp = prospect.current_carrier or template_label or "FL Blue / RAPT"
     title_text = f"{prospect.company or 'Prospect'} - Census vs. Invoice Summary"
     if "florida blue" in carrier_disp.lower() or "rapt" in carrier_disp.lower():
         title_text += " (Florida Blue / RAPT)"
@@ -394,7 +395,7 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     s.header(["Metric", "Value"])
     eff = prospect.effective_date.strftime("%m/%d/%Y") if hasattr(prospect.effective_date, "strftime") else str(prospect.effective_date or "")
     eff_dt = prospect.effective_date
-    census_emps = [p for p in census.employees if not p.invoice_only and not p.is_duplicate and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"]
+    census_emps = [p for p in census.employees if not p.invoice_only and not p.is_duplicate and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")]
     med_deps = [d for d in census.dependents if not d.is_duplicate and not getattr(d, "disposition", "").startswith("EXCLUDE_")]
     enrolled_count = sum(1 for p in census_emps if p.coverage in C.ACTIVE_TIERS)
     wp_count = sum(1 for p in census_emps if p.coverage == "WP")
@@ -403,14 +404,11 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     rc_count = sum(1 for p in census_emps if p.coverage == "RC")
 
     ren_disp = ""
-    if F.renewal_effective:
-        ren_disp = f"{F.renewal_effective:%m/%d/%Y}"
+    ren_dt_src = F.renewal_effective or getattr(prospect, "renewal_date", None)
+    if ren_dt_src:
+        ren_disp = ren_dt_src.strftime("%m/%d/%Y") if hasattr(ren_dt_src, "strftime") else str(ren_dt_src)
         if prospect.current_carrier:
-            ren_disp += f" ({prospect.current_carrier} renewal)"
-        elif "uhc" in (prospect.current_carrier or "").lower():
-            ren_disp += " (UHC Level Funded renewal)"
-    elif eff:
-        ren_disp = f"{eff} (UHC Level Funded renewal)"
+            ren_disp += f" ({prospect.current_carrier})"
 
     ren_missing_disp = "N/A - renewal not required" if not F.renewal_required else cnt.get("missing_renewal", 0)
 
@@ -464,14 +462,42 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
         inv_only_on_plan = [p for p in census.people if getattr(p, "invoice_only", False) and p.plan == plan]
         if inv_only_on_plan:
             p_names = ", ".join(f"{p.first} {p.last}".strip() for p in inv_only_on_plan)
-            census_match_prem = sum((F.plan_rates.get((plan, t)) or 0.0) * F.plan_enrollment.get((plan, t), 0) for t in C.ACTIVE_TIERS)
-            s.line(f"{plan_label} invoice count includes {p_names} (invoice-only; reported term). Census-matched {plan_label} premium = ${census_match_prem:,.2f}.")
+            # Sum actual matched employee premiums for this plan (exact for both composite AND age-banded plans!)
+            matched_plan_prems = [
+                float(res_map[id(e)].inv_premium)
+                for e in census_emps
+                if id(e) in res_map and res_map[id(e)].inv is not None
+                and res_map[id(e)].inv_premium is not None
+                and (res_map[id(e)].plan or e.plan) == plan
+            ]
+            if matched_plan_prems:
+                census_match_prem = round(sum(matched_plan_prems), 2)
+            else:
+                census_match_prem = sum((F.plan_rates.get((plan, t)) or 0.0) * F.plan_enrollment.get((plan, t), 0) for t in C.ACTIVE_TIERS)
+            has_term_ev = any(
+                "term" in " ".join(str(n[0]).lower() for n in (res_map[id(p)].notes if id(p) in res_map else []))
+                for p in inv_only_on_plan
+            )
+            term_tag = "invoice-only; reported term" if has_term_ev else "invoice-only; confirmation requested"
+            s.line(f"{plan_label} invoice count includes {p_names} ({term_tag}). Census-matched {plan_label} premium = ${census_match_prem:,.2f}.")
         s.gap()
 
     # ---- 4. Premium Change Analysis
     s.section("Premium Change Analysis")
     if not F.renewal_required:
-        s.line("Not applicable - renewal not required (prospect not currently with a PEO); renewal rates not populated.")
+        _peo_nm = (getattr(prospect, "peo_name", "") or "").strip()
+        _has_peo = bool(getattr(prospect, "is_peo", False) or (_peo_nm and _peo_nm.lower() not in {"no", "none", "n/a", "na", "direct", "not applicable"}))
+        if _has_peo:
+            _ren_dt_lbl = ""
+            _ren_src = F.renewal_effective or getattr(prospect, "renewal_date", None)
+            if _ren_src:
+                _ren_dt_lbl = _ren_src.strftime("%m/%d/%Y") if hasattr(_ren_src, "strftime") else str(_ren_src)
+            _peo_tag = f"current PEO {_peo_nm}; " if _peo_nm else "current PEO; "
+            _dt_tag = f"renewal date {_ren_dt_lbl} is more than 90 days out" if _ren_dt_lbl else "renewal date is more than 90 days out"
+            _ren_reason = f"{_peo_tag}{_dt_tag}"
+        else:
+            _ren_reason = "prospect not currently with a PEO"
+        s.line(f"Not applicable - renewal not required ({_ren_reason}); renewal rates not populated.")
     else:
         s.header(["Tier", "Current Premium", "Renewal Premium", "Difference", "% Change"])
         for plan in plans:
@@ -498,31 +524,54 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
 
     r_diff = s.r
     inv_only_emps = [p for p in census.people if getattr(p, "invoice_only", False)]
-    diff_lbl = f"Difference ({inv_only_emps[0].last}, {inv_only_emps[0].first} - invoice only)" if inv_only_emps else "Difference (invoice only employees)"
+    if inv_only_emps:
+        if len(inv_only_emps) <= 3:
+            _inv_names = "; ".join(f"{emp.last}, {emp.first}".strip(", ") for emp in inv_only_emps)
+            diff_lbl = f"Difference ({_inv_names} - invoice only)"
+        else:
+            diff_lbl = f"Difference ({len(inv_only_emps)} invoice-only employees)"
+    else:
+        diff_lbl = "Difference (invoice only employees)"
     s.row([diff_lbl, f"=B{r_cur}-B{r_matched}"], fmt={2: "#,##0.00"})
 
-    r_adj = s.r
-    retro_desc = ""
-    if inv_only_emps:
-        emp0 = inv_only_emps[0]
-        sp = getattr(emp0, "service_period", "") or (emp0.raw_data.get("service_period", "") if emp0.raw_data else "")
-        retro_desc = f" ({emp0.last} retro ADD {sp})".replace("  ", " ").rstrip()
-    retro_lbl = f"Invoice current adjustments{retro_desc}"
-    s.row([retro_lbl, F.invoice_retro_adjustments or 0.0], fmt={2: "#,##0.00"})
-
-    s.row(["Invoice total balance due", f"=B{r_cur}+B{r_adj}"], fmt={2: "#,##0.00"})
+    if getattr(F, "invoice_non_medical_charges", None) is not None:
+        r_nm = s.r
+        s.row([F.invoice_non_medical_label or "Invoice non-medical charges", F.invoice_non_medical_charges], fmt={2: "#,##0.00"})
+        if getattr(F, "invoice_unexplained_adjustment", None) is not None:
+            r_unexp = s.r
+            s.row([F.invoice_unexplained_label or "Invoice-level credit / adjustment (unexplained)", F.invoice_unexplained_adjustment], fmt={2: "#,##0.00"})
+            s.row(["Invoice total balance due", f"=B{r_cur}+B{r_nm}+B{r_unexp}"], fmt={2: "#,##0.00"})
+        else:
+            s.row(["Invoice total balance due", f"=B{r_cur}+B{r_nm}"], fmt={2: "#,##0.00"})
+    else:
+        r_adj = s.r
+        if getattr(F, "invoice_adjustments_label", ""):
+            retro_lbl = F.invoice_adjustments_label
+        else:
+            retro_desc = ""
+            if inv_only_emps:
+                emp0 = inv_only_emps[0]
+                rr0 = res_map.get(id(emp0))
+                inv0_retro = getattr(getattr(rr0, "inv", None), "retro_amount", 0.0) if rr0 else 0.0
+                if inv0_retro:
+                    sp = getattr(emp0, "service_period", "") or (emp0.raw_data.get("service_period", "") if emp0.raw_data else "")
+                    retro_desc = f" ({emp0.last} retro ADD {sp})".replace("  ", " ").rstrip()
+            retro_lbl = f"Invoice current adjustments{retro_desc}"
+        s.row([retro_lbl, F.invoice_retro_adjustments or 0.0], fmt={2: "#,##0.00"})
+        s.row(["Invoice total balance due", f"=B{r_cur}+B{r_adj}"], fmt={2: "#,##0.00"})
     s.gap()
 
     # ---- 6. Census Audit
     s.section("Census Audit")
     s.header(["Metric", "Count"])
-    pt_excluded_cnt = len({id(p) for p in census.employees if getattr(p, "disposition", "") == "EXCLUDE_PART_TIME"} | {id(p) for p in getattr(census, "excluded_employees", [])})
+    pt_excluded_cnt = len({id(p) for p in census.employees if str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")} | {id(p) for p in getattr(census, "excluded_employees", [])})
     for k, v in [("Source Employees", audit["src_employees"]),
                  ("Output Employees", audit["out_employees"]),
                  ("Source Dependents", audit["src_dependents"]),
                  ("Output Dependents", audit["out_dependents"]),
                  ("Missing Employees", audit["missing_employees"]),
-                 ("Added Invoice Employees", cnt.get("missing_census", 0)),
+                 ("Added Invoice Employees", 0),
+                 ("Invoice-Only Discrepancies (Not Added to Census)", cnt.get("missing_census", 0)),
                  ("Duplicate Employees", census.duplicate_employees),
                  ("Unassigned Dependents", len(census.unassigned_dependents)),
                  ("Part-Time / Seasonal / Intern Excluded", pt_excluded_cnt)]:
@@ -662,7 +711,7 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
         ws["H4"].value = prospect.sales_person
     if prospect.company:
         ws["B5"].value = prospect.company
-    ws["E5"].value = len([e for e in census.employees if not e.invoice_only and not e.is_duplicate and getattr(e, "disposition", "") != "EXCLUDE_PART_TIME"])
+    ws["E5"].value = len([e for e in census.employees if not e.invoice_only and not e.is_duplicate and not str(getattr(e, "disposition", "") or "").startswith("EXCLUDE_")])
     if prospect.current_carrier:
         ws["H5"].value = prospect.current_carrier
     if prospect.address:
@@ -694,10 +743,14 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
     from census_builder import recalculate_row_numbers
     recalculate_row_numbers(census)
     row = C.MARSH_FIRST_DATA_ROW
+    had_gap = False
 
     for p in census.people:
         if p.is_duplicate or getattr(p, "disposition", "").startswith("EXCLUDE_"):
             continue
+        if p.invoice_only and not had_gap:
+            row += 1  # Separate invoice-only discrepancies from confirmed census rows
+            had_gap = True
         r = row
         row += 1
         for col in range(1, 11):
@@ -710,45 +763,53 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
             ws.cell(r, col).alignment = Alignment(wrap_text=True, vertical="center",
                                                   horizontal="left" if col in (11, 14, 17, 21) else "center")
 
-        ws.cell(r, 1, p.row_no)
-        ws.cell(r, 2, p.first if is_valid_person_name(p.first) else None)
-        ws.cell(r, 3, p.last if is_valid_person_name(p.last) else (p.last or None))
-        ws.cell(r, 4, p.gender or None)
-        if p.dob:
-            ws.cell(r, 5, p.dob).number_format = "mm/dd/yyyy"
-        if p.zip:
-            z = ws.cell(r, 6, p.zip[:5])
-            z.number_format = "@"
-
-        # Member Type: EE/SP/CH/DP
-        rel = p.role
-        if rel == "EE":
-            m_type = "EE"
-        elif rel == "SP":
-            m_type = "SP"
-        elif rel == "DP":
-            m_type = "DP"
+        if p.invoice_only:
+            # Invoice-only discrepancies are never added as confirmed census records:
+            # leave ALL 10 census underwriting columns (A-J) blank and populate only
+            # the comparison columns (K-U, starting with Invoice Employee Name).
+            for blank_c in range(1, 11):
+                ws.cell(r, blank_c).value = None
         else:
-            m_type = "CH"
-        ws.cell(r, 7, m_type)
+            ws.cell(r, 1, p.row_no)
+            ws.cell(r, 2, p.first if is_valid_person_name(p.first) else None)
+            ws.cell(r, 3, p.last if is_valid_person_name(p.last) else (p.last or None))
+            ws.cell(r, 4, p.gender or None)
+            if p.dob:
+                ws.cell(r, 5, p.dob).number_format = "mm/dd/yyyy"
+            if p.zip:
+                z = ws.cell(r, 6, p.zip[:5])
+                z.number_format = "@"
+
+            # Member Type: EE/SP/CH/DP
+            rel = p.role
+            if rel == "EE":
+                m_type = "EE"
+            elif rel == "SP":
+                m_type = "SP"
+            elif rel == "DP":
+                m_type = "DP"
+            else:
+                m_type = "CH"
+            ws.cell(r, 7, m_type)
 
         # Medical Coverage, Cobra, Plan, Comparison & Notes: ONLY for Employee rows (p.role == "EE")
         # Dependents only have demographic information (Cols 1-7).
         if p.role == "EE":
-            # Medical Coverage: EE/ES/EC/EF/WO/WP/OC/RC/NE (FAM -> EF)
-            cov = (p.coverage or "").strip().upper()
-            if cov in ("FAM", "FAMILY"):
-                cov = "EF"
-            ws.cell(r, 8, cov or None)
-            ws.cell(r, 9, p.cobra or ("N" if cov in ("WO", "WP") else "N"))
+            if not p.invoice_only:
+                # Medical Coverage: EE/ES/EC/EF/WO/WP/OC/RC/NE (FAM -> EF)
+                cov = (p.coverage or "").strip().upper()
+                if cov in ("FAM", "FAMILY"):
+                    cov = "EF"
+                ws.cell(r, 8, cov or None)
+                ws.cell(r, 9, p.cobra or ("N" if cov in ("WO", "WP") else "N"))
 
-            plan = p.plan
-            if plan:
-                plan = re.sub(r"\s+copy\b", "", plan, flags=re.I).strip()
-            plan = plan if cov not in ("WO", "WP") else None
-            if plan and plan.upper() in ("NA", "N/A", "NONE", "WAIVED", "NOT ELIGIBLE"):
-                plan = None
-            ws.cell(r, 10, plan)
+                plan = p.plan
+                if plan:
+                    plan = re.sub(r"\s+copy\b", "", plan, flags=re.I).strip()
+                plan = plan if cov not in ("WO", "WP") else None
+                if plan and plan.upper() in ("NA", "N/A", "NONE", "WAIVED", "NOT ELIGIBLE"):
+                    plan = None
+                ws.cell(r, 10, plan)
 
             # Comparison columns
             rr = results.get(id(p))
@@ -786,16 +847,27 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
                     res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.GREEN)
                 elif rr.result in ("Eligibility Conflict", "Missing From Census", "Review - Name Mismatch") or rr.result_red:
                     res.font = Font(name=base_font.name, sz=base_font.sz, bold=True, color=C.RED)
+                sub_id_val = (rr.inv.sub_id if rr.inv and rr.inv.sub_id else None)
+                ws.cell(r, base + 11, sub_id_val)
             _set_notes(ws.cell(r, C.MARSH_COMPARISON_START_COL + 10), notes, base_font)
         else:
-            # Dependent row: Demographics only (Cols 1-7).
-            # Plan name, coverage type, cobra, comparison columns, and discrepancies/notes remain blank,
-            # except Comparison Result which indicates 'Dependent'.
-            ws.cell(r, 8, None)
-            ws.cell(r, 9, None)
-            ws.cell(r, 10, None)
+            # Dependent row in Marsh: carry subscriber's Medical Coverage, Cobra, and Medical Plan Name
+            # in Columns H-J (Marsh has no Dep-of row link column); keep comparison columns blank except 'Dependent'.
+            sub_emp = getattr(p, "employee", None)
+            dep_cov = (p.coverage or (sub_emp.coverage if sub_emp else "") or "").strip().upper()
+            if dep_cov in ("FAM", "FAMILY"):
+                dep_cov = "EF"
+            dep_cobra = (p.cobra or (sub_emp.cobra if sub_emp else "") or "N") if dep_cov else None
+            dep_plan = (p.plan or (sub_emp.plan if sub_emp else "") or "").strip()
+            if dep_plan:
+                dep_plan = re.sub(r"\s+copy\b", "", dep_plan, flags=re.I).strip()
+            if dep_cov in ("WO", "WP", "NE", "RC") or dep_plan.upper() in ("", "NA", "N/A", "NONE", "WAIVED", "NOT ELIGIBLE"):
+                dep_plan = None
+            ws.cell(r, 8, dep_cov or None)
+            ws.cell(r, 9, dep_cobra)
+            ws.cell(r, 10, dep_plan)
             for col_idx in range(C.MARSH_COMPARISON_START_COL, C.MARSH_COMPARISON_START_COL + len(C.MARSH_COMPARISON_HEADERS)):
-                ws.cell(r, col_idx, None)
+                ws.cell(r, col_idx).value = None
             res = ws.cell(r, C.MARSH_COMPARISON_START_COL + 9, "Dependent")       # Col T (20): Comparison Result
             res.font = Font(name=base_font.name, sz=base_font.sz)
 
@@ -811,7 +883,7 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
     row = C.SBU_FIRST_DATA_ROW
 
     for p in census.people:
-        if p.is_duplicate or getattr(p, "disposition", "").startswith("EXCLUDE_"):
+        if p.is_duplicate or getattr(p, "invoice_only", False) or getattr(p, "disposition", "").startswith("EXCLUDE_"):
             continue
         r = row
         row += 1
@@ -837,22 +909,22 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
         if p.dob:
             ws_census.cell(r, 4, p.dob).number_format = "mm/dd/yyyy"
 
-        # Biological Sex: M / F
-        ws_census.cell(r, 5, p.gender or None)
+        # Biological Sex: Male / Female (per SBU template Row 4 instruction)
+        g_norm = (p.gender or "").strip().upper()
+        sex_disp = "Male" if g_norm == "M" else ("Female" if g_norm == "F" else (p.gender or None))
+        ws_census.cell(r, 5, sex_disp)
 
         # Home Zip Code
         if p.zip:
             z = ws_census.cell(r, 6, p.zip[:5])
             z.number_format = "@"
 
-        # Waived: Y / N
+        # Waived: Y / N for employees only (blank for dependents per SBU template; WP is waiting period, not waived)
         if p.role == "EE":
-            is_w = p.coverage in ("WO", "RC", "NE", "WP") or "waiv" in (p.cov_raw or "").lower()
+            is_w = p.coverage in ("WO", "RC", "NE") or "waiv" in (p.cov_raw or "").lower()
             ws_census.cell(r, 7, "Y" if is_w else "N")
         else:
-            sub = p.employee
-            is_w = (sub and sub.coverage in ("WO", "RC", "NE", "WP")) if sub else False
-            ws_census.cell(r, 7, "Y" if is_w else "N")
+            ws_census.cell(r, 7).value = None
 
         if p.hire_date:
             ws_census.cell(r, 12, p.hire_date).number_format = "mm/dd/yyyy"
@@ -912,7 +984,7 @@ def save_marsh_workbook(template: Path, out: Path, census, prospect, results, F,
     wb = openpyxl.load_workbook(template)
     ws = wb["Group Info + Census"] if "Group Info + Census" in wb.sheetnames else wb.active
     write_marsh_sheet(ws, census, prospect, results)
-    write_summary_sheet(wb, census, prospect, F, audit, results=results)
+    write_summary_sheet(wb, census, prospect, F, audit, results=results, template_label="Cigna / Marsh")
     wb.save(out)
     return out
 

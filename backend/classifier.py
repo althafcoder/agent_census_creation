@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 import pandas as pd
 
@@ -45,6 +45,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "dob": ["dob", "dateofbirth", "birthdate", "birthday", "bdate", "birthdt", "memberdob", "dateofbirthmmddyyyy",
             "employeedateofbirth", "employeedob"],
     "zip": ["zip", "zipcode", "homezipcode", "postalcode", "homezip", "zip5", "residentzip",
+            "residentialzipcode", "residentialzip", "reszip", "employeezipcode", "employeezip",
+            "employeehomeaddresszip", "employeehomezip", "homeaddresszip",
             "primaryaddresszipcode", "primaryaddresszip", "residentzipcode", "residentpostalcode",
             "homepostalcode", "homezipcode", "residentpostal", "legalpreferredaddresszippostalcode",
             "zippostalcode", "zippostal", "legalpreferredaddresszip", "workzipcode", "workzip"],
@@ -56,8 +58,9 @@ FIELD_ALIASES: dict[str, list[str]] = {
                      "type", "eetype", "memberrole", "role", "dependenttype", "relationshiptype",
                      "typeemployeespousechildren", "relationshipemployeespouseorchild", "relationshiptoinsured",
                      "employeedependent", "employeeordependent", "employeedep", "employeeanddependent", "eeordep", "eeanddep",
+                     "enrollee", "enrolleetype", "enrolleerelationship",
                      "relationshipdesc", "relationshipdescription", "dependentrelationshipdesc", "dependentrelationshipdescription"],
-    "coverage": ["coverage", "coveragetier", "tier", "coveragelevel", "enrollmenttier", "plantier",
+    "coverage": ["coverage", "coveragetier", "tier", "tiers", "coveragelevel", "enrollmenttier", "plantier",
                  "election", "coveragecode", "enrollmentlevel", "benefittier", "ratetier",
                  "householdtier", "medicaltier", "coveragestatus", "coveragelevelvalue", "coveragelevelamount",
                  "medicalcoverage", "healthcoveragelevel", "healthcoverage", "healthcoveragetier",
@@ -77,6 +80,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
              "productname", "planenrolled", "currentplan", "planoption", "medicalplancode", "plandescription",
              "currentmedicalplan", "enrolledplan", "medicalplanoption", "healthplan", "healthcare", "healthcareplan",
              "planadminname", "adminplanname", "planadministrator", "medicalplandescription", "medicalplandesc",
+             "carrierplandescription", "carrierplandesc", "carrierplanname", "carrierplan", "carrierandplan",
+             "plantypedescription", "plantypedesc",
              "medicalexternalmarketingname", "medicalplanid", "electedplan",
              "planenrolledname", "enrolledplanname", "benefitplan", "planadmin", "plannameadmin",
              "medical1planname", "medical1plan", "medical1plancode",
@@ -103,7 +108,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
                 "totalrate", "monthlyrate", "totalmonthlyrate", "premiumrate", "totalpremiumrate", "fullrate",
                 "ratetotal", "rateamount", "totalmonthlypremium",
                 "currentrate", "billedrate", "totalbilled", "totalcost", "cost", "totalamountbilled", "billedcost",
-                "planrate", "medicalrate"],
+                "planrate", "medicalrate",
+                "totalmedical", "medicaltotal", "medicalpremium", "totalmedicalpremium", "employeemedical"],
     "sub_id": ["subscriberid", "memberid", "employeeid", "eeid", "empid", "id", "ssn", "ssnlast4",
                "certificate", "certno", "certificatenumber", "memberno", "membernumber", "subscriberno",
                "subscriberssn", "employeessn",
@@ -113,7 +119,7 @@ FIELD_ALIASES: dict[str, list[str]] = {
                   "insperityhiredate", "clienthiredate", "companyhiredate", "employmenthiredate", "peohiredate"],
     "eligibility_class": ["benefiteligibilityclass", "eligibilityclass", "benefiteligibility",
                           "eligibilitygroup", "benefiteligroup", "medicaleligibilitygroup",
-                          "medical1eligibilitygroup", "medicaleligibilityclass"],
+                          "medical1eligibilitygroup", "medicaleligibilityclass", "class", "benefitclass"],
     "worker_category": ["workercategory", "employeecategory", "employmentcategory", "employeetype",
                         "employeestatuscategory", "workerstatus", "workertype", "ftpt", "fulltimeparttime",
                         "fulltimeorparttime", "fulltimeparttimedependentorcobra",
@@ -121,7 +127,8 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "position_status": ["positionstatus", "employmentstatus", "positionstate"],
     "waive_reason": ["medicalwaivereason", "waivereason", "waiverreason", "medicalwaiver",
                      "waivedreason", "enrollmentwaivereason", "waiver", "waivereasontext", "reasonforwaiving",
-                     "waivedcoveragefor", "declinedreason", "declinereason", "reasonfordeclining"],
+                     "waivedcoveragefor", "declinedreason", "declinereason", "reasonfordeclining",
+                     "medicaldeclinereason", "medicaldeclinedreason"],
     "job_title": ["jobtitle", "positiontitle", "jobdescription", "positiondescription", "jobname", "title",
                   "employeesjobtitle", "employeejobtitle"],
     "salary": ["annualsalary", "salary", "annualwages", "wages", "grosssalary", "annualcomp",
@@ -172,6 +179,8 @@ class Header:
     labels: list[str]
     candidate_columns: dict[str, list[tuple[int, str]]] = field(default_factory=dict)
     wide_candidate_columns: dict[tuple[str, str], dict[str, list[tuple[int, str]]]] = field(default_factory=dict)
+    # canonical field -> {raw_code_lower: meaning} resolved dynamically from header legends / LLM
+    value_maps: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
 def _header_variants(val: str) -> tuple[str, ...]:
@@ -208,14 +217,34 @@ def _score_row(vals: list[str]) -> int:
     return count
 
 
-def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
+def detect_header(
+    df: pd.DataFrame,
+    max_scan: int = 40,
+    force_llm_remap: bool = False,
+    file_name: str | None = None,
+    blueprint_schema: Any = None,
+) -> Optional[Header]:
+    # When a validated Whole-Submission LLM Blueprint supplies the exact header_row & column map
+    # for this sheet, honor it directly — enabling 100% dynamic parsing of unseen column names
+    # without needing FIELD_ALIASES matches.
+    bp_valid = (
+        blueprint_schema is not None
+        and getattr(blueprint_schema, "is_census_table", False)
+        and isinstance(getattr(blueprint_schema, "columns", None), dict)
+        and len(blueprint_schema.columns) >= 2
+        and 0 <= getattr(blueprint_schema, "header_row", -1) < len(df)
+    )
     best_i, best_s = None, 0
-    for i in range(min(max_scan, len(df))):
-        s = _score_row(["" if pd.isna(v) else str(v) for v in df.iloc[i].tolist()])
-        if s > best_s:
-            best_i, best_s = i, s
-    if best_i is None or best_s < 2:
-        return None
+    if bp_valid:
+        best_i = int(blueprint_schema.header_row)
+        best_s = len(blueprint_schema.columns)
+    else:
+        for i in range(min(max_scan, len(df))):
+            s = _score_row(["" if pd.isna(v) else str(v) for v in df.iloc[i].tolist()])
+            if s > best_s:
+                best_i, best_s = i, s
+        if best_i is None or best_s < 2:
+            return None
     raw_labels = ["" if pd.isna(v) else str(v) for v in df.iloc[best_i].tolist()]
     labels = [clean(v) for v in df.iloc[best_i].tolist()]
     cols: dict[str, int] = {}
@@ -284,6 +313,14 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
                         "medicalplandesc", "medicalplandescription", "medicalplanname", "planname", "plandescription"
                     ):
                         cols["plan"] = idx
+                elif canon == "premium":
+                    # On multi-benefit invoices with separate Employee Medical / Total Medical / Dental / Vision / Total Premium
+                    # columns, ALWAYS prefer an explicit Medical-total column over combined all-benefits Total Premium or EE-only Medical.
+                    prev_k = norm_key(str(labels[cols["premium"]]))
+                    curr_k = norm_key(str(lab))
+                    _MED_TOTAL_KEYS = ("totalmedical", "medicaltotal", "medicalpremium", "totalmedicalpremium")
+                    if curr_k in _MED_TOTAL_KEYS and prev_k not in _MED_TOTAL_KEYS:
+                        cols["premium"] = idx
                 break
 
     # Handle repeated unnumbered dependent column blocks (e.g., Benefits Enrollment report with 5 wide dependent slots)
@@ -335,7 +372,63 @@ def detect_header(df: pd.DataFrame, max_scan: int = 40) -> Optional[Header]:
             cols["coverage"] = c_pt
             cols.pop("plan_type", None)
 
-    return Header(best_i, cols, wide, labels, cand_cols, wide_cands)
+    if bp_valid:
+        n_cols = df.shape[1]
+        for fld, ci in blueprint_schema.columns.items():
+            if 0 <= ci < n_cols:
+                cols[fld] = ci
+                cand_cols.setdefault(fld, []).append((ci, str(labels[ci]) if ci < len(labels) else fld))
+
+    value_maps = _resolve_value_codes(df, best_i, cols, raw_labels, force_llm=force_llm_remap)
+    if bp_valid and getattr(blueprint_schema, "value_maps", None):
+        for fld, vm in blueprint_schema.value_maps.items():
+            value_maps.setdefault(fld, {}).update(vm)
+    if force_llm_remap:
+        from column_semantics import infer_table_schema
+        llm_cols, llm_vmaps = infer_table_schema(
+            df, best_i, raw_labels, list(FIELD_ALIASES.keys()), file_name=file_name,
+        )
+        if llm_cols:
+            cols.update(llm_cols)
+        for fld, vm in llm_vmaps.items():
+            value_maps.setdefault(fld, {}).update(vm)
+    return Header(best_i, cols, wide, labels, cand_cols, wide_cands, value_maps)
+
+
+def _resolve_value_codes(
+    df: pd.DataFrame,
+    hdr_row: int,
+    cols: dict[str, int],
+    raw_labels: list[str],
+    force_llm: bool = False,
+) -> dict[str, dict[str, str]]:
+    """Dynamically translate coded column values (e.g. Employee (1) / Dependent (0)) into words
+    the deterministic normalizers understand. Driven by the source header legend, with an
+    LLM fallback for codes the legend does not explain. No column names or codes are hardcoded."""
+    from column_semantics import build_value_map
+    from utils import std_coverage, std_gender, std_relationship
+    normalizers = {"relationship": std_relationship, "gender": std_gender, "coverage": std_coverage}
+    maps: dict[str, dict[str, str]] = {}
+    for fld, norm in normalizers.items():
+        idx = cols.get(fld)
+        if idx is None or idx >= df.shape[1]:
+            continue
+        vals = df.iloc[hdr_row + 1:, idx].tolist()
+        try:
+            vm = build_value_map(
+                fld,
+                raw_labels[idx] if idx < len(raw_labels) else "",
+                vals,
+                norm,
+                allow_llm=(fld == "relationship" or force_llm),
+                min_unresolved_share=(0.0 if force_llm else 0.2),
+            )
+        except Exception as exc:
+            log.warning("Value-code resolution failed for %s: %s", fld, exc)
+            vm = {}
+        if vm:
+            maps[fld] = vm
+    return maps
 
 
 def body(df: pd.DataFrame, hdr: Header) -> pd.DataFrame:
@@ -454,6 +547,36 @@ def is_comparison_output_doc(doc: RawDoc) -> bool:
     return False
 
 
+def is_sbc_document(doc: RawDoc) -> bool:
+    """Content-driven detection of Summary of Benefits and Coverage (SBC) documents.
+
+    Works regardless of filename (e.g. plan-ID-named files like ``P621CHC.pdf`` or ``S9N3ADT.pdf``)
+    by checking for the federal CMS SBC heading / standard deductible questions in the document text.
+    """
+    name = getattr(doc, "name", "") or ""
+    if re.search(r"(group[_\-\s]*identification[_\-\s]*key|option[_\-\s]*key|plan[_\-\s]*key|(?:^|[_\-\s\.])sbc(?:$|[_\-\s\.])|summary[_\-\s]*of[_\-\s]*benefits)", name, re.I):
+        return True
+    raw_txt = getattr(doc, "text", "") or ""
+    if not raw_txt:
+        return False
+    from utils import normalize_reversed_text
+    # Collapse excessive vertical padding before slicing so rotated/sparse PDF pages fit in the header window
+    compact_head = re.sub(r"\s+", " ", raw_txt[:25000])
+    head = normalize_reversed_text(compact_head)[:4000]
+    if not head:
+        return False
+    # Require the federal CMS SBC structural heading (never trigger on an email merely mentioning "SBC")
+    if re.search(r"summary\s+of\s+benefits\s+and\s+coverage\s*:", head, re.I):
+        return True
+    if re.search(r"what\s+this\s+plan\s+covers\s*&\s*what\s+you\s+pay", head, re.I):
+        return True
+    if re.search(r"what\s+is\s+the\s+overall\s+deductible\?", head, re.I) and re.search(r"why\s+this\s+matters", head, re.I):
+        return True
+    if re.search(r"the\s+summary\s+of\s+benefits\s+and\s+coverage\s*\(sbc\)\s+document\s+will\s+help", head, re.I):
+        return True
+    return False
+
+
 def classify(doc: RawDoc) -> str:
     """Return one of: invoice, renewal, ghq, rfp, census, payroll, deliverable, unknown."""
     from census_config import LLM_FIRST, USE_LLM_FALLBACK
@@ -461,6 +584,11 @@ def classify(doc: RawDoc) -> str:
     if is_comparison_output_doc(doc):
         log.info("Document '%s' has completed comparison-output structure -> classified as deliverable (excluded from source ingestion)", doc.name)
         return "deliverable"
+
+    # Content-driven SBC detection wins even for plan-ID-named PDFs (e.g. P621CHC.pdf, S9N3ADT.pdf)
+    if is_sbc_document(doc):
+        log.info("Document '%s' identified as an SBC / plan design summary -> classified as plan_design", doc.name)
+        return "plan_design"
 
     # 1. LLM-First semantic classification (Copilot Studio approach)
     if LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip():

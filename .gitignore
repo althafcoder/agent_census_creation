@@ -37,6 +37,8 @@ output/*
 !output/.gitkeep
 extracted_text/*
 !extracted_text/.gitkeep
+New Opp - */
+Fw_ New Opp - */
 
 # Temporary scratch and test output folders
 backend/scratch_output/

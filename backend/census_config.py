@@ -154,8 +154,9 @@ MARSH_COMPARISON_HEADERS = [
     "Renewal Premium",         # S (19)
     "Comparison Result",       # T (20)
     "Notes",                   # U (21)
+    "Invoice Subscriber ID",   # V (22)
 ]
-MARSH_COMPARISON_WIDTHS = [26, 12, 18, 35, 14, 18, 35, 16, 16, 24, 40]
+MARSH_COMPARISON_WIDTHS = [26, 12, 18, 35, 14, 18, 35, 16, 16, 24, 40, 20]
 
 # ---- SBU Census Template Layout --------------------------------------------
 SBU_HEADER_ROW = 3
