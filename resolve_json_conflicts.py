@@ -99,5 +99,17 @@ files = [
 ]
 
 if __name__ == "__main__":
-    for f in files:
-        resolve_file(f)
+    # Automatically get all unmerged JSON files
+    try:
+        unmerged_files = subprocess.check_output(['git', 'diff', '--name-only', '--diff-filter=U'], encoding='utf-8').splitlines()
+        json_files = [f for f in unmerged_files if f.endswith('.json')]
+        
+        for f in json_files:
+            resolve_file(f)
+            
+        # For non-json files, just print them so we can handle manually if needed
+        other_files = [f for f in unmerged_files if not f.endswith('.json')]
+        if other_files:
+            print(f"Manual attention needed for: {other_files}")
+    except Exception as e:
+        print(f"Error finding unmerged files: {e}")
