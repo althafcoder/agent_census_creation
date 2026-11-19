@@ -101,6 +101,11 @@ class LocalPromptCache:
                         """)
                         conn.execute("CREATE INDEX IF NOT EXISTS idx_cache_created ON prompt_cache(created_at);")
                         conn.execute("CREATE INDEX IF NOT EXISTS idx_cache_step ON prompt_cache(step_name);")
+                        # Evict any poisoned empty responses (e.g. truncated/failed structured-output calls)
+                        conn.execute(
+                            "DELETE FROM prompt_cache WHERE trim(response_json) IN ('', '{}', '[]', 'null') "
+                            "OR (step_name = 'workbook_auditor' AND response_json LIKE '%\"confidence_summary\": \"\"%')"
+                        )
                 self._initialized = True
             except Exception as exc:
                 log.warning("Could not initialize local prompt cache SQLite DB: %s", exc)
@@ -246,6 +251,9 @@ class LocalPromptCache:
     ) -> None:
         """Store prompt and parsed response in persistent SQLite cache."""
         if not PROMPT_CACHE_ENABLED:
+            return
+        if response_data is None or response_data == {} or response_data == []:
+            log.debug("Refusing to cache empty response for step=%s", step_name or "extraction")
             return
 
         inst_hash = get_instruction_hash()

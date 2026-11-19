@@ -27,6 +27,7 @@
   "updated_at": "2026-11-18T05:56:14.361835",
   "compatibility": {
     "instruction_hashes": [
+      "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef",
       "218471cb1e739a58c197ddeecf116308e84f39eccf0e8528dcd25936e6e3174b"
     ],
     "template_hashes": [],

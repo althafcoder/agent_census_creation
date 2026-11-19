@@ -1,0 +1,79 @@
+[
+  {
+    "proposal_id": "shared_rule_disambiguate_same_name_persons",
+    "action": "DISAMBIGUATE_SAME_NAME_PERSONS",
+    "target_module": "backend/comparator.py / backend/census_builder.py",
+    "target_function": "core_pipeline",
+    "generalized_fix": "Generalize root-cause handling for DISAMBIGUATE_SAME_NAME_PERSONS in shared pipeline code rather than relying on post-hoc patches.",
+    "suggested_test": "tests/test_generalized_regression.py",
+    "observed_case_ids": [
+      "case_20261118_182016"
+    ],
+    "occurrence_count": 3,
+    "status": "proposed",
+    "first_seen_at": "2026-11-18T18:24:34.038279",
+    "last_seen_at": "2026-11-18T18:24:34.038279"
+  },
+  {
+    "proposal_id": "shared_rule_parse_meritain_statement",
+    "action": "PARSE_MERITAIN_STATEMENT",
+    "target_module": "backend/comparator.py / backend/census_builder.py",
+    "target_function": "core_pipeline",
+    "generalized_fix": "Generalize root-cause handling for PARSE_MERITAIN_STATEMENT in shared pipeline code rather than relying on post-hoc patches.",
+    "suggested_test": "tests/test_generalized_regression.py",
+    "observed_case_ids": [
+      "case_20261119_092527",
+      "case_20261119_092617"
+    ],
+    "occurrence_count": 6,
+    "status": "ready_for_core_rule_fix",
+    "first_seen_at": "2026-11-19T09:26:00.665897",
+    "last_seen_at": "2026-11-19T09:26:50.566451"
+  },
+  {
+    "proposal_id": "shared_rule_recompute_findings",
+    "action": "RECOMPUTE_FINDINGS",
+    "target_module": "backend/comparator.py / backend/census_builder.py",
+    "target_function": "core_pipeline",
+    "generalized_fix": "Generalize root-cause handling for RECOMPUTE_FINDINGS in shared pipeline code rather than relying on post-hoc patches.",
+    "suggested_test": "tests/test_generalized_regression.py",
+    "observed_case_ids": [
+      "case_20261119_112853"
+    ],
+    "occurrence_count": 3,
+    "status": "proposed",
+    "first_seen_at": "2026-11-19T11:39:18.410225",
+    "last_seen_at": "2026-11-19T11:39:18.421777"
+  },
+  {
+    "proposal_id": "shared_rule_reconcile_waived_coverage_and_dependents",
+    "action": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
+    "target_module": "backend/census_builder.py",
+    "target_function": "refine_non_enrolled_statuses",
+    "generalized_fix": "Refine waived/non-enrolled coverage & dependent disposition rules in refine_non_enrolled_statuses().",
+    "suggested_test": "tests/test_generalized_regression.py",
+    "observed_case_ids": [
+      "case_20261119_122712",
+      "case_20261119_124922"
+    ],
+    "occurrence_count": 2,
+    "status": "ready_for_core_rule_fix",
+    "first_seen_at": "2026-11-19T12:33:22.324805",
+    "last_seen_at": "2026-11-19T12:55:11.969174"
+  },
+  {
+    "proposal_id": "shared_rule_repair_linkage_or_normalization",
+    "action": "REPAIR_LINKAGE_OR_NORMALIZATION",
+    "target_module": "backend/census_builder.py",
+    "target_function": "_link_dependents",
+    "generalized_fix": "Strengthen structural dependent-to-subscriber linkage rules in _link_dependents().",
+    "suggested_test": "tests/test_coded_relationship_census.py",
+    "observed_case_ids": [
+      "case_20261119_122712"
+    ],
+    "occurrence_count": 6,
+    "status": "proposed",
+    "first_seen_at": "2026-11-19T12:33:22.324805",
+    "last_seen_at": "2026-11-19T12:33:22.340156"
+  }
+]

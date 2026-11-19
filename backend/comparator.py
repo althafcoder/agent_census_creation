@@ -8,6 +8,8 @@ from typing import Optional
 
 from census_config import ACTIVE_TIERS, FUZZY_ACCEPT, FUZZY_WITH_DOB, NON_ENROLLED
 from models import Census, Findings, InvoiceRecord, Person, RenewalDoc, RowResult
+from email_evidence import find_person_evidence
+from plan_linker import _match_plan_against_renewal, build_plan_link_table, match_by_premium_fingerprint
 from utils import clean, match_plan, name_similarity, name_tokens, split_full_name, std_coverage
 
 TERMINATED = ("term", "cancel", "inactive", "lapse", "disenroll")
@@ -175,6 +177,27 @@ def match_employees(emps: list[Person], invs: list[InvoiceRecord]) -> dict[int, 
                 used.add(j)
                 break
 
+    # pass 2d - multi-word / compound surname subset match (e.g. 'Carlos Oropeza Mejia' <-> 'MEJIA, CARLOS')
+    for i, e in enumerate(emps):
+        if i in res or not e.first or not e.last:
+            continue
+        ef_toks = [re.sub(r"[^a-z]", "", p.lower()) for p in clean(e.first).split() if re.sub(r"[^a-z]", "", p.lower())]
+        el_toks = [re.sub(r"[^a-z]", "", p.lower()) for p in re.split(r"[\s\-]+", clean(e.last)) if len(re.sub(r"[^a-z]", "", p.lower())) >= 2]
+        if not ef_toks or not el_toks:
+            continue
+        for j, inv in enumerate(invs):
+            if j in used or not inv.first or not inv.last:
+                continue
+            if_toks = [re.sub(r"[^a-z]", "", p.lower()) for p in clean(inv.first).split() if re.sub(r"[^a-z]", "", p.lower())]
+            il_toks = [re.sub(r"[^a-z]", "", p.lower()) for p in re.split(r"[\s\-]+", clean(inv.last)) if len(re.sub(r"[^a-z]", "", p.lower())) >= 2]
+            if not if_toks or not il_toks or ef_toks[0] != if_toks[0]:
+                continue
+            el_set, il_set = set(el_toks), set(il_toks)
+            if (el_set < il_set or il_set < el_set) and (el_set & il_set):
+                res[i] = (j, 0.94)
+                used.add(j)
+                break
+
     # pass 3 - fuzzy (typos, middle names); greedy best-first
     pairs = []
     for i, e in enumerate(emps):
@@ -236,10 +259,12 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
             F.exceptions.append(("Duplicate employees", d.display, "Duplicate record in source census"))
         elif getattr(d, "disposition", "") == "EXCLUDE_PART_TIME":
             results_dup[id(d)] = RowResult(result="Excluded - Part-Time", result_red=False)
+        elif str(getattr(d, "disposition", "") or "").startswith("EXCLUDE_"):
+            results_dup[id(d)] = RowResult(result="Excluded - Terminated/Inactive", result_red=False)
 
     emps = [
         e for e in census.canonical_census_employees
-        if not e.is_duplicate and getattr(e, "disposition", "") != "EXCLUDE_PART_TIME"
+        if not e.is_duplicate and not str(getattr(e, "disposition", "") or "").startswith("EXCLUDE_")
     ]
     rates = build_rate_table(invs) if have_invoice else {}
     top_plan = most_used_plan(invs, census) if have_invoice else ""
@@ -284,13 +309,33 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     return rec.get("renewal_premium")
         return None
 
+    plan_links: dict = {}
+
     def renewal_for(plan: str, tier: str, emp: Optional[Person] = None, inv: Optional[InvoiceRecord] = None) -> tuple[Optional[float], str]:
         if not renewal:
             return None, "no_doc"
-        rp = match_plan(plan, renewal.plans) if plan else (renewal.plans[0] if len(renewal.plans) == 1 else None)
         member_amt = _lookup_member_renewal_rate(emp, inv)
         if member_amt is not None:
             return member_amt, "ok"
+
+        rp = None
+        p_clean = clean(plan)
+        if p_clean and p_clean in plan_links:
+            rp = plan_links[p_clean].renewal_plan
+        if not rp and p_clean:
+            rp = _match_plan_against_renewal(p_clean, renewal)
+        # Fallback 1: employee's census plan directly names a renewal plan ID/name
+        if not rp and emp is not None and clean(getattr(emp, "plan", "")):
+            rp = _match_plan_against_renewal(emp.plan, renewal)
+        # Fallback 2: exact premium-rate fingerprint on this subscriber's invoice row
+        if not rp and inv is not None and getattr(inv, "premium", None) and tier in ACTIVE_TIERS:
+            fp_link = match_by_premium_fingerprint(p_clean or clean(inv.plan), {tier: [float(inv.premium)]}, renewal)
+            if fp_link:
+                rp = fp_link.renewal_plan
+        # Fallback 3: single-plan renewal when no plan name was given
+        if not rp and not p_clean and len(renewal.plans) == 1:
+            rp = renewal.plans[0]
+
         if not rp:
             return None, "unmapped"
         return renewal.rates.get((rp, tier)), "ok"
@@ -337,6 +382,29 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     matches[i] = (j, 0.95 if pref_match and ln_match else 0.70)
                     matched_inv.add(j)
                     break
+
+    # Dynamic evidence-based plan linking (Fix #4 + Whole-Submission Blueprint):
+    # resolve invoice billing codes (e.g. 0006-PPO, 0004-HMO) to renewal plan IDs via
+    # direct match -> census plan consensus -> exact premium-rate fingerprint -> blueprint plan links.
+    if renewal and have_invoice:
+        plan_links.update(build_plan_link_table(
+            renewal, emps, invs, matches,
+            inv_rates=rates,
+            blueprint_links=meta.get("blueprint_plan_links"),
+        ))
+        for inv_p, lnk in plan_links.items():
+            if lnk.method != "direct_name_match":
+                note = f"Renewal plan linked: '{inv_p}' -> '{lnk.renewal_plan}' ({lnk.evidence})"
+                if note not in F.renewal_notes:
+                    F.renewal_notes.append(note)
+    # Also surface any Blueprint plan links for SBC matching even when renewal is not required
+    for bpl in (meta.get("blueprint_plan_links") or []):
+        ip = clean(getattr(bpl, "invoice_plan", ""))
+        cp = clean(getattr(bpl, "canonical_plan_id", ""))
+        if ip and cp:
+            note = f"Renewal plan linked: '{ip}' -> '{cp}' ({clean(getattr(bpl, 'evidence', '')) or 'blueprint'})"
+            if note not in F.renewal_notes:
+                F.renewal_notes.append(note)
 
     for i, e in enumerate(emps):
         rr = RowResult()
@@ -392,7 +460,10 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                 if e.premium is None and inv.premium is not None:
                     e.premium = inv.premium
 
-                rr.plan, rr.tier, rr.inv_premium = inv.plan or e.plan, inv.tier, inv.premium
+                eff_inv_tier = inv.tier
+                if not eff_inv_tier and getattr(inv, "dep_medical_premium", 0.0) > 0.0 and cov in ("ES", "EC", "FAM"):
+                    eff_inv_tier = cov
+                rr.plan, rr.tier, rr.inv_premium = inv.plan or e.plan, eff_inv_tier, inv.premium
                 if rr.plan and census_plan_raw:
                     F.plan_display_names.setdefault(rr.plan, census_plan_raw)
                 if "premium due" in (inv.status or "").lower():
@@ -459,12 +530,36 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                     if amt is None:
                         cnt["missing_renewal"] += 1
 
-        # ================= employee NOT on invoice
+        # ================= employee NOT on medical invoice
         elif have_invoice:
             if cov in NON_ENROLLED:
-                rr.status = "Not on invoice"
-                rr.result = "Expected - Not Enrolled"
-                rr.plan, rr.tier, rr.inv_premium = None, None, None
+                # Check if employee appears on a combined bill with $0.00 medical + ancillary (Dental/Vision) only
+                nm_match = None
+                nm_sim = 0.0
+                for nm_rec in (meta.get("non_medical_invoice_records") or []):
+                    sc_nm = name_similarity((e.first, e.last), (nm_rec.first, nm_rec.last))
+                    if sc_nm >= 0.85 and sc_nm > nm_sim:
+                        nm_sim = sc_nm
+                        nm_match = nm_rec
+                if nm_match is not None:
+                    nm_pct = int(round(nm_sim * 100))
+                    rr.inv = nm_match
+                    rr.inv_name = nm_match.raw_name
+                    rr.group_no = nm_match.group_no
+                    rr.match_pct = nm_pct
+                    rr.match_text = "100% Match" if nm_pct >= 100 else f"{nm_pct}% Match | Invoice Name: {nm_match.raw_name}"
+                    rr.status = nm_match.status or "Ancillary Only"
+                    rr.result = "Match"
+                    rr.result_red = False
+                    rr.plan, rr.tier, rr.inv_premium = None, None, None
+                    anc_desc = nm_match.ancillary_detail or (
+                        f"${nm_match.ancillary_premium:,.2f} non-medical" if nm_match.ancillary_premium else "non-medical"
+                    )
+                    rr.notes.append((f"On invoice with $0.00 medical ({anc_desc} only); waived medical coverage confirmed.", False))
+                else:
+                    rr.status = "Not on invoice"
+                    rr.result = "Expected - Not Enrolled"
+                    rr.plan, rr.tier, rr.inv_premium = None, None, None
             elif cov == "WP":
                 wp["total"] += 1
                 elected = clean(e.plan)
@@ -552,18 +647,28 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
             rr.match_pct = 0
             rr.match_text = "0% Match | Invoice Only"
 
-            # Check if any census notes mention this employee
+            # Check if any census notes or client/broker submission emails mention this employee
             broker_info = ""
             for cn in getattr(census, "census_notes", []):
                 if r.last and r.last.lower() in cn.lower():
                     broker_info = cn
                     break
+            email_ev = find_person_evidence(meta.get("email_evidence"), r.first, r.last)
 
             retro_note = f" (plus {r.retro_period} retro {r.retro_code} ${r.retro_amount:,.2f})" if r.retro_amount else ""
-            if "recent term" in broker_info.lower() or "term" in broker_info.lower():
+            if email_ev and email_ev.event_type == "terminated":
+                eff_part = f" effective {email_ev.effective_date}" if email_ev.effective_date else ""
+                note_text = (
+                    f"Invoice Employee Not Found In Census - on {r.service_period or 'invoice'} invoice{retro_note}. "
+                    f"Submission email ({email_ev.source}) states terminated{eff_part}; confirm removal from billing (not added to census)."
+                )
+                term_clause = f"; submission email states terminated{eff_part}"
+            elif "recent term" in broker_info.lower() or "term" in broker_info.lower():
                 note_text = f"Invoice Employee Not Found In Census - on {r.service_period or 'invoice'} invoice{retro_note}. Broker submission email states he is a recent term; demographics not available."
+                term_clause = "; broker reports recent term"
             else:
                 note_text = f"Invoice Employee Not Found In Census - on {r.service_period or 'invoice'} invoice{retro_note}; demographics not available."
+                term_clause = "; demographics not available"
 
             rr.notes.append((note_text, True))
             if renewal:
@@ -578,8 +683,6 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
             prem_clause = f", ${r.premium:,.2f}" if r.premium is not None else ""
             plan_clause = r.plan or "Medical"
             tier_clause = r.tier or "Employee Only"
-            is_term = bool(broker_info and ("recent term" in broker_info.lower() or "term" in broker_info.lower()))
-            term_clause = "; broker reports recent term" if is_term else "; demographics not available"
             exc("Employee missing from census", r.raw_name, f"On invoice ({plan_clause}, {tier_clause}{prem_clause}){term_clause}")
 
     # ---- RowResult for dependents (covered under subscriber tier)
@@ -646,19 +749,62 @@ def run_comparison(census: Census, invs: list[InvoiceRecord], renewal: Optional[
                         F.plan_display_names[p] = f"{base_disp} (Renewal: {ren_code})"
 
     # Deterministic Premium Reconciliation calculation
-    matched_emps = [e for e in census.employees if not e.invoice_only and results.get(id(e)) and results[id(e)].inv is not None]
+    matched_emps = [
+        e for e in census.employees
+        if not e.invoice_only
+        and results.get(id(e))
+        and results[id(e)].inv is not None
+        and not getattr(results[id(e)].inv, "ancillary_only", False)
+    ]
     matched_prem = sum((results[id(e)].inv_premium or 0.0) for e in matched_emps)
     inv_only_recs = [r for j, r in enumerate(invs) if j not in matched_inv]
     inv_only_prem = sum((r.premium or 0.0) for r in inv_only_recs)
     cur_charges = matched_prem + inv_only_prem
     retro_total = sum((r.retro_amount or 0.0) for r in invs)
     total_due = cur_charges + retro_total
+    printed_total_due = meta.get("printed_invoice_total_due")
+    adj_label = ""
+    non_med_amt: Optional[float] = None
+    non_med_lbl = ""
+    unexp_amt: Optional[float] = None
+    unexp_lbl = ""
+    if printed_total_due is not None and float(printed_total_due) > 0 and abs(float(printed_total_due) - total_due) > 0.01:
+        # Combined multi-benefit invoice (e.g. Medical + Dental/Vision + invoice-level credits):
+        # reconcile medical-only charges transparently to the printed invoice Total Amount Due.
+        retro_total = round(float(printed_total_due) - cur_charges, 2)
+        total_due = round(float(printed_total_due), 2)
+        raw_non_med = meta.get("invoice_non_medical_charges")
+        raw_bd = meta.get("invoice_non_medical_breakdown") or {}
+        raw_gross = meta.get("invoice_gross_total_premium")
+        if raw_non_med is not None and float(raw_non_med) > 0:
+            non_med_amt = round(float(raw_non_med), 2)
+            bd_parts = " + ".join(f"{k} ${v:,.2f}" for k, v in raw_bd.items() if v)
+            non_med_lbl = f"Invoice non-medical charges ({bd_parts})" if bd_parts else "Invoice non-medical charges (Dental/Vision)"
+            unexp = round(total_due - (cur_charges + non_med_amt), 2)
+            if abs(unexp) > 0.01:
+                unexp_amt = unexp
+                gross_disp = f"Gross ${float(raw_gross):,.2f} vs " if raw_gross else ""
+                unexp_lbl = f"Invoice-level credit / adjustment (unexplained in invoice; {gross_disp}Amount Due ${total_due:,.2f})"
+                recon_note = (
+                    f"Invoice reconciliation note: Medical charges (${cur_charges:,.2f}) + non-medical charges "
+                    f"(${non_med_amt:,.2f}: {bd_parts or 'Dental/Vision'}) total ${cur_charges + non_med_amt:,.2f}, "
+                    f"whereas the printed invoice Amount Due is ${total_due:,.2f} (a {unexp:+,.2f} invoice-level "
+                    f"credit/adjustment not itemized in the supplied invoice)."
+                )
+                if recon_note not in F.notes:
+                    F.notes.append(recon_note)
+        adj_label = "Invoice non-medical charges & adjustments"
 
     F.census_matched_premium = round(matched_prem, 2)
     F.invoice_current_charges = round(cur_charges, 2)
     F.invoice_only_difference = round(inv_only_prem, 2)
     F.invoice_retro_adjustments = round(retro_total, 2)
     F.invoice_total_balance_due = round(total_due, 2)
+    F.invoice_adjustments_label = adj_label
+    F.invoice_non_medical_charges = non_med_amt
+    F.invoice_non_medical_label = non_med_lbl
+    F.invoice_unexplained_adjustment = unexp_amt
+    F.invoice_unexplained_label = unexp_lbl
 
     diff_desc = f"Difference ({inv_only_recs[0].last}, {inv_only_recs[0].first} - invoice only)" if len(inv_only_recs) == 1 else "Difference (invoice only employees)"
     retro_desc = f"Invoice current adjustments ({inv_only_recs[0].last} retro {inv_only_recs[0].retro_code} {inv_only_recs[0].retro_period})" if len(inv_only_recs) == 1 and inv_only_recs[0].retro_amount else "Invoice current adjustments"

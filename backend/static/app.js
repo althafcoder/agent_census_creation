@@ -357,8 +357,23 @@ document.addEventListener("DOMContentLoaded", () => {
       stateResults.style.display = "block";
 
       // Download links
-      btnDownloadXlsx.href = data.download_xlsx_url;
-      btnDownloadTxt.href = data.download_txt_url;
+      if (btnDownloadXlsx) {
+        if (data.download_xlsx_url) {
+          btnDownloadXlsx.style.display = "inline-flex";
+          btnDownloadXlsx.href = data.download_xlsx_url;
+        } else {
+          btnDownloadXlsx.style.display = "none";
+          btnDownloadXlsx.removeAttribute("href");
+        }
+      }
+      if (btnDownloadTxt) {
+        if (data.download_txt_url) {
+          btnDownloadTxt.style.display = "inline-flex";
+          btnDownloadTxt.href = data.download_txt_url;
+        } else {
+          btnDownloadTxt.style.display = "none";
+        }
+      }
 
       // All Files (.zip) one-click download button
       if (btnDownloadAll) {

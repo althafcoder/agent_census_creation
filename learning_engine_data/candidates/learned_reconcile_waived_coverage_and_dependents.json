@@ -19,6 +19,7 @@
   "updated_at": "2026-11-18T05:56:09.497181",
   "compatibility": {
     "instruction_hashes": [
+      "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef",
       "218471cb1e739a58c197ddeecf116308e84f39eccf0e8528dcd25936e6e3174b"
     ],
     "template_hashes": [],
@@ -56,7 +57,16 @@
   "root_cause": {
     "code": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
     "verification_status": "verified",
-    "summary": "Automated repair pattern for RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS"
+    "summary": "Automated repair pattern for RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
+    "shared_rule_proposal": {
+      "proposal_id": "shared_rule_reconcile_waived_coverage_and_dependents",
+      "action": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
+      "case_id": "case_20261119_124922",
+      "target_module": "backend/census_builder.py",
+      "target_function": "refine_non_enrolled_statuses",
+      "generalized_fix": "Refine waived/non-enrolled coverage & dependent disposition rules in refine_non_enrolled_statuses().",
+      "suggested_test": "tests/test_generalized_regression.py"
+    }
   },
   "strategy": {
     "action": "RECONCILE_WAIVED_COVERAGE_AND_DEPENDENTS",
@@ -70,6 +80,9 @@
   },
   "verification": {
     "case_successes": 1,
+    "seen_case_ids": [
+      "case_20261119_124922"
+    ],
     "case_failures": 0,
     "regression_fixture_ids": [],
     "negative_fixture_ids": [],

@@ -10,12 +10,12 @@ from typing import Any, Optional
 from classifier import _RETRO_WORDS, body, detect_header
 from models import InvoiceDoc, InvoiceRecord
 from readers import RawDoc
-from utils import (clean, is_blank, name_key, name_tokens, norm_key, parse_date, split_full_name, std_coverage,
-                   std_gender, std_relationship, std_zip, to_money)
+from utils import (clean, clean_overprint_text, is_blank, name_key, name_tokens, norm_key, parse_date,
+                   split_full_name, std_coverage, std_gender, std_relationship, std_zip, to_money)
 
 log = logging.getLogger("census.invoice")
 
-_DATE = r"(\d{1,2}/\d{1,2}/\d{2,4}|\d{4}-\d{2}-\d{2}|[A-Za-z]{3,9}\.? \d{1,2},? \d{4})"
+_DATE = r"(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{4}-\d{2}-\d{2}|[A-Za-z]{3,9}\.? \d{1,2},? \d{4})"
 _RANGE = re.compile(rf"{_DATE}\s*(?:to|through|thru|-|–|—)\s*{_DATE}", re.I)
 _ENTITY = re.compile(r"(?:group|account|policy|division|entity|location)\s*(?:#|no\.?|number|id)?\s*[:\-]?\s*"
                      r"([A-Za-z0-9][A-Za-z0-9\-]{2,})", re.I)
@@ -91,7 +91,7 @@ def detect_period(doc: RawDoc) -> tuple[Optional[date], Optional[date]]:
                 _, last_day = calendar.monthrange(d.year, d.month)
                 return d, d.replace(day=last_day)
 
-    pri = [l for l in lines if re.search(r"(billing|coverage|invoice|premium)\s*period|period\s*:", l, re.I)]
+    pri = [l for l in lines if re.search(r"(bill(?:ing)?|coverage|invoice|premium)\s*period|period\s*:", l, re.I)]
     for l in pri + lines[:40]:
         m = _RANGE.search(l)
         if m:
@@ -296,8 +296,18 @@ def _records_from_peo_employee_details(doc: RawDoc) -> list[InvoiceRecord]:
     return out
 
 
-def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
+_ANCILLARY_COL_RE = re.compile(
+    r"(dental|vision|20\s*/\s*20|vsp|eyemed|\blife\b|ad\s*&?\s*d|\bstd\b|\bltd\b|short\s*term|long\s*term|accident|critical|hospital|voluntary|ancillary)",
+    re.I,
+)
+
+
+def _records_from_tables(doc: RawDoc, meta_out: dict[str, Any] | None = None) -> list[InvoiceRecord]:
     recs: list[InvoiceRecord] = []
+    non_med_recs: list[InvoiceRecord] = []
+    anc_totals: dict[str, float] = {}
+    gross_total_sum = 0.0
+    printed_gross_total: Optional[float] = None
     for t in doc.tables:
         hdr = detect_header(t.df)
         if not hdr:
@@ -308,13 +318,37 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
         has_cov = "coverage" in c
         if not (has_name and (has_prem or has_cov)):
             continue
+        # Detect split Employee Medical / Dependent(s) Medical columns on multi-benefit carrier bills
+        ee_med_col = next((i for i, l in enumerate(hdr.labels) if norm_key(l) in ("employeemedical", "eemedical")), None)
+        dep_med_col = next((i for i, l in enumerate(hdr.labels) if "dependent" in norm_key(l) and "medical" in norm_key(l)), None)
+        # Detect ancillary benefit columns (Dental, Vision, Blue 20/20, Life, etc.) & gross Total Premium column
+        prem_col_idx = c.get("premium")
+        anc_cols: list[tuple[int, str]] = []
+        gross_col_idx: Optional[int] = None
+        for idx_l, lbl in enumerate(hdr.labels):
+            if idx_l == prem_col_idx:
+                continue
+            nk_l = norm_key(lbl)
+            if _ANCILLARY_COL_RE.search(lbl or "") and "medical" not in nk_l:
+                anc_cols.append((idx_l, clean(lbl)))
+            elif nk_l in ("totalpremium", "totalamount", "totalbilled", "totalcharges", "grandtotal") and idx_l != prem_col_idx:
+                gross_col_idx = idx_l
+
         current: Optional[InvoiceRecord] = None
         seen_subs: set[tuple] = set()
         for _, s in body(t.df, hdr).iterrows():
             g = lambda f: s.iloc[c[f]] if f in c else None
             vals = [clean(v) for v in s.tolist()]
             joined_vals = " ".join(vals).lower()
-            if not any(vals) or any(k in joined_vals for k in ("total", "subtotal", "department details", "provider details", "dept code")):
+            if not any(vals):
+                continue
+            if any(k in joined_vals for k in ("total", "subtotal", "department details", "provider details", "dept code")):
+                # Capture printed TOTALS row gross & ancillary totals if present
+                if "total" in joined_vals and "amount due" not in joined_vals and "subtotal" not in joined_vals:
+                    if gross_col_idx is not None and gross_col_idx < len(s):
+                        gv = to_money(s.iloc[gross_col_idx])
+                        if gv and gv > 0:
+                            printed_gross_total = round(gv, 2)
                 continue
             if "txn_type" in c and _RETRO_WORDS.search(clean(g("txn_type"))):
                 continue                                              # retro / adjustment lines
@@ -327,7 +361,41 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
                 continue
 
             prem = to_money(g("premium")) if "premium" in c else (to_money(g("ee_cost")) or 0.0)
+            row_anc_parts: list[tuple[str, float]] = []
+            for a_idx, a_lbl in anc_cols:
+                if a_idx < len(s):
+                    av = to_money(s.iloc[a_idx])
+                    if av and av > 0:
+                        row_anc_parts.append((a_lbl, round(av, 2)))
+                        anc_totals[a_lbl] = round(anc_totals.get(a_lbl, 0.0) + av, 2)
+            row_anc_sum = round(sum(v for _, v in row_anc_parts), 2)
+            if gross_col_idx is not None and gross_col_idx < len(s):
+                g_row = to_money(s.iloc[gross_col_idx])
+                if g_row and g_row > 0:
+                    gross_total_sum = round(gross_total_sum + g_row, 2)
+
             if has_prem and (not prem or prem <= 0):
+                # Preserve $0-medical / ancillary-only rows (e.g. waived medical + enrolled dental/vision)
+                # separately so waived employees are accurately reconciled with their Subscriber ID & note
+                # without inflating medical subscriber count or medical charges.
+                if row_anc_sum > 0:
+                    a_first, a_last = clean(g("first_name")), clean(g("last_name"))
+                    a_raw = ""
+                    if a_first or a_last:
+                        a_raw = f"{a_last}, {a_first}".strip(", ") if "full_name" not in c else clean(g("full_name"))
+                    if "full_name" in c and clean(g("full_name")) and not (a_first and a_last):
+                        a_raw = clean(g("full_name"))
+                        a_first, a_last = split_full_name(a_raw)
+                    if a_first or a_last:
+                        a_detail = " + ".join(f"{lbl} ${val:,.2f}" for lbl, val in row_anc_parts)
+                        non_med_recs.append(InvoiceRecord(
+                            first=a_first, last=a_last, raw_name=a_raw or f"{a_last}, {a_first}",
+                            tier="", dob=parse_date(g("dob")), gender=std_gender(g("gender")),
+                            plan="", premium=0.0,
+                            status=clean(g("status")), sub_id=clean(g("sub_id")),
+                            ancillary_only=True, ancillary_premium=row_anc_sum,
+                            ancillary_detail=a_detail, source=doc.name,
+                        ))
                 continue
 
             first, last = clean(g("first_name")), clean(g("last_name"))
@@ -369,21 +437,38 @@ def _records_from_tables(doc: RawDoc) -> list[InvoiceRecord]:
             seen_subs.add(sub_key)
 
             z, _ = std_zip(g("zip"))
+            inferred_tier = std_coverage(clean(g("coverage")))
+            dep_med_amt = to_money(s.iloc[dep_med_col]) if dep_med_col is not None and dep_med_col < len(s) else None
+            ee_med_amt = to_money(s.iloc[ee_med_col]) if ee_med_col is not None and ee_med_col < len(s) else None
+            if not inferred_tier and dep_med_col is not None:
+                if (dep_med_amt or 0.0) <= 0.0 and (ee_med_amt or prem or 0.0) > 0.0:
+                    inferred_tier = "EE"
             rec = InvoiceRecord(
                 first=first, last=last, raw_name=raw,
-                tier=std_coverage(clean(g("coverage"))),
+                tier=inferred_tier,
                 dob=parse_date(g("dob")), gender=std_gender(g("gender")), zip=z,
                 plan=plan, premium=prem,
                 status=clean(g("status")), sub_id=clean(g("sub_id")), source=doc.name,
                 has_dep_detail="relationship" in c or bool(dep_cnt),
                 dep_count=dep_cnt,
                 dep_rels=dep_rels_set)
+            if dep_med_amt is not None and dep_med_amt > 0.0:
+                setattr(rec, "dep_medical_premium", round(dep_med_amt, 2))
             recs.append(rec)
             current = rec
 
     bad_names = sum(1 for r in recs if not r.last or r.first.startswith("$") or r.last.startswith("$"))
     if bad_names > len(recs) * 0.2:
         return []
+    if meta_out is not None:
+        if non_med_recs:
+            meta_out["non_medical_records"] = non_med_recs
+        if anc_totals:
+            meta_out["non_medical_breakdown"] = {k: round(v, 2) for k, v in anc_totals.items() if v > 0}
+            meta_out["non_medical_charges"] = round(sum(anc_totals.values()), 2)
+        gt = printed_gross_total if (printed_gross_total and printed_gross_total > 0) else (gross_total_sum if gross_total_sum > 0 else None)
+        if gt is not None:
+            meta_out["gross_total_premium"] = round(gt, 2)
     return recs
 
 
@@ -722,6 +807,101 @@ def _records_from_carrier_statement(doc: RawDoc) -> tuple[list[InvoiceRecord], d
             ))
         if uhc_recs:
             return uhc_recs, {"service_period": cov_period}
+
+        # Check for HCSC / BCBS 'SUBSCRIBER FEES' columnar statement format:
+        # <sub_id 8-14 digits> <LAST , FIRST> <cat 4 digits> <product code> <tier> [change reason] [retro] <current> <total>
+        if re.search(r"\bSUBSCRIBER\s+FEES\b", text, re.I):
+            cleaned_text = clean_overprint_text(text)
+            m_bp = re.search(r"Bill\s+Period:\s*(\d{2}-\d{2}-\d{4})\s+to\s+(\d{2}-\d{2}-\d{4})", cleaned_text, re.I)
+            bp_str = f"{m_bp.group(1)} to {m_bp.group(2)}" if m_bp else ""
+            sub_fee_re = re.compile(
+                r"^\s*(\d{8,14})\s+([A-Z][A-Z'\-\. ]+?\s*,\s*[A-Z][A-Z'\-\. ]+?)\s+"
+                r"(\d{4})\s+([A-Z0-9]{3,6}-[A-Z0-9]{2,8})\s+([A-Z0-9\+]{2,10})\s+(.*)$"
+            )
+            amt_tok_re = re.compile(r"\(?[\d,]*\.\d{2}\)?")
+            sf_recs: list[InvoiceRecord] = []
+            by_sub: dict[tuple[str, str], InvoiceRecord] = {}
+            pending_retro_by_sub: dict[str, float] = {}
+            from census_builder import _is_non_medical
+
+            for ln in cleaned_text.splitlines():
+                msf = sub_fee_re.match(ln)
+                if not msf:
+                    continue
+                sub_id_s = msf.group(1).strip()
+                raw_nm = re.sub(r"\s*,\s*", ", ", re.sub(r"\s+", " ", msf.group(2)).strip())
+                prod_code = msf.group(4).strip()
+                tier_raw = msf.group(5).strip()
+                tail = msf.group(6).strip()
+                if _is_non_medical(prod_code):
+                    continue
+                amts = amt_tok_re.findall(tail)
+                if len(amts) < 2:
+                    continue
+
+                def _signed_amt(s: str) -> float:
+                    neg = s.startswith("(") and s.endswith(")")
+                    val = float(s.strip("()").replace(",", ""))
+                    return -val if neg else val
+
+                # Columns at right edge: [RETRO FEE ADJUST]  CURRENT CHARGES  TOTAL CHARGES
+                tot_amt = _signed_amt(amts[-1])
+                cur_amt = _signed_amt(amts[-2])
+                retro_amt = _signed_amt(amts[-3]) if len(amts) >= 3 else 0.0
+                tier = std_coverage(tier_raw) or "EE"
+                f_name, l_name = split_full_name(raw_nm)
+                key_s = (sub_id_s, prod_code)
+
+                # Pure credit / zero-current product-change reversal lines (e.g. current == 0.00):
+                # don't emit a duplicate subscriber row, but preserve the signed retro credit so net retro reconciles.
+                if cur_amt <= 0.0:
+                    if retro_amt:
+                        pending_retro_by_sub[sub_id_s] = round(pending_retro_by_sub.get(sub_id_s, 0.0) + retro_amt, 2)
+                    continue
+
+                rec = InvoiceRecord(
+                    first=f_name,
+                    last=l_name,
+                    raw_name=raw_nm,
+                    tier=tier,
+                    plan=prod_code,
+                    raw_plan=prod_code,
+                    premium=round(cur_amt, 2),
+                    current_premium=round(cur_amt, 2),
+                    retro_amount=round(retro_amt, 2) if retro_amt else 0.0,
+                    total_amount=round(tot_amt, 2),
+                    service_period=bp_str,
+                    status="Active",
+                    sub_id=sub_id_s,
+                    source=doc.name,
+                )
+                by_sub[key_s] = rec
+            for (sid_k, _), rec in by_sub.items():
+                if sid_k in pending_retro_by_sub:
+                    rec.retro_amount = round((rec.retro_amount or 0.0) + pending_retro_by_sub.pop(sid_k), 2)
+                    rec.total_amount = round((rec.premium or 0.0) + rec.retro_amount, 2)
+            sf_recs = list(by_sub.values())
+            if sf_recs:
+                sf_meta: dict[str, Any] = {"service_period": bp_str}
+                m_tot_fees = re.search(
+                    r"TOTAL\s+FEES\s+(?:(\(?[\d,]+\.\d{2}\)?)\s+)?([\d,]+\.\d{2})\s+([\d,]+\.\d{2})",
+                    cleaned_text,
+                    re.I,
+                )
+                if m_tot_fees:
+                    if m_tot_fees.group(1):
+                        raw_adj = m_tot_fees.group(1)
+                        adj_val = Decimal(raw_adj.strip("()").replace(",", ""))
+                        if raw_adj.startswith("("):
+                            adj_val = -adj_val
+                        sf_meta["total_adjustments"] = adj_val.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    sf_meta["current_charges"] = Decimal(m_tot_fees.group(2).replace(",", "")).quantize(
+                        Decimal("0.01"), rounding=ROUND_HALF_UP
+                    )
+                    sf_meta["total_due"] = Decimal(m_tot_fees.group(3).replace(",", "")).quantize(
+                        Decimal("0.01"), rounding=ROUND_HALF_UP
+                    )
+                return sf_recs, sf_meta
         return [], {}
 
     meta: dict[str, Any] = {}
@@ -841,7 +1021,30 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
 
     # 0. High-Fidelity Tabular Parsing for structured spreadsheet/CSV invoices & enrollment reports
     if doc.ext in (".xlsx", ".xlsm", ".xls", ".csv") and doc.tables:
-        recs = _records_from_tables(doc)
+        recs = _records_from_tables(doc, meta_out=carrier_meta)
+        # Extract printed Total Amount Due / Amount Due on Subgroup & Group Number from spreadsheet headers/footers
+        for t in doc.tables:
+            df = getattr(t, "df", None)
+            if df is None or df.empty:
+                continue
+            for r_i in range(len(df)):
+                row_strs = [clean(v) for v in df.iloc[r_i].tolist()]
+                joined_r = " ".join(row_strs)
+                if re.search(r"\b(total\s+amount\s+due|amount\s+due\s+on\s+subgroup|total\s+balance\s+due)\b", joined_r, re.I):
+                    monies = [to_money(v) for v in row_strs if to_money(v) is not None and to_money(v) > 0]
+                    if monies:
+                        carrier_meta["total_due"] = Decimal(str(monies[-1])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                if not carrier_meta.get("group_number"):
+                    for ci, cell_s in enumerate(row_strs):
+                        if re.fullmatch(r"group\s*(?:number|no\.?|#|id)\s*:?", cell_s, re.I):
+                            for nxt in row_strs[ci + 1:]:
+                                if nxt and re.match(r"^[A-Za-z0-9\-]{4,}$", nxt):
+                                    carrier_meta["group_number"] = nxt
+                                    break
+                        elif re.search(r"\bgroup\s*(?:number|no\.?|#|id)\s*[:#]\s*([A-Za-z0-9\-]{4,})", cell_s, re.I):
+                            m_g = re.search(r"\bgroup\s*(?:number|no\.?|#|id)\s*[:#]\s*([A-Za-z0-9\-]{4,})", cell_s, re.I)
+                            if m_g:
+                                carrier_meta["group_number"] = m_g.group(1).strip()
 
     # 0b. High-Fidelity Structured Carrier/TPA Statement Ingestion (Meritain Health statements)
     if not recs and ("meritain" in (doc.text or "").lower() or "meritain" in doc.name.lower() or "DIVISION:" in (doc.text or "")):
@@ -916,6 +1119,19 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
     tot_adj = carrier_meta.get("total_adjustments")
     tot_due = carrier_meta.get("total_due")
     retro_adjs = carrier_meta.get("retro_adjustments", [])
+    grp_num = clean(carrier_meta.get("group_number", ""))
+    if not grp_num:
+        m_grp = re.search(r"\bgroup\s*(?:number|no\.?|#|id)\s*[:#|]?\s*\|?\s*([A-Za-z0-9\-]{4,})", text, re.I)
+        if m_grp and not re.search(r"^(?:name|info|type|bill|plan)$", m_grp.group(1), re.I):
+            grp_num = m_grp.group(1).strip()
+    non_med_recs = list(carrier_meta.get("non_medical_records") or [])
+    if grp_num:
+        for r in recs:
+            if not (r.group_no or "").strip():
+                r.group_no = grp_num
+        for r in non_med_recs:
+            if not (r.group_no or "").strip():
+                r.group_no = grp_num
 
     return InvoiceDoc(
         path=doc.name, records=recs, period_start=start, period_end=end,
@@ -923,10 +1139,15 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
         revised=bool(re.search(r"(revis|correct|amend|supersed)", low)),
         draft=bool(re.search(r"\b(draft|void|cancel)", low)),
         number=m_num.group(1) if m_num else "",
+        group_number=grp_num,
         doc_date=parse_date(m_dt.group(1)) if m_dt else None,
         current_charges=float(cur_charges) if cur_charges is not None else None,
         total_adjustments=float(tot_adj) if tot_adj is not None else None,
         total_due=float(tot_due) if tot_due is not None else None,
+        gross_total_premium=carrier_meta.get("gross_total_premium"),
+        non_medical_charges=carrier_meta.get("non_medical_charges"),
+        non_medical_breakdown=dict(carrier_meta.get("non_medical_breakdown") or {}),
+        non_medical_records=non_med_recs,
         retro_adjustments=retro_adjs)
 
 

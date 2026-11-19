@@ -180,6 +180,25 @@ _STAGE_CHECKLISTS: dict[str, str] = {
         "CRITICAL STAGE CHECKLIST (RENEWAL): Extract future-year medical plan names, tiers, and monthly rates accurately; "
         "do not confuse current-year rates or non-medical ancillary rates with medical renewal rates."
     ),
+    "blueprint": (
+        "CRITICAL STAGE CHECKLIST (WHOLE-SUBMISSION BLUEPRINT): Review ALL submission files together as one case. "
+        "Classify every document accurately (recognizing plan-ID-named SBCs, payroll registers vs medical invoices, "
+        "completed deliverables, renewals, RFPs/emails). Map every census spreadsheet's exact 0-based header row, "
+        "column indices, and coded values (e.g. 1/0, E/D, Y/N). Extract all client/broker email facts (terminations "
+        "with effective dates, headcounts, PEO status, target effective date), cross-document plan/SBC links, and "
+        "printed invoice control totals. Never fabricate missing fields."
+    ),
+    "audit": (
+        "CRITICAL STAGE CHECKLIST (POST-GENERATION WORKBOOK AUDITOR): Audit the ALREADY-GENERATED Excel workbook(s), "
+        "Summary sheet, and Missing Information Email against the source submission facts. Flag ONLY concrete, "
+        "evidence-backed defects: (1) internal contradictions between Group Info header and Summary text (e.g. Current PEO "
+        "listed vs 'not currently with a PEO'), (2) column header vs value mismatches (e.g. Subscriber IDs placed under "
+        "'Invoice Group #'), (3) available source fields left blank (plan names from single medical SBC, tiers, IDs, renewal "
+        "dates), (4) non-medical charges leaking into medical totals or ancillary-only billed employees falsely marked 'Not on "
+        "invoice', (5) unexplained financial reconciliation gaps, (6) dependent/population/audit-count mismatches, and "
+        "(7) false requests in the Missing Information Email (e.g. requesting an SBC or renewal that was already provided or "
+        "is not required under the PEO 90-day rule). Never invent issues; cite exact output_location and source_evidence."
+    ),
 }
 
 
@@ -202,6 +221,8 @@ def get_scoped_instructions(scope: str = "full") -> str:
         "census": (1, 6, 8, 9, 10, 17, 21, 24, 25, 26, 29, 30, 31),
         "invoice": (1, 5, 11, 12, 16, 18, 19, 20, 26, 28, 29, 30, 31),
         "renewal": (1, 13, 14, 19, 20, 25, 26, 28, 29, 30, 31),
+        "blueprint": (1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 14, 32),
+        "audit": (1, 2, 3, 4, 11, 13, 14, 18, 23, 25, 32),
     }
     target_nums = set(scope_sections.get(scope, ()))
     if not target_nums:
@@ -428,9 +449,10 @@ def extract_json(
 
     t0 = time.perf_counter()
     try:
+        eff_max_tokens = max(max_tokens, 8192) if (use_structured_output and "opus-5-5" in ANTHROPIC_MODEL.lower()) else max_tokens
         create_kwargs: dict[str, Any] = {
             "model": ANTHROPIC_MODEL,
-            "max_tokens": max_tokens,
+            "max_tokens": eff_max_tokens,
             "output_config": {"effort": effective_effort},
             "system": system_prompt,
             "messages": messages,
@@ -444,7 +466,51 @@ def extract_json(
         if "opus-5-5" not in ANTHROPIC_MODEL.lower():
             create_kwargs["temperature"] = ANTHROPIC_TEMPERATURE if ANTHROPIC_TEMPERATURE is not None else 1.0
 
-        resp = client.messages.create(**create_kwargs)
+        def _extract_text_blocks(response_obj: Any) -> str:
+            parts: list[str] = []
+            for blk in getattr(response_obj, "content", []) or []:
+                btype = getattr(blk, "type", "") if not isinstance(blk, dict) else blk.get("type", "")
+                if btype == "thinking":
+                    continue
+                if btype == "text" or (not btype and hasattr(blk, "text")):
+                    parts.append(blk.text if hasattr(blk, "text") else blk.get("text", ""))
+                elif isinstance(blk, dict) and "text" in blk:
+                    parts.append(str(blk["text"]))
+            return "".join(parts)
+
+        used_format_fallback = False
+        try:
+            resp = client.messages.create(**create_kwargs)
+        except Exception as so_exc:
+            if use_structured_output and "format" in create_kwargs.get("output_config", {}):
+                log.warning(
+                    "Structured output format rejected for [%s] (%s); retrying with JSON prompt enforcement + validator_fn",
+                    step_name, so_exc,
+                )
+                used_format_fallback = True
+                create_kwargs["output_config"] = {"effort": effective_effort}
+                create_kwargs["max_tokens"] = max(eff_max_tokens, 16384)
+                resp = client.messages.create(**create_kwargs)
+            else:
+                raise
+
+        content = _extract_text_blocks(resp)
+        raw_parsed = _parse_json_robust(content) if content.strip() else {}
+
+        # Self-recovery when structured output returns empty/truncated JSON (e.g. Opus effort token exhaustion)
+        if use_structured_output and not used_format_fallback and (not content.strip() or raw_parsed in ({}, [], None)):
+            blk_types = [getattr(b, "type", type(b).__name__) for b in (getattr(resp, "content", []) or [])]
+            log.warning(
+                "Structured output for [%s] returned empty/unparseable JSON (stop_reason=%s, blocks=%s, chars=%d); "
+                "retrying without output_config.format (max_tokens=%d)",
+                step_name, getattr(resp, "stop_reason", None), blk_types, len(content), max(eff_max_tokens, 16384),
+            )
+            create_kwargs["output_config"] = {"effort": effective_effort}
+            create_kwargs["max_tokens"] = max(eff_max_tokens, 16384)
+            resp = client.messages.create(**create_kwargs)
+            content = _extract_text_blocks(resp)
+            raw_parsed = _parse_json_robust(content) if content.strip() else {}
+
         latency_sec = time.perf_counter() - t0
 
         # Dynamically record token usage and cost for Token Utilization & Cost Analytics
@@ -468,19 +534,12 @@ def extract_json(
         except Exception as _rec_err:
             log.debug("Anthropic cache telemetry skipped: %s", _rec_err)
 
-        content_parts: list[str] = []
-        for block in resp.content:
-            if getattr(block, "type", "") == "text" or hasattr(block, "text"):
-                content_parts.append(block.text)
-            elif isinstance(block, dict) and "text" in block:
-                content_parts.append(block["text"])
-        content = "".join(content_parts)
-        parsed = _parse_json_robust(content)
+        parsed = raw_parsed
         if callable(validator_fn):
             parsed = validator_fn(parsed)
 
-        # Validate-Before-Cache: Save only validated output to local persistent cache for future runs
-        if not ANTHROPIC_API_KEY.startswith("sk-ant-test") and parsed is not None:
+        # Validate-Before-Cache: NEVER cache empty/failed parses
+        if not ANTHROPIC_API_KEY.startswith("sk-ant-test") and raw_parsed not in ({}, [], None) and parsed not in ({}, [], None):
             try:
                 from caching import get_local_cache
                 step_name = _CURRENT_STEP.get() or "llm_extraction"
@@ -1039,6 +1098,78 @@ Return JSON list of objects only:
             log.warning("extract_census_rows failed on chunk %d: %s", idx, exc)
 
     return all_rows
+
+
+def infer_column_value_codes(field: str, header_label: str, distinct_values: list[str]) -> dict[str, str]:
+    """Ask Claude what opaque codes in a source column mean (e.g. '1' -> 'Employee', '0' -> 'Dependent').
+
+    Only the header text and the distinct values are sent (never the full roster), so
+    the deterministic DataFrame pipeline keeps 100% row fidelity and simply applies the mapping.
+    """
+    set_current_tracking(step_name="column_value_codes")
+    doc_name = get_instruction_doc_name()
+    targets = {
+        "relationship": "one of: Employee, Spouse, Child, Domestic Partner, Dependent "
+                        "(use 'Dependent' when the code only says dependent without the specific type)",
+        "gender": "one of: Male, Female",
+        "coverage": "one of: Employee Only, Employee + Spouse, Employee + Child(ren), Family, Waived",
+    }
+    target = targets.get(field, "a plain-English meaning")
+    prompt = f"""You are assisting a census ingestion step governed by {doc_name}.
+A source roster column is mapped to the canonical field "{field}".
+Column header text: {header_label!r}
+Distinct values found in the column: {distinct_values!r}
+
+For every value, state what it means, using {target}.
+Use the header text (it often contains a legend) and common census conventions.
+If a value cannot be determined with confidence, map it to "".
+
+Return JSON only: {{"<value>": "<meaning>", ...}}
+"""
+    data = extract_json(prompt, max_tokens=600, effort="low")
+    if not isinstance(data, dict):
+        return {}
+    return {str(k).strip(): str(v or "").strip() for k, v in data.items()}
+
+
+def infer_table_column_mapping(
+    headers: list[str],
+    sample_rows: list[list[str]],
+    allowed_fields: list[str],
+    file_name: str | None = None,
+) -> dict[str, Any]:
+    """Ask Claude to map census spreadsheet columns and any coded values from header + sample rows.
+
+    Only the header row and a small sample of rows (<= 8) are sent; Python applies the returned
+    mapping deterministically across the entire DataFrame so large rosters never truncate.
+    """
+    set_current_tracking(file_name=file_name, step_name="table_column_mapping")
+    doc_name = get_instruction_doc_name()
+    indexed_headers = {str(i): h for i, h in enumerate(headers)}
+    prompt = f"""You are assisting a census ingestion recovery step governed by {doc_name}.
+A census spreadsheet failed population sanity checks (e.g. mis-mapped relationship/employee indicator
+column or misaligned columns). Inspect the header row and sample rows below and identify:
+1. Which column index maps to each canonical field from: {allowed_fields}
+   (only map columns that clearly correspond; omit unrelated columns).
+2. For coded columns (especially "relationship", "gender", "coverage" — e.g. 1/0, E/D, Y/N),
+   provide a value map translating each raw code to plain English (e.g. "1": "Employee", "0": "Dependent").
+
+Headers (col_index -> header text):
+{json.dumps(indexed_headers, ensure_ascii=False)}
+
+Sample rows:
+{json.dumps(sample_rows[:8], ensure_ascii=False)}
+
+Return JSON only:
+{{
+  "columns": {{"<canonical_field>": <int_col_index>, ...}},
+  "value_maps": {{"<canonical_field>": {{"<raw_code>": "<plain_english_meaning>", ...}}, ...}}
+}}
+"""
+    data = extract_json(prompt, max_tokens=1000, effort="medium")
+    if not isinstance(data, dict):
+        return {}
+    return data
 
 
 def classify_document(text: str, filename: str) -> str:

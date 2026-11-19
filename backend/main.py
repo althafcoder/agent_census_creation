@@ -32,9 +32,13 @@ from caching.config import (
 from census_builder import build_census, extract_waiting_period_rule, refine_non_enrolled_statuses
 from classifier import classify, detect_header
 from comparator import run_comparison
+from email_evidence import extract_email_evidence
 from invoice_parser import combine_records, parse_invoice, select_invoices
 from models import Census, Findings
+from agent_orchestrator import run_agent_intake_plan
+from population_sanity import evaluate_population_sanity
 from prospect import build_prospect
+from submission_blueprint import generate_submission_blueprint, verify_invoice_control_totals
 from readers import read_all
 from renewal_parser import parse_renewal, select_renewal
 from router import (
@@ -47,6 +51,7 @@ from router import (
 )
 from tracer import DiagnosticTracer
 from utils import sanitize_filename
+from workbook_auditor import audit_generated_deliverables
 from workbook_writer import (
     save_marsh_workbook,
     save_rapt_workbook,
@@ -166,12 +171,36 @@ def run_pipeline(
              APP_VERSION, SCHEMA_VERSION, INSTRUCTION_VERSION, inst_hash)
     log.info("Inputs received: %d files (Hashes: %s)", len(docs), ", ".join(f"{k}:{v}" for k, v in input_hashes.items()))
 
+    # 1.5 Claude Tool-Using Intake Agent & Whole-Submission Blueprint -----------------------------
+    # Interactive tool-using agent inspects all files (with on-demand row/PDF drill-down tools)
+    # and commits a strictly validated Blueprint via native Tool Use; falls back cleanly to
+    # single-pass Blueprint or deterministic execution when offline.
+    blueprint = run_agent_intake_plan(docs, bypass_cache=bypass_cache)
+    if blueprint is None:
+        blueprint = generate_submission_blueprint(docs)
+
     roles: dict[str, list] = {
         "census": [], "invoice": [], "renewal": [], "ghq": [], "rfp": [],
         "deliverable": [], "payroll": [], "plan_design": [], "unknown": []
     }
+    from classifier import is_comparison_output_doc, is_sbc_document, is_wage_document
     for d in docs:
-        role = classify(d)
+        bp_role = blueprint.role_for(d.name) if blueprint is not None else None
+        if is_comparison_output_doc(d):
+            role = "deliverable"
+        elif is_wage_document(d):
+            role = "payroll"
+        elif is_sbc_document(d):
+            role = "plan_design"
+        elif bp_role:
+            role = bp_role
+            log.info("      * [BLUEPRINT] %-34s -> %-11s", d.name, role)
+        else:
+            role = classify(d)
+        if blueprint is not None and role == "plan_design":
+            bp_sbc_ids = blueprint.sbc_plan_ids_for(d.name)
+            if bp_sbc_ids:
+                setattr(d, "sbc_plan_ids", bp_sbc_ids)
         roles.setdefault(role, []).append(d)
         log.info("      * %-42s -> %-11s %s", d.name, role, "(OCR Scanned)" if d.scanned else "(Digital)")
 
@@ -202,7 +231,8 @@ def run_pipeline(
                 log.warning("      * Pre-consolidation gate: removed deliverable '%s' from %s role", doc_item.name, src_role)
     for cen_doc in roles.get("census", []):
         for tbl in getattr(cen_doc, "tables", []) or []:
-            hdr = detect_header(tbl.df)
+            bp_sc_chk = blueprint.census_schema_for(cen_doc.name, tbl.name) if blueprint is not None else None
+            hdr = detect_header(tbl.df, blueprint_schema=bp_sc_chk)
             if hdr and ({"first_name", "full_name"} & set(hdr.columns)) and "dob" in hdr.columns:
                 missing_hdrs = [k for k in ("relationship", "coverage") if k not in hdr.columns and not hdr.wide_deps]
                 if missing_hdrs:
@@ -243,6 +273,10 @@ def run_pipeline(
     # 2. prospect block & routing decision --------------------------------------------------------
     log.info("[2/7] Extracting Prospect Information & Determining Carrier Routing...")
     prospect, has_source, missing = build_prospect(roles["ghq"], roles["rfp"], all_docs=docs)
+    if blueprint is not None:
+        blueprint.apply_to_prospect(prospect)
+        if prospect.company or prospect.state or prospect.effective_date:
+            has_source = True
     
     # Apply Mandatory Routing Decision based on Prospect Primary Business State
     routing = determine_routing(prospect, docs=docs)
@@ -287,36 +321,67 @@ def run_pipeline(
 
     # 3. census (employees + dependents from all files) ------------------------------------------
     log.info("[3/7] Building Census: parsing employee & dependent records...")
+    anchored_med_plans: set[str] = set()
+    used_agent_py_first = False
+    py_first_invoices: Optional[list[Any]] = None
     if not roles["census"]:
         log.warning("No census / enrollment file was found among the uploads; proceeding to generate missing info deliverable.")
         census = Census()
         meta = {"has_coverage_column": False, "saw_dependent_source": False}
         F.notes.append("No census / enrollment file was found among the uploads. Census comparison workbook was not generated.")
     else:
-        anchored_med_plans: set[str] = set()
         for d in docs:
             d_low = d.name.lower()
             if "sbc" in d_low or "summary of benefits" in d_low or d in roles.get("invoice", []):
                 for tok in re.findall(r"\b[a-z]{1,5}\d{3,6}[a-z]\d{3,5}[a-z]?\b", (d.name + " " + (d.text or "")[:4000]), re.I):
                     anchored_med_plans.add(tok.lower())
-        census, meta = build_census(
-            roles["census"],
-            effective_date=prospect.effective_date,
-            tracer=tracer,
-            anchored_medical_plans=anchored_med_plans,
-        )
-        meta["company"] = prospect.company
-        if not census.employees:
-            excluded_fallback = set(id(x) for x in (roles.get("census", []) + roles.get("deliverable", [])))
-            fallback_docs = [d for d in docs if id(d) not in excluded_fallback and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
-            if fallback_docs:
-                log.info("      * Primary census yielded 0 employees; attempting fallback consolidation with %s", [d.name for d in fallback_docs])
-                census, meta = build_census(
-                    roles["census"] + fallback_docs,
-                    effective_date=prospect.effective_date,
-                    tracer=tracer,
-                    anchored_medical_plans=anchored_med_plans,
+
+        # Pillar #1 & #4: Agent-Python-First Mode (Claude + Sandboxed Python is the PRIMARY builder
+        # on live runs; deterministic census_builder.py acts strictly as offline/error fallback).
+        try:
+            from agent_orchestrator import run_agent_python_first_build
+            py_first_census, py_first_invoices = run_agent_python_first_build(
+                docs,
+                blueprint=blueprint,
+                prospect=prospect,
+                effective_date=prospect.effective_date,
+            )
+            if py_first_census is not None and py_first_census.canonical_census_employees:
+                census = py_first_census
+                meta = {
+                    "has_coverage_column": any(bool(e.coverage) for e in census.canonical_census_employees),
+                    "saw_dependent_source": bool(census.dependents),
+                    "company": prospect.company,
+                    "builder": "agent_python_first",
+                }
+                used_agent_py_first = True
+                log.info(
+                    "🚀 [AGENT PYTHON-FIRST] Primary Census built directly via Python Sandbox: %d EEs, %d Deps",
+                    len(census.canonical_census_employees), len(census.dependents),
                 )
+        except Exception as _pyf_err:
+            log.warning("Agent-Python-First primary build skipped (falling back to deterministic census_builder): %s", _pyf_err)
+
+        if not used_agent_py_first:
+            census, meta = build_census(
+                roles["census"],
+                effective_date=prospect.effective_date,
+                tracer=tracer,
+                anchored_medical_plans=anchored_med_plans,
+                blueprint=blueprint,
+            )
+            meta["company"] = prospect.company
+            if not census.employees:
+                excluded_fallback = set(id(x) for x in (roles.get("census", []) + roles.get("deliverable", [])))
+                fallback_docs = [d for d in docs if id(d) not in excluded_fallback and d.tables and d.access_status in ("READABLE", "UNLOCKED_AND_READ")]
+                if fallback_docs:
+                    log.info("      * Primary census yielded 0 employees; attempting fallback consolidation with %s", [d.name for d in fallback_docs])
+                    census, meta = build_census(
+                        roles["census"] + fallback_docs,
+                        effective_date=prospect.effective_date,
+                        tracer=tracer,
+                        anchored_medical_plans=anchored_med_plans,
+                    )
         if not census.employees:
             log.warning("Census files were found but no employee rows could be parsed; proceeding to generate missing info deliverable.")
             F.notes.append("Census files were provided but 0 employee rows could be read from them.")
@@ -330,8 +395,21 @@ def run_pipeline(
 
     # 4. invoices ----------------------------------------------------------------------------------
     log.info("[4/7] Parsing and selecting invoices...")
-    inv_docs = [parse_invoice(d) for d in roles["invoice"]]
+    if py_first_invoices and any(getattr(i, "records", None) for i in py_first_invoices):
+        inv_docs = py_first_invoices
+        log.info("🚀 [AGENT PYTHON-FIRST] Using %d Python-verified medical invoice(s)", len(inv_docs))
+    else:
+        inv_docs = [parse_invoice(d) for d in roles["invoice"]]
+    if blueprint is not None:
+        blueprint.apply_to_invoices(inv_docs)
     selected, inv_findings, period = select_invoices(inv_docs)
+    inv_control_gate = verify_invoice_control_totals(selected)
+    if not inv_control_gate["passed"]:
+        for _cg_issue in inv_control_gate["issues"]:
+            log.warning("⚠️ [INVOICE CONTROL-TOTAL GATE] %s", _cg_issue)
+            if _cg_issue not in F.notes:
+                F.notes.append(_cg_issue)
+            F.exceptions.append(("Invoice control-total mismatch", "Selected Invoice", _cg_issue))
     F.notes += inv_findings
     F.invoice_period = period
     with_detail = sum(1 for i in inv_docs if i.records)
@@ -361,10 +439,216 @@ def run_pipeline(
     ref_date = (selected[0].period_start if selected else None) or prospect.effective_date
     wait_rule = extract_waiting_period_rule(docs)
     wait_days = wait_rule.get("days") if wait_rule else None
-    refine_non_enrolled_statuses(
-        census, reference_date=ref_date, waiting_days=wait_days, waiting_rule=wait_rule,
-        docs=docs, effective_date=prospect.effective_date, tracer=tracer,
+    if not used_agent_py_first:
+        refine_non_enrolled_statuses(
+            census, reference_date=ref_date, waiting_days=wait_days, waiting_rule=wait_rule,
+            docs=docs, effective_date=prospect.effective_date, tracer=tracer,
+        )
+
+    # 4.2 Authoritative Population Controls (Test/Placeholder rows + Agent-identified excluded/terminated employees)
+    # Skip heuristic multi-file exclusion when Agent-Python-First already built the exact canonical population
+    # (so email-added employees like new hires are never accidentally stripped by file-membership heuristics).
+    if census and census.employees and not used_agent_py_first:
+        from utils import name_similarity, split_full_name
+        from census_builder import recalculate_row_numbers
+        bp_exclusions = list(getattr(blueprint, "excluded_employees", None) or []) if blueprint is not None else []
+        bp_excl_pairs = [
+            (split_full_name(item["person_name"]), item.get("reason", "Excluded by Intake Agent"))
+            for item in bp_exclusions
+            if isinstance(item, dict) and item.get("person_name")
+        ]
+        # Never exclude an employee who is actively billed on the current medical invoice
+        inv_name_pairs = [(r.first, r.last) for r in (invoice_records or []) if r.first or r.last]
+
+        # Detect an authoritative FT/PT active-status roster when 2+ census files are uploaded:
+        # a single census file that explicitly enumerates BOTH active FT and PT employees covering >=50%
+        # of the combined workforce is the authoritative active-employee population.
+        all_emps_incl_pt = list(census.employees) + [
+            ex for ex in (getattr(census, "excluded_employees", None) or [])
+            if ex not in census.employees
+        ]
+        auth_roster_files: set[str] = set()
+        pt_def_files = set(getattr(census, "pt_defining_files", None) or set())
+        if len(set(getattr(census, "files_used", None) or [])) >= 2 and pt_def_files and len(all_emps_incl_pt) >= 10:
+            for cand_f in pt_def_files:
+                f_emps = [e for e in all_emps_incl_pt if cand_f in (getattr(e, "source_files", None) or {e.source})]
+                f_pt = sum(1 for e in f_emps if getattr(e, "disposition", "") == "EXCLUDE_PART_TIME" or (e.worker_category or "").upper() == "PT")
+                f_ft = len(f_emps) - f_pt
+                if f_ft >= 5 and f_pt >= 5 and len(f_emps) >= len(all_emps_incl_pt) * 0.50:
+                    auth_roster_files.add(cand_f)
+
+        to_remove_ids: set[int] = set()
+        excluded_names_log: list[str] = []
+        absent_from_auth_names: list[str] = []
+        for e in list(census.employees):
+            if getattr(e, "invoice_only", False) or getattr(e, "disposition", "").startswith("EXCLUDE_"):
+                continue
+            full_low = f"{e.first} {e.last}".strip().lower()
+            is_test_row = full_low in ("test employee", "employee test", "sample employee", "test user", "dummy employee")
+            matched_reason = "Test/placeholder record" if is_test_row else ""
+            if not matched_reason and auth_roster_files:
+                e_files = getattr(e, "source_files", None) or {e.source}
+                if not (e_files & auth_roster_files):
+                    on_active_inv = any(name_similarity((e.first, e.last), ip) >= 0.88 for ip in inv_name_pairs)
+                    if not on_active_inv:
+                        matched_reason = f"Absent from authoritative active FT/PT roster ({', '.join(sorted(auth_roster_files))}) and not on medical invoice"
+                        absent_from_auth_names.append(e.display)
+            if not matched_reason and bp_excl_pairs:
+                on_active_inv = any(name_similarity((e.first, e.last), ip) >= 0.88 for ip in inv_name_pairs)
+                if not on_active_inv:
+                    for (ex_f, ex_l), rsn in bp_excl_pairs:
+                        if name_similarity((e.first, e.last), (ex_f, ex_l)) >= 0.88:
+                            matched_reason = rsn or "Excluded by Intake Agent"
+                            break
+            if matched_reason:
+                e.disposition = "EXCLUDE_TERMINATED" if not is_test_row else "EXCLUDE_PLACEHOLDER"
+                e.eligibility_status = e.disposition
+                if e not in census.excluded_employees:
+                    census.excluded_employees.append(e)
+                to_remove_ids.add(id(e))
+                for dep in list(getattr(e, "dependents", []) or []):
+                    dep.disposition = e.disposition
+                    if dep not in census.excluded_dependents:
+                        census.excluded_dependents.append(dep)
+                    to_remove_ids.add(id(dep))
+                excluded_names_log.append(f"{e.display} ({matched_reason[:60]})")
+        if to_remove_ids:
+            census.people = [p for p in census.people if id(p) not in to_remove_ids]
+            recalculate_row_numbers(census)
+            log.info(
+                "🤖 [AGENT POPULATION CONTROL] Excluded %d non-active/placeholder employee(s): %s",
+                len(excluded_names_log), ", ".join(excluded_names_log[:12]),
+            )
+            if absent_from_auth_names:
+                _abs_note = (
+                    f"{len(absent_from_auth_names)} employee(s) appeared only in a secondary demographic file and are absent from the "
+                    f"authoritative active/part-time roster ({', '.join(sorted(auth_roster_files))}) and current medical billing; "
+                    f"excluded pending termination confirmation: {', '.join(absent_from_auth_names)}."
+                )
+                if _abs_note not in F.notes:
+                    F.notes.append(_abs_note)
+
+        # Apply Python-verified status overrides from the Intake Agent Blueprint (e.g. WO/WP/NE/COBRA)
+        bp_overrides = list(getattr(blueprint, "status_overrides", None) or []) if blueprint is not None else []
+        if bp_overrides:
+            ov_applied = 0
+            for ov in bp_overrides:
+                if not isinstance(ov, dict) or not ov.get("person_name") or not ov.get("coverage"):
+                    continue
+                ov_f, ov_l = split_full_name(ov["person_name"])
+                ov_cov = str(ov.get("coverage") or "").strip().upper()
+                ov_cobra = str(ov.get("cobra") or "").strip().upper()
+                ov_rsn = str(ov.get("reason") or "Intake Agent Python-verified status")
+                for e in census.employees:
+                    if getattr(e, "invoice_only", False) or str(getattr(e, "disposition", "") or "").startswith("EXCLUDE_"):
+                        continue
+                    if name_similarity((e.first, e.last), (ov_f, ov_l)) >= 0.88:
+                        # Do not demote an employee who is actively billed on the medical invoice
+                        on_active_inv = any(name_similarity((e.first, e.last), ip) >= 0.88 for ip in inv_name_pairs)
+                        if on_active_inv and ov_cov in ("WO", "WP", "NE", "RC"):
+                            continue
+                        if ov_cov in ("EE", "ES", "EC", "FAM", "WO", "WP", "NE", "RC"):
+                            e.coverage = ov_cov
+                            if ov_cov in ("WO", "WP", "NE", "RC"):
+                                e.plan = "NA"
+                                e.disposition = "RETAIN_MEDICAL_STATUS"
+                                e.eligibility_status = {"WO": "WAIVED", "WP": "WAITING_PERIOD", "NE": "NOT_ELIGIBLE", "RC": "REFUSED"}[ov_cov]
+                            else:
+                                e.disposition = "INCLUDE_ACTIVE_MEDICAL"
+                                e.eligibility_status = "ENROLLED"
+                        if ov_cobra in ("Y", "N"):
+                            e.cobra = ov_cobra
+                        e.note(f"Status set to {e.coverage} ({ov_rsn})", red=False)
+                        ov_applied += 1
+                        break
+            if ov_applied:
+                log.info("🤖 [AGENT STATUS OVERRIDES] Applied %d Python-verified status override(s)", ov_applied)
+
+        # Apply Python-verified dependent links from the Intake Agent Blueprint (e.g. different-surname households)
+        bp_dep_links = list(getattr(blueprint, "dependent_links", None) or []) if blueprint is not None else []
+        if bp_dep_links:
+            from census_builder import apply_dependent_links
+            dl_applied = apply_dependent_links(census, bp_dep_links)
+            if dl_applied:
+                log.info("🤖 [AGENT DEPENDENT LINKS] Applied %d Python-verified dependent link(s)", dl_applied)
+
+    # 4.5 Dynamic Population Sanity Gate (Fix #3) --------------------------------------------------
+    # Cross-check parsed census totals against the submission's own stated headcount, invoice
+    # subscriber count, and internal structural invariants (unassigned-dependent spikes, ratios,
+    # demographics collapse). If a critical structural failure is found, attempt one LLM-guided
+    # column/value remap pass before proceeding to comparison or workbook generation.
+    sanity_report = evaluate_population_sanity(
+        census, prospect=prospect, invoice_records=invoice_records, docs=docs, roles=roles,
     )
+    if sanity_report.blocked and roles["census"]:
+        log.warning(
+            "⚠️ [POPULATION SANITY GATE] %d critical anomaly(ies) detected before comparison: %s",
+            sanity_report.critical_count,
+            "; ".join(i.message for i in sanity_report.issues if i.severity == "critical"),
+        )
+        try:
+            remapped_census, remapped_meta = build_census(
+                roles["census"],
+                effective_date=prospect.effective_date,
+                tracer=tracer,
+                anchored_medical_plans=anchored_med_plans,
+                force_llm_remap=True,
+            )
+            remapped_meta["company"] = prospect.company
+            refine_non_enrolled_statuses(
+                remapped_census, reference_date=ref_date, waiting_days=wait_days, waiting_rule=wait_rule,
+                docs=docs, effective_date=prospect.effective_date, tracer=tracer,
+            )
+            remapped_sanity = evaluate_population_sanity(
+                remapped_census, prospect=prospect, invoice_records=invoice_records, docs=docs, roles=roles,
+            )
+            if remapped_census.employees and remapped_sanity.critical_count < sanity_report.critical_count:
+                log.info(
+                    "✅ [POPULATION SANITY GATE] Dynamic LLM schema remap resolved anomalies (%d -> %d critical; EEs=%d, Deps=%d).",
+                    sanity_report.critical_count, remapped_sanity.critical_count,
+                    len(remapped_census.employees), len(remapped_census.dependents),
+                )
+                census = remapped_census
+                meta = remapped_meta
+                sanity_report = remapped_sanity
+        except Exception as _remap_err:
+            log.warning("Population sanity recovery remap skipped: %s", _remap_err)
+
+    # Copilot-style Sanity-Gate Fallback: if deterministic heuristics + remap STILL fail the
+    # Population Sanity Gate on an unseen HRIS layout, let Claude build the canonical Census
+    # directly via pandas inside PythonSandboxSession (100% row fidelity, zero token truncation).
+    if sanity_report.blocked and roles["census"]:
+        try:
+            from agent_orchestrator import build_canonical_census_via_python_agent
+            rescued_census = build_canonical_census_via_python_agent(
+                docs,
+                sanity_report.issues,
+                prospect=prospect,
+                effective_date=prospect.effective_date,
+            )
+            if rescued_census is not None and rescued_census.canonical_census_employees:
+                rescued_sanity = evaluate_population_sanity(
+                    rescued_census, prospect=prospect, invoice_records=invoice_records, docs=docs, roles=roles,
+                )
+                if not rescued_sanity.blocked or rescued_sanity.critical_count < sanity_report.critical_count:
+                    log.info(
+                        "✅ [SANITY-GATE PYTHON RESCUE] Agent-built canonical census resolved anomalies (%d -> %d critical; EEs=%d, Deps=%d).",
+                        sanity_report.critical_count, rescued_sanity.critical_count,
+                        len(rescued_census.canonical_census_employees), len(rescued_census.dependents),
+                    )
+                    census = rescued_census
+                    sanity_report = rescued_sanity
+        except Exception as _py_rescue_err:
+            log.warning("Sanity-Gate Python Rescue skipped: %s", _py_rescue_err)
+
+    meta["population_sanity"] = sanity_report.to_dict()
+    setattr(census, "population_sanity", sanity_report)
+    if sanity_report.blocked:
+        for _si in sanity_report.issues:
+            if _si.severity == "critical":
+                if _si.message not in F.notes:
+                    F.notes.append(_si.message)
+                F.exceptions.append(("Population sanity gate", "Census Population", _si.message))
 
     # 5. renewal (PEO & 90-day rule check) ---------------------------------------------------------
     log.info("[5/7] Parsing and matching renewals...")
@@ -378,10 +662,12 @@ def run_pipeline(
     # Check renewal requirement under the PEO & 90-day rule
     from datetime import timedelta
     plan_year_renewal = min((d.termination + timedelta(days=1) for d in ren_docs if d.termination), default=None)
+    known_ren_dt = plan_year_renewal or getattr(prospect, "renewal_date", None)
     ren_required, ren_reason = check_renewal_required(
         prospect, renewal_doc=renewal, docs=docs, proposed_effective=prospect.effective_date,
-        known_renewal_date=plan_year_renewal,
+        known_renewal_date=known_ren_dt,
     )
+    F.renewal_reason = ren_reason
     if ren_required:
         F.renewal_notes.append(ren_reason)
         if not renewal:
@@ -396,8 +682,74 @@ def run_pipeline(
 
     renewal_to_use = renewal if (ren_required or (renewal and getattr(renewal, "rates", None))) else None
 
+    # Single-medical-SBC plan name backfill: when neither census nor invoice supplies a plan column
+    # and the submission contains exactly one medical SBC / Benefit Highlights document, derive that
+    # single medical plan name dynamically and populate enrolled employees & their linked dependents.
+    if census and census.employees:
+        from census_builder import _is_non_medical
+        _NON_MED_DOC_RE = re.compile(
+            r"(?:^|[^a-z0-9])(dental|vision|vsp|eyemed|life|ad&?d|std|ltd|accident|critical|hospital|ancillary)(?:$|[^a-z0-9])",
+            re.I,
+        )
+        need_plan = [e for e in census.employees if e.coverage in C.ACTIVE_TIERS and not (e.plan or "").strip()]
+        if need_plan and not any((r.plan or "").strip() for r in invoice_records):
+            _BOOKLET_RE = re.compile(r"\b(benefits?\s+booklet|benefits?\s+guide|enrollment\s+guide|employee\s+guide)\b", re.I)
+            med_sbcs = [
+                d for d in (roles.get("plan_design", []) or [])
+                if not _NON_MED_DOC_RE.search(d.name or "")
+                and not _is_non_medical(d.name, "")
+                and not _BOOKLET_RE.search(f"{d.name} {(d.text or '')[:1200]}")
+                and not re.search(r"^\s*(?:dental|vision|blue\s*20/20|life\s+insurance)\b", (d.text or "")[:300], re.I)
+            ]
+            if len(med_sbcs) == 1:
+                raw_stem = med_sbcs[0].path.stem
+                # Strip leading carrier/prefix token separated by '_' when a multi-word plan name follows (e.g. BCBS_Blue Options PPO 1500 -> Blue Options PPO 1500)
+                if "_" in raw_stem:
+                    _pfx, _rest = raw_stem.split("_", 1)
+                    if len(_pfx.strip()) <= 8 and len(_rest.strip().split()) >= 2:
+                        raw_stem = _rest
+                sbc_title = re.sub(r"[_\s]+", " ", raw_stem).strip()
+                if sbc_title:
+                    for e in need_plan:
+                        e.plan = sbc_title
+                        for dep in getattr(e, "dependents", []) or []:
+                            if not (dep.plan or "").strip():
+                                dep.plan = sbc_title
+                    for r_inv in invoice_records:
+                        if not (r_inv.plan or "").strip():
+                            r_inv.plan = sbc_title
+                    log.info("      * Populated single-medical-SBC plan name '%s' for %d enrolled employee(s)", sbc_title, len(need_plan))
+
+    if selected and len(selected) == 1:
+        _sel0 = selected[0]
+        if getattr(_sel0, "total_due", None) is not None:
+            meta["printed_invoice_total_due"] = float(_sel0.total_due)
+        if getattr(_sel0, "non_medical_charges", None) is not None:
+            meta["invoice_non_medical_charges"] = float(_sel0.non_medical_charges)
+        if getattr(_sel0, "non_medical_breakdown", None):
+            meta["invoice_non_medical_breakdown"] = dict(_sel0.non_medical_breakdown)
+        if getattr(_sel0, "gross_total_premium", None) is not None:
+            meta["invoice_gross_total_premium"] = float(_sel0.gross_total_premium)
+    all_non_med_inv = [r for s_inv in selected for r in (getattr(s_inv, "non_medical_records", None) or [])]
+    if all_non_med_inv:
+        meta["non_medical_invoice_records"] = all_non_med_inv
+
     # 6. compare + populate premiums -------------------------------------------------------------
     log.info("[6/7] Running comparison and audit reconciliation...")
+    email_evs = extract_email_evidence(docs, roles=roles)
+    if blueprint is not None:
+        bp_evs = blueprint.as_person_evidence()
+        seen_ev = {(e.event_type, e.first.lower(), e.last.lower()) for e in email_evs}
+        for bev in bp_evs:
+            k_ev = (bev.event_type, bev.first.lower(), bev.last.lower())
+            if k_ev not in seen_ev:
+                email_evs.append(bev)
+                seen_ev.add(k_ev)
+        meta["blueprint_plan_links"] = list(blueprint.plan_links)
+        for _ac in (getattr(blueprint, "agent_clarifications", None) or []):
+            if _ac and _ac not in F.notes:
+                F.notes.append(_ac)
+    meta["email_evidence"] = email_evs
     results = run_comparison(
         census, invoice_records, renewal_to_use, meta, F, have_invoice,
         renewal_required=ren_required, tracer=tracer,
@@ -469,10 +821,10 @@ def run_pipeline(
     # 7. QC audit numbers --------------------------------------------------------------------------
     src_emp = census.raw_employee_rows - census.cross_file_merges
     src_dep = census.raw_dependent_rows - census.dependent_merges
-    out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"])
-    out_dep = len([p for p in census.people if p.role != "EE" and getattr(p, "disposition", "") not in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")])
-    pt_excluded = len({id(p) for p in census.people if getattr(p, "disposition", "") == "EXCLUDE_PART_TIME"} | {id(p) for p in getattr(census, "excluded_employees", [])})
-    non_med_dep_excluded = len({id(p) for p in census.people if getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")} | {id(p) for p in getattr(census, "excluded_dependents", [])})
+    out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+    out_dep = len([p for p in census.people if p.role != "EE" and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+    pt_excluded = len({id(p) for p in census.people if p.role == "EE" and str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")} | {id(p) for p in getattr(census, "excluded_employees", [])})
+    non_med_dep_excluded = len({id(p) for p in census.people if p.role != "EE" and str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")} | {id(p) for p in getattr(census, "excluded_dependents", [])})
     audit = {
         "src_employees": src_emp,
         "src_dependents": src_dep,
@@ -517,6 +869,7 @@ def run_pipeline(
             log.warning("⚠️ [LEARNING ENGINE] %d validation failure(s) detected. Entering closed-loop self-healing repair...", len(le_val_report.issues))
             working_state = {
                 "census": census,
+                "population_sanity": sanity_report.to_dict(),
                 "invoices": invoice_records,
                 "invs": invoice_records,
                 "invoice_docs": inv_docs,
@@ -565,10 +918,10 @@ def run_pipeline(
                 # Recalculate QC audit numbers directly from repaired census
                 src_emp = census.raw_employee_rows - census.cross_file_merges
                 src_dep = census.raw_dependent_rows - census.dependent_merges
-                out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"])
-                out_dep = len([p for p in census.people if p.role != "EE" and getattr(p, "disposition", "") not in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")])
-                pt_excluded = len({id(p) for p in census.people if getattr(p, "disposition", "") == "EXCLUDE_PART_TIME"} | {id(p) for p in getattr(census, "excluded_employees", [])})
-                non_med_dep_excluded = len({id(p) for p in census.people if getattr(p, "disposition", "") in ("EXCLUDE_PART_TIME", "EXCLUDE_NON_MEDICAL")} | {id(p) for p in getattr(census, "excluded_dependents", [])})
+                out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+                out_dep = len([p for p in census.people if p.role != "EE" and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+                pt_excluded = len({id(p) for p in census.people if p.role == "EE" and str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")} | {id(p) for p in getattr(census, "excluded_employees", [])})
+                non_med_dep_excluded = len({id(p) for p in census.people if p.role != "EE" and str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")} | {id(p) for p in getattr(census, "excluded_dependents", [])})
                 audit = {
                     "src_employees": src_emp,
                     "src_dependents": src_dep,
@@ -651,7 +1004,12 @@ def run_pipeline(
                     break
 
             if executed_repair_patches:
-                le_orchestrator._persist_verified_learning(executed_repair_patches, le_ctx)
+                le_orchestrator._persist_verified_learning(
+                    executed_repair_patches,
+                    le_ctx,
+                    validation_report=le_val_report,
+                    sanity_passed=sanity_report.passed,
+                )
 
     # 8. write carrier-specific workbook(s) --------------------------------------------------------
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -660,8 +1018,22 @@ def run_pipeline(
     out_path: Path | None = None
     sbu_path: Path | None = None
 
+    allow_unsafe_wb = os.getenv("CENSUS_ALLOW_UNSAFE_WORKBOOK", "").strip().lower() in ("1", "true", "yes")
     if not census.employees:
         log.info("[7/8] Census is absent or empty; withholding carrier comparison workbooks per Section 25.")
+    elif sanity_report.blocked and not allow_unsafe_wb:
+        log.warning(
+            "[7/8] Population Sanity Gate BLOCKED workbook generation (%d critical anomaly(ies)); "
+            "withholding carrier comparison workbooks to prevent corrupt output.",
+            sanity_report.critical_count,
+        )
+        msg_wb = (
+            "Carrier comparison workbook(s) withheld because the Population Sanity Gate detected "
+            "unresolved critical count/classification anomalies. Review the source census mapping "
+            "and exceptions report before re-running."
+        )
+        if msg_wb not in F.notes:
+            F.notes.append(msg_wb)
     elif routing.carrier == C.CARRIER_FLORIDA_BLUE or routing.is_florida:
         # Florida Blue -> RAPT Census Comparison Workbook only
         log.info("[7/8] Generating Florida Blue RAPT Census Excel workbook...")
@@ -712,6 +1084,178 @@ def run_pipeline(
     F.email_text = email_content
     log.info("      * Saved Missing Information Email: %s", email_path.name)
 
+    # Stage 8b: Post-Generation Workbook Auditor (Deterministic + Scoped LLM QA Review) ----------
+    workbook_audit_report = None
+    if out_path and out_path.exists():
+        try:
+            workbook_audit_report = audit_generated_deliverables(
+                out_path,
+                sbu_path=sbu_path,
+                email_text=email_content,
+                docs=docs,
+                roles=roles,
+                blueprint=blueprint,
+                prospect=prospect,
+                selected_invoices=selected,
+                findings=F,
+                apply_patches=True,
+            )
+            # Bounded 1-pass Closed-Loop Self-Repair when the Auditor's run_python check detects
+            # concrete population, status, or dependent-linking defects in the generated workbook.
+            _rep = getattr(workbook_audit_report, "repair_actions", None) or {}
+            _rep_excl = _rep.get("exclude_employees") or []
+            _rep_ov = _rep.get("status_overrides") or []
+            _rep_dl = _rep.get("dependent_links") or []
+            _rep_ff = _rep.get("field_fixes") or []
+            if _rep_excl or _rep_ov or _rep_dl or _rep_ff:
+                from utils import name_similarity as _rep_sim, split_full_name as _rep_split
+                from census_builder import apply_dependent_links as _rep_apply_dl, recalculate_row_numbers as _rep_recalc
+                _inv_pairs = [(r.first, r.last) for r in (invoice_records or []) if r.first or r.last]
+                _changed = 0
+
+                if _rep_excl:
+                    _rm_ids: set[int] = set()
+                    for ex in _rep_excl:
+                        ef, el = _rep_split(ex["person_name"])
+                        for e in list(census.employees):
+                            if getattr(e, "invoice_only", False) or str(getattr(e, "disposition", "") or "").startswith("EXCLUDE_"):
+                                continue
+                            if _rep_sim((e.first, e.last), (ef, el)) >= 0.88:
+                                if any(_rep_sim((e.first, e.last), ip) >= 0.88 for ip in _inv_pairs):
+                                    continue
+                                e.disposition = "EXCLUDE_TERMINATED"
+                                e.eligibility_status = "EXCLUDED_TERMINATED"
+                                if e not in census.excluded_employees:
+                                    census.excluded_employees.append(e)
+                                _rm_ids.add(id(e))
+                                for dep in list(getattr(e, "dependents", []) or []):
+                                    dep.disposition = "EXCLUDE_TERMINATED"
+                                    if dep not in census.excluded_dependents:
+                                        census.excluded_dependents.append(dep)
+                                    _rm_ids.add(id(dep))
+                                _changed += 1
+                                break
+                    if _rm_ids:
+                        census.people = [p for p in census.people if id(p) not in _rm_ids]
+                        _rep_recalc(census)
+
+                if _rep_ov:
+                    for ov in _rep_ov:
+                        of, ol = _rep_split(ov["person_name"])
+                        ocov = str(ov.get("coverage") or "").strip().upper()
+                        ocob = str(ov.get("cobra") or "").strip().upper()
+                        orsn = str(ov.get("reason") or "Post-Generation Auditor status fix")
+                        for e in census.employees:
+                            if getattr(e, "invoice_only", False) or str(getattr(e, "disposition", "") or "").startswith("EXCLUDE_"):
+                                continue
+                            if _rep_sim((e.first, e.last), (of, ol)) >= 0.88:
+                                if ocov in ("WO", "WP", "NE", "RC") and any(_rep_sim((e.first, e.last), ip) >= 0.88 for ip in _inv_pairs):
+                                    continue
+                                if ocov in ("EE", "ES", "EC", "FAM", "WO", "WP", "NE", "RC"):
+                                    e.coverage = ocov
+                                    if ocov in ("WO", "WP", "NE", "RC"):
+                                        e.plan = "NA"
+                                        e.disposition = "RETAIN_MEDICAL_STATUS"
+                                        e.eligibility_status = {"WO": "WAIVED", "WP": "WAITING_PERIOD", "NE": "NOT_ELIGIBLE", "RC": "REFUSED"}[ocov]
+                                    else:
+                                        e.disposition = "INCLUDE_ACTIVE_MEDICAL"
+                                        e.eligibility_status = "ENROLLED"
+                                if ocob in ("Y", "N"):
+                                    e.cobra = ocob
+                                e.note(f"Auditor repair: status set to {e.coverage} ({orsn})", red=False)
+                                _changed += 1
+                                break
+
+                if _rep_dl:
+                    _changed += _rep_apply_dl(census, _rep_dl)
+
+                if _rep_ff:
+                    from utils import parse_date as _rep_parse_date, std_zip as _rep_std_zip
+                    for ff in _rep_ff:
+                        ff_f, ff_l = _rep_split(ff["person_name"])
+                        for p in census.people:
+                            if getattr(p, "invoice_only", False) or str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_"):
+                                continue
+                            if _rep_sim((p.first, p.last), (ff_f, ff_l)) >= 0.88:
+                                patched_any = False
+                                if ff.get("gender") in ("M", "F"):
+                                    p.gender = ff["gender"]
+                                    p.gender_resolution_status = "RESOLVED"
+                                    patched_any = True
+                                if ff.get("dob"):
+                                    d_parsed = _rep_parse_date(ff["dob"])
+                                    if d_parsed:
+                                        p.dob = d_parsed
+                                        patched_any = True
+                                if ff.get("zip"):
+                                    zv = _rep_std_zip(ff["zip"])
+                                    z_str = zv[0] if isinstance(zv, tuple) else str(zv or "")
+                                    if z_str:
+                                        p.zip = z_str
+                                        patched_any = True
+                                if ff.get("cobra") in ("Y", "N"):
+                                    p.cobra = ff["cobra"]
+                                    patched_any = True
+                                if patched_any:
+                                    _changed += 1
+                                break
+
+                if _changed > 0:
+                    log.info(
+                        "🔧 [AUDITOR SELF-REPAIR] Applying %d repair action(s) (excl=%d, overrides=%d, dep_links=%d) and regenerating deliverables...",
+                        _changed, len(_rep_excl), len(_rep_ov), len(_rep_dl),
+                    )
+                    # Clear invoice-only ghost rows before re-comparing
+                    census.people = [p for p in census.people if not getattr(p, "invoice_only", False)]
+                    F.exceptions.clear()
+                    results = run_comparison(
+                        census=census,
+                        invs=invoice_records,
+                        renewal=renewal_to_use,
+                        meta=meta,
+                        F=F,
+                        have_invoice=have_invoice,
+                        renewal_required=ren_required,
+                        tracer=tracer,
+                    )
+                    out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+                    out_dep = len([p for p in census.people if p.role != "EE" and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+                    pt_excluded = len({id(p) for p in census.people if p.role == "EE" and str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")} | {id(p) for p in getattr(census, "excluded_employees", [])})
+                    non_med_dep_excluded = len({id(p) for p in census.people if p.role != "EE" and str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")} | {id(p) for p in getattr(census, "excluded_dependents", [])})
+                    audit.update({
+                        "out_employees": out_emp,
+                        "out_dependents": out_dep,
+                        "pt_excluded": pt_excluded,
+                        "non_med_dep_excluded": non_med_dep_excluded,
+                        "missing_employees": max(0, src_emp - out_emp - pt_excluded),
+                    })
+                    if routing.carrier == C.CARRIER_FLORIDA_BLUE or routing.is_florida:
+                        save_rapt_workbook(C.RAPT_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
+                    else:
+                        save_marsh_workbook(C.MARSH_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
+                        if sbu_path:
+                            save_sbu_workbook(C.SBU_TEMPLATE_PATH, sbu_path, census, prospect)
+
+                    workbook_audit_report = audit_generated_deliverables(
+                        out_path,
+                        sbu_path=sbu_path,
+                        email_text=email_content,
+                        docs=docs,
+                        roles=roles,
+                        blueprint=blueprint,
+                        prospect=prospect,
+                        selected_invoices=selected,
+                        findings=F,
+                        apply_patches=True,
+                    )
+                    workbook_audit_report.repair_pass_applied = True
+                    log.info(
+                        "🔧 [AUDITOR SELF-REPAIR] Completed! Final census=%d EEs / %d Deps | Audit Status=%s",
+                        out_emp, out_dep, workbook_audit_report.overall_status.upper(),
+                    )
+        except Exception as _aud_err:
+            log.warning("Post-Generation Workbook Auditor skipped: %s", _aud_err)
+
     # Diagnostic Trace deliverable
     trace_summary = tracer.format_summary()
     trace_path = output_dir / f"Diagnostic_Trace_{name}_{stamp}.txt"
@@ -719,6 +1263,8 @@ def run_pipeline(
     log.info("      * Saved Diagnostic Trace: %s", trace_path.name)
 
     summary = exception_summary(F, census, audit)
+    if workbook_audit_report is not None:
+        summary = summary + "\n\n" + workbook_audit_report.format_text()
     if out_path:
         txt_path = output_dir / out_path.name.replace(".xlsx", "_exceptions.txt")
     else:
@@ -755,7 +1301,8 @@ def run_pipeline(
                 slug = "".join(ch if ch.isalnum() else "_" for ch in (prospect.company or "case")).strip("_").lower()[:40]
                 if slug:
                     le_ctx.case_id = f"case_{slug}"
-            le_orchestrator._ensure_validated_repair_patterns(le_ctx, le_val_report)
+            if sanity_report.passed and le_val_report.blocked_checks == 0:
+                le_orchestrator._ensure_validated_repair_patterns(le_ctx, le_val_report)
             case_audit = le_orchestrator._build_private_case_audit(
                 ctx=le_ctx,
                 docs=docs,
@@ -863,6 +1410,10 @@ def run_pipeline(
             "ghq_required": routing.ghq_required,
         },
         "census": census,
+        "population_sanity": sanity_report.to_dict(),
+        "blueprint": blueprint.to_summary_dict() if blueprint is not None else None,
+        "invoice_control_gate": inv_control_gate,
+        "workbook_audit": workbook_audit_report.to_dict() if workbook_audit_report is not None else None,
         "summary": summary,
         "audit": audit,
         "findings": F,

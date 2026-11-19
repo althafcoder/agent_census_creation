@@ -1667,3 +1667,32 @@ If a comparison document is unavailable but valid census exists:
 - Include the missing required comparison document in the email.
 
 The final deliverables must contain no unsupported values, no duplicate findings, no false-positive deficiencies, no contradictory rules, and no internal audit narrative.
+
+============================================================
+32. CROSS-DOCUMENT INGESTION & RECONCILIATION CLARIFICATIONS
+============================================================
+
+32.1 Coded Employee vs. Dependent Indicators and Stacked Rosters
+- A source census may encode employee versus dependent status using numeric or shorthand flag values (such as 1/0, Y/N, or E/D) defined in the column header legend or column values. Decode these indicators before classifying roles so actual employees are never converted into dependents.
+- In stacked census rosters where dependent rows appear directly beneath their subscriber without an explicit subscriber-ID column, link each dependent row to the preceding employee row when that employee's coverage tier admits dependents and household signals (ZIP or surname) align.
+- When a source marks a row generically as "Dependent" without specifying Spouse or Child, infer Spouse (SP) vs. Child (CH) from the subscriber's coverage tier and dependent ages (ES -> Spouse; EC -> Child; FAM -> adult closest in age to the employee is Spouse, remaining dependents are Children). Never override an explicit source relationship.
+
+32.2 Pre-Output Population Sanity Checks
+- Before finalizing comparison workbooks, cross-check parsed employee and dependent totals against the submission's own stated evidence (GHQ/RFP headcount tables, client email headcounts, and invoice subscriber counts) and internal invariants (unassigned-dependent spikes, dependent-to-employee ratios, and demographic completeness).
+- If a critical structural count or classification anomaly is detected, re-evaluate column/value mappings before releasing deliverables; never release a structurally corrupted census workbook.
+
+32.3 Evidence-Based Invoice-to-Renewal Plan Linking
+- When invoice billing group codes differ from renewal plan IDs or descriptive plan names, link invoice plans to renewal plans dynamically using the following evidence order:
+  1. Direct plan ID, carrier plan-mapping table, or plan name match.
+  2. Cross-employee consensus from the plan IDs/descriptions listed on the source census for matched subscribers.
+  3. Exact composite rate matching between observed invoice (tier, monthly premium) values and renewal/current composite rate tables, enforcing network-type compatibility (e.g., PPO vs. HMO).
+  4. Single-plan renewal fallback only when one medical renewal plan exists and network type does not conflict.
+
+32.4 Content-Based SBC Recognition and PDF Normalization
+- Classify Summary of Benefits and Coverage (SBC) documents by their CMS SBC structural content, even when filenames contain only carrier plan IDs or when PDF pages are rotated/reversed. Never request SBCs in the Missing Information Email for enrolled medical plans whose SBCs are already present in the submission.
+- Normalize PDF extraction artifacts (such as faux-bold doubled characters in tier codes and 180-degree rotated text streams) before parsing tiers, plans, or document types.
+
+32.5 Submission Email Evidence and Invoice-Only Employees
+- Treat operational facts stated in client or broker submission emails (such as employee terminations with effective dates, recent hires, or stated headcounts) as authoritative submission evidence and reflect them accurately in comparison notes, exceptions, and the Missing Information Email.
+- Employees who appear on the invoice but are absent from the source census must be reported as discrepancies for client confirmation and must NOT be added as confirmed census records (including population-only deliverables such as the SBU census) until confirmed by the client.
+

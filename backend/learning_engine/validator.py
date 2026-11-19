@@ -579,7 +579,7 @@ class UnderwritingValidator:
             except Exception:
                 _queued_cov = set()
             for emp in getattr(census, "employees", []):
-                if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False) or getattr(emp, "disposition", "") == "EXCLUDE_PART_TIME":
+                if getattr(emp, "is_duplicate", False) or getattr(emp, "invoice_only", False) or str(getattr(emp, "disposition", "") or "").startswith("EXCLUDE_"):
                     continue
                 invalid_fields = []
                 # Check for un-normalized OCR noise or junk symbols (e.g. 'P6T&L')
@@ -1164,14 +1164,14 @@ class UnderwritingValidator:
             p for p in (census.employees if census else [])
             if not getattr(p, "is_duplicate", False)
             and not getattr(p, "invoice_only", False)
-            and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"
+            and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")
             and p.coverage in C.ACTIVE_TIERS
         ]
         total_inv_count = getattr(findings, "invoice_employee_count", 0) if findings else 0
         matched_count = 0
 
         for p in (census.employees if census else []):
-            if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False) or getattr(p, "disposition", "") == "EXCLUDE_PART_TIME":
+            if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False) or str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_"):
                 continue
             res = results.get(id(p))
             if res:
@@ -1297,7 +1297,7 @@ class UnderwritingValidator:
 
         if census and (inv_text_combined or inv_recs_all):
             for p in getattr(census, "employees", []):
-                if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False) or getattr(p, "disposition", "") == "EXCLUDE_PART_TIME":
+                if getattr(p, "is_duplicate", False) or getattr(p, "invoice_only", False) or str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_"):
                     continue
                 cov = (p.coverage or "").strip().upper()
                 if cov not in C.ACTIVE_TIERS:
@@ -1617,8 +1617,8 @@ class UnderwritingValidator:
         # 21. Census Headcount Conservation Check (Section 6 Audit)
         if census and getattr(census, "raw_employee_rows", 0) > 0:
             src_emp = census.raw_employee_rows - getattr(census, "cross_file_merges", 0)
-            out_emp = len([p for p in getattr(census, "people", []) if p.role == "EE" and not getattr(p, "invoice_only", False) and getattr(p, "disposition", "") != "EXCLUDE_PART_TIME"])
-            pt_excluded = len({id(p) for p in getattr(census, "people", []) if getattr(p, "disposition", "") == "EXCLUDE_PART_TIME"} | {id(p) for p in getattr(census, "excluded_employees", [])})
+            out_emp = len([p for p in getattr(census, "people", []) if p.role == "EE" and not getattr(p, "invoice_only", False) and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+            pt_excluded = len({id(p) for p in getattr(census, "people", []) if p.role == "EE" and str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")} | {id(p) for p in getattr(census, "excluded_employees", [])})
             dup_emp = getattr(census, "duplicate_employees", 0)
             missing_unreconciled = max(0, src_emp - out_emp - pt_excluded - dup_emp)
             has_unreconciled_note = bool(findings and any("Census totals do not reconcile" in str(n) for n in getattr(findings, "notes", [])))
@@ -1689,6 +1689,46 @@ class UnderwritingValidator:
                     expected_state="Cross-source duplicate employees must be deduplicated and merged",
                     observed_state=f"Duplicate employees detected: {census_dup_pairs[:3]}",
                     allowed_actions=[RepairAction.DEDUPLICATE_CENSUS_EMPLOYEES],
+                ))
+
+        # Dynamic Population Sanity Gate check (Fix #3)
+        sanity_rep = getattr(census, "population_sanity", None) if census is not None else None
+        if sanity_rep is None and census is not None:
+            try:
+                from population_sanity import evaluate_population_sanity
+                inv_recs = [r for inv in (selected_invoices or []) for r in (getattr(inv, "records", []) or [])]
+                sanity_rep = evaluate_population_sanity(
+                    census, prospect=prospect, invoice_records=inv_recs, roles=roles,
+                )
+            except Exception:
+                sanity_rep = None
+        if sanity_rep is not None:
+            if sanity_rep.blocked:
+                crit_msgs = "; ".join(i.message for i in sanity_rep.issues if i.severity == "critical")
+                checks.append(CheckResult(
+                    rule_id="RULE_POPULATION_SANITY_GATE",
+                    section="6.0",
+                    name="Cross-Document Population Sanity Gate",
+                    status=CheckStatus.BLOCKED,
+                    reason=crit_msgs or "Critical population sanity anomaly detected",
+                ))
+                issues.append(Issue(
+                    issue_id="ISSUE_POPULATION_SANITY_BLOCKED",
+                    rule_id="RULE_POPULATION_SANITY_GATE",
+                    target_ref="census.population",
+                    issue_type=IssueType.BUSINESS_RULE_MISAPPLIED,
+                    severity=IssueSeverity.CRITICAL,
+                    earliest_stage=EarliestStage.EXTRACTION,
+                    expected_state="Parsed census totals must reconcile structurally with stated headcount, invoice count, and dependent ratios",
+                    observed_state=crit_msgs,
+                ))
+            else:
+                checks.append(CheckResult(
+                    rule_id="RULE_POPULATION_SANITY_GATE",
+                    section="6.0",
+                    name="Cross-Document Population Sanity Gate",
+                    status=CheckStatus.PASS,
+                    reason="Parsed census population passed cross-document sanity checks",
                 ))
 
         report = self._build_report(checks, issues)

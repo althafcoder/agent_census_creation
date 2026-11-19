@@ -1,0 +1,146 @@
+================================================================================
+DOCUMENT: Original_Email.pdf
+SOURCE PATH: C:\Users\c1755\AppData\Local\Temp\census_run_nzo1ew1a\in\Original_Email.pdf
+FILE EXTENSION: .pdf
+IS SCANNED (OCR USED): False
+EXTRACTION METHOD: Digital PDF (pdfplumber Direct Extraction)
+TOTAL CHARACTERS: 10,570 chars
+TOTAL TABLES DETECTED: 1 table(s)
+================================================================================
+
+--- [EXTRACTED TEXT CONTENT] ---
+Subject                                                                      
+       New Opp - Bermuda Sands Apparel, LLC, new medical opp                        
+       Body                                                                         
+       Best Regards,                                                                
+       Sales Support Team                                                           
+       Health Submissions                                                           
+       From: Karen Schneider <Karen.Schneider@DecisionHR.com>                       
+       Sent: Monday, November 16, 2026 5:22 PM                                      
+       To: DHR Benefits Submissions <dhrbensub@cognethro.com>; Samantha.Autry       
+       <Samantha.Autry@decisionhr.com>                                              
+       Cc: Rachel Barden <Rachel.Barden@DecisionHR.com>; Karen Schneider            
+       <Karen.Schneider@DecisionHR.com>                                             
+       Subject: Bermuda Sands Apparel, LLC, new medical opp                         
+       Hi Team,                                                                     
+       We have a new medical opportunity and would like to request medical quotes:  
+       Cigna Master                                                                 
+       Cigna Captive                                                                
+       Name: Bermuda Sands Apparel, LLC                                             
+       Address: 10220 Western Ridge Road, Suite A, Charlotte, NC 28273              
+       EIN: 27-2493310                                                              
+       ED: 1/1/27                                                                   
+       RD: 4/1/27                                                                   
+       Current PEO: Paychex                                                         
+       Broker: PairPEO (20% admin + $30/25 PEPM)                                    
+       Headcount: Approximately 13 employees                                        
+       Medical Premium: $19,511                                                     
+       Current Medical: BCBSNC                                                      
+       Thank you!                                                                   
+       Karen Schneider                                                              
+       Sales Consultant                                                             
+       Charlotte, NC                                                                
+       Mobile: (704) 719-0636                                                       
+       Karen Abernethy Schneider | LinkedIn                                         
+       LinkedIn | Website | Privacy Policy                                          
+       Payroll, Benefits, Workers Comp, HR                                          
+       From: matt@pairpeo.com <matt@pairpeo.com> on behalf of PairPEO RFP <rfp@pairpeo.com>
+       Sent: Monday, November 16, 2026 4:26 PM                                      
+       To: Matt Butler <matt@pairpeo.com>; PairPEO RFP <rfp@pairpeo.com>            
+       Subject: New Opportunity - Bermuda Sands Apparel, LLC                        
+       Bermuda Sands Apparel, LLC                                                   
+       10220 Western Ridge Road, Suite A, Charlotte, NC 28273                       
+       EIN: 27-2493310                                                              
+       --                                                                           
+       RFP Disclaimer: All communication regarding this RFP must be directed to rfp@pairpeo.com to
+       ensure timely responses and proper record-keeping. Responses sent to any other email address
+       may not be considered.                                                       
+       Participation in this RFP process does not guarantee selection, nor does it create any
+       contractual obligations with PairPEO. PairPEO reserves the right to accept or reject any
+       proposal at its sole discretion. Submitted proposals may be reviewed, analyzed, or reformatted
+       for internal evaluation and comparison purposes. PairPEO may present aggregated findings to
+       clients but will not alter the substance or pricing of any submission.       
+       Please note that RFP participants will be given a 48-hour Service Level Agreement (SLA) to
+       respond with any requests for missing or clarifying information required to move forward with
+       the medical proposal process. Failure to provide the requested information within this
+       timeframe may result in disqualification from further consideration.         
+       This electronic communication is confidential and protected by legal privileges and work
+       product immunities. If you are not the intended recipient, do not use or disseminate the
+       information contained in this electronic communication. Receipt of this electronic
+       communication by anyone other than the intended recipient is not a waiver of attorney-client or
+                                                                                    
+                                                                                    
+                                                                                    
+       work product privileges. If you have received this electronic communication in error, please
+       notify the sender immediately and permanently delete the original and any copies or printouts
+       thereof.                                                                     
+       Attachments (5)                                                              
+       1. BSA _PairPEO Employee Census.xlsx                                         
+       2. BCBS_BillingInvoice_11162026061319256_14179816_1001.xls                   
+       3. BCBS_Blue Options PPO 1500.pdf                                            
+       4. BCBS_Vision.pdf                                                           
+       5. BCBS_Dental 2026.pdf
+
+--- [EXTRACTED TABLES SUMMARY] ---
+
+[Table 1: p1_x1 (Rows: 59, Columns: 6)]
+                                    Subject        NaN  NaN     NaN                NaN                NaN
+        New Opp - Bermuda Sands Apparel, LL   C, new m  edi  cal op                  p                NaN
+                                       Body        NaN  NaN     NaN                NaN                NaN
+                              Best Regards,        NaN  NaN     NaN                NaN                NaN
+                         Sales Support Team        NaN  NaN     NaN                NaN                NaN
+                         Health Submissions        NaN  NaN     NaN                NaN                NaN
+       From: Karen Schneider <Karen.Schneid   er@Decis  ion   HR.co                 m>                NaN
+       Sent: Monday, November 16, 2026 5:22         PM  NaN     NaN                NaN                NaN
+      To: DHR Benefits Submissions <dhrbens     ub@cog  net  hro.co      m>; Samantha.              Autry
+            <Samantha.Autry@decisionhr.com>        NaN  NaN     NaN                NaN                NaN
+        Cc: Rachel Barden <Rachel.Barden@De   cisionHR  .co   m>; K     aren Schneider                NaN
+           <Karen.Schneider@DecisionHR.com>        NaN  NaN     NaN                NaN                NaN
+       Subject: Bermuda Sands Apparel, LLC,   new medi  cal     opp                NaN                NaN
+                                   Hi Team,        NaN  NaN     NaN                NaN                NaN
+      We have a new medical opportunity and  would lik e to   reque    st medical quot                es:
+                               Cigna Master        NaN  NaN     NaN                NaN                NaN
+                              Cigna Captive        NaN  NaN     NaN                NaN                NaN
+           Name: Bermuda Sands Apparel, LLC        NaN  NaN     NaN                NaN                NaN
+       Address: 10220 Western Ridge Road, S uite A, Ch  arl otte, N            C 28273                NaN
+                            EIN: 27-2493310        NaN  NaN     NaN                NaN                NaN
+                                 ED: 1/1/27        NaN  NaN     NaN                NaN                NaN
+                                 RD: 4/1/27        NaN  NaN     NaN                NaN                NaN
+                       Current PEO: Paychex        NaN  NaN     NaN                NaN                NaN
+      Broker: PairPEO (20% admin + $30/25 P       EPM)  NaN     NaN                NaN                NaN
+      Headcount: Approximately 13 employees        NaN  NaN     NaN                NaN                NaN
+                   Medical Premium: $19,511        NaN  NaN     NaN                NaN                NaN
+                    Current Medical: BCBSNC        NaN  NaN     NaN                NaN                NaN
+                                 Thank you!        NaN  NaN     NaN                NaN                NaN
+                            Karen Schneider        NaN  NaN     NaN                NaN                NaN
+                           Sales Consultant        NaN  NaN     NaN                NaN                NaN
+                              Charlotte, NC        NaN  NaN     NaN                NaN                NaN
+                     Mobile: (704) 719-0636        NaN  NaN     NaN                NaN                NaN
+       Karen Abernethy Schneider | LinkedIn        NaN  NaN     NaN                NaN                NaN
+        LinkedIn | Website | Privacy Policy        NaN  NaN     NaN                NaN                NaN
+        Payroll, Benefits, Workers Comp, HR        NaN  NaN     NaN                NaN                NaN
+        From: matt@pairpeo.com <matt@pairpe   o.com> o  n b ehalf o      f PairPEO RFP    <rfp@pairpeo.co
+       Sent: Monday, November 16, 2026 4:26         PM  NaN     NaN                NaN                NaN
+     To: Matt Butler <matt@pairpeo.com>; Pa    irPEO R   FP   <rfp@       pairpeo.com>                NaN
+      Subject: New Opportunity - Bermuda Sa   nds Appa rel,     LLC                NaN                NaN
+                 Bermuda Sands Apparel, LLC        NaN  NaN     NaN                NaN                NaN
+      10220 Western Ridge Road, Suite A, Ch arlotte, N  C 2    8273                NaN                NaN
+                            EIN: 27-2493310        NaN  NaN     NaN                NaN                NaN
+                                         --        NaN  NaN     NaN                NaN                NaN
+     RFP Disclaimer: All communication rega rding this   RF   P mus   t be directed to    rfp@pairpeo.com
+    ensure timely responses and proper reco   rd-keepi  ng.   Respo    nses sent to an y other email addr
+                     may not be considered.        NaN  NaN     NaN                NaN                NaN
+  Participation in this RFP process does no   t guaran  tee selecti    on, nor does it         create any
+   contractual obligations with PairPEO. Pa   irPEO re serv  es the    right to accept      or reject any
+ proposal at its sole discretion. Submitted   proposal  s m   ay be    reviewed, analy zed, or reformatte
+   for internal evaluation and comparison p   urposes.  Pai    rPEO     may present ag  gregated findings
+clients but will not alter the substance or pricing of   an  y subm            ission.                NaN
+  Please note that RFP participants will be    given a  48-  hour S   ervice Level Agr    eement (SLA) to
+   respond with any requests for missing or clarifying  inf  ormati   on required to m   ove forward with
+   the medical proposal process. Failure to  provide t he r   eques    ted information        within this
+timeframe may result in disqualification fr   om furth er c  onside            ration.                NaN
+   This electronic communication is confide  ntial and  pro  tected  by legal privileg        es and work
+ product immunities. If you are not the int  ended rec  ipi ent, do    not use or diss        eminate the
+ information contained in this electronic c    ommunic atio  n. Rec eipt of this elect              ronic
+     communication by anyone other than the   intended   re cipient    is not a waiver of attorney-client
+------------------------------------------------------------

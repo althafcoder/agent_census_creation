@@ -5,6 +5,8 @@ import logging
 import re
 from typing import Optional
 
+import pandas as pd
+
 from models import Prospect
 from readers import RawDoc
 from utils import clean, clean_company_name, norm_key, parse_date
@@ -15,7 +17,7 @@ LABELS = {
     "effective_date": ["proposedeffectivedate", "requestedeffectivedate", "effectivedate",
                        "coverageeffectivedate", "proposedeffective", "desiredeffectivedate", "ed"],
     "sic": ["siccode", "sicnaicscode", "sicnaics", "naicscode", "sic", "naics", "siccodenaics"],
-    "company": ["companyname", "companylegalentityname", "legalentityname", "legalentity",
+    "company": ["companyname", "companynamedba", "companynameanddba", "companylegalentityname", "legalentityname", "legalentity",
                 "clientlegalname", "legalname", "prospectname", "employername", "nameofcompany", "businessname",
                 "groupname", "organizationname", "legalbusinessname", "nameofemployer", "company", "employer"],
     "address": ["address", "streetaddress", "businessaddress", "mailingaddress", "addressline1", "address1",
@@ -80,22 +82,34 @@ def _parse_multi_colon_line(line: str) -> dict[str, str]:
     return pairs
 
 
+def _strip_pipe_val(val: str) -> str:
+    """Clean spreadsheet pipe-delimited text values and reject blank-form placeholder lines (e.g. '_____')."""
+    s = clean(val)
+    if "|" in s:
+        parts = [clean(p) for p in s.split("|") if clean(p)]
+        s = parts[0] if parts else ""
+    if s and re.fullmatch(r"[_\-\.\s]+", s):
+        return ""
+    return s
+
+
 def _kv_pairs(doc: RawDoc) -> dict[str, str]:
     """label -> value from 'Label: value' text lines and from label/value table cells."""
     pairs: dict[str, str] = {}
     for line in (doc.text or "").splitlines():
         if ":" in line:
-            if line.count(":") > 1:
+            if line.count(":") > 1 and "|" not in line:
                 m_pairs = _parse_multi_colon_line(line)
                 for mk, mv in m_pairs.items():
                     pairs.setdefault(mk, mv)
                 continue
             k, _, v = line.partition(":")
-            if 0 < len(k.strip()) <= 55 and clean(v):
-                cleaned_v = clean(v)
-                if norm_key(k) in LABELS["company"]:
+            cleaned_v = _strip_pipe_val(v)
+            if 0 < len(k.strip()) <= 55 and cleaned_v:
+                nk = norm_key(k)
+                if nk in LABELS["company"]:
                     cleaned_v = clean_company_name(cleaned_v)
-                pairs.setdefault(norm_key(k), cleaned_v)
+                pairs.setdefault(nk, cleaned_v)
     for t in doc.tables:
         grid = t.df.values.tolist()
         for row in grid:
@@ -353,6 +367,76 @@ def _text_fill(merged: dict, primary_docs: list[RawDoc], fallback_docs: list[Raw
                 merged["pt_employees"] = pt_hit[0]
     if merged.get("ft_employees") and not merged.get("ft_employees_source"):
         merged["ft_employees_source"] = ", ".join(d.name for d in primary_docs[:2])
+    if not merged.get("stated_total_employees"):
+        hit = _stated_total_employees(primary_docs)
+        if hit:
+            merged["stated_total_employees"], merged["stated_total_source"] = hit
+    if not merged.get("renewal_date"):
+        rd_val = _extract_renewal_date(primary_docs) or _extract_renewal_date(fallback_docs)
+        if rd_val:
+            merged["renewal_date"] = rd_val
+
+
+_REN_DATE_RE = re.compile(
+    r"(?:insurance\s+renewal\s+date|current\s+renewal(?:\s+date)?|medical\s+renewal\s+date|renewal\s+date|\bRD)\s*[:\-|\s]+\s*"
+    r"(\d{4}-\d{2}-\d{2}|\d{1,2}/\d{1,2}/\d{2,4}|[A-Za-z]{3,9}\.?\s+\d{1,2},?\s+\d{4})",
+    re.I,
+)
+
+
+def _extract_renewal_date(docs: list[RawDoc]):
+    """Dynamically extract declared carrier renewal date (e.g. 'Insurance Renewal Date: 2027-04-01' or 'RD: 4/1/27')."""
+    for d in docs or []:
+        # Check key-value spreadsheet tables first (e.g. Company Info banner on census/RFP)
+        for t in getattr(d, "tables", []) or []:
+            df = getattr(t, "df", None)
+            if df is None or df.empty:
+                continue
+            for r_i in range(min(25, len(df))):
+                vals = [clean(v) for v in df.iloc[r_i].tolist()]
+                for c_i, cell in enumerate(vals):
+                    if re.search(r"^(?:insurance\s+|medical\s+|current\s+)?renewal\s+date$", cell, re.I):
+                        for nxt in vals[c_i + 1: c_i + 4]:
+                            dt = parse_date(nxt)
+                            if dt:
+                                return dt
+        # Check narrative text (emails / RFPs / GHQs)
+        m = _REN_DATE_RE.search((getattr(d, "text", "") or "")[:6000])
+        if m:
+            dt = parse_date(m.group(1))
+            if dt:
+                return dt
+    return None
+
+
+_EMP_COUNT_HDR_RE = re.compile(r"^\s*(?:#|no\.?|number|count|total)?\s*(?:of\s+)?(?:employees?|ees?|head\s*count|lives)\s*$", re.I)
+_TOTAL_ROW_RE = re.compile(r"^\s*(?:grand\s+)?totals?\b", re.I)
+
+
+def _stated_total_employees(docs: list[RawDoc]) -> Optional[tuple[int, str]]:
+    """Read a headcount the employer states in a table: a column headed like '# of Employees' and a
+    'Total(s)' row (e.g. a state-by-state employee breakdown). Layout-driven, no fixed cell positions."""
+    for d in docs:
+        for t in (d.tables or []):
+            df = t.df
+            if df is None or df.empty:
+                continue
+            for hr in range(min(len(df), 40)):
+                hdr = ["" if pd.isna(v) else str(v) for v in df.iloc[hr].tolist()]
+                cols = [i for i, h in enumerate(hdr) if _EMP_COUNT_HDR_RE.match(h)]
+                if not cols:
+                    continue
+                for rr in range(hr + 1, min(len(df), hr + 200)):
+                    row = ["" if pd.isna(v) else str(v) for v in df.iloc[rr].tolist()]
+                    if any(_TOTAL_ROW_RE.match(c) for c in row[:max(1, cols[0])]):
+                        try:
+                            val = int(float(row[cols[0]].replace(",", "")))
+                        except (ValueError, IndexError):
+                            break
+                        if val > 0:
+                            return val, d.name
+                        break
+    return None
 
 
 # A cell that is (only) a full-time-employee-count label, e.g. "# of FT employees:".
@@ -550,11 +634,18 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
     pr.effective_date = d
     pr.sic = merged.get("sic", "")
     pr.company = clean_company_name(merged.get("company", ""))
-    pr.address = merged.get("address", "")
-    pr.city = merged.get("city", "")
-    pr.state = merged.get("state", "")
-    pr.current_carrier = merged.get("current_carrier", "")
-    pr.peo_name = merged.get("peo", "")
+    pr.address = _strip_pipe_val(merged.get("address", ""))
+    pr.city = _strip_pipe_val(merged.get("city", ""))
+    pr.state = _strip_pipe_val(merged.get("state", ""))
+    pr.current_carrier = _strip_pipe_val(merged.get("current_carrier", ""))
+    _raw_peo = _strip_pipe_val(merged.get("peo", ""))
+    if _raw_peo.lower() in ("none", "n/a", "na", "no", "false", "direct", "not applicable", "0", "-"):
+        pr.peo_name = ""
+        pr.is_peo = False
+    else:
+        pr.peo_name = _raw_peo
+        if _raw_peo:
+            pr.is_peo = True
     pr.funding_type = merged.get("funding", "")
     pr.salesforce_id = merged.get("salesforce_id", "")
     pr.dba = merged.get("dba", "")
@@ -568,6 +659,11 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
             pr.ft_employees = int(merged["ft_employees"])
         except (TypeError, ValueError):
             pr.ft_employees = None
+    if merged.get("stated_total_employees"):
+        pr.stated_total_employees = int(merged["stated_total_employees"])
+        pr.stated_total_source = str(merged.get("stated_total_source") or "")
+    if merged.get("renewal_date"):
+        pr.renewal_date = parse_date(merged["renewal_date"])
     if merged.get("pt_employees") is not None:
         try:
             pr.pt_employees = int(merged["pt_employees"])
@@ -575,7 +671,7 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
             pr.pt_employees = None
 
     if merged.get("csz"):
-        csz_clean = re.sub(r"\([^)]*\)", "", merged["csz"]).strip()
+        csz_clean = _strip_pipe_val(re.sub(r"\([^)]*\)", "", merged["csz"]).strip())
         pr.city_state_zip = csz_clean
     elif merged.get("city") and merged.get("state") and merged.get("zip"):
         z = re.sub(r"\.0$", "", merged["zip"])

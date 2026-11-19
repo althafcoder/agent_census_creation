@@ -571,19 +571,37 @@ def legal_entity_mismatch_items(
             df = getattr(tbl, "df", None)
             if df is None or df.empty:
                 continue
-            for r_i in range(min(10, len(df))):
+            _FORM_LABELS = {
+                "companyname", "nan", "none", "address", "streetaddress", "city", "state",
+                "zip", "citystatezip", "taxid", "ein", "fein", "industry", "sic", "naics",
+                "renewaldate", "effectivedate", "date", "phone", "email", "contact",
+            }
+            for r_i in range(min(12, len(df))):
                 row_vals = [clean(v) for v in df.iloc[r_i].tolist()]
                 comp_col = next(
                     (c_i for c_i, lab in enumerate(row_vals)
                      if norm_key(lab) in ("companyname", "legalentity", "legalentityname", "employername", "groupname", "clientname")),
                     None,
                 )
-                if comp_col is not None and r_i + 1 < len(df):
-                    for data_i in range(r_i + 1, min(r_i + 15, len(df))):
-                        val = clean(df.iloc[data_i, comp_col])
-                        if val and len(val) >= 4 and norm_key(val) not in ("companyname", "nan", "none"):
+                if comp_col is not None:
+                    raw_hdr = row_vals[comp_col]
+                    next_row_val = clean(df.iloc[r_i + 1, comp_col]) if (r_i + 1 < len(df)) else ""
+                    is_row_banner = (
+                        raw_hdr.rstrip().endswith(":")
+                        or next_row_val.rstrip().endswith(":")
+                        or norm_key(next_row_val) in _FORM_LABELS
+                    )
+                    if is_row_banner:
+                        val = next((v for v in row_vals[comp_col + 1:] if v and len(v) >= 4 and not v.rstrip().endswith(":") and norm_key(v) not in _FORM_LABELS), "")
+                        if val:
                             observed_entities.append((val, "census"))
-                            break
+                        break
+                    if r_i + 1 < len(df):
+                        for data_i in range(r_i + 1, min(r_i + 15, len(df))):
+                            val = clean(df.iloc[data_i, comp_col])
+                            if val and len(val) >= 4 and not val.rstrip().endswith(":") and norm_key(val) not in _FORM_LABELS:
+                                observed_entities.append((val, "census"))
+                                break
                     break
 
     # 2. Check medical invoice group / customer headers

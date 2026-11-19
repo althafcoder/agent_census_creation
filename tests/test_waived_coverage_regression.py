@@ -182,12 +182,12 @@ def test_geiger_dependents_and_workbook_dependent_blanking():
     assert ws_marsh.cell(14, 9).value == "N"
     assert ws_marsh.cell(14, 10).value == "UHC HSA 3500/80% SILVER"
 
-    # Row 15: Cole Geiger (CH - dependent row)
+    # Row 15: Cole Geiger (CH - dependent row: carries subscriber EC/N/Plan in Marsh Cols H-J; comparison blank except 'Dependent')
     assert ws_marsh.cell(15, 2).value == "Cole"
     assert ws_marsh.cell(15, 7).value == "CH"
-    assert ws_marsh.cell(15, 8).value is None     # Medical Coverage MUST be None
-    assert ws_marsh.cell(15, 9).value is None     # Cobra MUST be None
-    assert ws_marsh.cell(15, 10).value is None    # Medical Plan Name MUST be None
+    assert ws_marsh.cell(15, 8).value == "EC"
+    assert ws_marsh.cell(15, 9).value == "N"
+    assert ws_marsh.cell(15, 10).value == "UHC HSA 3500/80% SILVER"
     # All comparison and discrepancy/notes columns MUST be None except Col 20 (Comparison Result) = 'Dependent'
     for col_idx in list(range(11, 20)) + [21]:
         assert ws_marsh.cell(15, col_idx).value is None
@@ -196,9 +196,9 @@ def test_geiger_dependents_and_workbook_dependent_blanking():
     # Row 16: Amelia Geiger (CH - dependent row)
     assert ws_marsh.cell(16, 2).value == "Amelia"
     assert ws_marsh.cell(16, 7).value == "CH"
-    assert ws_marsh.cell(16, 8).value is None
-    assert ws_marsh.cell(16, 9).value is None
-    assert ws_marsh.cell(16, 10).value is None
+    assert ws_marsh.cell(16, 8).value == "EC"
+    assert ws_marsh.cell(16, 9).value == "N"
+    assert ws_marsh.cell(16, 10).value == "UHC HSA 3500/80% SILVER"
     for col_idx in list(range(11, 20)) + [21]:
         assert ws_marsh.cell(16, col_idx).value is None
     assert ws_marsh.cell(16, 20).value == "Dependent"
