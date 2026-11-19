@@ -501,12 +501,17 @@ def run_pipeline(
     executed_repair_patches: list[RepairPatch] = []
 
     if validator:
+        import time as _time
+        log.info("[7.5] Learning Engine pre-release validation starting...")
+        _t_val = _time.time()
         le_val_report = validator.validate_full_pipeline(
             prospect=prospect, routing=routing, census=census, selected_invoices=selected,
             renewal=renewal, ren_required=ren_required, claims_required=claims_required,
             findings=F, results=results, roles=roles,
         )
         le_status = le_val_report.release_status.value
+        log.info("[7.5] Learning Engine validation finished in %.1fs (failed_checks=%d, issues=%d)",
+                 _time.time() - _t_val, le_val_report.failed_checks, len(le_val_report.issues))
 
         if le_orchestrator and le_ctx and (le_val_report.failed_checks > 0 or le_val_report.issues):
             log.warning("⚠️ [LEARNING ENGINE] %d validation failure(s) detected. Entering closed-loop self-healing repair...", len(le_val_report.issues))

@@ -173,9 +173,16 @@ def _payroll_docs(roles: Optional[dict], docs: Optional[Iterable[Any]]) -> list[
     return out
 
 
+# The pay-period header sits at the top of a register. Scanning only a bounded, whitespace-collapsed
+# slice prevents catastrophic regex backtracking on very large extracted documents (e.g. 700k-char policies).
+_PERIOD_SCAN_CHARS = 6000
+_NAME_SCAN_CHARS = 400_000
+
+
 def _payroll_period(text: str) -> str:
+    head = re.sub(r"\s+", " ", (text or "")[:_PERIOD_SCAN_CHARS])
     for rx in _PERIOD_RES:
-        m = rx.search(text or "")
+        m = rx.search(head)
         if m:
             return f"{_to_iso_mdY(m.group(1))}-{_to_iso_mdY(m.group(2))}"
     return ""
@@ -215,7 +222,7 @@ def payroll_not_on_census_items(census: Any, roles: Optional[dict] = None, docs:
         by_period.setdefault(period, []).append(f"{first.strip().title()} {last.strip().title()}")
 
     for d in _payroll_docs(roles, docs):
-        text = getattr(d, "text", "") or ""
+        text = (getattr(d, "text", "") or "")[:_NAME_SCAN_CHARS]
         period = _payroll_period(text)
         for m in _PAYROLL_ID_NAME_RE.finditer(text):
             _consider(m.group(2), m.group(1), period)

@@ -378,7 +378,7 @@ class RepairEngine:
                 expected_old_state="collapsed invoice extraction with missing subscribers",
                 proposed_new_state="high-fidelity statement extraction across all divisions",
                 parameters={"action": "parse_meritain_statement"},
-                affected_stages=[EarliestStage.INVOICE_PARSING, EarliestStage.COMPARISON, EarliestStage.WRITER],
+                affected_stages=[EarliestStage.EXTRACTION, EarliestStage.COMPARISON, EarliestStage.WRITER],
                 verification_checks=["RULE_26_INVOICE_EXTRACTION_FIDELITY"],
             )
 

@@ -320,6 +320,7 @@ async def favicon():
 @app.get("/health", response_model=HealthResponse, include_in_schema=False)
 async def health():
     """Health check endpoint."""
+    _prepare_pipeline_env()
     from llm_client import get_instruction_doc_name
     from device_manager import get_device_manager
     dm_status = get_device_manager().get_status()
@@ -509,6 +510,20 @@ def _prepare_pipeline_env():
     sys.path.insert(0, backend_str)
 
 
+PIPELINE_TIMEOUT_SECONDS = int(os.environ.get("CENSUS_PIPELINE_TIMEOUT", "900"))
+
+
+async def _run_pipeline_offloaded(run_pipeline, *args):
+    """Run the blocking pipeline in a worker thread so the event loop keeps serving other APIs,
+    and fail the request (HTTP 504) instead of hanging forever if it exceeds the timeout."""
+    import asyncio
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(run_pipeline, *args), timeout=PIPELINE_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        log.error("Census pipeline exceeded %ss and was abandoned; other APIs remain available.", PIPELINE_TIMEOUT_SECONDS)
+        raise HTTPException(status_code=504, detail=f"Census pipeline timed out after {PIPELINE_TIMEOUT_SECONDS}s.")
+
+
 @app.post(
     "/api/process",
     response_model=PipelineResponse,
@@ -573,7 +588,7 @@ async def process_files(
             pass
 
         log.info(">>> [API] Starting Census Comparison Pipeline on %d files...", len(pipeline_paths))
-        res = run_pipeline(pipeline_paths, C_local.OUTPUT_DIR)
+        res = await _run_pipeline_offloaded(run_pipeline, pipeline_paths, C_local.OUTPUT_DIR)
         out_file = Path(res["output_file"]) if res.get("output_file") else None
         txt_file = Path(res["txt_file"]) if res.get("txt_file") else None
 
@@ -653,7 +668,7 @@ async def test_folder(req: FolderTestRequest, request: Request = None):
         pass
 
     try:
-        res = run_pipeline(p, C_local.OUTPUT_DIR)
+        res = await _run_pipeline_offloaded(run_pipeline, p, C_local.OUTPUT_DIR)
         out_file = Path(res["output_file"]) if res.get("output_file") else None
         txt_file = Path(res["txt_file"]) if res.get("txt_file") else None
 
