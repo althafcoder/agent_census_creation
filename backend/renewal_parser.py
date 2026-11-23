@@ -273,31 +273,8 @@ def parse_renewal(doc: RawDoc) -> RenewalDoc:
             log.info("Extracted %d composite renewal rate(s) and %d current rate(s) across %d plan(s) from %s",
                      len(comp_ren), len(comp_cur), len({p for p, _ in comp_ren}), doc.name)
 
-    from census_config import LLM_FIRST, USE_LLM_FALLBACK
-    if LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip() and not has_structured_composite:
-        try:
-            log.info("Applying LLM-First semantic extraction for renewal: %s", doc.name)
-            from llm_client import extract_renewal_rates
-            rates_data = extract_renewal_rates(doc.text)
-            for item in rates_data:
-                p = clean(item.get("plan"))
-                t = std_coverage(clean(item.get("tier")))
-                amt = to_money(item.get("rate"))
-                if p and t in _TIERS and amt:
-                    rd.rates[(p, t)] = amt
-            if not rd.effective:
-                for item in rates_data:
-                    if item.get("effective_date"):
-                        eff_cand = parse_date(item["effective_date"])
-                        if eff_cand:
-                            rd.effective = eff_cand
-                            break
-            if rd.rates:
-                log.info("LLM-First successfully extracted %d renewal rates from %s", len(rd.rates), doc.name)
-        except Exception as exc:
-            log.warning("LLM-First renewal extraction failed for %s: %s (falling back to table parsers)", doc.name, exc)
-
-    if not rd.rates:
+    # 1. High-Fidelity Tabular Parsing for structured spreadsheet/CSV renewal rate tables first (0 tokens)
+    if not rd.rates and doc.tables:
         for t in doc.tables:
             df = t.df
             for i in range(min(25, len(df))):
@@ -338,6 +315,30 @@ def parse_renewal(doc: RawDoc) -> RenewalDoc:
                     if plan and tier in _TIERS and amt:
                         rd.rates[(plan, tier)] = amt
                 break
+
+    from census_config import LLM_FIRST, USE_LLM_FALLBACK
+    if not rd.rates and LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip() and not has_structured_composite:
+        try:
+            log.info("Applying LLM-First semantic extraction for renewal: %s", doc.name)
+            from llm_client import extract_renewal_rates
+            rates_data = extract_renewal_rates(doc.text)
+            for item in rates_data:
+                p = clean(item.get("plan"))
+                t = std_coverage(clean(item.get("tier")))
+                amt = to_money(item.get("rate"))
+                if p and t in _TIERS and amt:
+                    rd.rates[(p, t)] = amt
+            if not rd.effective:
+                for item in rates_data:
+                    if item.get("effective_date"):
+                        eff_cand = parse_date(item["effective_date"])
+                        if eff_cand:
+                            rd.effective = eff_cand
+                            break
+            if rd.rates:
+                log.info("LLM-First successfully extracted %d renewal rates from %s", len(rd.rates), doc.name)
+        except Exception as exc:
+            log.warning("LLM-First renewal extraction failed for %s: %s (falling back to table parsers)", doc.name, exc)
 
     if not rd.rates and (doc.text or "").strip():
         rd.rates = _records_from_renewal_text(doc.text)

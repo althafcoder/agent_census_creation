@@ -7,12 +7,13 @@
     "generalized_fix": "Generalize root-cause handling for DISAMBIGUATE_SAME_NAME_PERSONS in shared pipeline code rather than relying on post-hoc patches.",
     "suggested_test": "tests/test_generalized_regression.py",
     "observed_case_ids": [
-      "case_20261118_182016"
+      "case_20261118_182016",
+      "case_20261120_151037"
     ],
-    "occurrence_count": 3,
-    "status": "proposed",
+    "occurrence_count": 6,
+    "status": "ready_for_core_rule_fix",
     "first_seen_at": "2026-11-18T18:24:34.038279",
-    "last_seen_at": "2026-11-18T18:24:34.038279"
+    "last_seen_at": "2026-11-20T15:17:20.135395"
   },
   {
     "proposal_id": "shared_rule_parse_meritain_statement",
@@ -54,12 +55,15 @@
     "suggested_test": "tests/test_generalized_regression.py",
     "observed_case_ids": [
       "case_20261119_122712",
-      "case_20261119_124922"
+      "case_20261119_124922",
+      "case_20261120_131302",
+      "case_20261120_151037",
+      "case_20261123_113428"
     ],
-    "occurrence_count": 2,
+    "occurrence_count": 9,
     "status": "ready_for_core_rule_fix",
     "first_seen_at": "2026-11-19T12:33:22.324805",
-    "last_seen_at": "2026-11-19T12:55:11.969174"
+    "last_seen_at": "2026-11-23T11:39:27.096678"
   },
   {
     "proposal_id": "shared_rule_repair_linkage_or_normalization",
@@ -69,11 +73,30 @@
     "generalized_fix": "Strengthen structural dependent-to-subscriber linkage rules in _link_dependents().",
     "suggested_test": "tests/test_coded_relationship_census.py",
     "observed_case_ids": [
-      "case_20261119_122712"
+      "case_20261119_122712",
+      "case_20261120_131302",
+      "case_20261123_112625",
+      "case_20261123_112703"
     ],
-    "occurrence_count": 6,
-    "status": "proposed",
+    "occurrence_count": 18,
+    "status": "ready_for_core_rule_fix",
     "first_seen_at": "2026-11-19T12:33:22.324805",
-    "last_seen_at": "2026-11-19T12:33:22.340156"
+    "last_seen_at": "2026-11-23T11:27:54.402282"
+  },
+  {
+    "proposal_id": "shared_rule_filter_template_example_rows",
+    "action": "FILTER_TEMPLATE_EXAMPLE_ROWS",
+    "target_module": "backend/comparator.py / backend/census_builder.py",
+    "target_function": "core_pipeline",
+    "generalized_fix": "Generalize root-cause handling for FILTER_TEMPLATE_EXAMPLE_ROWS in shared pipeline code rather than relying on post-hoc patches.",
+    "suggested_test": "tests/test_generalized_regression.py",
+    "observed_case_ids": [
+      "case_20261123_112625",
+      "case_20261123_112703"
+    ],
+    "occurrence_count": 2,
+    "status": "ready_for_core_rule_fix",
+    "first_seen_at": "2026-11-23T11:26:38.216004",
+    "last_seen_at": "2026-11-23T11:27:54.391854"
   }
 ]

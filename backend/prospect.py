@@ -491,7 +491,12 @@ def _grid_label_value(label_re: "re.Pattern[str]", docs: list[RawDoc]) -> Option
     return None
 
 
-def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: list[RawDoc] | None = None) -> tuple[Prospect, bool, bool]:
+def build_prospect(
+    ghq_docs: list[RawDoc],
+    rfp_docs: list[RawDoc],
+    all_docs: list[RawDoc] | None = None,
+    blueprint: object | None = None,
+) -> tuple[Prospect, bool, bool]:
     """Returns (prospect, any_source_found, any_field_missing) strictly following official instructions."""
     import pandas as pd
     sources = list(ghq_docs) + list(rfp_docs)
@@ -502,8 +507,30 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
 
     from census_config import LLM_FIRST, USE_LLM_FALLBACK
 
-    # 1. LLM-First semantic extraction from GHQ / RFP (Matching Copilot Studio)
-    if LLM_FIRST and USE_LLM_FALLBACK and (ghq_text.strip() or rfp_text.strip()):
+    # 0. Pre-seed from Whole-Submission Blueprint when already extracted by the Intake Agent
+    bp_prospect = getattr(blueprint, "prospect", None) if blueprint is not None else None
+    if isinstance(bp_prospect, dict) and bp_prospect:
+        _apply_llm_prospect(merged, {
+            "company_name": bp_prospect.get("company", ""),
+            "proposed_effective_date": bp_prospect.get("effective_date", ""),
+            "sic_naics_code": bp_prospect.get("sic", ""),
+            "address": bp_prospect.get("address", ""),
+            "city": bp_prospect.get("city", ""),
+            "state": bp_prospect.get("state", ""),
+            "zip": bp_prospect.get("zip", ""),
+            "referral": bp_prospect.get("referral", ""),
+            "sales_person": bp_prospect.get("sales_person", ""),
+            "current_carrier": bp_prospect.get("current_carrier", ""),
+            "current_peo": bp_prospect.get("peo_name", "") if bp_prospect.get("is_peo") else "",
+            "dba": bp_prospect.get("dba", ""),
+            "ein": bp_prospect.get("ein", ""),
+            "contact_name": bp_prospect.get("contact_name", ""),
+            "contact_email": bp_prospect.get("contact_email", ""),
+            "contact_phone": bp_prospect.get("contact_phone", ""),
+        })
+
+    # 1. LLM-First semantic extraction from GHQ / RFP (skipped when Blueprint already extracted prospect metadata)
+    if LLM_FIRST and USE_LLM_FALLBACK and (ghq_text.strip() or rfp_text.strip()) and not bp_prospect:
         try:
             log.info("      [PROSPECT] Calling Claude Anthropic (LLM-First) for prospect fields extraction...")
             from llm_client import extract_prospect_fields
@@ -606,7 +633,7 @@ def build_prospect(ghq_docs: list[RawDoc], rfp_docs: list[RawDoc], all_docs: lis
                 other_texts.append(f"--- {d.name} ---\n{d.text[:2500]}")
 
         combined_other = "\n\n".join(other_texts)
-        if combined_other.strip() and USE_LLM_FALLBACK:
+        if combined_other.strip() and USE_LLM_FALLBACK and not bp_prospect:
             try:
                 log.info("      [PROSPECT] Reviewing all uploaded documents (census notes & invoices) per official instructions...")
                 from llm_client import extract_prospect_fields

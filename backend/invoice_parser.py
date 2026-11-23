@@ -1072,6 +1072,14 @@ def parse_invoice(doc: RawDoc) -> InvoiceDoc:
             or _records_from_text(doc)
         )
 
+    # If deterministic statement parsing already reconciles to printed current_charges, use it directly (0 LLM tokens)
+    printed_cur_pre = carrier_meta.get("current_charges")
+    if not recs and det_recs and printed_cur_pre is not None and float(printed_cur_pre) > 0:
+        det_sum_pre = round(sum((r.premium or 0.0) for r in det_recs), 2)
+        if abs(det_sum_pre - float(printed_cur_pre)) <= 0.05:
+            recs = det_recs
+            log.info("Deterministic invoice parser matched printed current_charges (%.2f) for %s; skipping LLM call.", det_sum_pre, doc.name)
+
     if not recs and LLM_FIRST and USE_LLM_FALLBACK:
         try:
             log.info("Applying LLM-First semantic extraction for invoice: %s", doc.name)

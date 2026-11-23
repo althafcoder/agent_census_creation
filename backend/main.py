@@ -272,7 +272,7 @@ def run_pipeline(
 
     # 2. prospect block & routing decision --------------------------------------------------------
     log.info("[2/7] Extracting Prospect Information & Determining Carrier Routing...")
-    prospect, has_source, missing = build_prospect(roles["ghq"], roles["rfp"], all_docs=docs)
+    prospect, has_source, missing = build_prospect(roles["ghq"], roles["rfp"], all_docs=docs, blueprint=blueprint)
     if blueprint is not None:
         blueprint.apply_to_prospect(prospect)
         if prospect.company or prospect.state or prospect.effective_date:

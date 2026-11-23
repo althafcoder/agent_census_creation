@@ -260,6 +260,8 @@ class SubmissionBlueprint:
     excluded_employees: list[dict[str, str]] = field(default_factory=list)  # [{person_name, reason}]
     status_overrides: list[dict[str, str]] = field(default_factory=list)    # [{person_name, coverage, cobra, reason}]
     dependent_links: list[dict[str, str]] = field(default_factory=list)     # [{dependent_name, subscriber_name, reason}]
+    python_census_payload: Optional[dict[str, Any]] = None
+    python_invoices_payload: Optional[dict[str, Any]] = None
 
     def role_for(self, file_name: str) -> Optional[str]:
         rec = self.documents.get(clean(file_name).lower())

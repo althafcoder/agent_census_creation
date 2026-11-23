@@ -261,7 +261,16 @@ def execute_inspection_tool(
     return f"ERROR: Unknown tool '{name}'"
 
 
-# ------------------------------------------------------- Agent Intake Loop --
+def _get_shared_agent_tools() -> list[dict[str, Any]]:
+    """Return a unified toolset for live cached runs so Intake and Workbook Auditor share the exact same `tools + system` cache prefix."""
+    from workbook_auditor import AUDIT_SCHEMA
+    return list(INTAKE_AGENT_TOOLS) + [
+        {
+            "name": "submit_workbook_audit",
+            "description": "Submit the completed Post-Generation Workbook QA Audit report (only used by the Post-Generation QA Auditor).",
+            "input_schema": AUDIT_SCHEMA,
+        }
+    ]
 def _agent_loop_enabled() -> bool:
     if os.getenv("CENSUS_DISABLE_AGENT_LOOP", "").strip().lower() in ("1", "true", "yes"):
         return False
@@ -271,10 +280,70 @@ def _agent_loop_enabled() -> bool:
     return bool(LLM_FIRST and USE_LLM_FALLBACK and ANTHROPIC_API_KEY and not ANTHROPIC_API_KEY.startswith("sk-ant-test"))
 
 
+def _build_cached_agent_payload(
+    base_system: str,
+    role_instructions: str,
+    messages: list[dict[str, Any]],
+    api_key: str,
+) -> tuple[Any, list[dict[str, Any]]]:
+    """Attach Anthropic ephemeral cache_control breakpoints to system instructions and multi-turn messages.
+
+    Breakpoint 1: Shared governing official instructions in `system` (cached once, reused across all turns and stages).
+    Breakpoint 2: Initial submission/snapshot user message (`messages[0]`).
+    Breakpoint 3: Latest tool_result user turn (`messages[-1]`) on multi-turn loops so prior tool turns are cached.
+    """
+    from caching.config import ANTHROPIC_PROMPT_CACHE_ENABLED
+    if (
+        not ANTHROPIC_PROMPT_CACHE_ENABLED
+        or not api_key
+        or api_key.startswith(("sk-ant-test", "sk-ant-real-mock"))
+        or os.getenv("PYTEST_CURRENT_TEST", "") != ""
+    ):
+        full_sys = f"{base_system}\n\n{role_instructions}".strip()
+        return full_sys, messages
+
+    sys_blocks: list[dict[str, Any]] = [
+        {
+            "type": "text",
+            "text": base_system,
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+    if role_instructions.strip():
+        sys_blocks.append({
+            "type": "text",
+            "text": role_instructions.strip(),
+        })
+
+    cached_msgs: list[dict[str, Any]] = []
+    for idx, msg in enumerate(messages):
+        c = msg.get("content")
+        if idx == 0 and msg.get("role") == "user" and isinstance(c, str) and len(c) >= 2000:
+            cached_msgs.append({
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": c,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
+            })
+        elif idx == len(messages) - 1 and idx >= 2 and msg.get("role") == "user" and isinstance(c, list) and c:
+            new_list = [dict(blk) if isinstance(blk, dict) else blk for blk in c]
+            if isinstance(new_list[-1], dict):
+                new_list[-1] = {**new_list[-1], "cache_control": {"type": "ephemeral"}}
+            cached_msgs.append({"role": "user", "content": new_list})
+        else:
+            cached_msgs.append(msg)
+
+    return sys_blocks, cached_msgs
+
+
 def run_agent_intake_plan(
     docs: list[Any],
     *,
-    max_turns: int = 10,
+    max_turns: int = 4,
     bypass_cache: bool = False,
 ) -> Optional[SubmissionBlueprint]:
     """Run the Claude Tool-Using Intake Agent (with Sandboxed Python Code Interpreter) to inspect all files
@@ -287,7 +356,9 @@ def run_agent_intake_plan(
 
     from census_config import ANTHROPIC_API_KEY, ANTHROPIC_EFFORT, ANTHROPIC_MODEL, ANTHROPIC_WORKSPACE_ID
     from llm_client import (
+        _STAGE_CHECKLISTS,
         get_instruction_doc_name,
+        get_official_instructions,
         get_scoped_instructions,
         get_system_prompt,
         set_current_tracking,
@@ -295,7 +366,12 @@ def run_agent_intake_plan(
 
     set_current_tracking(file_name="whole_submission", step_name="agent_intake_blueprint")
     doc_name = get_instruction_doc_name()
-    scoped_rules = get_scoped_instructions("blueprint")
+    use_shared_sys_cache = bool(
+        ANTHROPIC_API_KEY
+        and not ANTHROPIC_API_KEY.startswith(("sk-ant-test", "sk-ant-real-mock"))
+        and os.getenv("PYTEST_CURRENT_TEST", "") == ""
+    )
+    scoped_rules = _STAGE_CHECKLISTS["blueprint"] if use_shared_sys_cache else get_scoped_instructions("blueprint")
     digest = build_submission_digest(docs)
     cache_key_prompt = f"AGENT_INTAKE_V2_PY\n{doc_name}\n{digest}"
     effective_effort = ANTHROPIC_EFFORT or "high"
@@ -343,11 +419,15 @@ def run_agent_intake_plan(
         except Exception as _ce:
             log.debug("Agent intake cache lookup skipped: %s", _ce)
 
-    system_prompt = (
-        get_system_prompt()
-        + "\n\nYou are operating as an interactive Underwriting Intake Agent with a Sandboxed Python Code Interpreter (`run_python`) "
+    base_system_prompt = (
+        f"{get_system_prompt()}\n\nOFFICIAL INSTRUCTIONS ({doc_name}):\n{get_official_instructions()}"
+        if use_shared_sys_cache
+        else get_system_prompt()
+    )
+    role_system_prompt = (
+        "You are operating as an interactive Underwriting Intake Agent with a Sandboxed Python Code Interpreter (`run_python`) "
         "and read-only document inspection tools (`inspect_spreadsheet_rows`, `inspect_pdf_text`). "
-        "ALWAYS use `run_python` (e.g. `column_summary(...)` and exact pandas set-difference / filter queries) to inspect 100% of "
+        "ALWAYS use `run_python` (e.g. `column_summary(...)` and exact pandas set-difference / filter queries) in ONE comprehensive script to inspect 100% of "
         "every census sheet's columns and unique values (Employment Status, Class, Worker Category, Medical Plan End Date, Decline Reason, COBRA) "
         "so you NEVER miss terminated, part-time, inactive, or waived employees on unseen file layouts. "
         "Then call `commit_submission_blueprint` ONCE with complete, Python-verified data."
@@ -358,7 +438,7 @@ SCOPED GOVERNING RULES:
 {scoped_rules}
 
 INSTRUCTIONS:
-1. Start by calling `run_python` to profile EVERY spreadsheet table (`list_files()`, `column_summary(file_name, sheet_name, header_row)`):
+1. In ONE comprehensive `run_python` call, profile EVERY spreadsheet table (`list_files()`, `column_summary(file_name, sheet_name, header_row)`) and any invoice/renewal tables at once:
    - Inspect ALL distinct values of Employment Status / Position Status, Class / Worker Category, Relationship, Coverage / Tier, Medical Plan, Medical Plan End Date, Decline / Waive Reason, and COBRA.
    - If multiple census files exist, compute exact Python set differences between them (e.g., employees in an older all-employee export who are absent from the authoritative Active FT/PT roster).
    - Cross-check the resulting Active Full-Time employee count against any headcount stated in the RFP / GHQ / submission email and against the medical invoice subscriber count.
@@ -371,7 +451,7 @@ INSTRUCTIONS:
    - `excluded_employees`: use `run_python` to compute the EXACT list of employees who must be excluded (test/placeholder rows, Terminated/Inactive non-COBRA employees, Part-Time/Seasonal/Per-Diem/Contractor employees, or employees absent from the authoritative active roster and not on the invoice).
    - `status_overrides`: when `run_python` reveals unambiguous medical status from source columns (e.g. `Medical Decline Reason` -> `WO`, recent hire in waiting period -> `WP`, active `COBRA` participant -> `cobra="Y"`, or ended medical coverage with no active plan -> `WO`), emit exact overrides so zero rows remain blank or misclassified.
    - `dependent_links`: if a separate Dependent tab/file has dependents whose last name differs from their employee (e.g. maiden/blended surname) or lacks a Subscriber column, use `run_python` to match them by exact 5-digit ZIP + tier compatibility (`ES`/`EC`/`EF`/`FAM`) and emit exact `(dependent_name -> subscriber_name)` links.
-3. Call `commit_submission_blueprint` once verified.
+3. Call `commit_submission_blueprint` immediately on your second turn once verified (do not split Python inspection into multiple small turns when one script can inspect everything).
 
 SUBMISSION DIGEST ({len(docs)} files):
 {digest}
@@ -385,20 +465,32 @@ SUBMISSION DIGEST ({len(docs)} files):
     committed_raw: Optional[dict[str, Any]] = None
 
     t0 = time.perf_counter()
+    c_payload_emitted: Optional[dict[str, Any]] = None
+    i_payload_emitted: Optional[dict[str, Any]] = None
     try:
         with PythonSandboxSession(docs) as sandbox:
             for turn in range(max_turns):
                 is_last_turn = (turn == max_turns - 1)
+                sys_payload, msgs_payload = _build_cached_agent_payload(
+                    base_system_prompt, role_system_prompt, messages, ANTHROPIC_API_KEY
+                )
+                active_tools = _get_shared_agent_tools() if use_shared_sys_cache else INTAKE_AGENT_TOOLS
                 create_kwargs: dict[str, Any] = {
                     "model": ANTHROPIC_MODEL,
                     "max_tokens": 8192,
                     "output_config": {"effort": effective_effort},
-                    "system": system_prompt,
-                    "tools": INTAKE_AGENT_TOOLS,
-                    "messages": messages,
+                    "system": sys_payload,
+                    "tools": active_tools,
+                    "messages": msgs_payload,
                 }
                 # Note: Opus 5.5 rejects tool_choice={"type":"tool"} / "any" with effort; use natural auto + prompt nudge
+                t_call = time.perf_counter()
                 resp = client.messages.create(**create_kwargs)
+                try:
+                    from caching import record_anthropic_usage
+                    record_anthropic_usage(getattr(resp, "usage", None), step_name="agent_intake_blueprint", latency_sec=time.perf_counter() - t_call)
+                except Exception:
+                    pass
 
                 try:
                     from core.universal_token_monitor import track_usage
@@ -451,11 +543,16 @@ SUBMISSION DIGEST ({len(docs)} files):
                 messages.append({"role": "assistant", "content": assistant_blocks})
                 messages.append({"role": "user", "content": tool_results})
 
+            c_payload_emitted = sandbox.read_canonical_census()
+            i_payload_emitted = sandbox.read_canonical_invoices()
+
         if not committed_raw:
             log.warning("Agent Intake Loop completed without committing a blueprint; falling back.")
             return None
 
         bp = validate_blueprint_dict(committed_raw, docs=docs)
+        bp.python_census_payload = c_payload_emitted
+        bp.python_invoices_payload = i_payload_emitted
         bp.agent_clarifications = [clean(x) for x in (committed_raw.get("agent_clarifications") or []) if clean(x)]
         bp.excluded_employees = [
             {"person_name": clean(x.get("person_name", "")), "reason": clean(x.get("reason", ""))}
@@ -521,7 +618,9 @@ def run_tool_based_workbook_audit(
     """
     from census_config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_WORKSPACE_ID
     from llm_client import (
+        _STAGE_CHECKLISTS,
         get_instruction_doc_name,
+        get_official_instructions,
         get_scoped_instructions,
         get_system_prompt,
         set_current_tracking,
@@ -531,14 +630,21 @@ def run_tool_based_workbook_audit(
     wb_name = snapshot["workbook"]["workbook_name"]
     set_current_tracking(file_name=wb_name, step_name="workbook_auditor")
     doc_name = get_instruction_doc_name()
-    scoped_rules = get_scoped_instructions("audit")
+    use_shared_sys_cache = bool(
+        ANTHROPIC_API_KEY
+        and not ANTHROPIC_API_KEY.startswith(("sk-ant-test", "sk-ant-real-mock"))
+        and os.getenv("PYTEST_CURRENT_TEST", "") == ""
+    )
+    scoped_rules = _STAGE_CHECKLISTS["audit"] if use_shared_sys_cache else get_scoped_instructions("audit")
 
     audit_tool = {
         "name": "submit_workbook_audit",
         "description": "Submit the completed Post-Generation Workbook QA Audit report.",
         "input_schema": AUDIT_SCHEMA,
     }
-    has_sandbox = bool(docs or extra_files)
+    # Default to a single-turn cached audit over the rich deliverable snapshot unless multi-turn Python audit is explicitly enabled
+    multi_turn_py_audit = os.getenv("CENSUS_AUDIT_MULTI_TURN_PY", "0").strip().lower() in ("1", "true", "yes")
+    has_sandbox = bool((docs or extra_files) and multi_turn_py_audit)
     audit_tools = [_RUN_PYTHON_TOOL, audit_tool] if has_sandbox else [audit_tool]
 
     py_hint = (
@@ -600,18 +706,33 @@ DELIVERABLE SNAPSHOT & SOURCE GROUND TRUTH:
     ]
     submitted_raw: Optional[dict[str, Any]] = None
 
+    base_sys_aud = (
+        f"{get_system_prompt()}\n\nOFFICIAL INSTRUCTIONS ({doc_name}):\n{get_official_instructions()}"
+        if use_shared_sys_cache
+        else get_system_prompt()
+    )
     sb_ctx = PythonSandboxSession(docs or [], extra_files=extra_files) if has_sandbox else None
     try:
         turns = max_turns if has_sandbox else 1
         for turn in range(turns):
+            sys_payload, msgs_payload = _build_cached_agent_payload(
+                base_sys_aud, "", messages, ANTHROPIC_API_KEY
+            )
+            active_aud_tools = _get_shared_agent_tools() if use_shared_sys_cache else audit_tools
+            t_call = time.perf_counter()
             resp = client.messages.create(
                 model=ANTHROPIC_MODEL,
                 max_tokens=6144,
                 output_config={"effort": "medium"},
-                system=get_system_prompt(),
-                tools=audit_tools,
-                messages=messages,
+                system=sys_payload,
+                tools=active_aud_tools,
+                messages=msgs_payload,
             )
+            try:
+                from caching import record_anthropic_usage
+                record_anthropic_usage(getattr(resp, "usage", None), step_name="workbook_auditor", latency_sec=time.perf_counter() - t_call)
+            except Exception:
+                pass
             try:
                 from core.universal_token_monitor import track_usage
                 track_usage(
@@ -997,7 +1118,12 @@ YOUR TASK (use `run_python` — `FILES`, `TABLES`, `TEXTS`, `list_files()`, `she
 
 # ------------------- Pillar #1 & #4: Agent-Python-First Census + Invoices ---
 def _agent_python_first_enabled() -> bool:
-    if os.getenv("CENSUS_AGENT_PYTHON_FIRST", "1").strip().lower() in ("0", "false", "no"):
+    # By default ("auto" / "0"), the unified Intake Agent Blueprint + deterministic census_builder
+    # runs first (zero extra LLM loop, 100% deterministic audit/dependent/zip fidelity), and
+    # Python-Sandbox census building runs automatically via Sanity-Gate Rescue only if needed.
+    # Set CENSUS_AGENT_PYTHON_FIRST=force (or 1 with CENSUS_FORCE_AGENT_PY_IN_TEST=1) to force the separate loop.
+    mode = os.getenv("CENSUS_AGENT_PYTHON_FIRST", "auto").strip().lower()
+    if mode in ("0", "false", "no", "auto", ""):
         return False
     if os.getenv("PYTEST_CURRENT_TEST", "") != "" and os.getenv("CENSUS_FORCE_AGENT_PY_IN_TEST", "") != "1":
         return False
