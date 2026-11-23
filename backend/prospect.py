@@ -234,7 +234,11 @@ _FULLTIME_RE = re.compile(r"full[\s\-]?time\s+employees?\s*[:\-]?\s*(\d{1,5})", 
 _PT_RE = re.compile(r"#?\s*PT\s*Employees?\s*[:\-]?\s*(\d{1,5})", re.I)
 _PARTTIME_RE = re.compile(r"part[\s\-]?time\s+employees?\s*[:\-]?\s*(\d{1,5})", re.I)
 # Broker / agency / vendor domains that must never be captured as the *client's* contact email.
-_AGENCY_DOMAINS = ("adp.com", "archonpeo.com", "archon", "benefitfocus", "bswift", "peo")
+_AGENCY_DOMAINS = ("adp.com", "archonpeo.com", "archon", "benefitfocus", "bswift", "peo", "decisionhr", "cognethro", "onedigital")
+_NON_MEDICAL_CASUALTY_DOC_RE = re.compile(
+    r"\b(workers'?\s*comp(?:ensation)?\s*policy|loss\s*runs?|loss\s*affidavit|employers'?\s*liability\s*policy)\b",
+    re.I,
+)
 
 
 def _harvest(regex: "re.Pattern[str]", docs: list[RawDoc]) -> str:
@@ -499,6 +503,10 @@ def build_prospect(
 ) -> tuple[Prospect, bool, bool]:
     """Returns (prospect, any_source_found, any_field_missing) strictly following official instructions."""
     import pandas as pd
+    all_docs_filtered = [
+        d for d in (all_docs or [])
+        if not _NON_MEDICAL_CASUALTY_DOC_RE.search(f"{getattr(d, 'name', '')} {(getattr(d, 'text', '') or '')[:1500]}")
+    ]
     sources = list(ghq_docs) + list(rfp_docs)
     merged = {f: "" for f in LABELS}
 
@@ -570,9 +578,9 @@ def build_prospect(
     # as mandated by the official instructions ("Source Document Review: All files must be reviewed and combined")
     core_missing = not merged.get("company") or not merged.get("effective_date") or not merged.get("address")
     found_in_other = False
-    if core_missing and all_docs:
+    if core_missing and all_docs_filtered:
         other_texts = []
-        for d in all_docs:
+        for d in all_docs_filtered:
             if d in sources:
                 continue
             vals = _from_doc(d)
@@ -649,12 +657,16 @@ def build_prospect(
         merged["sic"] = ""
 
     # 3b. Harvest supported contact details (email, phone, EIN) from all current-submission documents
-    _text_fill(merged, sources, list(all_docs or []))
+    _text_fill(merged, sources, all_docs_filtered)
 
     # P1.8: Explicit labelled SIC code in source documents beats LLM guess when GHQ/RFP SIC was blank
-    sic_from_text = _sic_from_text(sources + list(all_docs or []))
+    # Never harvest SIC from casualty/WC policies or when Blueprint explicitly left SIC blank because GHQ stated 'Unknown'
+    ghq_sic_unknown = bool(re.search(r"sic(?:\s*code)?[^\n]{0,40}\b(unknown|not\s+provided|n/?a|tbd)\b", f"{ghq_text}\n{rfp_text}", re.I))
+    sic_from_text = "" if ghq_sic_unknown else _sic_from_text(sources + all_docs_filtered)
     if sic_from_text and ("-" in sic_from_text or not merged.get("sic") or not det_sic):
         merged["sic"] = sic_from_text
+    elif ghq_sic_unknown:
+        merged["sic"] = ""
 
     pr = Prospect()
     d = parse_date(merged.get("effective_date"))

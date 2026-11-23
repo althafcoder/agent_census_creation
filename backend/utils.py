@@ -407,12 +407,16 @@ def std_relationship(v) -> str:
         "vp", "vice president", "president", "manager", "director", "lead", "head", "officer",
         "development", "business", "engineer", "analyst", "specialist", "coordinator", "assistant",
         "supervisor", "consultant", "administrator", "representative", "operations", "tech",
-        "technician", "executive", "clerk", "architect", "accountant", "counsel",
+        "technician", "executive", "clerk", "architect", "accountant", "counsel", "dispatcher",
         "general", "senior", "managing", "principal", "associate", "founding"
     )
     if any(re.search(rf"\b{re.escape(w)}\b", s) for w in _JOB_TITLE_WORDS):
         return ""
 
+    if s.startswith(("dependent", "dependant")) or (
+        bool(re.search(r"\b(spouse|sp)\b", s) and re.search(r"\b(child|children|ch)\b", s))
+    ):
+        return "CH"
     if re.search(r"\b(spouse|wife|husband)\b|\bpartner\b(?!ship)", s) or s in {"sp", "w", "h"}:
         return "SP"
     if re.search(r"\b(child|son|daughter|dependent|step)\b|\bch\b|\bc\b|\bdep\b", s) or s in {"ch", "c", "dep", "d"}:

@@ -22,11 +22,10 @@
     "status": "PASS"
   },
   "created_at": "2026-11-02T12:00:30.051455",
-  "updated_at": "2026-11-18T05:56:14.809359",
+  "updated_at": "2026-11-23T18:29:24.586449",
   "compatibility": {
     "instruction_hashes": [
-      "1a0a38151b3fddb735d779100a10506c48b10b41511ed8487977228a4f0029ef",
-      "218471cb1e739a58c197ddeecf116308e84f39eccf0e8528dcd25936e6e3174b"
+      "289f0ceb8d8c4f101588f895ff15dfa06bed691c45927beb1ae3e149ca23df49"
     ],
     "template_hashes": [],
     "parser_versions": [
@@ -94,11 +93,11 @@
       "RULE_29_INVOICE_PRESENCE_FALSE_POSITIVE"
     ],
     "promotion_eligible": true,
-    "last_verified_at": "2026-11-18T05:56:14.151396"
+    "last_verified_at": "2026-11-23T18:29:24.210791"
   },
   "promotion": {
     "mode": "auto_allowlisted",
-    "decision_ref": "verified_20261118_055614",
+    "decision_ref": "verified_20261123_182924",
     "reason": "Validated against Section 6 execution gates and Section 7 regression suite"
   },
   "usage": {

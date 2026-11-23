@@ -404,11 +404,13 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     rc_count = sum(1 for p in census_emps if p.coverage == "RC")
 
     ren_disp = ""
-    ren_dt_src = F.renewal_effective or getattr(prospect, "renewal_date", None)
+    ren_dt_src = F.renewal_effective or (getattr(prospect, "renewal_date", None) if (F.renewal_required or getattr(prospect, "is_peo", False) or getattr(prospect, "current_carrier", "")) else None)
     if ren_dt_src:
         ren_disp = ren_dt_src.strftime("%m/%d/%Y") if hasattr(ren_dt_src, "strftime") else str(ren_dt_src)
         if prospect.current_carrier:
             ren_disp += f" ({prospect.current_carrier})"
+    elif not F.renewal_required:
+        ren_disp = "N/A - renewal not required"
 
     ren_missing_disp = "N/A - renewal not required" if not F.renewal_required else cnt.get("missing_renewal", 0)
 
@@ -438,6 +440,8 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     if F.notes:
         s.section("Findings Notes")
         for n in F.notes:
+            if not F.renewal_required and "no renewal document was provided" in str(n).lower():
+                continue
             s.line(n, red=False)
         s.gap()
 
@@ -641,8 +645,13 @@ def write_summary_sheet(wb, census: Census, prospect: Prospect, F: Findings, aud
     else:
         s.row(["Employee missing from census", "None", ""])
 
-    # Missing from invoice
-    missing_inv = [e for e in census.employees if not e.invoice_only and e.coverage in C.ACTIVE_TIERS and (not res_map.get(id(e)) or res_map[id(e)].inv is None)]
+    # Missing from invoice (only when an invoice was actually provided; Section 23.7)
+    have_inv_for_summary = bool(F.selected_invoice or F.invoice_employee_count)
+    missing_inv = (
+        [e for e in census.employees if not e.invoice_only and e.coverage in C.ACTIVE_TIERS and (not res_map.get(id(e)) or res_map[id(e)].inv is None)]
+        if have_inv_for_summary
+        else []
+    )
     if missing_inv:
         for e in missing_inv:
             s.row(["Employees missing from invoice", f"{e.last}, {e.first}", f"Coverage {e.coverage}"])

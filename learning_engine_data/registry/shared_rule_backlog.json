@@ -58,12 +58,13 @@
       "case_20261119_124922",
       "case_20261120_131302",
       "case_20261120_151037",
-      "case_20261123_113428"
+      "case_20261123_113428",
+      "case_20261123_151051"
     ],
-    "occurrence_count": 9,
+    "occurrence_count": 12,
     "status": "ready_for_core_rule_fix",
     "first_seen_at": "2026-11-19T12:33:22.324805",
-    "last_seen_at": "2026-11-23T11:39:27.096678"
+    "last_seen_at": "2026-11-23T15:12:40.886150"
   },
   {
     "proposal_id": "shared_rule_repair_linkage_or_normalization",
@@ -76,12 +77,15 @@
       "case_20261119_122712",
       "case_20261120_131302",
       "case_20261123_112625",
-      "case_20261123_112703"
+      "case_20261123_112703",
+      "case_20261123_151051",
+      "case_20261123_165841",
+      "case_20261123_171056"
     ],
-    "occurrence_count": 18,
+    "occurrence_count": 30,
     "status": "ready_for_core_rule_fix",
     "first_seen_at": "2026-11-19T12:33:22.324805",
-    "last_seen_at": "2026-11-23T11:27:54.402282"
+    "last_seen_at": "2026-11-23T17:11:45.556387"
   },
   {
     "proposal_id": "shared_rule_filter_template_example_rows",
@@ -92,11 +96,13 @@
     "suggested_test": "tests/test_generalized_regression.py",
     "observed_case_ids": [
       "case_20261123_112625",
-      "case_20261123_112703"
+      "case_20261123_112703",
+      "case_20261123_165841",
+      "case_20261123_171056"
     ],
-    "occurrence_count": 2,
+    "occurrence_count": 4,
     "status": "ready_for_core_rule_fix",
     "first_seen_at": "2026-11-23T11:26:38.216004",
-    "last_seen_at": "2026-11-23T11:27:54.391854"
+    "last_seen_at": "2026-11-23T17:11:45.552139"
   }
 ]

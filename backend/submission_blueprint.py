@@ -266,9 +266,9 @@ class SubmissionBlueprint:
     def role_for(self, file_name: str) -> Optional[str]:
         rec = self.documents.get(clean(file_name).lower())
         if not rec:
-            return None
+            return "unknown" if self.documents else None
         r = str(rec.get("role") or "").strip().lower()
-        return r if r in VALID_ROLES and r != "unknown" else None
+        return r if r in VALID_ROLES else ("unknown" if self.documents else None)
 
     def sbc_plan_ids_for(self, file_name: str) -> list[str]:
         rec = self.documents.get(clean(file_name).lower())
@@ -282,9 +282,11 @@ class SubmissionBlueprint:
                 not sn or not clean(sc.sheet_name) or clean(sc.sheet_name).lower() == sn
             ):
                 return sc
-        # Single-sheet fallback matching by filename alone
+        # Single-sheet fallback matching by filename alone ONLY when the schema did not specify a different sheet_name
         by_file = [sc for sc in self.census_schemas if clean(sc.file_name).lower() == fn]
-        return by_file[0] if len(by_file) == 1 else None
+        if len(by_file) == 1 and (not sn or not clean(by_file[0].sheet_name)):
+            return by_file[0]
+        return None
 
     def as_person_evidence(self) -> list[Any]:
         """Convert blueprint email_facts into ``PersonEvidence`` records for comparator & router."""
@@ -528,7 +530,18 @@ def validate_blueprint_dict(raw: Any, docs: Optional[list[Any]] = None) -> Submi
             continue
         fn = _clean_str(sc.get("file_name"))
         sn = _clean_str(sc.get("sheet_name"))
-        if not fn or not bool(sc.get("is_census_table", True)):
+        is_cen_tbl = bool(sc.get("is_census_table", True))
+        if not fn:
+            continue
+        if not is_cen_tbl:
+            validated_schemas.append(BlueprintCensusSchema(
+                file_name=fn,
+                sheet_name=sn,
+                header_row=0,
+                is_census_table=False,
+                columns={},
+                value_maps={},
+            ))
             continue
         try:
             hdr_row = int(sc.get("header_row", 0))
@@ -581,6 +594,12 @@ def validate_blueprint_dict(raw: Any, docs: Optional[list[Any]] = None) -> Submi
                 if re.fullmatch(r"-?\d+\.0+", rk):
                     rk = rk.split(".")[0]
                 meaning = _clean_str(pair.get("meaning"))
+                if fld == "relationship" and meaning:
+                    m_low = meaning.lower()
+                    if m_low.startswith(("dependent", "dependant")) or (
+                        bool(re.search(r"\b(spouse|sp)\b", m_low) and re.search(r"\b(child|children|ch)\b", m_low))
+                    ):
+                        meaning = "Dependent"
                 if rk and meaning and norm(meaning):
                     cleaned_map[rk.lower()] = meaning
             if cleaned_map:

@@ -547,6 +547,14 @@ def run_pipeline(
                         on_active_inv = any(name_similarity((e.first, e.last), ip) >= 0.88 for ip in inv_name_pairs)
                         if on_active_inv and ov_cov in ("WO", "WP", "NE", "RC"):
                             continue
+                        # Do not promote a dual-role spouse employee back to FAM/EF if they are already carried as SP under another subscriber
+                        is_carried_as_sp = any(
+                            d.role in ("SP", "DP") and name_similarity((e.first, e.last), (d.first, d.last)) >= 0.88
+                            for other_e in census.employees if other_e is not e
+                            for d in (getattr(other_e, "dependents", None) or [])
+                        )
+                        if is_carried_as_sp and e.coverage == "WO" and ov_cov in ("FAM", "EF", "ES", "EC"):
+                            continue
                         if ov_cov in ("EE", "ES", "EC", "FAM", "WO", "WP", "NE", "RC"):
                             e.coverage = ov_cov
                             if ov_cov in ("WO", "WP", "NE", "RC"):
@@ -1235,6 +1243,29 @@ def run_pipeline(
                         save_marsh_workbook(C.MARSH_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
                         if sbu_path:
                             save_sbu_workbook(C.SBU_TEMPLATE_PATH, sbu_path, census, prospect)
+
+                    # Also regenerate the Missing Information Email so repaired counts and clarifications stay in sync
+                    email_subject, email_sections = build_missing_information_email_parts(
+                        prospect=prospect,
+                        routing=routing,
+                        findings=F,
+                        census=census,
+                        have_census=bool(census.employees),
+                        have_invoice=have_invoice,
+                        have_renewal=bool(renewal),
+                        renewal_required=ren_required,
+                        claims_required=claims_required,
+                        ghq_present=bool(roles["ghq"]),
+                        ghq_partial=bool(missing and roles["ghq"]),
+                        roles=roles,
+                        selected_invoices=selected,
+                        invoice_records=invoice_records,
+                        results=results,
+                        docs=docs,
+                    )
+                    email_content = format_missing_information_email_text(email_subject, email_sections)
+                    write_missing_information_docx(email_path, email_subject, email_sections)
+                    F.email_text = email_content
 
                     workbook_audit_report = audit_generated_deliverables(
                         out_path,

@@ -1485,8 +1485,8 @@ def refine_non_enrolled_statuses(census: Census, reference_date=None,
         worker_info = f"{e.worker_category} {e.eligibility_class} {e.job_title} {e.position_status} {e.salary}".lower()
         m_hrs = re.search(r"(\d+(?:\.\d+)?)\s*(?:hrs?|hours?|hours?/week|hrs?/wk)", worker_info)
         is_pt = bool(
-            re.search(r"\b(part[\s\-]?time|pt)\b", worker_info)
-            or (e.worker_category and e.worker_category.upper() == "PT")
+            re.search(r"\b(part[\s\-]?time|pt|1099|independent\s+contractor)\b", worker_info)
+            or (e.worker_category and e.worker_category.upper() in ("PT", "1099"))
             or (m_hrs and float(m_hrs.group(1)) < 30.0)
         )
         pos_status_str = clean(e.position_status)
@@ -1652,11 +1652,49 @@ def apply_dependent_links(census: Census, dependent_links: list[dict[str, str]])
         sf, sl = split_full_name(sub_name)
 
         # Find best-matching dependent and subscriber
-        best_dep = max(dep_pool, key=lambda d: name_similarity((d.first, d.last), (df, dl)), default=None)
-        if best_dep is None or name_similarity((best_dep.first, best_dep.last), (df, dl)) < 0.85:
-            continue
         best_emp = max(active_emps, key=lambda e: name_similarity((e.first, e.last), (sf, sl)), default=None)
         if best_emp is None or name_similarity((best_emp.first, best_emp.last), (sf, sl)) < 0.85:
+            continue
+
+        best_dep = max(dep_pool, key=lambda d: name_similarity((d.first, d.last), (df, dl)), default=None)
+        if best_dep is None or name_similarity((best_dep.first, best_dep.last), (df, dl)) < 0.85:
+            # Check if the named dependent is currently an active employee row (dual-role spouse + W-2 employee in same household)
+            emp_as_dep = max(
+                (e for e in active_emps if e is not best_emp),
+                key=lambda e: name_similarity((e.first, e.last), (df, dl)),
+                default=None,
+            )
+            if emp_as_dep is not None and name_similarity((emp_as_dep.first, emp_as_dep.last), (df, dl)) >= 0.88:
+                already_dep = any(name_similarity((d.first, d.last), (df, dl)) >= 0.88 for d in best_emp.dependents)
+                if not already_dep:
+                    sp_clone = Person(
+                        role="SP",
+                        first=emp_as_dep.first,
+                        last=emp_as_dep.last,
+                        gender=emp_as_dep.gender,
+                        dob=emp_as_dep.dob,
+                        zip=emp_as_dep.zip or best_emp.zip,
+                        coverage=best_emp.coverage,
+                        cobra=best_emp.cobra or "N",
+                        plan=best_emp.plan,
+                        source=emp_as_dep.source,
+                        rel_raw="SP",
+                        record_id=f"{emp_as_dep.record_id}_sp",
+                        subscriber_id=best_emp.record_id,
+                        employee=best_emp,
+                        eligibility_status="DEPENDENT",
+                        disposition="INCLUDE_ACTIVE_MEDICAL",
+                        gender_resolution_status=emp_as_dep.gender_resolution_status,
+                    )
+                    best_emp.dependents.insert(0, sp_clone)
+                    dep_pool.append(sp_clone)
+                    census.raw_dependent_rows += 1
+                if emp_as_dep.coverage in ("FAM", "EF", "ES", "EC") and not emp_as_dep.dependents:
+                    emp_as_dep.coverage = "WO"
+                    emp_as_dep.plan = "NA"
+                    emp_as_dep.disposition = "RETAIN_MEDICAL_STATUS"
+                    emp_as_dep.eligibility_status = "WAIVED"
+                applied += 1
             continue
 
         # Detach from previous subscriber if linked elsewhere
@@ -1687,6 +1725,8 @@ def apply_dependent_links(census: Census, dependent_links: list[dict[str, str]])
         applied += 1
 
     if applied:
+        for emp_i in active_emps:
+            _infer_generic_dependent_roles(emp_i, None)
         # Rebuild census.people in canonical employee-followed-by-dependents order
         new_people: list[Person] = []
         included_dep_ids: set[int] = set()
@@ -1833,7 +1873,15 @@ _GENERIC_DEP_WORDS = {"dependent", "dependant", "dep", "d"}
 
 def _is_generic_dependent_rel(rel_raw: str) -> bool:
     """True when the source explicitly says 'dependent' without spouse/child detail."""
-    return clean(rel_raw).lower() in _GENERIC_DEP_WORDS
+    s = clean(rel_raw).lower()
+    if not s:
+        return False
+    if s in _GENERIC_DEP_WORDS or s == "0":
+        return True
+    first_tok = re.split(r"[\s\(\[\-:;,/]+", s)[0]
+    if first_tok in _GENERIC_DEP_WORDS:
+        return True
+    return bool(re.search(r"\b(spouse|sp)\b", s) and re.search(r"\b(child|children|ch)\b", s))
 
 
 def _infer_generic_dependent_roles(emp: Person, eff) -> None:
@@ -2067,6 +2115,56 @@ def _link_dependents(st: _State, effective_date=None) -> None:
         eff = eff.date()
 
     has_medical_roster = st.has_cov_col or any(e.plan for e in st.employees)
+
+    # Stacked Family-Block Dual-Employee Reconciliation:
+    # When two consecutive employees in the same household (same surname + same 5-digit ZIP) both carry
+    # FAM/EF coverage and only the second employee captured the stacked child rows directly beneath them
+    # (leaving the primary FAM employee above with 0 dependents and the family with no SP row),
+    # link the children + a spouse (SP) copy of the second employee under the primary FAM subscriber
+    # and set the second employee's own subscriber row to WO (waived own policy as covered spouse).
+    for idx_e in range(len(st.employees) - 1):
+        emp_a = st.employees[idx_e]
+        emp_b = st.employees[idx_e + 1]
+        comb_deps = list(emp_a.dependents) + list(emp_b.dependents)
+        if (
+            (emp_a.coverage or "").upper() in ("FAM", "EF")
+            and (emp_b.coverage or "").upper() in ("FAM", "EF")
+            and emp_a.last and emp_b.last and emp_a.last.strip().lower() == emp_b.last.strip().lower()
+            and emp_a.zip and emp_b.zip and emp_a.zip[:5] == emp_b.zip[:5]
+            and (not emp_a.dependents or not emp_b.dependents)
+            and comb_deps
+            and not any(d.role in ("SP", "DP") and not _is_generic_dependent_rel(d.rel_raw) for d in comb_deps)
+        ):
+            sp_dep = Person(
+                role="SP",
+                first=emp_b.first,
+                last=emp_b.last,
+                gender=emp_b.gender,
+                dob=emp_b.dob,
+                zip=emp_b.zip,
+                coverage=emp_a.coverage,
+                cobra=emp_a.cobra or "N",
+                plan=emp_a.plan,
+                source=emp_b.source,
+                rel_raw="SP",
+                record_id=f"{emp_b.record_id}_sp",
+                subscriber_id=emp_a.record_id,
+                employee=emp_a,
+                eligibility_status="DEPENDENT",
+                disposition="INCLUDE_ACTIVE_MEDICAL",
+                gender_resolution_status=emp_b.gender_resolution_status,
+            )
+            emp_a.dependents = [sp_dep]
+            for ch_d in comb_deps:
+                ch_d.employee = emp_a
+                ch_d.subscriber_id = emp_a.record_id
+                emp_a.dependents.append(ch_d)
+            emp_b.dependents.clear()
+            emp_b.coverage = "WO"
+            emp_b.plan = "NA"
+            emp_b.disposition = "RETAIN_MEDICAL_STATUS"
+            emp_b.eligibility_status = "WAIVED"
+            st.census.raw_dependent_rows += 1
 
     for emp in st.employees:
         # If employee has explicit waiver evidence, enforce WO immediately
@@ -2603,10 +2701,39 @@ def build_census(
         # 1. High-Fidelity Tabular Parsing (for structured Excel/CSV censuses with recognized headers)
         # Direct column alignment is used for tabular sheets to guarantee zero dropped records and zero token truncation on large enterprise rosters
         tables = _prepare_doc_tables(doc)
+        doc_has_explicit_bp_census_sheet = bool(
+            blueprint is not None
+            and any(
+                clean(sc.file_name).lower() == clean(doc.name).lower()
+                and sc.is_census_table
+                and clean(sc.sheet_name)
+                for sc in (getattr(blueprint, "census_schemas", None) or [])
+            )
+        )
         for tname, tdf in tables:
             parsed_ok = False
             try:
                 bp_sc = blueprint.census_schema_for(doc.name, tname) if blueprint is not None else None
+                if bp_sc is not None and not bp_sc.is_census_table:
+                    log.info("Skipping non-census sheet '%s' in %s (Blueprint is_census_table=False)", tname, doc.name)
+                    continue
+                if (
+                    doc_has_explicit_bp_census_sheet
+                    and bp_sc is None
+                    and not re.search(r"\b(census|roster|emp|dep|member|enrol)", tname, re.I)
+                ):
+                    # Harvest any explicit 1099 / contractor / part-time annotations for already-parsed employees before skipping auxiliary tab
+                    for _, aux_row in tdf.iterrows():
+                        r_txt = " ".join(clean(v) for v in aux_row.tolist() if clean(v))
+                        if re.search(r"\b(1099|independent\s+contractor)\b", r_txt, re.I):
+                            r_low = r_txt.lower()
+                            for emp_existing in st.employees:
+                                full_e = f"{emp_existing.first} {emp_existing.last}".strip().lower()
+                                rev_e = f"{emp_existing.last}, {emp_existing.first}".strip().lower()
+                                if full_e and (full_e in r_low or rev_e in r_low):
+                                    emp_existing.worker_category = "1099"
+                    log.info("Skipping auxiliary non-census sheet '%s' in %s (primary census sheet already mapped by Blueprint)", tname, doc.name)
+                    continue
                 parsed_ok = _parse_table(
                     doc, tname, tdf, st, force_llm_remap=force_llm_remap, blueprint_schema=bp_sc,
                 )

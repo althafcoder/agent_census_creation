@@ -219,26 +219,92 @@ def search_text(pattern: str, file_name: str = None, max_hits: int = 15):
 def emit_canonical_census(payload):
     """Write a canonical census JSON payload (from Python) to the session's output slot.
 
-    Expected shape:
-      {
-        "employees": [
-          {
-            "first": "Jane", "last": "Doe", "gender": "F", "dob": "1985-04-12",
-            "zip": "07109", "coverage": "FAM", "plan": "AETNA EPO 0-100",
-            "cobra": "N", "premium": 1200.0, "source": "file.xlsx",
-            "dependents": [
-              {"role": "SP", "first": "John", "last": "Doe", "gender": "M", "dob": "1984-01-02", "zip": "07109"}
-            ]
-          }
-        ],
-        "excluded_count": 3,
-        "notes": ["Excluded 3 part-time employees"]
-      }
+    Enforces universal pre-commit structural invariants (no header/blank-name rows,
+    automatic ES->SP and FAM adult->SP role resolution for generic dependents, and
+    subscriber tier inheritance) before accepting the payload.
     """
     if isinstance(payload, list):
         payload = {"employees": payload, "excluded_count": 0, "notes": []}
     if not isinstance(payload, dict) or not isinstance(payload.get("employees"), list):
         raise ValueError("emit_canonical_census expects a dict with an 'employees' list (or a list of employees).")
+
+    _BAD_HEADER_TOKENS = {
+        "firstname", "lastname", "fullname", "employeename", "censusname", "censusrow",
+        "payrollname", "code", "description", "headcount", "annualwages", "weeklygross",
+        "total", "subtotal", "grandtotal", "required", "none", "nan", "null",
+    }
+    _VALID_COV = {"EE", "ES", "EC", "FAM", "EF", "WO", "WP", "NE", "RC"}
+
+    def _parse_yr(d_val):
+        if not d_val:
+            return None
+        s = str(d_val).strip()
+        m = re.search(r"\b(19\d{2}|20\d{2})\b", s)
+        return int(m.group(1)) if m else None
+
+    cleaned_emps = []
+    for idx, emp in enumerate(payload["employees"]):
+        if not isinstance(emp, dict):
+            continue
+        ef = str(emp.get("first") or emp.get("first_name") or "").strip()
+        el = str(emp.get("last") or emp.get("last_name") or "").strip()
+        ef_k = re.sub(r"[^a-z0-9]", "", ef.lower())
+        el_k = re.sub(r"[^a-z0-9]", "", el.lower())
+        if not ef_k or not el_k or ef_k in _BAD_HEADER_TOKENS or el_k in _BAD_HEADER_TOKENS:
+            raise ValueError(
+                f"VALIDATION ERROR in emit_canonical_census at employee[{idx}] ({ef!r} {el!r}): "
+                f"Blank, missing, or table-header/metadata name token detected. Filter out header/legend/blank rows before calling emit_canonical_census."
+            )
+        cov = str(emp.get("coverage") or emp.get("tier") or "").strip().upper()
+        if cov == "EF":
+            cov = "FAM"
+        emp["first"] = ef
+        emp["last"] = el
+        emp["coverage"] = cov if cov in _VALID_COV else ("EE" if emp.get("plan") else "WO")
+        emp["cobra"] = "Y" if str(emp.get("cobra") or "").strip().upper() in ("Y", "YES", "TRUE", "1") else "N"
+
+        raw_deps = [d for d in (emp.get("dependents") or []) if isinstance(d, dict)]
+        valid_deps = []
+        for d_idx, dep in enumerate(raw_deps):
+            df = str(dep.get("first") or dep.get("first_name") or "").strip()
+            dl = str(dep.get("last") or dep.get("last_name") or "").strip()
+            df_k = re.sub(r"[^a-z0-9]", "", df.lower())
+            dl_k = re.sub(r"[^a-z0-9]", "", dl.lower())
+            if not df_k or not dl_k or df_k in _BAD_HEADER_TOKENS or dl_k in _BAD_HEADER_TOKENS:
+                raise ValueError(
+                    f"VALIDATION ERROR in emit_canonical_census at employee[{idx}] dependent[{d_idx}] ({df!r} {dl!r}): "
+                    f"Blank or table-header dependent name detected."
+                )
+            drole = str(dep.get("role") or dep.get("relationship") or "").strip().upper()
+            dep["first"] = df
+            dep["last"] = dl
+            dep["role"] = drole
+            dep["coverage"] = emp["coverage"]
+            dep["cobra"] = emp["cobra"]
+            valid_deps.append(dep)
+
+        # Universal Tier <-> Dependent Role Invariant:
+        # 1. If subscriber is ES and has 1 dependent, that dependent must be SP (or DP).
+        if emp["coverage"] == "ES" and len(valid_deps) == 1 and valid_deps[0]["role"] not in ("SP", "DP"):
+            d_yr = _parse_yr(valid_deps[0].get("dob"))
+            if d_yr is None or (2026 - d_yr) >= 18:
+                valid_deps[0]["role"] = "SP"
+        # 2. If subscriber is FAM and has no SP/DP yet, promote the adult closest in age to the employee to SP.
+        elif emp["coverage"] == "FAM" and valid_deps and not any(d["role"] in ("SP", "DP") for d in valid_deps):
+            e_yr = _parse_yr(emp.get("dob"))
+            adult_deps = [d for d in valid_deps if (_parse_yr(d.get("dob")) is not None and (2026 - _parse_yr(d.get("dob"))) >= 19)]
+            if adult_deps:
+                best_sp = min(adult_deps, key=lambda d: abs(_parse_yr(d.get("dob")) - (e_yr or _parse_yr(d.get("dob")))))
+                if e_yr is None or abs(_parse_yr(best_sp.get("dob")) - e_yr) <= 22:
+                    best_sp["role"] = "SP"
+        for d in valid_deps:
+            if d["role"] not in ("SP", "CH", "DP"):
+                d["role"] = "CH"
+        emp["dependents"] = valid_deps
+        cleaned_emps.append(emp)
+
+    payload["employees"] = cleaned_emps
+
     def _default(o):
         if hasattr(o, "isoformat"):
             return o.isoformat()
@@ -249,7 +315,13 @@ def emit_canonical_census(payload):
         json.dump(payload, _out, default=_default, ensure_ascii=False)
     emps = payload["employees"]
     deps = sum(len(e.get("dependents") or []) for e in emps if isinstance(e, dict))
-    print(f"EMITTED canonical_census.json: {len(emps)} employees, {deps} dependents, excluded_count={payload.get('excluded_count', 0)}")
+    sp_cnt = sum(1 for e in emps for d in (e.get("dependents") or []) if d.get("role") in ("SP", "DP"))
+    ch_cnt = deps - sp_cnt
+    cov_counts = collections.Counter(e.get("coverage", "") for e in emps)
+    print(
+        f"EMITTED canonical_census.json: {len(emps)} employees, {deps} dependents (SP={sp_cnt}, CH={ch_cnt}), "
+        f"tiers={dict(cov_counts)}, excluded_count={payload.get('excluded_count', 0)}"
+    )
 
 
 def emit_canonical_invoices(payload):

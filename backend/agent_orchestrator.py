@@ -411,9 +411,12 @@ def run_agent_intake_plan(
                     for x in (cached.get("dependent_links") or [])
                     if isinstance(x, dict) and clean(x.get("dependent_name", "")) and clean(x.get("subscriber_name", ""))
                 ]
+                bp.python_census_payload = cached.get("_python_census_payload")
+                bp.python_invoices_payload = cached.get("_python_invoices_payload")
                 log.info(
-                    "⚡ [AGENT INTAKE CACHE HIT] Blueprint restored (%d docs, %d schemas, %d excluded, %d overrides, %d dep links)",
+                    "⚡ [AGENT INTAKE CACHE HIT] Blueprint restored (%d docs, %d schemas, %d excluded, %d overrides, %d dep links, py_census=%s)",
                     len(bp.documents), len(bp.census_schemas), len(bp.excluded_employees), len(bp.status_overrides), len(bp.dependent_links),
+                    bool(bp.python_census_payload),
                 )
                 return bp
         except Exception as _ce:
@@ -585,11 +588,16 @@ SUBMISSION DIGEST ({len(docs)} files):
             len(bp.agent_clarifications), len(bp.excluded_employees), len(bp.status_overrides), len(bp.dependent_links),
         )
 
-        # Cache validated blueprint locally
+        # Cache validated blueprint locally (including any emitted canonical census/invoices payloads)
         try:
             from caching import get_local_cache
+            cache_obj = dict(committed_raw)
+            if c_payload_emitted:
+                cache_obj["_python_census_payload"] = c_payload_emitted
+            if i_payload_emitted:
+                cache_obj["_python_invoices_payload"] = i_payload_emitted
             get_local_cache().set(
-                prompt=cache_key_prompt, model=ANTHROPIC_MODEL, response_data=committed_raw,
+                prompt=cache_key_prompt, model=ANTHROPIC_MODEL, response_data=cache_obj,
                 step_name="agent_intake_blueprint", tokens_saved_estimate=len(cache_key_prompt) // 4,
                 effort=effective_effort, output_schema=_COMMIT_BLUEPRINT_SCHEMA,
             )
@@ -1198,7 +1206,19 @@ def run_agent_python_first_build(
     Returns ``(census, invoice_docs)`` where either element may be ``None`` if not emitted
     (falling back cleanly to deterministic engines).
     """
-    if not docs or not _agent_python_first_enabled():
+    if not docs:
+        return None, None
+    src_names = [getattr(d, "name", "") for d in docs if getattr(d, "name", "")]
+    if blueprint is not None and getattr(blueprint, "python_census_payload", None):
+        c_obj = canonical_json_to_census(blueprint.python_census_payload, source_files=src_names)
+        i_objs = canonical_json_to_invoices(blueprint.python_invoices_payload) if getattr(blueprint, "python_invoices_payload", None) else None
+        if c_obj is not None:
+            log.info(
+                "🚀 [UNIFIED AGENT BUILD] Using canonical census emitted during Intake Loop (%d EEs, %d Deps, 0 extra LLM calls)",
+                len(c_obj.employees), len(c_obj.dependents),
+            )
+            return c_obj, (i_objs or None)
+    if not _agent_python_first_enabled():
         return None, None
 
     from census_config import ANTHROPIC_API_KEY, ANTHROPIC_EFFORT, ANTHROPIC_MODEL, ANTHROPIC_WORKSPACE_ID

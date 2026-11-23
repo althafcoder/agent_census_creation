@@ -374,10 +374,32 @@ def _extract_payroll_info(roles: dict | None, docs: list[RawDoc] | None) -> tupl
 
     # Match medical deduction pattern (avoid Medicare statutory tax 'Med')
     pat_med = re.compile(r"\b(?:32\s+)?MEDICAL\s+([0-9]+\.[0-9]{2})\b", re.I)
+    _CASUALTY_DOC_RE = re.compile(
+        r"\b(workers'?\s*comp(?:ensation)?|loss\s*runs?|loss\s*affidavit|employers'?\s*liability|ncci)\b",
+        re.I,
+    )
+    _PAYROLL_TABLE_HDR_RE = re.compile(
+        r"\b(hours|gross|wages?|regular|overtime|net\s*pay|withholding|deductions?|payroll\s*name|earnings|salary)\b",
+        re.I,
+    )
+    _NON_NAME_WORDS = {
+        "department", "company", "total", "payroll", "earnings", "deductible", "policy",
+        "coverage", "liability", "insurance", "workers", "compensation", "disease",
+        "occupational", "bureau", "rate", "state", "texas", "florida", "circle", "street",
+        "avenue", "boulevard", "annual", "wages", "headcount", "description", "code",
+        "the", "and", "or", "but", "we", "have", "right", "not", "on", "client", "census",
+    }
 
     for d in payroll_list:
+        if _CASUALTY_DOC_RE.search(f"{d.name} {(d.text or '')[:1500]}"):
+            continue
         for t in d.tables:
             df = t.df
+            if df is None or df.empty:
+                continue
+            head_sample = " ".join(str(v) for v in df.iloc[:min(8, len(df))].values.flatten() if v is not None)
+            if not _PAYROLL_TABLE_HDR_RE.search(head_sample):
+                continue
             for r_idx, row in df.iterrows():
                 row_str = " ".join(str(v) for v in row.values)
                 # Check for medical deduction
@@ -387,14 +409,18 @@ def _extract_payroll_info(roles: dict | None, docs: list[RawDoc] | None) -> tupl
                 # Check for employee name
                 for val in row.values:
                     s = str(val).strip()
-                    if "," in s:
+                    if "," in s and len(s) <= 45:
                         for line in s.split("\n"):
                             line = line.strip()
-                            m_name = re.match(r"^([A-Za-z\s\.\'\-]+),\s+([A-Za-z\s\.\'\-]+)$", line)
+                            if len(line) > 40:
+                                continue
+                            m_name = re.match(r"^([A-Za-z\'\-]+(?:\s+[A-Za-z\'\-]+){0,2}),\s+([A-Za-z\'\-]+(?:\s+[A-Za-z\.\'\-]+){0,2})$", line)
                             if m_name:
                                 last = m_name.group(1).strip().lower()
-                                first = m_name.group(2).strip().lower().split()[0]
-                                if not any(w in last for w in ["department", "company", "total", "payroll", "earnings"]):
+                                first_parts = m_name.group(2).strip().lower().split()
+                                first = first_parts[0] if first_parts else ""
+                                all_toks = set(last.split()) | set(first_parts)
+                                if first and last and len(first) >= 2 and len(last) >= 2 and not (all_toks & _NON_NAME_WORDS):
                                     last = " ".join(last.split())
                                     payroll_names.add((first, last))
                                     if amt is not None:
@@ -812,9 +838,9 @@ def build_missing_information_email_parts(
     if comparison_items:
         sections.append(("Census vs. Invoice Comparison", comparison_items))
 
-    # 4b. Census Clarification Section (data-driven; shared with Learning Engine validator)
+        # 4b. Census Clarification Section (data-driven; shared with Learning Engine validator)
     #     Unresolved/invalid coverage codes, heuristically interpreted codes (e.g. QW),
-    #     payroll employees absent from the census, and declared-vs-census headcount.
+    #     payroll employees absent from the census, declared-vs-census headcount, and Agent Blueprint clarifications.
     if have_census and census:
         try:
             from clarifications import collect_clarifications
@@ -824,6 +850,15 @@ def build_missing_information_email_parts(
                                           selected_invoices=selected_invoices)
             existing_low = "\n".join(comparison_items).lower()
             clar_items = [c.text for c in clar if c.text and c.text.lower() not in existing_low]
+            if findings and getattr(findings, "notes", None):
+                seen_clar_low = {c.lower() for c in clar_items} | {c.lower() for c in comparison_items}
+                for fn_note in findings.notes:
+                    fn_s = str(fn_note or "").strip()
+                    if not fn_s or fn_s.lower() in seen_clar_low:
+                        continue
+                    if any(k in fn_s.lower() for k in ("please confirm", "please provide", "please clarify", "conflict:")):
+                        clar_items.append(fn_s)
+                        seen_clar_low.add(fn_s.lower())
             if clar_items:
                 sections.append(("Census Clarification", clar_items))
         except Exception as _clar_err:  # never break email generation

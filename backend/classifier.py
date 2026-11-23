@@ -379,10 +379,16 @@ def detect_header(
                 cols[fld] = ci
                 cand_cols.setdefault(fld, []).append((ci, str(labels[ci]) if ci < len(labels) else fld))
 
-    value_maps = _resolve_value_codes(df, best_i, cols, raw_labels, force_llm=force_llm_remap)
+    value_maps: dict[str, dict[str, str]] = {}
     if bp_valid and getattr(blueprint_schema, "value_maps", None):
         for fld, vm in blueprint_schema.value_maps.items():
             value_maps.setdefault(fld, {}).update(vm)
+    resolved_vmaps = _resolve_value_codes(
+        df, best_i, cols, raw_labels, force_llm=force_llm_remap, skip_llm=bool(bp_valid and value_maps),
+    )
+    for fld, vm in resolved_vmaps.items():
+        for k_v, v_v in vm.items():
+            value_maps.setdefault(fld, {}).setdefault(k_v, v_v)
     if force_llm_remap:
         from column_semantics import infer_table_schema
         llm_cols, llm_vmaps = infer_table_schema(
@@ -401,6 +407,7 @@ def _resolve_value_codes(
     cols: dict[str, int],
     raw_labels: list[str],
     force_llm: bool = False,
+    skip_llm: bool = False,
 ) -> dict[str, dict[str, str]]:
     """Dynamically translate coded column values (e.g. Employee (1) / Dependent (0)) into words
     the deterministic normalizers understand. Driven by the source header legend, with an
@@ -420,7 +427,7 @@ def _resolve_value_codes(
                 raw_labels[idx] if idx < len(raw_labels) else "",
                 vals,
                 norm,
-                allow_llm=(fld == "relationship" or force_llm),
+                allow_llm=(not skip_llm) and (fld == "relationship" or force_llm),
                 min_unresolved_share=(0.0 if force_llm else 0.2),
             )
         except Exception as exc:
@@ -483,8 +490,12 @@ def is_wage_document(doc: RawDoc) -> bool:
 
     Uses both an absolute floor and a density ratio so that large census/enrollment files that
     merely mention a few wage-related words are never misclassified as payroll."""
+    name_low = (getattr(doc, "name", "") or "").lower()
     text = doc.text or ""
     if not text.strip():
+        return False
+    # Workers' Compensation policies, Loss Runs, and Loss Affidavits are casualty insurance documents, never payroll registers
+    if re.search(r"\b(workers'?\s*comp(?:ensation)?\s*policy|loss\s*runs?|loss\s*affidavit|employers'?\s*liability\s*policy)\b", f"{name_low} {text[:3000]}", re.I):
         return False
     wage_hits = len(_WAGE_CONTENT.findall(text))
     benefit_hits = len(_BENEFIT_CONTENT.findall(text))
