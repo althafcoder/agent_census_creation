@@ -72,27 +72,110 @@ class RoutingDecision:
     notes: list[str] = field(default_factory=list)
 
 
-def normalize_state(text: str) -> Optional[str]:
-    """Identify a 2-letter US state code from a text snippet."""
+_USPS_STREET_SUFFIX_RE = re.compile(
+    r"^\s*\.?\s*(?:ave(?:nue)?|st(?:reet)?|rd|road|blvd|boulevard|dr(?:ive)?|ln|lane|"
+    r"way|ct|court|pl(?:ace)?|cir(?:cle)?|pkwy|parkway|hwy|highway|trl|trail|"
+    r"ter(?:race)?|loop|sq(?:uare)?|expy|expressway|pike|run|pass|path|row|walk|"
+    r"xing|crossing|plz|plaza|mall|aly|alley|cres(?:cent)?|pt|point|tpke|turnpike|"
+    r"cswy|causeway)\b",
+    re.IGNORECASE,
+)
+
+_CITY_QUALIFIER_RE = re.compile(
+    r"^\s+(?:city|beach|springs|falls|park|heights|grove|mills|harbor|town|"
+    r"village|island|hills|burg|port|view|ridge|lake|valley|creek|point)\b",
+    re.IGNORECASE,
+)
+
+_STREET_NUM_PREFIX_RE = re.compile(
+    r"(?:^|[\n;])\s*\d+[A-Za-z]?\s+(?:(?:N|S|E|W|NE|NW|SE|SW|North|South|East|West)\.?\s+)?$",
+    re.IGNORECASE,
+)
+
+# 2-letter tokens that also appear as street suffixes, directionals, or business abbreviations;
+# require an explicit comma or ZIP context before treating them as a US state code.
+_AMBIGUOUS_TRAILING_STATE_CODES = frozenset({
+    "AL", "CO", "CT", "DE", "HI", "ID", "IN", "KY", "LA", "MD", "ME", "MT", "NE", "OH", "OK", "OR", "PA",
+})
+
+_PRECEDING_STREET_SUFFIX_RE = re.compile(
+    r"\b(?:ave(?:nue)?|st(?:reet)?|rd|road|blvd|boulevard|dr(?:ive)?|ln|lane|"
+    r"way|ct|court|pl(?:ace)?|cir(?:cle)?|pkwy|parkway|hwy|highway|trl|trail|"
+    r"ter(?:race)?|ste|suite|apt|unit|bldg|flr|floor)\.?\s*$",
+    re.IGNORECASE,
+)
+
+
+def normalize_state(text: str, *, allow_unqualified_full_name: bool = True) -> Optional[str]:
+    """Identify a 2-letter US state code from a text snippet using postal-address grammar.
+
+    Precedence:
+    1. Exact 2-letter US state code (e.g. 'FL').
+    2. Explicit 'ST ZIP' postal pattern (e.g. 'Largo, FL 33770', 'ISLANDIA NY 11749-1401').
+    3. Explicit comma-delimited 2-letter state code (e.g. 'Largo, FL', 'Indiana, PA').
+    4. Unambiguous trailing uppercase 2-letter state code (e.g. '1111 Missouri Ave N.Largo FL').
+    5. Full US state name, excluding street names (e.g. '1111 Missouri Ave N') and city names
+       (e.g. 'Kansas City', 'Virginia Beach'). When allow_unqualified_full_name is False
+       (street-address fields), a full state name must appear in a postal state position
+       (preceded by a comma or followed by a 5-digit ZIP).
+    """
     if not text:
         return None
     text_clean = text.strip()
-    # Direct 2-letter match
+    if not text_clean:
+        return None
+
+    # 1. Direct 2-letter match
     upper = text_clean.upper()
     if upper in US_STATES:
         return upper
-    # Look for full state names
+
+    # 2. Explicit 'ST 12345' (or 'ST 12345-6789') postal pattern — highest structural confidence
+    m_zip = re.search(r"\b([A-Za-z]{2})\s+\d{5}(?:-\d{4})?\b", text_clean)
+    if m_zip and m_zip.group(1).upper() in US_STATES:
+        return m_zip.group(1).upper()
+
+    # 3. Standard 'City, ST' or ', ST 12345' (anchored so ', Suite IN ...' is not misread)
+    for m_comma in re.finditer(r",\s*([A-Za-z]{2})(?=\s+\d{5}\b|\s*$|\s*,|\s*\))", text_clean):
+        cand = m_comma.group(1).upper()
+        if cand in US_STATES:
+            return cand
+
+    # 4. Unambiguous trailing uppercase 2-letter state code (e.g. '1111 Missouri Ave N.Largo FL')
+    m_trail = re.search(r"(?<=[\s.,])([A-Z]{2})\s*$", text_clean)
+    if m_trail:
+        cand = m_trail.group(1)
+        prefix = text_clean[:m_trail.start()]
+        if (
+            cand in US_STATES
+            and cand not in _AMBIGUOUS_TRAILING_STATE_CODES
+            and not _PRECEDING_STREET_SUFFIX_RE.search(prefix)
+        ):
+            return cand
+
+    # 5. Full state names with street-name and city-name structural guards
     for code, name in US_STATES.items():
-        if re.search(rf"\b{re.escape(name)}\b", text_clean, re.IGNORECASE):
+        for m_name in re.finditer(rf"\b{re.escape(name)}\b", text_clean, re.IGNORECASE):
+            before = text_clean[:m_name.start()]
+            after = text_clean[m_name.end():]
+            # Reject street names (e.g. 'Missouri Ave', 'Virginia St', '1111 Missouri')
+            if _USPS_STREET_SUFFIX_RE.search(after):
+                continue
+            if _STREET_NUM_PREFIX_RE.search(before):
+                continue
+            # Reject city names containing a state name (e.g. 'Kansas City', 'Virginia Beach')
+            if _CITY_QUALIFIER_RE.search(after):
+                continue
+            if not allow_unqualified_full_name:
+                # In street/full-address fields, require a postal state position:
+                # preceded by a comma (', Florida') or followed by a 5-digit ZIP ('Florida 33770')
+                in_postal_pos = bool(
+                    re.search(r",\s*$", before) or re.match(r"^\s+\d{5}(?:-\d{4})?\b", after)
+                )
+                if not in_postal_pos:
+                    continue
             return code
-    # Look for standard 'City, ST 12345' or ', ST'
-    m = re.search(r",\s*([A-Za-z]{2})\b", text_clean)
-    if m and m.group(1).upper() in US_STATES:
-        return m.group(1).upper()
-    # Look for any isolated 2-letter code in state position
-    m2 = re.search(r"\b([A-Za-z]{2})\s+\d{5}\b", text_clean)
-    if m2 and m2.group(1).upper() in US_STATES:
-        return m2.group(1).upper()
+
     return None
 
 
@@ -110,17 +193,17 @@ def extract_prospect_state(prospect: Prospect, docs: list[RawDoc] | None = None)
 
     # 1. From prospect object
     if prospect.state:
-        st = normalize_state(prospect.state)
+        st = normalize_state(prospect.state, allow_unqualified_full_name=True)
         if st:
             _record(st, "Prospect State field")
 
     if prospect.city_state_zip:
-        st = normalize_state(prospect.city_state_zip)
+        st = normalize_state(prospect.city_state_zip, allow_unqualified_full_name=True)
         if st:
             _record(st, "Prospect City/State/Zip")
 
     if prospect.address:
-        st = normalize_state(prospect.address)
+        st = normalize_state(prospect.address, allow_unqualified_full_name=False)
         if st:
             _record(st, "Prospect Address")
 
@@ -137,11 +220,11 @@ def extract_prospect_state(prospect: Prospect, docs: list[RawDoc] | None = None)
                 for line in lines:
                     low = line.lower()
                     if any(k in low for k in ["company address", "business address", "hq address", "physical address", "headquarters", "location address", "locations:"]):
-                        st = normalize_state(line)
+                        st = normalize_state(line, allow_unqualified_full_name=False)
                         if st:
                             _record(st, f"{d.name} company address line")
                     elif "state:" in low or "state :" in low or "st:" in low:
-                        st = normalize_state(line.split(":")[-1])
+                        st = normalize_state(line.split(":")[-1], allow_unqualified_full_name=True)
                         if st:
                             _record(st, f"{d.name} State field")
 
