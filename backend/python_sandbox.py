@@ -262,6 +262,20 @@ def emit_canonical_census(payload):
         emp["last"] = el
         emp["coverage"] = cov if cov in _VALID_COV else ("EE" if emp.get("plan") else "WO")
         emp["cobra"] = "Y" if str(emp.get("cobra") or "").strip().upper() in ("Y", "YES", "TRUE", "1") else "N"
+        # Universal ZIP invariant: never truncate an invalid ZIP (e.g. 6-digit '310122'); leave blank and note it.
+        raw_z = str(emp.get("zip") or "").strip().replace(" ", "")
+        if raw_z:
+            if re.fullmatch(r"\d{5}", raw_z):
+                emp["zip"] = raw_z
+            elif re.fullmatch(r"\d{9}", raw_z) or re.fullmatch(r"\d{5}-\d{4}", raw_z):
+                emp["zip"] = raw_z[:5]
+            elif re.fullmatch(r"\d{4}", raw_z):
+                emp["zip"] = raw_z.zfill(5)
+            else:
+                emp["zip"] = ""
+                emp_notes = list(emp.get("notes") or [])
+                emp_notes.append(f"Invalid ZIP Format: '{raw_z}' (left blank - confirm with client)")
+                emp["notes"] = emp_notes
 
         raw_deps = [d for d in (emp.get("dependents") or []) if isinstance(d, dict)]
         valid_deps = []
@@ -358,6 +372,31 @@ def emit_canonical_invoices(payload):
     invs = payload["invoices"]
     recs = sum(len(inv.get("records") or []) for inv in invs if isinstance(inv, dict))
     print(f"EMITTED canonical_invoices.json: {len(invs)} invoice(s), {recs} medical subscriber record(s)")
+
+
+def emit_canonical_renewal(payload):
+    """Write Python-verified canonical renewal rate table to the session's output slot.
+
+    Expected shape:
+      {
+        "file_name": "Benefits_Renewal.xlsx",
+        "effective": "2026-12-01",
+        "rates": [
+          {"plan": "Aetna NY PPO $1650 -> $1700 HSA", "tier": "EE", "rate": 803.17}
+        ]
+      }
+    """
+    if not isinstance(payload, dict) or not isinstance(payload.get("rates"), list):
+        raise ValueError("emit_canonical_renewal expects a dict with a 'rates' list.")
+    def _default(o):
+        if hasattr(o, "isoformat"):
+            return o.isoformat()
+        if isinstance(o, Decimal):
+            return float(o)
+        return str(o)
+    with open("canonical_renewal.json", "w", encoding="utf-8") as _out:
+        json.dump(payload, _out, default=_default, ensure_ascii=False)
+    print(f"EMITTED canonical_renewal.json: effective={payload.get('effective')}, {len(payload['rates'])} rate row(s)")
 
 
 with open("agent_script.py", "r", encoding="utf-8") as _sf:
@@ -512,6 +551,20 @@ class PythonSandboxSession:
             return data if isinstance(data, dict) else None
         except Exception as exc:
             log.warning("Failed reading canonical_invoices.json from sandbox: %s", exc)
+            return None
+
+    def read_canonical_renewal(self) -> Optional[dict[str, Any]]:
+        """Read back the JSON emitted via `emit_canonical_renewal(...)` inside this session, if any."""
+        p = os.path.join(self._tmpdir, "canonical_renewal.json")
+        if not os.path.exists(p):
+            return None
+        try:
+            import json
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else None
+        except Exception as exc:
+            log.warning("Failed reading canonical_renewal.json from sandbox: %s", exc)
             return None
 
     def close(self) -> None:

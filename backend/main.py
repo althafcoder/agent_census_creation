@@ -204,6 +204,37 @@ def run_pipeline(
         roles.setdefault(role, []).append(d)
         log.info("      * %-42s -> %-11s %s", d.name, role, "(OCR Scanned)" if d.scanned else "(Digital)")
 
+    # Universal Multi-Role Document Tagging:
+    # A single workbook can legitimately serve BOTH as a member-level medical premium schedule (BER/invoice)
+    # and as a renewal rate table (e.g., Tab 1 = employee medical premiums, Tab 2 = quoted renewal rates).
+    # Inspect table structure dynamically rather than locking every file to one exclusive role.
+    _MONTH_HDR_RE = re.compile(
+        r"\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+        r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b",
+        re.I,
+    )
+    for _cand_role in ("renewal", "unknown"):
+        for _cand_doc in list(roles.get(_cand_role, [])):
+            if _cand_doc in roles["invoice"] or is_comparison_output_doc(_cand_doc) or is_wage_document(_cand_doc):
+                continue
+            for _tbl in getattr(_cand_doc, "tables", []) or []:
+                _hdr = detect_header(_tbl.df)
+                if not _hdr:
+                    continue
+                _cols = _hdr.columns
+                _has_emp_name = bool({"full_name", "first_name", "last_name"} & set(_cols))
+                _has_med_info = bool({"plan", "coverage"} & set(_cols))
+                _has_rate_col = ("premium" in _cols) or any(
+                    _MONTH_HDR_RE.search(lbl or "") for lbl in (_hdr.labels or [])
+                )
+                if _has_emp_name and _has_med_info and _has_rate_col:
+                    roles["invoice"].append(_cand_doc)
+                    log.info(
+                        "      * [MULTI-ROLE] %-33s -> also tagged as 'invoice' (member-level medical premium sheet '%s')",
+                        _cand_doc.name, _tbl.name,
+                    )
+                    break
+
     # Unknown files that contain a census-looking table are still used (never ignore a genuine census file)
     unknown_docs = list(roles.get("unknown", []))
     for unk in unknown_docs:
@@ -1282,6 +1313,114 @@ def run_pipeline(
                     workbook_audit_report.repair_pass_applied = True
                     log.info(
                         "🔧 [AUDITOR SELF-REPAIR] Completed! Final census=%d EEs / %d Deps | Audit Status=%s",
+                        out_emp, out_dep, workbook_audit_report.overall_status.upper(),
+                    )
+
+            # Compulsory-only full Python-Sandbox Repair: fires ONLY when the post-generation
+            # auditor still reports Status=FAILED (Critical/High findings) after lightweight
+            # field patches. Zero extra API calls on clean runs.
+            _still_failed = (
+                workbook_audit_report is not None
+                and str(getattr(workbook_audit_report, "overall_status", "")).lower() == "failed"
+                and any(
+                    str(getattr(f, "severity", "")).lower() in ("critical", "high")
+                    for f in (getattr(workbook_audit_report, "findings", None) or [])
+                )
+            )
+            if _still_failed:
+                from agent_orchestrator import run_agent_auditor_repair_build
+                _crit_high = [
+                    f for f in (workbook_audit_report.findings or [])
+                    if str(getattr(f, "severity", "")).lower() in ("critical", "high")
+                ]
+                log.warning(
+                    "🔧 [COMPULSORY AUDIT REPAIR] Audit Status=FAILED (%d critical/high findings); invoking bounded Python-Sandbox repair...",
+                    len(_crit_high),
+                )
+                rep_census, rep_invs, rep_ren = run_agent_auditor_repair_build(
+                    docs,
+                    _crit_high,
+                    prospect=prospect,
+                    effective_date=prospect.effective_date,
+                )
+                if rep_census is not None or rep_invs or rep_ren is not None:
+                    if rep_census is not None and rep_census.canonical_census_employees:
+                        census = rep_census
+                    if rep_invs:
+                        selected, inv_findings, period = select_invoices(rep_invs)
+                        invoice_records = combine_records(selected)
+                        have_invoice = bool(invoice_records)
+                        F.invoice_period = period
+                    if rep_ren is not None and getattr(rep_ren, "rates", None):
+                        renewal = rep_ren
+                        renewal_to_use = rep_ren
+                        F.renewal_effective = rep_ren.effective
+                    # Clear invoice-only ghost rows and stale notes/exceptions before re-comparing
+                    census.people = [p for p in census.people if not getattr(p, "invoice_only", False)]
+                    F.exceptions.clear()
+                    if have_invoice:
+                        F.notes = [n for n in F.notes if "no employee rows could be read" not in n.lower()]
+                    results = run_comparison(
+                        census=census,
+                        invs=invoice_records,
+                        renewal=renewal_to_use,
+                        meta=meta,
+                        F=F,
+                        have_invoice=have_invoice,
+                        renewal_required=ren_required,
+                        tracer=tracer,
+                    )
+                    out_emp = len([p for p in census.people if p.role == "EE" and not p.invoice_only and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+                    out_dep = len([p for p in census.people if p.role != "EE" and not str(getattr(p, "disposition", "") or "").startswith("EXCLUDE_")])
+                    audit.update({
+                        "out_employees": out_emp,
+                        "out_dependents": out_dep,
+                        "missing_employees": max(0, src_emp - out_emp - audit.get("pt_excluded", 0)),
+                    })
+                    if routing.carrier == C.CARRIER_FLORIDA_BLUE or routing.is_florida:
+                        save_rapt_workbook(C.RAPT_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
+                    else:
+                        save_marsh_workbook(C.MARSH_TEMPLATE_PATH, out_path, census, prospect, results, F, audit, tracer=tracer)
+                        if sbu_path:
+                            save_sbu_workbook(C.SBU_TEMPLATE_PATH, sbu_path, census, prospect)
+
+                    email_subject, email_sections = build_missing_information_email_parts(
+                        prospect=prospect,
+                        routing=routing,
+                        findings=F,
+                        census=census,
+                        have_census=bool(census.employees),
+                        have_invoice=have_invoice,
+                        have_renewal=bool(renewal),
+                        renewal_required=ren_required,
+                        claims_required=claims_required,
+                        ghq_present=bool(roles["ghq"]),
+                        ghq_partial=bool(missing and roles["ghq"]),
+                        roles=roles,
+                        selected_invoices=selected,
+                        invoice_records=invoice_records,
+                        results=results,
+                        docs=docs,
+                    )
+                    email_content = format_missing_information_email_text(email_subject, email_sections)
+                    write_missing_information_docx(email_path, email_subject, email_sections)
+                    F.email_text = email_content
+
+                    workbook_audit_report = audit_generated_deliverables(
+                        out_path,
+                        sbu_path=sbu_path,
+                        email_text=email_content,
+                        docs=docs,
+                        roles=roles,
+                        blueprint=blueprint,
+                        prospect=prospect,
+                        selected_invoices=selected,
+                        findings=F,
+                        apply_patches=True,
+                    )
+                    workbook_audit_report.repair_pass_applied = True
+                    log.info(
+                        "🔧 [COMPULSORY AUDIT REPAIR] Completed! Final census=%d EEs / %d Deps | Audit Status=%s",
                         out_emp, out_dep, workbook_audit_report.overall_status.upper(),
                     )
         except Exception as _aud_err:

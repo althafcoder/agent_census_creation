@@ -859,7 +859,10 @@ def canonical_json_to_census(
         if isinstance(raw_ez, str) and raw_ez.strip().isdigit() and len(raw_ez.strip()) == 4:
             raw_ez = raw_ez.strip().zfill(5)
         emp_zip_val = std_zip(raw_ez or "")
-        emp_zip = emp_zip_val[0] if isinstance(emp_zip_val, tuple) else str(emp_zip_val or "")
+        if isinstance(emp_zip_val, tuple):
+            emp_zip = emp_zip_val[0] if emp_zip_val[1] else ""
+        else:
+            emp_zip = str(emp_zip_val or "")
         emp = Person(
             role="EE",
             first=first,
@@ -878,6 +881,9 @@ def canonical_json_to_census(
             record_id=_next_id(),
             gender_resolution_status="RESOLVED" if std_gender(er.get("gender") or "") else "MISSING",
         )
+        for _en in (er.get("notes") or []):
+            if clean(_en):
+                emp.note(clean(_en))
         if cov in ("EE", "ES", "EC", "FAM"):
             emp.eligibility_status = "ENROLLED"
             emp.disposition = "INCLUDE_ACTIVE_MEDICAL"
@@ -1418,3 +1424,208 @@ SUBMISSION DIGEST ({len(docs)} files):
     except Exception as exc:
         log.warning("Agent-Python-First build skipped (falling back to deterministic parser): %s", exc)
         return None, None
+
+
+def canonical_json_to_renewal(payload: dict[str, Any]) -> Optional[Any]:
+    """Convert Python-emitted `canonical_renewal.json` into a validated `RenewalDoc`."""
+    if not isinstance(payload, dict) or not isinstance(payload.get("rates"), list):
+        return None
+    from models import RenewalDoc
+    from utils import parse_date, std_coverage, to_money
+
+    rates: dict[tuple[str, str], float] = {}
+    plans: list[str] = []
+    for r in payload["rates"]:
+        if not isinstance(r, dict):
+            continue
+        plan = clean(r.get("plan") or "")
+        tier = std_coverage(r.get("tier") or "") or clean(r.get("tier") or "").upper()
+        if tier == "EF":
+            tier = "FAM"
+        rate_val = to_money(r.get("rate"))
+        if not plan or not tier or rate_val is None or rate_val <= 0:
+            continue
+        rates[(plan, tier)] = float(rate_val)
+        if plan not in plans:
+            plans.append(plan)
+    if not rates:
+        return None
+    return RenewalDoc(
+        path=clean(payload.get("file_name") or "agent_python_renewal"),
+        effective=parse_date(payload.get("effective")),
+        rates=rates,
+        plans=plans,
+    )
+
+
+def run_agent_auditor_repair_build(
+    docs: list[Any],
+    audit_findings: list[Any],
+    *,
+    prospect: Any = None,
+    effective_date: Any = None,
+    max_turns: int = 5,
+) -> tuple[Optional[Any], Optional[list[Any]], Optional[Any]]:
+    """Compulsory-only closed-loop repair: triggered ONLY when `workbook_auditor.py` returns
+    `overall_status == 'failed'` (Critical/High findings) that simple field patches could not fix.
+
+    Uses the live Python sandbox (`run_python`) to inspect 100% of raw files, resolve every
+    reported Critical/High finding at the root, and emit repaired canonical census, invoice,
+    and/or renewal payloads in 1 bounded session (zero extra API calls on clean runs).
+    """
+    if not docs or not audit_findings or not _agent_loop_enabled():
+        return None, None, None
+
+    from census_config import ANTHROPIC_API_KEY, ANTHROPIC_EFFORT, ANTHROPIC_MODEL, ANTHROPIC_WORKSPACE_ID
+    from llm_client import (
+        get_instruction_doc_name,
+        get_scoped_instructions,
+        get_system_prompt,
+        set_current_tracking,
+    )
+
+    set_current_tracking(file_name="whole_submission", step_name="auditor_python_repair")
+    doc_name = get_instruction_doc_name()
+    scoped_rules = get_scoped_instructions("blueprint")
+    digest = build_submission_digest(docs)
+    src_names = [getattr(d, "name", "") for d in docs if getattr(d, "name", "")]
+
+    finding_lines = []
+    for f in audit_findings[:15]:
+        sev = getattr(f, "severity", "high")
+        cat = getattr(f, "category", "")
+        loc = getattr(f, "location", "")
+        msg = getattr(f, "message", "")
+        fix = getattr(f, "suggested_fix", "")
+        finding_lines.append(f"- [{str(sev).upper()}] ({cat}) @ {loc}: {msg}" + (f" | Fix: {fix}" if fix else ""))
+    findings_block = "\n".join(finding_lines)
+
+    confirm_tool = {
+        "name": "confirm_audit_repair",
+        "description": (
+            "Call ONCE after `run_python` has emitted the repaired canonical JSON(s) "
+            "(`emit_canonical_census`, and if needed `emit_canonical_invoices` / `emit_canonical_renewal`) "
+            "resolving all Critical/High audit findings."
+        ),
+        "input_schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["summary", "emitted_census", "emitted_invoices", "emitted_renewal"],
+            "properties": {
+                "summary": {"type": "string"},
+                "emitted_census": {"type": "boolean"},
+                "emitted_invoices": {"type": "boolean"},
+                "emitted_renewal": {"type": "boolean"},
+            },
+        },
+    }
+
+    system_prompt = (
+        get_system_prompt()
+        + "\n\nYou are executing a COMPULSORY CLOSED-LOOP AUDIT REPAIR inside a live Sandboxed Python "
+        "Code Interpreter (`run_python`). The post-generation auditor flagged Critical/High defects "
+        "in the generated deliverables. Inspect the raw files directly in Python, fix EVERY reported "
+        "defect at its source (template rows, COBRA enrollees, invalid ZIPs left blank, member-level "
+        "medical invoice/BER reconciliation, and renewal rate tables), emit the corrected canonical "
+        "payloads, verify every total in Python, and call `confirm_audit_repair`."
+    )
+    user_prompt = f"""Repair the Critical/High post-generation audit findings below for this submission under {doc_name}.
+
+AUDIT FINDINGS TO RESOLVE:
+{findings_block}
+
+PROSPECT CONTEXT:
+- Company: {getattr(prospect, 'company', '') if prospect else ''}
+- Proposed Effective Date: {effective_date or ''}
+
+SANDBOX HELPERS:
+- `FILES`, `TABLES`, `TEXTS`, `list_files()`, `sheet_df()`, `column_summary()`, `search_text()`
+- `emit_canonical_census({{"employees": [...], "excluded_count": N, "notes": [...]}})`
+- `emit_canonical_invoices({{"invoices": [{{"file_name": ..., "period_start": ..., "period_end": ..., "current_charges": ..., "records": [...]}}]}})`
+- `emit_canonical_renewal({{"file_name": ..., "effective": "YYYY-MM-DD", "rates": [{{"plan": ..., "tier": "EE|ES|EC|FAM", "rate": 123.45}}]}})`
+
+RULES:
+1. Exclude all unnumbered template/example rows and instructional prompt rows.
+2. Preserve all COBRA enrollees as primary subscribers (`cobra="Y"`, `coverage="EE"`, blank DOB/ZIP if not in source).
+3. Never truncate invalid ZIPs — leave invalid ZIPs blank (`""`).
+4. If an invoice PDF is lump-sum (no member rows), check ALL spreadsheets in `TABLES` for a member-level medical premium sheet whose sum reconciles to the invoice medical total, and emit it via `emit_canonical_invoices(...)`.
+5. If renewal is required and a renewal rate table exists in `TABLES`/`TEXTS`, emit all medical plan/tier renewal rates via `emit_canonical_renewal(...)`.
+
+SCOPED GOVERNING RULES:
+{scoped_rules}
+
+SUBMISSION DIGEST ({len(docs)} files):
+{digest}
+"""
+
+    import anthropic
+
+    headers = {"anthropic-workspace-id": ANTHROPIC_WORKSPACE_ID} if ANTHROPIC_WORKSPACE_ID else None
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, default_headers=headers)
+    messages: list[dict[str, Any]] = [{"role": "user", "content": user_prompt}]
+    effective_effort = ANTHROPIC_EFFORT or "medium"
+    t0 = time.perf_counter()
+
+    try:
+        with PythonSandboxSession(docs) as sandbox:
+            for turn in range(max_turns):
+                resp = client.messages.create(
+                    model=ANTHROPIC_MODEL,
+                    max_tokens=8192,
+                    output_config={"effort": effective_effort},
+                    system=system_prompt,
+                    tools=[_RUN_PYTHON_TOOL, confirm_tool],
+                    messages=messages,
+                )
+                try:
+                    from core.universal_token_monitor import track_usage
+                    track_usage(
+                        resp.usage, model=ANTHROPIC_MODEL, poc_name="BENEFITS_UW",
+                        file_name="whole_submission", step_name=f"auditor_py_repair_turn_{turn + 1}",
+                    )
+                except Exception:
+                    pass
+
+                assistant_blocks = list(getattr(resp, "content", []) or [])
+                tool_uses = [b for b in assistant_blocks if getattr(b, "type", "") == "tool_use"]
+                if not tool_uses:
+                    messages.append({"role": "assistant", "content": assistant_blocks})
+                    messages.append({"role": "user", "content": "Emit the repaired canonical JSON(s) via `run_python` and call `confirm_audit_repair`."})
+                    continue
+
+                tool_results: list[dict[str, Any]] = []
+                confirmed = False
+                for tu in tool_uses:
+                    t_name = getattr(tu, "name", "")
+                    t_input = getattr(tu, "input", {}) or {}
+                    t_id = getattr(tu, "id", "")
+                    if t_name == "run_python":
+                        res_text = sandbox.run(str(t_input.get("code") or ""))
+                        log.info("🔧 [AUDITOR PYTHON REPAIR] Turn %d -> %d chars", turn + 1, len(res_text))
+                        tool_results.append({"type": "tool_result", "tool_use_id": t_id, "content": res_text})
+                    elif t_name == "confirm_audit_repair":
+                        confirmed = True
+                        tool_results.append({"type": "tool_result", "tool_use_id": t_id, "content": "Confirmed."})
+
+                if confirmed or turn == max_turns - 1:
+                    break
+                messages.append({"role": "assistant", "content": assistant_blocks})
+                messages.append({"role": "user", "content": tool_results})
+
+            c_payload = sandbox.read_canonical_census()
+            i_payload = sandbox.read_canonical_invoices()
+            r_payload = sandbox.read_canonical_renewal()
+            c_obj = canonical_json_to_census(c_payload, source_files=src_names) if c_payload else None
+            i_objs = canonical_json_to_invoices(i_payload) if i_payload else None
+            r_obj = canonical_json_to_renewal(r_payload) if r_payload else None
+            log.info(
+                "🔧 [AUDITOR PYTHON REPAIR] Completed in %.2fs (census=%s, invoices=%d, renewal=%s)",
+                time.perf_counter() - t0,
+                bool(c_obj),
+                len(i_objs or []),
+                bool(r_obj),
+            )
+            return c_obj, (i_objs or None), r_obj
+    except Exception as exc:
+        log.warning("Auditor Python-Sandbox repair skipped: %s", exc)
+        return None, None, None

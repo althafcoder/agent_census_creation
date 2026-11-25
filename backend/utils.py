@@ -402,6 +402,13 @@ def std_relationship(v) -> str:
     if re.search(r"\b(domestic\s*partner|\bdp\b)\b", s) or s == "dp":
         return "DP"
 
+    # COBRA enrollee / continuation participant is a primary subscriber (EE) unless explicitly
+    # qualified as a spouse/child/dependent (e.g. 'COBRA Spouse' or 'COBRA Dependent').
+    if re.search(r"\b(cobra|continuation)\b", s) and not re.search(
+        r"\b(spouse|wife|husband|child|son|daughter|dependent|dependant|dep)\b", s
+    ):
+        return "EE"
+
     # Business / employment job title guard: job titles must never be treated as dependent relationships
     _JOB_TITLE_WORDS = (
         "vp", "vice president", "president", "manager", "director", "lead", "head", "officer",

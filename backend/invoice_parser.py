@@ -323,6 +323,23 @@ def _records_from_tables(doc: RawDoc, meta_out: dict[str, Any] | None = None) ->
         dep_med_col = next((i for i, l in enumerate(hdr.labels) if "dependent" in norm_key(l) and "medical" in norm_key(l)), None)
         # Detect ancillary benefit columns (Dental, Vision, Blue 20/20, Life, etc.) & gross Total Premium column
         prem_col_idx = c.get("premium")
+        # Fallback: when a member-level premium schedule labels its current-period rate column by
+        # month/year (e.g. "November 2026", "Nov 2026") rather than literally "Premium", pick the
+        # first month-labeled numeric column that is not a renewal/effective/increase column.
+        if prem_col_idx is None:
+            _MONTH_COL_RE = re.compile(
+                r"\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+                r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b",
+                re.I,
+            )
+            _FUTURE_OR_DELTA_RE = re.compile(r"\b(effective|renewal|increase|change|diff|delta|new|proposed)\b", re.I)
+            for idx_l, lbl in enumerate(hdr.labels):
+                if _MONTH_COL_RE.search(lbl or "") and not _FUTURE_OR_DELTA_RE.search(lbl or ""):
+                    prem_col_idx = idx_l
+                    c = dict(c)
+                    c["premium"] = idx_l
+                    has_prem = True
+                    break
         anc_cols: list[tuple[int, str]] = []
         gross_col_idx: Optional[int] = None
         for idx_l, lbl in enumerate(hdr.labels):

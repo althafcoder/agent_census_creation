@@ -303,18 +303,56 @@ def parse_renewal(doc: RawDoc) -> RenewalDoc:
                                 rd.rates[(plan, tier)] = amt
                     break
 
-            hdr = detect_header(df.iloc[i:].reset_index(drop=True), max_scan=1)
-            if hdr and "plan" in hdr.columns and "coverage" in hdr.columns:   # LONG layout
+            hdr = detect_header(df)
+            cov_col = hdr.columns.get("coverage") if hdr else None
+            if hdr and cov_col is None:
+                cov_col = next(
+                    (j for j, l in enumerate(hdr.labels) if re.search(r"\b(tier|rate\s*basis|coverage)\b", l or "", re.I)),
+                    None,
+                )
+            if hdr and "plan" in hdr.columns and cov_col is not None:   # LONG layout
                 rate_col = next((j for j, l in enumerate(hdr.labels) if norm_key(l) in _RENEW_PREM), None)
                 if rate_col is None:
+                    # Universal fallback for date-labeled current vs. renewal rate columns
+                    # (e.g. "Nov 5, 2026" | "Dec 1, 2026" or "Effective Dec. 1, 2026"):
+                    # pick the latest date-labeled column as the renewal rate column.
+                    _dated_cols: list[tuple[date, int]] = []
+                    for j, l in enumerate(hdr.labels):
+                        if re.search(r"\b(change|diff|delta|increase|note)\b", l or "", re.I):
+                            continue
+                        _clean_d = re.sub(r"^(?:effective|eff\.?|renewal|as\s+of)\s+", "", clean(l), flags=re.I)
+                        _dt_val = parse_date(_clean_d)
+                        if _dt_val:
+                            _dated_cols.append((_dt_val, j))
+                    if _dated_cols:
+                        _dated_cols.sort(key=lambda x: x[0])
+                        _latest_dt, rate_col = _dated_cols[-1]
+                        if not rd.effective:
+                            rd.effective = _latest_dt
+                if rate_col is None:
                     continue
-                for _, row in body(df.iloc[i:].reset_index(drop=True), hdr).iterrows():
+                _benefit_col = next(
+                    (j for j, l in enumerate(hdr.labels) if norm_key(l) in ("benefit", "benefittype", "line", "category", "plantype")),
+                    None,
+                )
+                for _, row in body(df, hdr).iterrows():
+                    if _benefit_col is not None and _benefit_col < len(row):
+                        _bval = clean(row.iloc[_benefit_col]).lower()
+                        if _bval and "medical" not in _bval and "health" not in _bval:
+                            continue
                     plan = clean(row.iloc[hdr.columns["plan"]])
-                    tier = std_coverage(clean(row.iloc[hdr.columns["coverage"]]))
+                    tier = std_coverage(clean(row.iloc[cov_col]))
                     amt = to_money(row.iloc[rate_col])
-                    if plan and tier in _TIERS and amt:
+                    if plan and tier in _TIERS and amt and amt > 0:
                         rd.rates[(plan, tier)] = amt
-                break
+                        # Also register base plan name before '->' or '→' successor arrow so current census plan matches directly
+                        if "→" in plan or "->" in plan:
+                            _parts = re.split(r"\s*(?:→|->)\s*", plan, maxsplit=1)
+                            _base_p = clean(_parts[0])
+                            if _base_p:
+                                rd.rates.setdefault((_base_p, tier), amt)
+                if rd.rates:
+                    break
 
     from census_config import LLM_FIRST, USE_LLM_FALLBACK
     if not rd.rates and LLM_FIRST and USE_LLM_FALLBACK and (doc.text or "").strip() and not has_structured_composite:

@@ -325,9 +325,14 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
         p.note(f"Invalid Date of Birth: '{clean(d_raw)}'")
     elif not p.dob:
         p.note("Missing Date of Birth")
-    p.zip, ok = std_zip(row_vals.get("zip"))
-    if not ok:
-        p.note(f"Invalid ZIP Format: '{p.zip}'")
+    raw_zip_val, ok = std_zip(row_vals.get("zip"))
+    if ok:
+        p.zip = raw_zip_val
+    else:
+        # Never carry or truncate an invalid ZIP into output deliverables; leave blank and request from client.
+        p.zip = ""
+        p.raw_data["invalid_zip"] = raw_zip_val
+        p.note(f"Invalid ZIP Format: '{raw_zip_val}' (left blank - confirm with client)")
     p.address = clean(row_vals.get("address"))
     # "Medical/Plan/Election/Tier/Coverage" column containing EE/ES/EC/EF/WO/WP/NE
     # but the header says "PLAN" or "MEDICAL PLAN" - scan the row values for coverage codes.
@@ -396,10 +401,12 @@ def _standardise(p: Person, row_vals: dict, is_employee: bool, st: _State) -> No
             or _explicit_cobra_text(row_vals.get("worker_category"))
             or _explicit_cobra_text(row_vals.get("position_status"))
             or _explicit_cobra_text(row_vals.get("eligibility_class"))
+            or _explicit_cobra_text(row_vals.get("relationship"))
+            or _explicit_cobra_text(row_vals.get("plan"))
         )
         p.cobra = "Y" if cobra_cand == "Y" else (cobra_cand or getattr(p, "cobra", "") or "N")
         raw_plan_val = clean(row_vals.get("plan"))
-        if raw_plan_val.lower() in ("0", "0.0", "none", "null", "nan"):
+        if raw_plan_val.lower() in ("0", "0.0", "none", "null", "nan", "cobra", "cobra enrollee", "cobra participant"):
             raw_plan_val = ""
         p.plan = raw_plan_val
         if clean(cov) in ("0", "0.0") and not p.plan:
@@ -808,10 +815,60 @@ def _parse_table(
     ]
     is_wide_multi_benefit = bool(med_col_indices and anc_col_indices)
 
-    for _, series in body_df.iterrows():
+    # Universal structural guard #1: detect a sequential 1, 2, 3... row-index column in the
+    # leading columns (0 or 1). When present, any unnumbered leading rows BEFORE index '1'
+    # (such as blank-template sample/example blocks) are structurally excluded without relying
+    # on a hardcoded list of fake names.
+    _seq_col: Optional[int] = None
+    _seq_start_pos: Optional[int] = None
+    _body_rows = list(body_df.iterrows())
+    for _cand_c in range(min(2, len(hdr.labels))):
+        if _cand_c in set(cols.values()):
+            continue
+        _nums: list[tuple[int, int]] = []
+        for _pos, (_, _ser) in enumerate(_body_rows[:40]):
+            if _cand_c >= len(_ser):
+                continue
+            _v_str = clean(_ser.iloc[_cand_c])
+            if re.fullmatch(r"\d+(?:\.0+)?", _v_str):
+                _nums.append((_pos, int(float(_v_str))))
+        # Require at least 3 consecutive integers starting at 1 (1, 2, 3)
+        for _idx_i in range(len(_nums) - 2):
+            if (
+                _nums[_idx_i][1] == 1
+                and _nums[_idx_i + 1][1] == 2
+                and _nums[_idx_i + 2][1] == 3
+            ):
+                _seq_col = _cand_c
+                _seq_start_pos = _nums[_idx_i][0]
+                break
+        if _seq_col is not None:
+            break
+
+    _PROMPT_CELL_RE = re.compile(
+        r"^(?:please\s+(?:provide|select|enter|choose|include|list|specify|type|fill)|"
+        r"select\s+from\s+(?:the\s+)?dropdown|mm/dd/yyyy|dd/mm/yyyy|yyyy-mm-dd|"
+        r"permanent\s+address|legal\s+name|first\s+name|last\s+name)$",
+        re.I,
+    )
+    _PLACEHOLDER_SURNAMES = {"sample", "template", "example", "census", "placeholder", "dummy"}
+
+    for _row_pos, (_, series) in enumerate(_body_rows):
         r = _Row(hdr, series)
         non_empty = [clean(v) for v in series.tolist() if clean(v)]
         if not non_empty:
+            continue
+
+        # Skip unnumbered leading template/example rows above sequential row #1
+        if _seq_start_pos is not None and _row_pos < _seq_start_pos:
+            _idx_cell = clean(series.iloc[_seq_col]) if (_seq_col is not None and _seq_col < len(series)) else ""
+            if not re.fullmatch(r"\d+(?:\.0+)?", _idx_cell):
+                continue
+
+        # Universal structural guard #2: skip instructional / form-prompt sub-header rows
+        # (e.g. "Please provide each person's legal name | Please select from the dropdown | mm/dd/yyyy")
+        _prompt_hits = sum(1 for _v in non_empty if _PROMPT_CELL_RE.search(_v))
+        if _prompt_hits >= 2:
             continue
 
         # Filter template example / sample rows (e.g. 'Ex', 'Example', 'Sample' in leading cells or column A/B)
@@ -821,6 +878,12 @@ def _parse_table(
         if any(clean(series.iloc[c]).lower() in ("ex", "example", "sample", "eg", "e.g.", "ex.", "example:")
                for c in range(min(4, len(series)))):
             continue
+        # Guard against template placeholder surnames paired with generic 'Plan 1'/'Plan 2' or blank plan
+        if "last_name" in cols:
+            _ln_chk = clean(r.g("last_name")).lower()
+            _pl_chk = clean(r.g("plan")).lower() if "plan" in cols else ""
+            if _ln_chk in _PLACEHOLDER_SURNAMES and (not _pl_chk or re.fullmatch(r"plan\s*\d+", _pl_chk)):
+                continue
         joined = " ".join(v.lower() for v in non_empty)
         if joined.startswith(("total", "grand total", "count", "subtotal")):
             continue
@@ -1018,6 +1081,7 @@ def _parse_table(
             values = {"gender": r.t("gender"),
                       "gender_candidates": r.gender_candidates(is_dep=False, demo_is_employee=True, source_file=fname),
                       "dob": r.g("dob"), "zip": r.g("zip"),
+                      "relationship": rel_raw,
                       "address": r.t("address") if "address" in cols else "",
                       "preferred_first": r.t("preferred_first") if "preferred_first" in cols else "",
                       "middle_name": r.t("middle_name") if "middle_name" in cols else "",
@@ -1047,6 +1111,7 @@ def _parse_table(
         values = {"gender": r.t("gender"),
                   "gender_candidates": r.gender_candidates(is_dep=is_dep_row, demo_is_employee=not is_dep_row, source_file=fname),
                   "dob": r.g("dob"), "zip": r.g("zip"),
+                  "relationship": rel_raw,
                   "address": r.t("address") if "address" in cols else "",
                   "preferred_first": r.t("preferred_first") if "preferred_first" in cols else "",
                   "middle_name": r.t("middle_name") if "middle_name" in cols else "",
@@ -2306,7 +2371,7 @@ def _is_non_census_or_example_sheet(tname: str, df: pd.DataFrame) -> bool:
     clean_name = str(tname or "").strip().lower()
     if clean_name in NON_CENSUS_SHEET_NAMES:
         return True
-    if any(tok in clean_name for tok in ("example", "sample", "data validation", "generic conv", "generic_conv")):
+    if any(tok in clean_name for tok in ("example", "sample", "data validation", "generic conv", "generic_conv", "internal use", "definitions")):
         return True
     if not isinstance(df, pd.DataFrame) or df.empty:
         return False

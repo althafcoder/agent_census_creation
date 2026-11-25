@@ -14,7 +14,7 @@ from openpyxl.utils import get_column_letter
 import census_config as C
 from comparator import tier_from_deps
 from models import Census, Findings, Prospect, RowResult
-from utils import is_valid_person_name
+from utils import is_valid_person_name, std_zip
 
 THIN = Side(style="thin", color="FFBFBFBF")
 BOX = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
@@ -786,8 +786,10 @@ def write_marsh_sheet(ws, census: Census, prospect: Prospect, results: dict[int,
             if p.dob:
                 ws.cell(r, 5, p.dob).number_format = "mm/dd/yyyy"
             if p.zip:
-                z = ws.cell(r, 6, p.zip[:5])
-                z.number_format = "@"
+                _z_val, _z_ok = std_zip(p.zip)
+                if _z_ok and _z_val:
+                    z = ws.cell(r, 6, _z_val[:5])
+                    z.number_format = "@"
 
             # Member Type: EE/SP/CH/DP
             rel = p.role
@@ -925,8 +927,10 @@ def write_sbu_sheets(wb, census: Census, prospect: Prospect) -> None:
 
         # Home Zip Code
         if p.zip:
-            z = ws_census.cell(r, 6, p.zip[:5])
-            z.number_format = "@"
+            _z_val, _z_ok = std_zip(p.zip)
+            if _z_ok and _z_val:
+                z = ws_census.cell(r, 6, _z_val[:5])
+                z.number_format = "@"
 
         # Waived: Y / N for employees only (blank for dependents per SBU template; WP is waiting period, not waived)
         if p.role == "EE":
